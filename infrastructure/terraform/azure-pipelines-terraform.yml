@@ -70,10 +70,12 @@ stages:
         displayName: 'Terraform Format, Validate & Security Scan'
         steps:
           # Install Terraform
-          - task: TerraformInstaller@1
+          - bash: |
+              wget -q https://releases.hashicorp.com/terraform/$(TF_VERSION)/terraform_$(TF_VERSION)_linux_amd64.zip
+              unzip -o terraform_$(TF_VERSION)_linux_amd64.zip
+              sudo mv terraform /usr/local/bin/
+              terraform version
             displayName: 'Install Terraform $(TF_VERSION)'
-            inputs:
-              terraformVersion: '$(TF_VERSION)'
 
           # Install tfsec for security scanning
           - bash: |
@@ -156,10 +158,12 @@ stages:
       - job: TerraformPlanDev
         displayName: 'Generate Terraform Plan for Dev'
         steps:
-          - task: TerraformInstaller@1
+          - bash: |
+              wget -q https://releases.hashicorp.com/terraform/$(TF_VERSION)/terraform_$(TF_VERSION)_linux_amd64.zip
+              unzip -o terraform_$(TF_VERSION)_linux_amd64.zip
+              sudo mv terraform /usr/local/bin/
+              terraform version
             displayName: 'Install Terraform $(TF_VERSION)'
-            inputs:
-              terraformVersion: '$(TF_VERSION)'
 
           - bash: |
               cd $(WORKING_DIR)
@@ -213,10 +217,12 @@ stages:
           runOnce:
             deploy:
               steps:
-                - task: TerraformInstaller@1
+                - bash: |
+                    wget -q https://releases.hashicorp.com/terraform/$(TF_VERSION)/terraform_$(TF_VERSION)_linux_amd64.zip
+                    unzip -o terraform_$(TF_VERSION)_linux_amd64.zip
+                    sudo mv terraform /usr/local/bin/
+                    terraform version
                   displayName: 'Install Terraform $(TF_VERSION)'
-                  inputs:
-                    terraformVersion: '$(TF_VERSION)'
 
                 - task: DownloadPipelineArtifact@2
                   displayName: 'Download Terraform Plan'
@@ -280,10 +286,12 @@ stages:
       - job: TerraformPlanStaging
         displayName: 'Generate Terraform Plan for Staging'
         steps:
-          - task: TerraformInstaller@1
+          - bash: |
+              wget -q https://releases.hashicorp.com/terraform/$(TF_VERSION)/terraform_$(TF_VERSION)_linux_amd64.zip
+              unzip -o terraform_$(TF_VERSION)_linux_amd64.zip
+              sudo mv terraform /usr/local/bin/
+              terraform version
             displayName: 'Install Terraform $(TF_VERSION)'
-            inputs:
-              terraformVersion: '$(TF_VERSION)'
 
           - bash: |
               cd $(WORKING_DIR)
@@ -337,10 +345,12 @@ stages:
           runOnce:
             deploy:
               steps:
-                - task: TerraformInstaller@1
+                - bash: |
+                    wget -q https://releases.hashicorp.com/terraform/$(TF_VERSION)/terraform_$(TF_VERSION)_linux_amd64.zip
+                    unzip -o terraform_$(TF_VERSION)_linux_amd64.zip
+                    sudo mv terraform /usr/local/bin/
+                    terraform version
                   displayName: 'Install Terraform $(TF_VERSION)'
-                  inputs:
-                    terraformVersion: '$(TF_VERSION)'
 
                 - task: DownloadPipelineArtifact@2
                   displayName: 'Download Terraform Plan'
@@ -404,10 +414,12 @@ stages:
       - job: TerraformPlanProd
         displayName: 'Generate Terraform Plan for Production'
         steps:
-          - task: TerraformInstaller@1
+          - bash: |
+              wget -q https://releases.hashicorp.com/terraform/$(TF_VERSION)/terraform_$(TF_VERSION)_linux_amd64.zip
+              unzip -o terraform_$(TF_VERSION)_linux_amd64.zip
+              sudo mv terraform /usr/local/bin/
+              terraform version
             displayName: 'Install Terraform $(TF_VERSION)'
-            inputs:
-              terraformVersion: '$(TF_VERSION)'
 
           - bash: |
               cd $(WORKING_DIR)
@@ -461,10 +473,12 @@ stages:
           runOnce:
             deploy:
               steps:
-                - task: TerraformInstaller@1
+                - bash: |
+                    wget -q https://releases.hashicorp.com/terraform/$(TF_VERSION)/terraform_$(TF_VERSION)_linux_amd64.zip
+                    unzip -o terraform_$(TF_VERSION)_linux_amd64.zip
+                    sudo mv terraform /usr/local/bin/
+                    terraform version
                   displayName: 'Install Terraform $(TF_VERSION)'
-                  inputs:
-                    terraformVersion: '$(TF_VERSION)'
 
                 - task: DownloadPipelineArtifact@2
                   displayName: 'Download Terraform Plan'
