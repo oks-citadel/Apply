@@ -39,8 +39,11 @@ pr:
     include:
       - infrastructure/terraform/**
 
+# Use self-hosted agent pool (Default) since Microsoft-hosted requires parallelism grant
+# To use Microsoft-hosted agents, request free parallelism at: https://aka.ms/azpipelines-parallelism-request
+# Then change this back to: vmImage: 'ubuntu-latest'
 pool:
-  vmImage: 'ubuntu-latest'
+  name: 'Default'
 
 # ============================================================================
 # Variables
