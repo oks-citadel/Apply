@@ -1,0 +1,54 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: jobpilot
+
+resources:
+  # Base Resources
+  - base/namespace.yaml
+  - base/serviceaccount.yaml
+  - base/configmap.yaml
+  - base/secrets.yaml
+  - base/resourcequota.yaml
+  - base/poddisruptionbudget.yaml
+  - base/networkpolicy.yaml
+  - base/ingress.yaml
+
+  # Service Deployments
+  - services/auth-service.yaml
+  - services/user-service.yaml
+  - services/job-service.yaml
+  - services/ai-service.yaml
+  - services/resume-service.yaml
+  - services/analytics-service.yaml
+  - services/notification-service.yaml
+  - services/auto-apply-service.yaml
+  - services/web-app.yaml
+
+commonLabels:
+  app.kubernetes.io/name: jobpilot
+  app.kubernetes.io/part-of: jobpilot-platform
+
+commonAnnotations:
+  managed-by: kustomize
+  version: "1.0.0"
+
+images:
+  - name: jobpilotacr.azurecr.io/auth-service
+    newTag: latest
+  - name: jobpilotacr.azurecr.io/user-service
+    newTag: latest
+  - name: jobpilotacr.azurecr.io/job-service
+    newTag: latest
+  - name: jobpilotacr.azurecr.io/ai-service
+    newTag: latest
+  - name: jobpilotacr.azurecr.io/resume-service
+    newTag: latest
+  - name: jobpilotacr.azurecr.io/analytics-service
+    newTag: latest
+  - name: jobpilotacr.azurecr.io/notification-service
+    newTag: latest
+  - name: jobpilotacr.azurecr.io/auto-apply-service
+    newTag: latest
+  - name: jobpilotacr.azurecr.io/web-app
+    newTag: latest

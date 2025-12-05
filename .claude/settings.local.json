@@ -1,0 +1,32 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C Apply log:*)",
+      "Bash(tree:*)",
+      "Bash(fi)",
+      "Bash(done)",
+      "Bash(find:*)",
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(pnpm run type-check:*)",
+      "Bash(chmod:*)",
+      "Bash(pnpm install)",
+      "Bash(pnpm run build:*)",
+      "Bash(xargs cat:*)",
+      "Bash(test:*)",
+      "Bash(wc:*)",
+      "Bash(pnpm install:*)",
+      "Bash([ -f \"C:\\Users\\kogun\\OneDrive\\Documents\\Job-Apply-Platform\\pnpm-lock.yaml\" ])",
+      "Bash(pnpm test:*)",
+      "Bash(npm test:*)",
+      "Bash(npm run test:coverage:*)",
+      "Bash(grep:*)",
+      "Bash(git init:*)",
+      "Bash(git config:*)",
+      "Bash(terraform fmt:*)",
+      "Bash(xargs:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

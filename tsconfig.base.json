@@ -1,0 +1,84 @@
+{
+  "compilerOptions": {
+    // Type Checking
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "strictPropertyInitialization": true,
+    "noImplicitThis": true,
+    "alwaysStrict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noPropertyAccessFromIndexSignature": false,
+
+    // Module Resolution
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "isolatedModules": true,
+    "moduleDetection": "force",
+
+    // Emit
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "removeComments": false,
+    "importHelpers": true,
+    "newLine": "lf",
+
+    // Interop Constraints
+    "forceConsistentCasingInFileNames": true,
+    "allowJs": false,
+
+    // Skip Lib Check
+    "skipLibCheck": true,
+
+    // Path Aliases
+    "baseUrl": ".",
+    "paths": {
+      "@jobpilot/types": ["./packages/types/src/index.ts"],
+      "@jobpilot/types/*": ["./packages/types/src/*"],
+      "@jobpilot/ui": ["./packages/ui/src/index.ts"],
+      "@jobpilot/ui/*": ["./packages/ui/src/*"],
+      "@jobpilot/config": ["./packages/config/src/index.ts"],
+      "@jobpilot/config/*": ["./packages/config/src/*"],
+      "@jobpilot/utils": ["./packages/utils/src/index.ts"],
+      "@jobpilot/utils/*": ["./packages/utils/src/*"],
+      "@jobpilot/auth-service": ["./services/auth-service/src/index.ts"],
+      "@jobpilot/auth-service/*": ["./services/auth-service/src/*"],
+      "@jobpilot/user-service": ["./services/user-service/src/index.ts"],
+      "@jobpilot/user-service/*": ["./services/user-service/src/*"],
+      "@jobpilot/resume-service": ["./services/resume-service/src/index.ts"],
+      "@jobpilot/resume-service/*": ["./services/resume-service/src/*"],
+      "@jobpilot/job-service": ["./services/job-service/src/index.ts"],
+      "@jobpilot/job-service/*": ["./services/job-service/src/*"],
+      "@jobpilot/auto-apply-service": ["./services/auto-apply-service/src/index.ts"],
+      "@jobpilot/auto-apply-service/*": ["./services/auto-apply-service/src/*"],
+      "@jobpilot/analytics-service": ["./services/analytics-service/src/index.ts"],
+      "@jobpilot/analytics-service/*": ["./services/analytics-service/src/*"],
+      "@jobpilot/notification-service": ["./services/notification-service/src/index.ts"],
+      "@jobpilot/notification-service/*": ["./services/notification-service/src/*"],
+      "@jobpilot/ai-service": ["./services/ai-service/src/index.ts"],
+      "@jobpilot/ai-service/*": ["./services/ai-service/src/*"]
+    }
+  },
+  "exclude": [
+    "node_modules",
+    "dist",
+    "build",
+    ".next",
+    "coverage",
+    "**/*.spec.ts",
+    "**/*.test.ts"
+  ]
+}

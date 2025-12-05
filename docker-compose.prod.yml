@@ -1,0 +1,307 @@
+version: '3.9'
+
+# ============================================================================
+# Production Docker Compose Configuration
+# ============================================================================
+# This file contains production-ready configurations with:
+# - Resource limits
+# - Health checks
+# - Restart policies
+# - Logging configuration
+# - Environment variable references
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: jobpilot-postgres-prod
+    restart: always
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_INITDB_ARGS: '-A md5'
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infrastructure/docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ./backups/postgres:/backups
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - jobpilot-network
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '1.0'
+          memory: 1G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    labels:
+      - "com.jobpilot.service=database"
+      - "com.jobpilot.environment=production"
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: jobpilot-redis-prod
+    restart: always
+    ports:
+      - '6379:6379'
+    command: >
+      redis-server
+      --appendonly yes
+      --requirepass ${REDIS_PASSWORD}
+      --maxmemory 512mb
+      --maxmemory-policy allkeys-lru
+      --save 900 1
+      --save 300 10
+      --save 60 10000
+    volumes:
+      - redis_data:/data
+      - ./backups/redis:/backups
+    healthcheck:
+      test: ['CMD', 'redis-cli', '--raw', 'incr', 'ping']
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    networks:
+      - jobpilot-network
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    labels:
+      - "com.jobpilot.service=cache"
+      - "com.jobpilot.environment=production"
+
+  # Web Application (Next.js)
+  web:
+    image: ${ACR_LOGIN_SERVER}/web-app:${IMAGE_TAG:-latest}
+    container_name: jobpilot-web-prod
+    restart: always
+    ports:
+      - '3000:3000'
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      NEXT_PUBLIC_API_URL: ${API_URL}
+      NEXT_PUBLIC_AI_SERVICE_URL: ${AI_SERVICE_URL}
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_URL: ${REDIS_URL}
+      SESSION_SECRET: ${SESSION_SECRET}
+      NEXTAUTH_URL: ${NEXTAUTH_URL}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+      APPLICATIONINSIGHTS_CONNECTION_STRING: ${APPLICATIONINSIGHTS_CONNECTION_STRING}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'wget', '--no-verbose', '--tries=1', '--spider', 'http://localhost:3000/api/health']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - jobpilot-network
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '1.0'
+          memory: 1G
+      replicas: 2
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+    labels:
+      - "com.jobpilot.service=web"
+      - "com.jobpilot.environment=production"
+
+  # Auth Service (Node.js)
+  auth-service:
+    image: ${ACR_LOGIN_SERVER}/auth-service:${IMAGE_TAG:-latest}
+    container_name: jobpilot-auth-prod
+    restart: always
+    ports:
+      - '4000:4000'
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_URL: ${REDIS_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      REFRESH_TOKEN_SECRET: ${REFRESH_TOKEN_SECRET}
+      REFRESH_TOKEN_EXPIRES_IN: ${REFRESH_TOKEN_EXPIRES_IN:-30d}
+      SERVICE_BUS_CONNECTION_STRING: ${SERVICE_BUS_CONNECTION_STRING}
+      APPLICATIONINSIGHTS_CONNECTION_STRING: ${APPLICATIONINSIGHTS_CONNECTION_STRING}
+      CORS_ORIGIN: ${CORS_ORIGIN}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'wget', '--no-verbose', '--tries=1', '--spider', 'http://localhost:4000/health']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - jobpilot-network
+    deploy:
+      resources:
+        limits:
+          cpus: '1.5'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+      replicas: 2
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+    labels:
+      - "com.jobpilot.service=auth"
+      - "com.jobpilot.environment=production"
+
+  # AI Service (Python FastAPI)
+  ai-service:
+    image: ${ACR_LOGIN_SERVER}/ai-service:${IMAGE_TAG:-latest}
+    container_name: jobpilot-ai-prod
+    restart: always
+    ports:
+      - '5000:5000'
+    environment:
+      ENVIRONMENT: production
+      PORT: 5000
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4}
+      REDIS_URL: ${REDIS_URL}
+      SERVICE_BUS_CONNECTION_STRING: ${SERVICE_BUS_CONNECTION_STRING}
+      APPLICATIONINSIGHTS_CONNECTION_STRING: ${APPLICATIONINSIGHTS_CONNECTION_STRING}
+      MAX_WORKERS: ${AI_MAX_WORKERS:-4}
+      TIMEOUT: ${AI_TIMEOUT:-300}
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'wget', '--no-verbose', '--tries=1', '--spider', 'http://localhost:5000/health']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - jobpilot-network
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '1.0'
+          memory: 1G
+      replicas: 2
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+    labels:
+      - "com.jobpilot.service=ai"
+      - "com.jobpilot.environment=production"
+
+  # NGINX Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: jobpilot-nginx-prod
+    restart: always
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - ./infrastructure/docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./infrastructure/docker/nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./infrastructure/docker/nginx/ssl:/etc/nginx/ssl:ro
+      - nginx_logs:/var/log/nginx
+    depends_on:
+      - web
+      - auth-service
+      - ai-service
+    healthcheck:
+      test: ['CMD', 'wget', '--no-verbose', '--tries=1', '--spider', 'http://localhost/health']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - jobpilot-network
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+    labels:
+      - "com.jobpilot.service=proxy"
+      - "com.jobpilot.environment=production"
+
+volumes:
+  postgres_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /var/lib/jobpilot/postgres
+  redis_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /var/lib/jobpilot/redis
+  nginx_logs:
+    driver: local
+
+networks:
+  jobpilot-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

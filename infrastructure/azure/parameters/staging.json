@@ -1,0 +1,56 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "environment": {
+      "value": "staging"
+    },
+    "location": {
+      "value": "eastus"
+    },
+    "projectName": {
+      "value": "jobpilot"
+    },
+    "sqlAdminUsername": {
+      "reference": {
+        "keyVault": {
+          "id": "/subscriptions/{subscription-id}/resourceGroups/jobpilot-shared-rg/providers/Microsoft.KeyVault/vaults/jobpilot-shared-kv"
+        },
+        "secretName": "sql-admin-username"
+      }
+    },
+    "sqlAdminPassword": {
+      "reference": {
+        "keyVault": {
+          "id": "/subscriptions/{subscription-id}/resourceGroups/jobpilot-shared-rg/providers/Microsoft.KeyVault/vaults/jobpilot-shared-kv"
+        },
+        "secretName": "sql-admin-password-staging"
+      }
+    },
+    "tags": {
+      "value": {
+        "Project": "JobPilot",
+        "Environment": "Staging",
+        "ManagedBy": "AzureDevOps",
+        "CostCenter": "Engineering"
+      }
+    },
+    "enableDefender": {
+      "value": true
+    },
+    "appInsightsSamplingPercentage": {
+      "value": 100
+    },
+    "enableDiagnostics": {
+      "value": true
+    },
+    "enablePrivateEndpoints": {
+      "value": true
+    },
+    "allowedIpAddresses": {
+      "value": [
+        "203.0.113.0/24"
+      ]
+    }
+  }
+}

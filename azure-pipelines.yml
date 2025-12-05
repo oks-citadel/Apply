@@ -1,0 +1,635 @@
+# Azure DevOps Pipeline for JobPilot AI Platform
+# Project: https://dev.azure.com/citadelcloudmanagement/ApplyPlatform
+# Repo: https://dev.azure.com/citadelcloudmanagement/_git/ApplyPlatform
+
+trigger:
+  branches:
+    include:
+      - main
+      - develop
+  paths:
+    exclude:
+      - '*.md'
+      - 'docs/**'
+
+pr:
+  branches:
+    include:
+      - main
+      - develop
+
+variables:
+  NODE_VERSION: '20'
+  PNPM_VERSION: '8.15.0'
+  PYTHON_VERSION: '3.11'
+  isMain: $[eq(variables['Build.SourceBranch'], 'refs/heads/main')]
+  isDevelop: $[eq(variables['Build.SourceBranch'], 'refs/heads/develop')]
+
+stages:
+  # ============================================
+  # Stage 1: Build and Validate
+  # ============================================
+  - stage: Build
+    displayName: 'Build & Validate'
+    jobs:
+      # Setup and Install Dependencies
+      - job: Setup
+        displayName: 'Setup Dependencies'
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - checkout: self
+            fetchDepth: 0
+
+          - task: NodeTool@0
+            displayName: 'Install Node.js'
+            inputs:
+              versionSpec: $(NODE_VERSION)
+
+          - script: |
+              corepack enable
+              corepack prepare pnpm@$(PNPM_VERSION) --activate
+            displayName: 'Install pnpm'
+
+          - task: Cache@2
+            displayName: 'Cache pnpm store'
+            inputs:
+              key: 'pnpm | "$(Agent.OS)" | pnpm-lock.yaml'
+              restoreKeys: |
+                pnpm | "$(Agent.OS)"
+              path: $(Pipeline.Workspace)/.pnpm-store
+
+          - script: |
+              pnpm config set store-dir $(Pipeline.Workspace)/.pnpm-store
+              pnpm install --frozen-lockfile
+            displayName: 'Install dependencies'
+
+          - publish: $(System.DefaultWorkingDirectory)
+            artifact: source
+            displayName: 'Publish source'
+
+      # Lint Job
+      - job: Lint
+        displayName: 'Lint Code'
+        dependsOn: Setup
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - download: current
+            artifact: source
+
+          - task: NodeTool@0
+            inputs:
+              versionSpec: $(NODE_VERSION)
+
+          - script: |
+              corepack enable
+              corepack prepare pnpm@$(PNPM_VERSION) --activate
+            displayName: 'Install pnpm'
+
+          - task: Cache@2
+            inputs:
+              key: 'pnpm | "$(Agent.OS)" | pnpm-lock.yaml'
+              restoreKeys: pnpm | "$(Agent.OS)"
+              path: $(Pipeline.Workspace)/.pnpm-store
+
+          - script: |
+              pnpm config set store-dir $(Pipeline.Workspace)/.pnpm-store
+              pnpm install --frozen-lockfile
+            displayName: 'Install dependencies'
+
+          - script: pnpm run lint
+            displayName: 'Run ESLint'
+
+          - script: pnpm run format:check
+            displayName: 'Check Prettier formatting'
+
+      # Type Check Job
+      - job: TypeCheck
+        displayName: 'TypeScript Check'
+        dependsOn: Setup
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - download: current
+            artifact: source
+
+          - task: NodeTool@0
+            inputs:
+              versionSpec: $(NODE_VERSION)
+
+          - script: |
+              corepack enable
+              corepack prepare pnpm@$(PNPM_VERSION) --activate
+            displayName: 'Install pnpm'
+
+          - task: Cache@2
+            inputs:
+              key: 'pnpm | "$(Agent.OS)" | pnpm-lock.yaml'
+              restoreKeys: pnpm | "$(Agent.OS)"
+              path: $(Pipeline.Workspace)/.pnpm-store
+
+          - script: |
+              pnpm config set store-dir $(Pipeline.Workspace)/.pnpm-store
+              pnpm install --frozen-lockfile
+            displayName: 'Install dependencies'
+
+          - script: pnpm run type-check
+            displayName: 'Run TypeScript type check'
+
+      # Security Audit Job
+      - job: SecurityAudit
+        displayName: 'Security Audit'
+        dependsOn: Setup
+        pool:
+          vmImage: 'ubuntu-latest'
+        continueOnError: true
+        steps:
+          - download: current
+            artifact: source
+
+          - task: NodeTool@0
+            inputs:
+              versionSpec: $(NODE_VERSION)
+
+          - script: |
+              corepack enable
+              corepack prepare pnpm@$(PNPM_VERSION) --activate
+            displayName: 'Install pnpm'
+
+          - script: pnpm audit --audit-level moderate
+            displayName: 'Run npm audit'
+            continueOnError: true
+
+  # ============================================
+  # Stage 2: Test
+  # ============================================
+  - stage: Test
+    displayName: 'Run Tests'
+    dependsOn: Build
+    jobs:
+      - job: UnitTests
+        displayName: 'Unit Tests'
+        pool:
+          vmImage: 'ubuntu-latest'
+        services:
+          postgres:
+            image: postgres:15-alpine
+            ports:
+              - 5432:5432
+            env:
+              POSTGRES_USER: postgres
+              POSTGRES_PASSWORD: postgres
+              POSTGRES_DB: jobpilot_test
+          redis:
+            image: redis:7-alpine
+            ports:
+              - 6379:6379
+        steps:
+          - checkout: self
+
+          - task: NodeTool@0
+            inputs:
+              versionSpec: $(NODE_VERSION)
+
+          - script: |
+              corepack enable
+              corepack prepare pnpm@$(PNPM_VERSION) --activate
+            displayName: 'Install pnpm'
+
+          - task: Cache@2
+            inputs:
+              key: 'pnpm | "$(Agent.OS)" | pnpm-lock.yaml'
+              restoreKeys: pnpm | "$(Agent.OS)"
+              path: $(Pipeline.Workspace)/.pnpm-store
+
+          - script: |
+              pnpm config set store-dir $(Pipeline.Workspace)/.pnpm-store
+              pnpm install --frozen-lockfile
+            displayName: 'Install dependencies'
+
+          - script: pnpm run test
+            displayName: 'Run unit tests'
+            env:
+              DATABASE_URL: postgresql://postgres:postgres@localhost:5432/jobpilot_test
+              REDIS_URL: redis://localhost:6379
+              NODE_ENV: test
+
+          - task: PublishTestResults@2
+            displayName: 'Publish test results'
+            condition: succeededOrFailed()
+            inputs:
+              testResultsFormat: 'JUnit'
+              testResultsFiles: '**/junit.xml'
+              mergeTestResults: true
+              failTaskOnFailedTests: true
+
+          - task: PublishCodeCoverageResults@1
+            displayName: 'Publish code coverage'
+            condition: succeededOrFailed()
+            inputs:
+              codeCoverageTool: 'Cobertura'
+              summaryFileLocation: '$(System.DefaultWorkingDirectory)/coverage/cobertura-coverage.xml'
+              reportDirectory: '$(System.DefaultWorkingDirectory)/coverage'
+
+      # Python AI Service Tests
+      - job: PythonTests
+        displayName: 'Python AI Service Tests'
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - checkout: self
+
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: $(PYTHON_VERSION)
+              addToPath: true
+
+          - script: |
+              cd services/ai-service
+              pip install -r requirements.txt
+              pip install pytest pytest-asyncio pytest-cov
+            displayName: 'Install Python dependencies'
+
+          - script: |
+              cd services/ai-service
+              pytest tests/ --cov=src --cov-report=xml --cov-report=html --junitxml=junit.xml
+            displayName: 'Run Python tests'
+            continueOnError: true
+
+          - task: PublishTestResults@2
+            condition: succeededOrFailed()
+            inputs:
+              testResultsFormat: 'JUnit'
+              testResultsFiles: 'services/ai-service/junit.xml'
+
+  # ============================================
+  # Stage 3: Security Scanning
+  # ============================================
+  - stage: Security
+    displayName: 'Security Scanning'
+    dependsOn: Test
+    jobs:
+      - job: SAST
+        displayName: 'Static Application Security Testing'
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - checkout: self
+
+          - task: SnykSecurityScan@1
+            displayName: 'Snyk Security Scan'
+            inputs:
+              serviceConnectionEndpoint: 'snyk-connection'
+              testType: 'app'
+              monitorOnBuild: false
+              failOnIssues: false
+            continueOnError: true
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish Snyk Results'
+            condition: succeededOrFailed()
+            inputs:
+              targetPath: $(System.DefaultWorkingDirectory)/.snyk
+              artifact: snyk-results
+              publishLocation: pipeline
+            continueOnError: true
+
+      - job: ContainerScan
+        displayName: 'Container Image Scanning'
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - checkout: self
+
+          - script: |
+              echo "Installing Trivy..."
+              wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
+              echo "deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
+              sudo apt-get update
+              sudo apt-get install trivy -y
+            displayName: 'Install Trivy'
+
+          - script: |
+              echo "Scanning Dockerfiles for vulnerabilities..."
+              trivy config --exit-code 0 --severity HIGH,CRITICAL docker/ || true
+            displayName: 'Trivy Dockerfile Scan'
+
+          - script: |
+              echo "Note: Container image scanning will be performed after images are built"
+              echo "Add image scanning in BuildArtifacts stage after Docker build"
+            displayName: 'Container Scan Note'
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish Trivy Results'
+            condition: succeededOrFailed()
+            inputs:
+              targetPath: $(System.DefaultWorkingDirectory)/trivy-results.json
+              artifact: trivy-results
+              publishLocation: pipeline
+            continueOnError: true
+
+      - job: DependencyCheck
+        displayName: 'Dependency Vulnerability Check'
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - checkout: self
+
+          - task: NodeTool@0
+            inputs:
+              versionSpec: $(NODE_VERSION)
+
+          - script: |
+              corepack enable
+              corepack prepare pnpm@$(PNPM_VERSION) --activate
+            displayName: 'Install pnpm'
+
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: $(PYTHON_VERSION)
+              addToPath: true
+
+          - script: |
+              echo "Running npm audit..."
+              pnpm audit --audit-level=high --json > npm-audit.json || true
+
+              echo "Installing safety for Python dependency check..."
+              python -m pip install safety
+
+              echo "Running Python safety check..."
+              cd services/ai-service
+              safety check --file requirements.txt --json --output ../../safety-report.json || true
+              cd ../..
+            displayName: 'Dependency Audit'
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish NPM Audit Results'
+            condition: succeededOrFailed()
+            inputs:
+              targetPath: $(System.DefaultWorkingDirectory)/npm-audit.json
+              artifact: npm-audit-results
+              publishLocation: pipeline
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish Safety Results'
+            condition: succeededOrFailed()
+            inputs:
+              targetPath: $(System.DefaultWorkingDirectory)/safety-report.json
+              artifact: safety-results
+              publishLocation: pipeline
+
+      - job: CodeQL
+        displayName: 'CodeQL Analysis'
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - checkout: self
+
+          - task: NodeTool@0
+            inputs:
+              versionSpec: $(NODE_VERSION)
+
+          - script: |
+              corepack enable
+              corepack prepare pnpm@$(PNPM_VERSION) --activate
+              pnpm install --frozen-lockfile
+            displayName: 'Install dependencies'
+
+          - script: |
+              echo "CodeQL analysis placeholder"
+              echo "Configure CodeQL scanning in Azure DevOps Advanced Security"
+              echo "or integrate with GitHub Advanced Security"
+            displayName: 'CodeQL Scan'
+
+  # ============================================
+  # Stage 4: Build Artifacts
+  # ============================================
+  - stage: BuildArtifacts
+    displayName: 'Build Artifacts'
+    dependsOn: Security
+    jobs:
+      - job: BuildAll
+        displayName: 'Build All Packages'
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - checkout: self
+
+          - task: NodeTool@0
+            inputs:
+              versionSpec: $(NODE_VERSION)
+
+          - script: |
+              corepack enable
+              corepack prepare pnpm@$(PNPM_VERSION) --activate
+            displayName: 'Install pnpm'
+
+          - task: Cache@2
+            inputs:
+              key: 'pnpm | "$(Agent.OS)" | pnpm-lock.yaml'
+              restoreKeys: pnpm | "$(Agent.OS)"
+              path: $(Pipeline.Workspace)/.pnpm-store
+
+          - script: |
+              pnpm config set store-dir $(Pipeline.Workspace)/.pnpm-store
+              pnpm install --frozen-lockfile
+            displayName: 'Install dependencies'
+
+          - script: pnpm run build
+            displayName: 'Build all packages'
+
+          - publish: $(System.DefaultWorkingDirectory)/apps/web/.next
+            artifact: web-app
+            displayName: 'Publish Web App'
+
+          - publish: $(System.DefaultWorkingDirectory)/services
+            artifact: services
+            displayName: 'Publish Services'
+
+      # Build Docker Images
+      - job: BuildDocker
+        displayName: 'Build Docker Images'
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - checkout: self
+
+          # Authenticate to Azure using managed identity service connection
+          - task: AzureCLI@2
+            displayName: 'Login to ACR using Managed Identity'
+            inputs:
+              azureSubscription: 'JobPilot-ServiceConnection'  # Configure this in Azure DevOps
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                # Get ACR name from Azure
+                ACR_NAME=$(az acr list --resource-group jobpilot-$(ENVIRONMENT)-rg --query "[0].name" -o tsv)
+                echo "ACR Name: $ACR_NAME"
+
+                # Login to ACR using managed identity (no admin credentials)
+                az acr login --name $ACR_NAME
+
+                # Export for subsequent steps
+                echo "##vso[task.setvariable variable=ACR_NAME]$ACR_NAME"
+                echo "##vso[task.setvariable variable=ACR_LOGIN_SERVER]${ACR_NAME}.azurecr.io"
+
+          - task: Docker@2
+            displayName: 'Build Auth Service Image'
+            inputs:
+              command: build
+              Dockerfile: docker/Dockerfile.node
+              buildContext: $(System.DefaultWorkingDirectory)
+              tags: |
+                $(ACR_LOGIN_SERVER)/auth-service:$(Build.BuildId)
+                $(ACR_LOGIN_SERVER)/auth-service:latest
+              arguments: '--build-arg SERVICE=auth-service'
+
+          - task: Docker@2
+            displayName: 'Push Auth Service Image to ACR'
+            inputs:
+              command: push
+              tags: |
+                $(ACR_LOGIN_SERVER)/auth-service:$(Build.BuildId)
+                $(ACR_LOGIN_SERVER)/auth-service:latest
+
+          - task: Docker@2
+            displayName: 'Build AI Service Image'
+            inputs:
+              command: build
+              Dockerfile: docker/Dockerfile.python
+              buildContext: $(System.DefaultWorkingDirectory)
+              tags: |
+                $(ACR_LOGIN_SERVER)/ai-service:$(Build.BuildId)
+                $(ACR_LOGIN_SERVER)/ai-service:latest
+
+          - task: Docker@2
+            displayName: 'Push AI Service Image to ACR'
+            inputs:
+              command: push
+              tags: |
+                $(ACR_LOGIN_SERVER)/ai-service:$(Build.BuildId)
+                $(ACR_LOGIN_SERVER)/ai-service:latest
+
+          - script: |
+              echo "Installing Trivy for container scanning..."
+              wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
+              echo "deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
+              sudo apt-get update
+              sudo apt-get install trivy -y
+            displayName: 'Install Trivy'
+
+          - script: |
+              echo "Scanning auth-service container image..."
+              trivy image --exit-code 0 --severity HIGH,CRITICAL \
+                --format json --output auth-service-trivy.json \
+                auth-service:$(Build.BuildId) || true
+
+              echo "Scanning ai-service container image..."
+              trivy image --exit-code 0 --severity HIGH,CRITICAL \
+                --format json --output ai-service-trivy.json \
+                ai-service:$(Build.BuildId) || true
+
+              echo "Container scan results:"
+              trivy image --exit-code 0 --severity HIGH,CRITICAL auth-service:$(Build.BuildId) || true
+              trivy image --exit-code 0 --severity HIGH,CRITICAL ai-service:$(Build.BuildId) || true
+            displayName: 'Scan Container Images with Trivy'
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish Container Scan Results'
+            condition: succeededOrFailed()
+            inputs:
+              targetPath: $(System.DefaultWorkingDirectory)
+              artifact: container-scan-results
+              publishLocation: pipeline
+
+  # ============================================
+  # Stage 5: Deploy to Development
+  # ============================================
+  - stage: DeployDev
+    displayName: 'Deploy to Development'
+    dependsOn: BuildArtifacts
+    condition: and(succeeded(), eq(variables.isDevelop, true))
+    jobs:
+      - deployment: DeployDevEnvironment
+        displayName: 'Deploy to Dev'
+        pool:
+          vmImage: 'ubuntu-latest'
+        environment: 'development'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - download: current
+                  artifact: web-app
+
+                - download: current
+                  artifact: services
+
+                - script: |
+                    echo "Deploying to Development environment..."
+                    echo "Build ID: $(Build.BuildId)"
+                    # Add your deployment scripts here
+                    # Examples:
+                    # - Azure App Service deployment
+                    # - Azure Container Apps deployment
+                    # - Kubernetes deployment
+                  displayName: 'Deploy to Dev'
+
+  # ============================================
+  # Stage 6: Deploy to Staging
+  # ============================================
+  - stage: DeployStaging
+    displayName: 'Deploy to Staging'
+    dependsOn: BuildArtifacts
+    condition: and(succeeded(), eq(variables.isMain, true))
+    jobs:
+      - deployment: DeployStagingEnvironment
+        displayName: 'Deploy to Staging'
+        pool:
+          vmImage: 'ubuntu-latest'
+        environment: 'staging'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - download: current
+                  artifact: web-app
+
+                - download: current
+                  artifact: services
+
+                - script: |
+                    echo "Deploying to Staging environment..."
+                    echo "Build ID: $(Build.BuildId)"
+                    # Add staging deployment scripts
+                  displayName: 'Deploy to Staging'
+
+  # ============================================
+  # Stage 7: Deploy to Production (Manual Approval)
+  # ============================================
+  - stage: DeployProduction
+    displayName: 'Deploy to Production'
+    dependsOn: DeployStaging
+    condition: and(succeeded(), eq(variables.isMain, true))
+    jobs:
+      - deployment: DeployProductionEnvironment
+        displayName: 'Deploy to Production'
+        pool:
+          vmImage: 'ubuntu-latest'
+        environment: 'production'  # Configure approval gates in Azure DevOps
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - download: current
+                  artifact: web-app
+
+                - download: current
+                  artifact: services
+
+                - script: |
+                    echo "Deploying to Production environment..."
+                    echo "Build ID: $(Build.BuildId)"
+                    # Add production deployment scripts
+                  displayName: 'Deploy to Production'

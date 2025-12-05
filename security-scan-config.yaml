@@ -1,0 +1,367 @@
+# ============================================================================
+# Security Scanning Configuration for JobPilot AI Platform
+# ============================================================================
+# This file contains configuration for various security scanning tools
+# used in the Azure DevOps CI/CD pipeline
+
+# ============================================================================
+# Trivy Configuration (Container and IaC Scanning)
+# ============================================================================
+trivy:
+  # Severity levels to scan for
+  severity:
+    - CRITICAL
+    - HIGH
+    - MEDIUM
+
+  # Exit code behavior
+  exit_code: 0  # Don't fail pipeline on vulnerabilities (for now)
+
+  # Output formats
+  output_formats:
+    - json
+    - sarif
+    - table
+
+  # Timeout settings
+  timeout: "15m"
+
+  # Cache settings
+  cache_dir: "/tmp/trivy-cache"
+
+  # Scan targets
+  targets:
+    containers:
+      - auth-service
+      - ai-service
+      - web-app
+    config_files:
+      - docker/
+      - infrastructure/
+
+  # Ignore unfixed vulnerabilities
+  ignore_unfixed: false
+
+  # Skip files
+  skip_files:
+    - "**/*.md"
+    - "**/*.txt"
+    - "**/test/**"
+    - "**/tests/**"
+
+# ============================================================================
+# Snyk Configuration (SAST and Dependency Scanning)
+# ============================================================================
+snyk:
+  # Organization (configure in Azure DevOps)
+  organization: "citadelcloudmanagement"
+
+  # Severity threshold
+  severity_threshold: "high"
+
+  # Fail on issues
+  fail_on_issues: false  # Set to true in production
+
+  # Monitor on build
+  monitor: true
+
+  # Project settings
+  project_name: "JobPilot-AI-Platform"
+
+  # Scan types
+  test_types:
+    - app          # Application dependencies
+    - code         # Source code (SAST)
+    - oss          # Open source dependencies
+    - container    # Container images
+
+  # Ignore policies
+  ignore:
+    # Add vulnerability IDs to ignore (with justification)
+    # - SNYK-JS-AXIOS-1234567  # Reason: Not applicable in our context
+
+# ============================================================================
+# Checkov Configuration (IaC Security Scanning)
+# ============================================================================
+checkov:
+  # Frameworks to scan
+  frameworks:
+    - bicep
+    - dockerfile
+    - secrets
+
+  # Directories to scan
+  directories:
+    - infrastructure/azure/
+    - docker/
+
+  # Checks to skip (with justification)
+  skip_checks:
+    # Example: CKV_AZURE_123 - Skip specific check with reason
+    # - CKV_AZURE_123  # Reason: Not applicable for our deployment model
+
+  # Soft fail mode
+  soft_fail: true
+
+  # Output formats
+  output_formats:
+    - cli
+    - json
+    - junitxml
+    - sarif
+
+  # Compact output
+  compact: true
+
+  # Download external modules
+  download_external_modules: true
+
+# ============================================================================
+# PSRule for Azure Configuration
+# ============================================================================
+psrule:
+  # Input path
+  input_path: "infrastructure/azure/"
+
+  # Modules
+  modules:
+    - PSRule.Rules.Azure
+
+  # Output format
+  output_format: "Sarif"
+
+  # Baseline
+  baseline: "Azure.Default"
+
+  # Minimum severity
+  minimum_severity: "Warning"
+
+  # Configuration
+  configuration:
+    # Azure-specific settings
+    AZURE_RESOURCE_GROUP: "jobpilot-*"
+    AZURE_SUBSCRIPTION: "JobPilot-Azure-Subscription"
+
+# ============================================================================
+# Safety (Python Dependency Scanning)
+# ============================================================================
+safety:
+  # Ignore specific vulnerability IDs
+  ignore_ids: []
+    # Example: 12345  # Reason for ignoring
+
+  # Output format
+  output_format: "json"
+
+  # Fail on issues
+  fail_on_issues: false
+
+  # Cache settings
+  cache: true
+
+  # Proxy settings (if needed)
+  # proxy: "http://proxy.company.com:8080"
+
+# ============================================================================
+# NPM Audit Configuration
+# ============================================================================
+npm_audit:
+  # Audit level
+  audit_level: "high"
+
+  # Production only
+  production_only: false
+
+  # Output format
+  output_format: "json"
+
+  # Registry
+  registry: "https://registry.npmjs.org/"
+
+  # Omit dev dependencies
+  omit_dev: false
+
+# ============================================================================
+# CodeQL Configuration (Future Implementation)
+# ============================================================================
+codeql:
+  # Languages to analyze
+  languages:
+    - javascript
+    - typescript
+    - python
+
+  # Queries to run
+  queries:
+    - security-and-quality
+    - security-extended
+
+  # Source root
+  source_root: "."
+
+  # Build mode
+  build_mode: "autobuild"
+
+  # Paths to ignore
+  paths_ignore:
+    - "**/node_modules/**"
+    - "**/dist/**"
+    - "**/build/**"
+    - "**/*.test.ts"
+    - "**/*.spec.ts"
+
+# ============================================================================
+# OWASP Dependency-Check Configuration (Optional)
+# ============================================================================
+owasp_dependency_check:
+  # Enabled
+  enabled: false
+
+  # Project name
+  project: "JobPilot-AI-Platform"
+
+  # Scan paths
+  scan_paths:
+    - services/
+    - packages/
+
+  # Suppression file
+  suppression_file: "dependency-check-suppressions.xml"
+
+  # Fail build on CVSS score
+  fail_on_cvss: 7
+
+  # Data directory
+  data_directory: "/tmp/owasp-data"
+
+# ============================================================================
+# SonarQube Configuration (Optional)
+# ============================================================================
+sonarqube:
+  # Enabled
+  enabled: false
+
+  # Project key
+  project_key: "jobpilot-ai-platform"
+
+  # Organization
+  organization: "citadelcloudmanagement"
+
+  # Sources
+  sources: "apps,services,packages"
+
+  # Exclusions
+  exclusions:
+    - "**/node_modules/**"
+    - "**/dist/**"
+    - "**/coverage/**"
+    - "**/*.test.ts"
+    - "**/*.spec.ts"
+
+  # Quality gate
+  quality_gate_wait: true
+
+  # Coverage
+  coverage_exclusions:
+    - "**/*.test.ts"
+    - "**/*.spec.ts"
+    - "**/tests/**"
+
+# ============================================================================
+# GitHub Advanced Security (GHAS) Configuration
+# ============================================================================
+github_advanced_security:
+  # Code scanning
+  code_scanning:
+    enabled: true
+    tools:
+      - codeql
+      - snyk
+
+  # Secret scanning
+  secret_scanning:
+    enabled: true
+    push_protection: true
+
+  # Dependency review
+  dependency_review:
+    enabled: true
+    fail_on_severity: "high"
+
+# ============================================================================
+# Security Policy Configuration
+# ============================================================================
+security_policy:
+  # Vulnerability disclosure
+  disclosure_email: "security@jobpilot.com"
+
+  # Response time SLAs
+  response_sla:
+    critical: "24 hours"
+    high: "3 days"
+    medium: "7 days"
+    low: "30 days"
+
+  # Security champions
+  security_champions:
+    - "security-team@citadelcloudmanagement.com"
+
+  # Compliance requirements
+  compliance:
+    - "OWASP Top 10"
+    - "CIS Azure Foundations Benchmark"
+    - "NIST Cybersecurity Framework"
+
+  # Automated remediation
+  auto_remediation:
+    enabled: true
+    severity_threshold: "high"
+    auto_merge_minor_patches: true
+
+# ============================================================================
+# Reporting Configuration
+# ============================================================================
+reporting:
+  # Formats
+  formats:
+    - sarif
+    - json
+    - html
+    - pdf
+
+  # Destinations
+  destinations:
+    - azure_devops_artifacts
+    - email
+    - slack
+
+  # Retention
+  retention_days: 90
+
+  # Dashboard URL
+  dashboard_url: "https://dev.azure.com/citadelcloudmanagement/ApplyPlatform/_dashboards/security"
+
+# ============================================================================
+# Notification Configuration
+# ============================================================================
+notifications:
+  # Slack webhook
+  slack:
+    enabled: false
+    webhook_url: "${SLACK_WEBHOOK_URL}"
+    channel: "#security-alerts"
+
+  # Email
+  email:
+    enabled: true
+    recipients:
+      - "devops@citadelcloudmanagement.com"
+      - "security@citadelcloudmanagement.com"
+    send_on:
+      - critical
+      - high
+
+  # Teams
+  teams:
+    enabled: false
+    webhook_url: "${TEAMS_WEBHOOK_URL}"

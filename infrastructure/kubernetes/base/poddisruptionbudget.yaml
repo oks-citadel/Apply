@@ -1,0 +1,125 @@
+# Auth Service PDB
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: auth-service-pdb
+  namespace: jobpilot
+  labels:
+    app: auth-service
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: auth-service
+---
+# User Service PDB
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: user-service-pdb
+  namespace: jobpilot
+  labels:
+    app: user-service
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: user-service
+---
+# Job Service PDB
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: job-service-pdb
+  namespace: jobpilot
+  labels:
+    app: job-service
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: job-service
+---
+# AI Service PDB
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: ai-service-pdb
+  namespace: jobpilot
+  labels:
+    app: ai-service
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: ai-service
+---
+# Resume Service PDB
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: resume-service-pdb
+  namespace: jobpilot
+  labels:
+    app: resume-service
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: resume-service
+---
+# Analytics Service PDB
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: analytics-service-pdb
+  namespace: jobpilot
+  labels:
+    app: analytics-service
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: analytics-service
+---
+# Notification Service PDB
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: notification-service-pdb
+  namespace: jobpilot
+  labels:
+    app: notification-service
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: notification-service
+---
+# Auto Apply Service PDB
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: auto-apply-service-pdb
+  namespace: jobpilot
+  labels:
+    app: auto-apply-service
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: auto-apply-service
+---
+# Web App PDB
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: web-app-pdb
+  namespace: jobpilot
+  labels:
+    app: web-app
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: web-app

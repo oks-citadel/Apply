@@ -1,0 +1,153 @@
+# ============================================================================
+# tfsec Configuration
+# ============================================================================
+# Security scanning configuration for Terraform code
+# tfsec performs static analysis of Terraform code to identify security issues
+#
+# Documentation: https://aquasecurity.github.io/tfsec/
+# ============================================================================
+
+# Minimum severity level to report
+minimum_severity: LOW
+
+# Exclude specific checks
+exclude:
+  # Azure-specific exclusions
+
+  # AZU001 - Allow Storage Account to not use HTTPS only in dev
+  # Development environments may need HTTP for local testing
+  - azure-storage-use-secure-tls-policy
+
+  # AZU002 - Allow Storage Account public access in dev
+  # Development may need public access for testing
+  # - azure-storage-no-public-access
+
+  # AZU003 - SQL Server public network access
+  # Excluded for dev/staging where private endpoints are disabled
+  # This is controlled via enable_private_endpoints variable
+  # - azure-database-no-public-access
+
+  # AZU005 - Key Vault network ACLs
+  # Excluded for dev where simplified networking is used
+  # - azure-keyvault-specify-network-acl
+
+  # AZU006 - App Service authentication
+  # App Services use custom authentication via auth-service
+  # - azure-appservice-authentication-enabled
+
+  # AZU012 - SQL Server threat detection
+  # Controlled via enable_defender variable
+  # - azure-database-enable-audit
+
+# Exclude specific directories
+exclude_paths:
+  - .terraform/**
+  - .terraform.lock.hcl
+  - terraform.tfstate
+  - terraform.tfstate.backup
+  - .git/**
+  - examples/**
+  - tests/**
+
+# Include specific directories (if not using root)
+# include_paths:
+#   - modules/**
+
+# Severity overrides for specific checks
+severity_overrides:
+  # Make certain checks more severe
+  azure-keyvault-ensure-secret-expiry: HIGH
+  azure-database-enable-ssl-enforcement: CRITICAL
+  azure-storage-use-secure-tls-policy: HIGH
+
+# Custom checks (if needed)
+# custom_checks:
+#   - code: CUSTOM-001
+#     description: Custom check for JobPilot
+#     severity: MEDIUM
+#     resolution: Apply fix
+#     terraform:
+#       module: azurerm_resource_group
+#       attribute: tags
+#       check: contains(tags, "Environment")
+
+# Ignored rules by environment (use with --var environment=<env>)
+# This requires tfsec v1.28.0+
+# conditional_exclusions:
+#   - rule: azure-storage-no-public-access
+#     condition: var.environment == "dev"
+
+# Output configuration
+# These are typically set via CLI flags in the pipeline
+
+# Format options: default, json, csv, junit, sarif
+# format: default
+
+# Enable color output
+# color: true
+
+# Show passed checks
+# show-passed: false
+
+# Soft fail mode (don't fail the build on findings)
+# soft-fail: false
+
+# ============================================================================
+# Check Categories
+# ============================================================================
+# tfsec organizes checks into categories:
+#
+# - General: General security best practices
+# - Network: Network security configuration
+# - IAM: Identity and access management
+# - Encryption: Encryption at rest and in transit
+# - Logging: Logging and monitoring
+# - Secrets: Secret management
+# - Resilience: High availability and disaster recovery
+#
+# For Azure (azurerm provider):
+# - azure-appservice-*: App Service checks
+# - azure-compute-*: Virtual Machine checks
+# - azure-container-*: Container checks
+# - azure-database-*: Database checks
+# - azure-keyvault-*: Key Vault checks
+# - azure-network-*: Network checks
+# - azure-storage-*: Storage Account checks
+# - azure-synapse-*: Synapse checks
+# ============================================================================
+
+# ============================================================================
+# Common Security Checks for JobPilot Platform
+# ============================================================================
+#
+# Enforced Checks (not excluded):
+# - azure-database-enable-ssl-enforcement
+# - azure-database-enable-audit
+# - azure-keyvault-ensure-secret-expiry
+# - azure-storage-use-secure-tls-policy
+# - azure-storage-default-action-deny
+# - azure-network-no-public-egress
+# - azure-network-no-public-ingress
+# - azure-appservice-enforce-https
+# - azure-container-use-rbac-permissions
+# - azure-compute-disable-password-authentication
+#
+# Environment-Specific Handling:
+# - Development: More permissive (some public access allowed)
+# - Staging: Production-like security
+# - Production: All security checks enforced
+# ============================================================================
+
+# ============================================================================
+# Usage in Azure DevOps Pipeline
+# ============================================================================
+# The pipeline runs tfsec with the following command:
+#
+# tfsec . \
+#   --format junit \
+#   --out tfsec-results.xml \
+#   --soft-fail \
+#   --config-file .tfsec.yml
+#
+# Results are published to Azure DevOps for review
+# ============================================================================

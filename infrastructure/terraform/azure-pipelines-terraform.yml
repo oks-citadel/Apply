@@ -1,0 +1,528 @@
+# ============================================================================
+# Azure DevOps Pipeline - Terraform Infrastructure Deployment
+# ============================================================================
+# Multi-stage pipeline for deploying JobPilot AI Platform infrastructure
+#
+# Pipeline Flow:
+# 1. Validate - Format check, validate syntax, security scanning
+# 2. Plan (Dev/Staging/Prod) - Generate execution plans
+# 3. Apply (Dev/Staging/Prod) - Deploy infrastructure with approvals
+#
+# Security Features:
+# - Terraform state stored in Azure Storage backend
+# - Secret management via Azure Key Vault
+# - Security scanning with tfsec and Checkov
+# - Manual approval gates for production
+# - Plan artifacts for audit trail
+# ============================================================================
+
+name: Terraform-$(Date:yyyyMMdd)$(Rev:.r)
+
+trigger:
+  branches:
+    include:
+      - main
+      - develop
+  paths:
+    include:
+      - infrastructure/terraform/**
+    exclude:
+      - infrastructure/terraform/README.md
+      - infrastructure/terraform/**/*.md
+
+pr:
+  branches:
+    include:
+      - main
+      - develop
+  paths:
+    include:
+      - infrastructure/terraform/**
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+# ============================================================================
+# Variables
+# ============================================================================
+
+variables:
+  - group: terraform-backend
+  - group: terraform-credentials
+  - name: TF_VERSION
+    value: '1.6.0'
+  - name: WORKING_DIR
+    value: '$(System.DefaultWorkingDirectory)/infrastructure/terraform'
+  - name: TFSEC_VERSION
+    value: 'latest'
+  - name: CHECKOV_VERSION
+    value: 'latest'
+
+# ============================================================================
+# Stage 1: Validate
+# ============================================================================
+
+stages:
+  - stage: Validate
+    displayName: 'Validate Terraform Configuration'
+    jobs:
+      - job: TerraformValidate
+        displayName: 'Terraform Format, Validate & Security Scan'
+        steps:
+          # Install Terraform
+          - task: TerraformInstaller@1
+            displayName: 'Install Terraform $(TF_VERSION)'
+            inputs:
+              terraformVersion: '$(TF_VERSION)'
+
+          # Install tfsec for security scanning
+          - bash: |
+              curl -s https://raw.githubusercontent.com/aquasecurity/tfsec/master/scripts/install_linux.sh | bash
+            displayName: 'Install tfsec'
+
+          # Install Checkov for security scanning
+          - bash: |
+              pip install checkov
+            displayName: 'Install Checkov'
+
+          # Terraform Format Check
+          - bash: |
+              cd $(WORKING_DIR)
+              terraform fmt -check -recursive
+            displayName: 'Terraform Format Check'
+            continueOnError: true
+
+          # Terraform Init
+          - bash: |
+              cd $(WORKING_DIR)
+              bash scripts/terraform-init.sh validation
+            displayName: 'Terraform Init'
+            env:
+              ARM_CLIENT_ID: $(ARM_CLIENT_ID)
+              ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
+              ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
+              ARM_TENANT_ID: $(ARM_TENANT_ID)
+
+          # Terraform Validate
+          - bash: |
+              cd $(WORKING_DIR)
+              terraform validate
+            displayName: 'Terraform Validate'
+
+          # Security Scan - tfsec
+          - bash: |
+              cd $(WORKING_DIR)
+              tfsec . --format junit --out tfsec-results.xml --soft-fail
+              tfsec . --format default
+            displayName: 'Security Scan - tfsec'
+            continueOnError: true
+
+          # Security Scan - Checkov
+          - bash: |
+              cd $(WORKING_DIR)
+              checkov -d . --config-file .checkov.yaml --output junitxml --output-file-path checkov-results.xml --soft-fail
+              checkov -d . --config-file .checkov.yaml
+            displayName: 'Security Scan - Checkov'
+            continueOnError: true
+
+          # Publish Security Scan Results
+          - task: PublishTestResults@2
+            displayName: 'Publish tfsec Results'
+            condition: succeededOrFailed()
+            inputs:
+              testResultsFormat: 'JUnit'
+              testResultsFiles: '$(WORKING_DIR)/tfsec-results.xml'
+              testRunTitle: 'tfsec Security Scan'
+              failTaskOnFailedTests: false
+
+          - task: PublishTestResults@2
+            displayName: 'Publish Checkov Results'
+            condition: succeededOrFailed()
+            inputs:
+              testResultsFormat: 'JUnit'
+              testResultsFiles: '$(WORKING_DIR)/checkov-results.xml'
+              testRunTitle: 'Checkov Security Scan'
+              failTaskOnFailedTests: false
+
+# ============================================================================
+# Stage 2: Plan Dev
+# ============================================================================
+
+  - stage: Plan_Dev
+    displayName: 'Plan - Development'
+    dependsOn: Validate
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/develop'))
+    jobs:
+      - job: TerraformPlanDev
+        displayName: 'Generate Terraform Plan for Dev'
+        steps:
+          - task: TerraformInstaller@1
+            displayName: 'Install Terraform $(TF_VERSION)'
+            inputs:
+              terraformVersion: '$(TF_VERSION)'
+
+          - bash: |
+              cd $(WORKING_DIR)
+              bash scripts/terraform-init.sh dev
+            displayName: 'Terraform Init - Dev'
+            env:
+              ARM_CLIENT_ID: $(ARM_CLIENT_ID)
+              ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
+              ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
+              ARM_TENANT_ID: $(ARM_TENANT_ID)
+
+          - bash: |
+              cd $(WORKING_DIR)
+              bash scripts/terraform-plan.sh dev
+            displayName: 'Terraform Plan - Dev'
+            env:
+              ARM_CLIENT_ID: $(ARM_CLIENT_ID)
+              ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
+              ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
+              ARM_TENANT_ID: $(ARM_TENANT_ID)
+              TF_VAR_sql_admin_username: $(SQL_ADMIN_USERNAME)
+              TF_VAR_sql_admin_password: $(SQL_ADMIN_PASSWORD_DEV)
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish Terraform Plan Artifact'
+            inputs:
+              targetPath: '$(WORKING_DIR)/tfplan-dev'
+              artifact: 'tfplan-dev'
+              publishLocation: 'pipeline'
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish Terraform Files'
+            inputs:
+              targetPath: '$(WORKING_DIR)'
+              artifact: 'terraform-dev'
+              publishLocation: 'pipeline'
+
+# ============================================================================
+# Stage 3: Apply Dev
+# ============================================================================
+
+  - stage: Apply_Dev
+    displayName: 'Apply - Development'
+    dependsOn: Plan_Dev
+    condition: succeeded()
+    jobs:
+      - deployment: TerraformApplyDev
+        displayName: 'Deploy Infrastructure to Dev'
+        environment: 'dev'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: TerraformInstaller@1
+                  displayName: 'Install Terraform $(TF_VERSION)'
+                  inputs:
+                    terraformVersion: '$(TF_VERSION)'
+
+                - task: DownloadPipelineArtifact@2
+                  displayName: 'Download Terraform Plan'
+                  inputs:
+                    artifactName: 'tfplan-dev'
+                    targetPath: '$(Pipeline.Workspace)/tfplan-dev'
+
+                - task: DownloadPipelineArtifact@2
+                  displayName: 'Download Terraform Files'
+                  inputs:
+                    artifactName: 'terraform-dev'
+                    targetPath: '$(Pipeline.Workspace)/terraform'
+
+                - bash: |
+                    cd $(Pipeline.Workspace)/terraform
+                    bash scripts/terraform-init.sh dev
+                  displayName: 'Terraform Init - Dev'
+                  env:
+                    ARM_CLIENT_ID: $(ARM_CLIENT_ID)
+                    ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
+                    ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
+                    ARM_TENANT_ID: $(ARM_TENANT_ID)
+
+                - bash: |
+                    cd $(Pipeline.Workspace)/terraform
+                    cp $(Pipeline.Workspace)/tfplan-dev/tfplan-dev .
+                    bash scripts/terraform-apply.sh dev
+                  displayName: 'Terraform Apply - Dev'
+                  env:
+                    ARM_CLIENT_ID: $(ARM_CLIENT_ID)
+                    ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
+                    ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
+                    ARM_TENANT_ID: $(ARM_TENANT_ID)
+
+                - bash: |
+                    cd $(Pipeline.Workspace)/terraform
+                    terraform output -json > outputs-dev.json
+                  displayName: 'Export Terraform Outputs'
+                  env:
+                    ARM_CLIENT_ID: $(ARM_CLIENT_ID)
+                    ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
+                    ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
+                    ARM_TENANT_ID: $(ARM_TENANT_ID)
+
+                - task: PublishPipelineArtifact@1
+                  displayName: 'Publish Terraform Outputs'
+                  inputs:
+                    targetPath: '$(Pipeline.Workspace)/terraform/outputs-dev.json'
+                    artifact: 'outputs-dev'
+                    publishLocation: 'pipeline'
+
+# ============================================================================
+# Stage 4: Plan Staging
+# ============================================================================
+
+  - stage: Plan_Staging
+    displayName: 'Plan - Staging'
+    dependsOn: Validate
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+    jobs:
+      - job: TerraformPlanStaging
+        displayName: 'Generate Terraform Plan for Staging'
+        steps:
+          - task: TerraformInstaller@1
+            displayName: 'Install Terraform $(TF_VERSION)'
+            inputs:
+              terraformVersion: '$(TF_VERSION)'
+
+          - bash: |
+              cd $(WORKING_DIR)
+              bash scripts/terraform-init.sh staging
+            displayName: 'Terraform Init - Staging'
+            env:
+              ARM_CLIENT_ID: $(ARM_CLIENT_ID)
+              ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
+              ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
+              ARM_TENANT_ID: $(ARM_TENANT_ID)
+
+          - bash: |
+              cd $(WORKING_DIR)
+              bash scripts/terraform-plan.sh staging
+            displayName: 'Terraform Plan - Staging'
+            env:
+              ARM_CLIENT_ID: $(ARM_CLIENT_ID)
+              ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
+              ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
+              ARM_TENANT_ID: $(ARM_TENANT_ID)
+              TF_VAR_sql_admin_username: $(SQL_ADMIN_USERNAME)
+              TF_VAR_sql_admin_password: $(SQL_ADMIN_PASSWORD_STAGING)
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish Terraform Plan Artifact'
+            inputs:
+              targetPath: '$(WORKING_DIR)/tfplan-staging'
+              artifact: 'tfplan-staging'
+              publishLocation: 'pipeline'
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish Terraform Files'
+            inputs:
+              targetPath: '$(WORKING_DIR)'
+              artifact: 'terraform-staging'
+              publishLocation: 'pipeline'
+
+# ============================================================================
+# Stage 5: Apply Staging
+# ============================================================================
+
+  - stage: Apply_Staging
+    displayName: 'Apply - Staging'
+    dependsOn: Plan_Staging
+    condition: succeeded()
+    jobs:
+      - deployment: TerraformApplyStaging
+        displayName: 'Deploy Infrastructure to Staging'
+        environment: 'staging'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: TerraformInstaller@1
+                  displayName: 'Install Terraform $(TF_VERSION)'
+                  inputs:
+                    terraformVersion: '$(TF_VERSION)'
+
+                - task: DownloadPipelineArtifact@2
+                  displayName: 'Download Terraform Plan'
+                  inputs:
+                    artifactName: 'tfplan-staging'
+                    targetPath: '$(Pipeline.Workspace)/tfplan-staging'
+
+                - task: DownloadPipelineArtifact@2
+                  displayName: 'Download Terraform Files'
+                  inputs:
+                    artifactName: 'terraform-staging'
+                    targetPath: '$(Pipeline.Workspace)/terraform'
+
+                - bash: |
+                    cd $(Pipeline.Workspace)/terraform
+                    bash scripts/terraform-init.sh staging
+                  displayName: 'Terraform Init - Staging'
+                  env:
+                    ARM_CLIENT_ID: $(ARM_CLIENT_ID)
+                    ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
+                    ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
+                    ARM_TENANT_ID: $(ARM_TENANT_ID)
+
+                - bash: |
+                    cd $(Pipeline.Workspace)/terraform
+                    cp $(Pipeline.Workspace)/tfplan-staging/tfplan-staging .
+                    bash scripts/terraform-apply.sh staging
+                  displayName: 'Terraform Apply - Staging'
+                  env:
+                    ARM_CLIENT_ID: $(ARM_CLIENT_ID)
+                    ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
+                    ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
+                    ARM_TENANT_ID: $(ARM_TENANT_ID)
+
+                - bash: |
+                    cd $(Pipeline.Workspace)/terraform
+                    terraform output -json > outputs-staging.json
+                  displayName: 'Export Terraform Outputs'
+                  env:
+                    ARM_CLIENT_ID: $(ARM_CLIENT_ID)
+                    ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
+                    ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
+                    ARM_TENANT_ID: $(ARM_TENANT_ID)
+
+                - task: PublishPipelineArtifact@1
+                  displayName: 'Publish Terraform Outputs'
+                  inputs:
+                    targetPath: '$(Pipeline.Workspace)/terraform/outputs-staging.json'
+                    artifact: 'outputs-staging'
+                    publishLocation: 'pipeline'
+
+# ============================================================================
+# Stage 6: Plan Production
+# ============================================================================
+
+  - stage: Plan_Prod
+    displayName: 'Plan - Production'
+    dependsOn: Apply_Staging
+    condition: succeeded()
+    jobs:
+      - job: TerraformPlanProd
+        displayName: 'Generate Terraform Plan for Production'
+        steps:
+          - task: TerraformInstaller@1
+            displayName: 'Install Terraform $(TF_VERSION)'
+            inputs:
+              terraformVersion: '$(TF_VERSION)'
+
+          - bash: |
+              cd $(WORKING_DIR)
+              bash scripts/terraform-init.sh prod
+            displayName: 'Terraform Init - Production'
+            env:
+              ARM_CLIENT_ID: $(ARM_CLIENT_ID)
+              ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
+              ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
+              ARM_TENANT_ID: $(ARM_TENANT_ID)
+
+          - bash: |
+              cd $(WORKING_DIR)
+              bash scripts/terraform-plan.sh prod
+            displayName: 'Terraform Plan - Production'
+            env:
+              ARM_CLIENT_ID: $(ARM_CLIENT_ID)
+              ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
+              ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
+              ARM_TENANT_ID: $(ARM_TENANT_ID)
+              TF_VAR_sql_admin_username: $(SQL_ADMIN_USERNAME)
+              TF_VAR_sql_admin_password: $(SQL_ADMIN_PASSWORD_PROD)
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish Terraform Plan Artifact'
+            inputs:
+              targetPath: '$(WORKING_DIR)/tfplan-prod'
+              artifact: 'tfplan-prod'
+              publishLocation: 'pipeline'
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish Terraform Files'
+            inputs:
+              targetPath: '$(WORKING_DIR)'
+              artifact: 'terraform-prod'
+              publishLocation: 'pipeline'
+
+# ============================================================================
+# Stage 7: Apply Production (Manual Approval Required)
+# ============================================================================
+
+  - stage: Apply_Prod
+    displayName: 'Apply - Production'
+    dependsOn: Plan_Prod
+    condition: succeeded()
+    jobs:
+      - deployment: TerraformApplyProd
+        displayName: 'Deploy Infrastructure to Production'
+        environment: 'prod'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: TerraformInstaller@1
+                  displayName: 'Install Terraform $(TF_VERSION)'
+                  inputs:
+                    terraformVersion: '$(TF_VERSION)'
+
+                - task: DownloadPipelineArtifact@2
+                  displayName: 'Download Terraform Plan'
+                  inputs:
+                    artifactName: 'tfplan-prod'
+                    targetPath: '$(Pipeline.Workspace)/tfplan-prod'
+
+                - task: DownloadPipelineArtifact@2
+                  displayName: 'Download Terraform Files'
+                  inputs:
+                    artifactName: 'terraform-prod'
+                    targetPath: '$(Pipeline.Workspace)/terraform'
+
+                - bash: |
+                    cd $(Pipeline.Workspace)/terraform
+                    bash scripts/terraform-init.sh prod
+                  displayName: 'Terraform Init - Production'
+                  env:
+                    ARM_CLIENT_ID: $(ARM_CLIENT_ID)
+                    ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
+                    ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
+                    ARM_TENANT_ID: $(ARM_TENANT_ID)
+
+                - bash: |
+                    cd $(Pipeline.Workspace)/terraform
+                    cp $(Pipeline.Workspace)/tfplan-prod/tfplan-prod .
+                    bash scripts/terraform-apply.sh prod
+                  displayName: 'Terraform Apply - Production'
+                  env:
+                    ARM_CLIENT_ID: $(ARM_CLIENT_ID)
+                    ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
+                    ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
+                    ARM_TENANT_ID: $(ARM_TENANT_ID)
+
+                - bash: |
+                    cd $(Pipeline.Workspace)/terraform
+                    terraform output -json > outputs-prod.json
+                  displayName: 'Export Terraform Outputs'
+                  env:
+                    ARM_CLIENT_ID: $(ARM_CLIENT_ID)
+                    ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
+                    ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
+                    ARM_TENANT_ID: $(ARM_TENANT_ID)
+
+                - task: PublishPipelineArtifact@1
+                  displayName: 'Publish Terraform Outputs'
+                  inputs:
+                    targetPath: '$(Pipeline.Workspace)/terraform/outputs-prod.json'
+                    artifact: 'outputs-prod'
+                    publishLocation: 'pipeline'
+
+                - bash: |
+                    echo "================================================"
+                    echo "Production Deployment Completed Successfully"
+                    echo "================================================"
+                    echo "Environment: Production"
+                    echo "Build Number: $(Build.BuildNumber)"
+                    echo "Deployed By: $(Build.RequestedFor)"
+                    echo "Timestamp: $(date)"
+                    echo "================================================"
+                  displayName: 'Deployment Summary'

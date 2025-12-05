@@ -1,0 +1,74 @@
+{
+  "manifest_version": 3,
+  "name": "JobPilot AI - Auto Apply",
+  "version": "1.0.0",
+  "description": "AI-powered job application assistant that helps you apply to jobs faster with smart autofill and tracking",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "scripting",
+    "tabs",
+    "notifications"
+  ],
+  "host_permissions": [
+    "https://www.linkedin.com/*",
+    "https://www.indeed.com/*",
+    "https://*.greenhouse.io/*",
+    "https://*.lever.co/*",
+    "https://*.myworkdayjobs.com/*",
+    "https://*.icims.com/*",
+    "https://*.taleo.net/*",
+    "https://*.smartrecruiters.com/*",
+    "https://*.jobvite.com/*",
+    "https://*.breezy.hr/*"
+  ],
+  "action": {
+    "default_popup": "src/popup/index.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.linkedin.com/*",
+        "https://www.indeed.com/*",
+        "https://*.greenhouse.io/*",
+        "https://*.lever.co/*",
+        "https://*.myworkdayjobs.com/*",
+        "https://*.icims.com/*",
+        "https://*.taleo.net/*",
+        "https://*.smartrecruiters.com/*",
+        "https://*.jobvite.com/*",
+        "https://*.breezy.hr/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "assets/*",
+        "icons/*"
+      ],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  }
+}

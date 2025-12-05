@@ -1,0 +1,51 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "environment": {
+      "value": "dev"
+    },
+    "location": {
+      "value": "eastus"
+    },
+    "projectName": {
+      "value": "jobpilot"
+    },
+    "sqlAdminUsername": {
+      "value": ""
+    },
+    "sqlAdminPassword": {
+      "value": ""
+    },
+    "enableDefender": {
+      "value": false
+    },
+    "enableDiagnostics": {
+      "value": true
+    },
+    "enablePrivateEndpoints": {
+      "value": false
+    },
+    "enableApplicationGateway": {
+      "value": false
+    },
+    "enableFrontDoor": {
+      "value": false
+    },
+    "enableAKS": {
+      "value": true
+    },
+    "aksKubernetesVersion": {
+      "value": "1.28.3"
+    },
+    "appInsightsSamplingPercentage": {
+      "value": 100
+    },
+    "allowedIpAddresses": {
+      "value": []
+    },
+    "wafMode": {
+      "value": "Detection"
+    }
+  }
+}

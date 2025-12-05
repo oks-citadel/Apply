@@ -1,0 +1,59 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jobpilot-config
+  namespace: jobpilot
+  labels:
+    app: jobpilot-platform
+data:
+  # Application Configuration
+  NODE_ENV: "production"
+  LOG_LEVEL: "info"
+
+  # Database Configuration
+  POSTGRES_HOST: "jobpilot-postgres.postgres.database.azure.com"
+  POSTGRES_PORT: "5432"
+  POSTGRES_DB: "jobpilot"
+
+  # Redis Configuration
+  REDIS_HOST: "jobpilot-redis.redis.cache.windows.net"
+  REDIS_PORT: "6380"
+  REDIS_TLS: "true"
+
+  # Service URLs (Internal)
+  AUTH_SERVICE_URL: "http://auth-service.jobpilot.svc.cluster.local:3001"
+  USER_SERVICE_URL: "http://user-service.jobpilot.svc.cluster.local:3002"
+  JOB_SERVICE_URL: "http://job-service.jobpilot.svc.cluster.local:3003"
+  AI_SERVICE_URL: "http://ai-service.jobpilot.svc.cluster.local:3004"
+  RESUME_SERVICE_URL: "http://resume-service.jobpilot.svc.cluster.local:3005"
+  ANALYTICS_SERVICE_URL: "http://analytics-service.jobpilot.svc.cluster.local:3006"
+  NOTIFICATION_SERVICE_URL: "http://notification-service.jobpilot.svc.cluster.local:3007"
+  AUTO_APPLY_SERVICE_URL: "http://auto-apply-service.jobpilot.svc.cluster.local:3008"
+
+  # Azure Configuration
+  AZURE_STORAGE_ACCOUNT_NAME: "jobpilotstorage"
+  AZURE_BLOB_CONTAINER_RESUMES: "resumes"
+  AZURE_BLOB_CONTAINER_DOCUMENTS: "documents"
+
+  # Azure OpenAI Configuration
+  AZURE_OPENAI_ENDPOINT: "https://jobpilot-openai.openai.azure.com/"
+  AZURE_OPENAI_DEPLOYMENT_NAME: "gpt-4"
+  AZURE_OPENAI_API_VERSION: "2024-02-15-preview"
+
+  # Email Configuration
+  SMTP_HOST: "smtp.sendgrid.net"
+  SMTP_PORT: "587"
+  SMTP_SECURE: "false"
+  EMAIL_FROM: "noreply@jobpilot.com"
+
+  # Application Settings
+  CORS_ORIGIN: "https://jobpilot.com,https://www.jobpilot.com"
+  API_RATE_LIMIT: "100"
+  API_RATE_WINDOW: "15"
+  SESSION_TIMEOUT: "3600"
+
+  # Feature Flags
+  FEATURE_AUTO_APPLY: "true"
+  FEATURE_AI_RESUME: "true"
+  FEATURE_ANALYTICS: "true"
+  FEATURE_NOTIFICATIONS: "true"

@@ -1,0 +1,261 @@
+# ============================================================================
+# Checkov Configuration
+# ============================================================================
+# Security and compliance scanning configuration for Terraform code
+# Checkov performs static analysis to identify misconfigurations and security issues
+#
+# Documentation: https://www.checkov.io/
+# ============================================================================
+
+# Directories to scan
+directory:
+  - .
+
+# Exclude specific directories
+excluded-paths:
+  - .terraform
+  - .git
+  - examples
+  - tests
+  - scripts
+  - environments
+
+# Download external checks from Bridgecrew
+download-external-modules: true
+
+# Evaluate variables passed via --var-file
+evaluate-variables: true
+
+# ============================================================================
+# Check Configuration
+# ============================================================================
+
+# Frameworks to run (default is all)
+framework:
+  - terraform
+  - terraform_plan
+  - secrets
+
+# Skip specific checks by ID
+skip-check:
+  # Azure Storage Account - HTTPS only
+  # CKV_AZURE_3: Excluded for dev environments
+  # - CKV_AZURE_3
+
+  # Azure Storage Account - Enable logging
+  # CKV_AZURE_33: Can be enabled based on environment
+  # - CKV_AZURE_33
+
+  # Azure SQL Server - Threat detection
+  # CKV_AZURE_24: Controlled via enable_defender variable
+  # - CKV_AZURE_24
+
+  # Azure SQL Server - Email notifications
+  # CKV_AZURE_26: Not all environments need email alerts
+  - CKV_AZURE_26
+
+  # Azure SQL Server - Email to account admins
+  # CKV_AZURE_27: Not all environments need this
+  - CKV_AZURE_27
+
+  # Azure Key Vault - Firewall enabled
+  # CKV_AZURE_109: Excluded for dev, enabled for prod
+  # - CKV_AZURE_109
+
+  # Azure App Service - Client certificates required
+  # CKV_AZURE_17: Not needed for API services
+  - CKV_AZURE_17
+
+  # Azure App Service - HTTP2 enabled
+  # CKV_AZURE_18: Not critical for all environments
+  - CKV_AZURE_18
+
+  # Azure Container Registry - Admin user disabled
+  # CKV_AZURE_137: May be needed for CI/CD in some cases
+  # - CKV_AZURE_137
+
+  # Azure Network Security Group - Specific port restrictions
+  # CKV_AZURE_160: Custom NSG rules based on requirements
+  # - CKV_AZURE_160
+
+  # Azure AKS - Network policy
+  # CKV_AZURE_7: Configured via module settings
+  # - CKV_AZURE_7
+
+  # Ensure terraform required version
+  # CKV_TF_1: Version specified in backend.tf
+  # - CKV_TF_1
+
+  # Ensure terraform required providers
+  # CKV_TF_2: Providers specified in backend.tf
+  # - CKV_TF_2
+
+# ============================================================================
+# Severity Configuration
+# ============================================================================
+
+# Only show checks with severity CRITICAL or HIGH
+# compact: true
+
+# Soft fail - don't exit with error code
+# soft-fail: true
+
+# Soft fail only on specific checks
+soft-fail-on:
+  - CKV_AZURE_3   # Storage HTTPS
+  - CKV_AZURE_33  # Storage logging
+  - CKV_AZURE_109 # Key Vault firewall
+
+# Hard fail on specific checks (always fail on these)
+# hard-fail-on:
+#   - CKV_AZURE_23  # SQL Server auditing
+#   - CKV_AZURE_24  # SQL Server threat detection
+
+# ============================================================================
+# Output Configuration
+# ============================================================================
+
+# Output format: cli, json, junitxml, github_failed_only, sarif
+output: cli
+
+# Output file path (used with junitxml format)
+# output-file-path: checkov-results.xml
+
+# Quiet mode - reduce output
+quiet: false
+
+# Compact mode - reduce output verbosity
+compact: false
+
+# Show file path in output
+# include-file-path: true
+
+# ============================================================================
+# Policy Configuration
+# ============================================================================
+
+# Use specific Bridgecrew policies
+# bc-api-key: YOUR_API_KEY
+# prisma-api-url: https://api.prismacloud.io
+
+# External checks directory
+# external-checks-dir:
+#   - /path/to/custom/checks
+
+# External checks git repository
+# external-checks-git:
+#   - https://github.com/org/repo.git
+
+# ============================================================================
+# Baseline Configuration
+# ============================================================================
+
+# Create baseline file (suppress existing issues)
+# baseline: .checkov.baseline
+
+# ============================================================================
+# Secrets Detection
+# ============================================================================
+
+# Enable secrets detection
+enable-secret-scan-all-files: true
+
+# ============================================================================
+# Custom Policies
+# ============================================================================
+
+# Custom policy configurations can be added here
+# See: https://www.checkov.io/3.Custom%20Policies/Custom%20Policies%20Overview.html
+
+# ============================================================================
+# Environment-Specific Checks
+# ============================================================================
+#
+# The following checks are conditionally important based on environment:
+#
+# Development:
+# - Relaxed security for rapid iteration
+# - Public access may be allowed
+# - Basic SKUs without advanced features
+#
+# Staging:
+# - Production-like security
+# - Most security checks enforced
+# - Testing security configurations
+#
+# Production:
+# - All security checks enforced
+# - No exceptions for critical security
+# - Private endpoints required
+# - Advanced threat protection enabled
+# ============================================================================
+
+# ============================================================================
+# Common Azure Checks for JobPilot Platform
+# ============================================================================
+#
+# Critical Checks (Always Enforced):
+# - CKV_AZURE_1: Azure Instance Metadata Service (IMDS) disabled
+# - CKV_AZURE_13: App Service authentication enabled
+# - CKV_AZURE_23: SQL Server auditing enabled
+# - CKV_AZURE_24: SQL Server threat detection enabled
+# - CKV_AZURE_35: Key Vault key expiry set
+# - CKV_AZURE_41: Key Vault secret expiry set
+# - CKV_AZURE_42: Key Vault key rotation enabled
+# - CKV_AZURE_44: Storage account encryption with CMK
+# - CKV_AZURE_47: AKS API server authorized IP ranges
+# - CKV_AZURE_109: Key Vault firewall enabled
+# - CKV_AZURE_113: SQL Server AD admin configured
+# - CKV_AZURE_114: Key Vault private endpoint
+# - CKV_AZURE_118: App Service use managed identity
+#
+# High Priority Checks:
+# - CKV_AZURE_3: Storage Account HTTPS only
+# - CKV_AZURE_4: AKS RBAC enabled
+# - CKV_AZURE_7: AKS network policy enabled
+# - CKV_AZURE_8: AKS private cluster
+# - CKV_AZURE_19: App Service HTTPS only
+# - CKV_AZURE_33: Storage Account logging enabled
+# - CKV_AZURE_43: Storage Account secure transfer
+# - CKV_AZURE_88: App Service min TLS version
+# - CKV_AZURE_137: Container Registry admin user disabled
+#
+# Medium Priority Checks:
+# - CKV_AZURE_17: App Service client certificates
+# - CKV_AZURE_18: App Service HTTP/2 enabled
+# - CKV_AZURE_26: SQL Server email alerts
+# - CKV_AZURE_27: SQL Server email to admins
+# - CKV_AZURE_160: NSG port restrictions
+# ============================================================================
+
+# ============================================================================
+# Integration with Azure DevOps Pipeline
+# ============================================================================
+# The pipeline runs Checkov with the following command:
+#
+# checkov -d . \
+#   --config-file .checkov.yaml \
+#   --output junitxml \
+#   --output-file-path checkov-results.xml \
+#   --soft-fail
+#
+# Results are published to Azure DevOps for review and tracking
+# ============================================================================
+
+# ============================================================================
+# Best Practices
+# ============================================================================
+# 1. Run Checkov locally before committing:
+#    checkov -d . --config-file .checkov.yaml
+#
+# 2. Fix critical and high severity issues first
+#
+# 3. Use skip-check sparingly and document why
+#
+# 4. Review security findings in each PR
+#
+# 5. Update baseline when intentional changes are made
+#
+# 6. Keep Checkov updated:
+#    pip install --upgrade checkov
+# ============================================================================

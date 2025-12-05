@@ -1,0 +1,28 @@
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+pydantic==2.5.3
+pydantic-settings==2.1.0
+openai==1.10.0
+anthropic==0.18.0
+pinecone-client==3.0.0
+numpy==1.26.3
+scikit-learn==1.4.0
+redis==5.0.1
+httpx==0.26.0
+python-multipart==0.0.6
+python-jose[cryptography]==3.3.0
+tenacity==8.2.3
+structlog==24.1.0
+
+# Azure Application Insights for logging
+opencensus-ext-azure==1.1.13
+opencensus-ext-logging==0.1.1
+
+# OpenTelemetry packages for distributed tracing
+opentelemetry-api==1.25.0
+opentelemetry-sdk==1.25.0
+opentelemetry-instrumentation==0.46b0
+opentelemetry-instrumentation-fastapi==0.46b0
+opentelemetry-instrumentation-httpx==0.46b0
+opentelemetry-instrumentation-logging==0.46b0
+azure-monitor-opentelemetry-exporter==1.0.0b27

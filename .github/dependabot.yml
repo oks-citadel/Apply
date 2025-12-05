@@ -1,0 +1,151 @@
+# Dependabot Configuration for JobPilot AI Platform
+# Automated dependency updates for security and maintenance
+# https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+
+version: 2
+updates:
+  # ============================================================================
+  # NPM Dependencies (Root and Monorepo Packages)
+  # ============================================================================
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "citadelcloudmanagement/jobpilot-core-team"
+    assignees:
+      - "citadelcloudmanagement/jobpilot-core-team"
+    labels:
+      - "dependencies"
+      - "npm"
+      - "automated"
+    commit-message:
+      prefix: "chore(deps):"
+      include: "scope"
+    # Group minor and patch updates together
+    groups:
+      production-dependencies:
+        dependency-type: "production"
+        update-types:
+          - "minor"
+          - "patch"
+      development-dependencies:
+        dependency-type: "development"
+        update-types:
+          - "minor"
+          - "patch"
+    # Only allow security updates for major versions
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+    # Allow specific packages to update to major versions
+    allow:
+      - dependency-name: "next"
+      - dependency-name: "react"
+      - dependency-name: "react-dom"
+
+  # ============================================================================
+  # Python Dependencies (AI Service)
+  # ============================================================================
+  - package-ecosystem: "pip"
+    directory: "/services/ai-service"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "citadelcloudmanagement/jobpilot-core-team"
+    assignees:
+      - "citadelcloudmanagement/jobpilot-core-team"
+    labels:
+      - "dependencies"
+      - "python"
+      - "ai-service"
+      - "automated"
+    commit-message:
+      prefix: "chore(deps):"
+      prefix-development: "chore(deps-dev):"
+      include: "scope"
+    groups:
+      ml-dependencies:
+        patterns:
+          - "torch*"
+          - "transformers*"
+          - "langchain*"
+          - "openai*"
+        update-types:
+          - "minor"
+          - "patch"
+      fastapi-dependencies:
+        patterns:
+          - "fastapi*"
+          - "uvicorn*"
+          - "pydantic*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # ============================================================================
+  # Docker Base Images
+  # ============================================================================
+  - package-ecosystem: "docker"
+    directory: "/docker"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+      time: "09:00"
+    open-pull-requests-limit: 3
+    reviewers:
+      - "citadelcloudmanagement/jobpilot-core-team"
+    labels:
+      - "dependencies"
+      - "docker"
+      - "infrastructure"
+      - "automated"
+    commit-message:
+      prefix: "chore(docker):"
+      include: "scope"
+
+  # ============================================================================
+  # GitHub Actions Workflows
+  # ============================================================================
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "wednesday"
+      time: "09:00"
+    open-pull-requests-limit: 3
+    reviewers:
+      - "citadelcloudmanagement/jobpilot-core-team"
+    labels:
+      - "dependencies"
+      - "github-actions"
+      - "ci-cd"
+      - "automated"
+    commit-message:
+      prefix: "chore(actions):"
+      include: "scope"
+
+  # ============================================================================
+  # Terraform (if applicable in future)
+  # ============================================================================
+  # - package-ecosystem: "terraform"
+  #   directory: "/infrastructure/terraform"
+  #   schedule:
+  #     interval: "weekly"
+  #     day: "thursday"
+  #     time: "09:00"
+  #   open-pull-requests-limit: 3
+  #   reviewers:
+  #     - "citadelcloudmanagement/jobpilot-core-team"
+  #   labels:
+  #     - "dependencies"
+  #     - "terraform"
+  #     - "infrastructure"
+  #   commit-message:
+  #     prefix: "chore(terraform):"
