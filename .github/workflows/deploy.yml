@@ -1,0 +1,201 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [main]
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  REGISTRY: jobpilotacr.azurecr.io
+  NODE_VERSION: '20'
+
+jobs:
+  build-and-push:
+    name: Build & Push ${{ matrix.service }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - web
+          - auth-service
+          - user-service
+          - job-service
+          - resume-service
+          - notification-service
+          - auto-apply-service
+          - ai-service
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Azure Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+
+      - name: Determine Dockerfile path
+        id: dockerfile
+        run: |
+          if [ "${{ matrix.service }}" = "web" ]; then
+            echo "path=apps/web/Dockerfile" >> $GITHUB_OUTPUT
+            echo "context=." >> $GITHUB_OUTPUT
+          else
+            echo "path=services/${{ matrix.service }}/Dockerfile" >> $GITHUB_OUTPUT
+            echo "context=services/${{ matrix.service }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ matrix.service }}
+          tags: |
+            type=sha,prefix=
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ steps.dockerfile.outputs.context }}
+          file: ${{ steps.dockerfile.outputs.path }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            NODE_ENV=production
+
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    if: github.ref == 'refs/heads/main' || github.event.inputs.environment == 'staging'
+    environment:
+      name: staging
+      url: https://staging.jobpilot.ai
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Set AKS context
+        uses: azure/aks-set-context@v3
+        with:
+          resource-group: jobpilot-staging-rg
+          cluster-name: jobpilot-staging-aks
+
+      - name: Deploy to AKS
+        run: |
+          kubectl set image deployment/web web=${{ env.REGISTRY }}/web:${{ github.sha }} -n jobpilot
+          kubectl set image deployment/auth-service auth-service=${{ env.REGISTRY }}/auth-service:${{ github.sha }} -n jobpilot
+          kubectl set image deployment/user-service user-service=${{ env.REGISTRY }}/user-service:${{ github.sha }} -n jobpilot
+          kubectl set image deployment/job-service job-service=${{ env.REGISTRY }}/job-service:${{ github.sha }} -n jobpilot
+          kubectl set image deployment/resume-service resume-service=${{ env.REGISTRY }}/resume-service:${{ github.sha }} -n jobpilot
+          kubectl set image deployment/notification-service notification-service=${{ env.REGISTRY }}/notification-service:${{ github.sha }} -n jobpilot
+          kubectl set image deployment/auto-apply-service auto-apply-service=${{ env.REGISTRY }}/auto-apply-service:${{ github.sha }} -n jobpilot
+          kubectl set image deployment/ai-service ai-service=${{ env.REGISTRY }}/ai-service:${{ github.sha }} -n jobpilot
+
+      - name: Wait for rollout
+        run: |
+          kubectl rollout status deployment/web -n jobpilot --timeout=300s
+          kubectl rollout status deployment/auth-service -n jobpilot --timeout=300s
+
+      - name: Run smoke tests
+        run: |
+          curl -f https://staging.jobpilot.ai/health || exit 1
+          curl -f https://staging-api.jobpilot.ai/health || exit 1
+
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: deploy-staging
+    if: startsWith(github.ref, 'refs/tags/v') || github.event.inputs.environment == 'production'
+    environment:
+      name: production
+      url: https://jobpilot.ai
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Set AKS context
+        uses: azure/aks-set-context@v3
+        with:
+          resource-group: jobpilot-prod-rg
+          cluster-name: jobpilot-prod-aks
+
+      - name: Deploy to AKS (Blue/Green)
+        run: |
+          # Get current active deployment color
+          CURRENT=$(kubectl get service web -n jobpilot -o jsonpath='{.spec.selector.version}' || echo "blue")
+          NEW=$([ "$CURRENT" = "blue" ] && echo "green" || echo "blue")
+
+          echo "Current: $CURRENT, Deploying to: $NEW"
+
+          # Update the inactive deployment
+          kubectl set image deployment/web-$NEW web=${{ env.REGISTRY }}/web:${{ github.sha }} -n jobpilot
+          kubectl rollout status deployment/web-$NEW -n jobpilot --timeout=300s
+
+          # Switch traffic to new deployment
+          kubectl patch service web -n jobpilot -p "{\"spec\":{\"selector\":{\"version\":\"$NEW\"}}}"
+
+      - name: Run production smoke tests
+        run: |
+          sleep 30
+          curl -f https://jobpilot.ai/health || exit 1
+          curl -f https://api.jobpilot.ai/health || exit 1
+
+      - name: Notify deployment success
+        uses: slackapi/slack-github-action@v1
+        if: success()
+        with:
+          payload: |
+            {
+              "text": "Deployed ${{ github.sha }} to production successfully"
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: Notify deployment failure
+        uses: slackapi/slack-github-action@v1
+        if: failure()
+        with:
+          payload: |
+            {
+              "text": "Production deployment failed for ${{ github.sha }}"
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

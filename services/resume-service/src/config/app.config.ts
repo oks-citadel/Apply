@@ -38,13 +38,13 @@ export const validationSchema = Joi.object({
 });
 
 export const appConfig = () => ({
-  port: parseInt(process.env.PORT, 10) || 8003,
+  port: parseInt(process.env.PORT || '8003', 10),
   nodeEnv: process.env.NODE_ENV || 'development',
   apiPrefix: process.env.API_PREFIX || 'api/v1',
 
   database: {
     host: process.env.DB_HOST || 'localhost',
-    port: parseInt(process.env.DB_PORT, 10) || 5432,
+    port: parseInt(process.env.DB_PORT || '5432', 10),
     username: process.env.DB_USERNAME || 'postgres',
     password: process.env.DB_PASSWORD || 'postgres',
     database: process.env.DB_DATABASE || 'resume_service',
@@ -57,7 +57,7 @@ export const appConfig = () => ({
   },
 
   upload: {
-    maxFileSize: parseInt(process.env.MAX_FILE_SIZE, 10) || 10485760,
+    maxFileSize: parseInt(process.env.MAX_FILE_SIZE || '10485760', 10),
     destination: process.env.UPLOAD_DEST || './uploads',
   },
 
@@ -69,7 +69,7 @@ export const appConfig = () => ({
 
   redis: {
     host: process.env.REDIS_HOST || 'localhost',
-    port: parseInt(process.env.REDIS_PORT, 10) || 6379,
+    port: parseInt(process.env.REDIS_PORT || '6379', 10),
     password: process.env.REDIS_PASSWORD,
   },
 

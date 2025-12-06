@@ -2,14 +2,16 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { APP_INTERCEPTOR } from '@nestjs/core';
-import { LoggingModule, LoggingInterceptor } from '@jobpilot/logging';
+// TODO: Re-enable workspace package
+// import { LoggingModule, LoggingInterceptor } from '@jobpilot/logging';
 import { ProfileModule } from './modules/profile/profile.module';
 import { CareerModule } from './modules/career/career.module';
 import { SkillsModule } from './modules/skills/skills.module';
 import { PreferencesModule } from './modules/preferences/preferences.module';
 import { SubscriptionModule } from './modules/subscription/subscription.module';
-import { AnalyticsModule } from './modules/analytics/analytics.module';
-import { StorageModule } from './modules/storage/storage.module';
+// TODO: Re-enable when modules are implemented
+// import { AnalyticsModule } from './modules/analytics/analytics.module';
+// import { StorageModule } from './modules/storage/storage.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { HealthModule } from './health/health.module';
 
@@ -21,19 +23,20 @@ import { HealthModule } from './health/health.module';
       envFilePath: '.env',
     }),
 
+    // TODO: Re-enable workspace package
     // Logging module
-    LoggingModule.forRootAsync({
-      isGlobal: true,
-      useFactory: (configService: ConfigService) => ({
-        serviceName: 'user-service',
-        environment: configService.get<string>('NODE_ENV', 'development'),
-        version: configService.get<string>('SERVICE_VERSION', '1.0.0'),
-        appInsightsKey: configService.get<string>('APPLICATIONINSIGHTS_INSTRUMENTATION_KEY'),
-        enableConsole: true,
-        logLevel: configService.get<string>('LOG_LEVEL', 'info') as any,
-      }),
-      inject: [ConfigService],
-    }),
+    // LoggingModule.forRootAsync({
+    //   isGlobal: true,
+    //   useFactory: (configService: ConfigService) => ({
+    //     serviceName: 'user-service',
+    //     environment: configService.get<string>('NODE_ENV', 'development'),
+    //     version: configService.get<string>('SERVICE_VERSION', '1.0.0'),
+    //     appInsightsKey: configService.get<string>('APPLICATIONINSIGHTS_INSTRUMENTATION_KEY'),
+    //     enableConsole: true,
+    //     logLevel: configService.get<string>('LOG_LEVEL', 'info') as any,
+    //   }),
+    //   inject: [ConfigService],
+    // }),
 
     // Database
     TypeOrmModule.forRootAsync({
@@ -75,14 +78,16 @@ import { HealthModule } from './health/health.module';
     SkillsModule,
     PreferencesModule,
     SubscriptionModule,
-    AnalyticsModule,
-    StorageModule,
+    // TODO: Re-enable when modules are implemented
+    // AnalyticsModule,
+    // StorageModule,
   ],
   providers: [
-    {
-      provide: APP_INTERCEPTOR,
-      useClass: LoggingInterceptor,
-    },
+    // TODO: Re-enable workspace package
+    // {
+    //   provide: APP_INTERCEPTOR,
+    //   useClass: LoggingInterceptor,
+    // },
   ],
 })
 export class AppModule {}

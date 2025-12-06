@@ -29,7 +29,7 @@ export function useApplications(filters?: ApplicationFilters) {
     queryKey: applicationKeys.list(filters),
     queryFn: () => applicationsApi.getApplications(filters),
     staleTime: 2 * 60 * 1000, // 2 minutes
-    keepPreviousData: true,
+    placeholderData: (previousData) => previousData,
   });
 }
 

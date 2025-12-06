@@ -1,0 +1,102 @@
+services:
+  # Web Application - Available at http://localhost:3100
+  web:
+    image: citadelplatforms/applyai:web-latest
+    container_name: jobpilot-web
+    restart: unless-stopped
+    ports:
+      - '3100:3000'
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=http://localhost:3001/api
+    healthcheck:
+      test: ['CMD', 'wget', '--no-verbose', '--tries=1', '--spider', 'http://localhost:3000/']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - jobpilot-network
+
+  # PostgreSQL Database - Using port 5434 to avoid conflict
+  postgres:
+    image: postgres:15-alpine
+    container_name: jobpilot-postgres
+    restart: unless-stopped
+    ports:
+      - '5434:5432'
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: jobpilot
+      POSTGRES_INITDB_ARGS: '-A md5'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - jobpilot-network
+
+  # Redis Cache - Using port 6381 to avoid conflict
+  redis:
+    image: redis:7-alpine
+    container_name: jobpilot-redis
+    restart: unless-stopped
+    ports:
+      - '6381:6379'
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - jobpilot-network
+
+  # RabbitMQ Message Broker - Using different ports to avoid conflict
+  rabbitmq:
+    image: rabbitmq:3.12-management-alpine
+    container_name: jobpilot-rabbitmq
+    restart: unless-stopped
+    ports:
+      - '5673:5672'
+      - '15673:15672'
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ['CMD', 'rabbitmq-diagnostics', 'ping']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - jobpilot-network
+
+  # Mailhog for email testing - Using different ports to avoid conflict
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: jobpilot-mailhog
+    restart: unless-stopped
+    ports:
+      - '1026:1025'
+      - '8026:8025'
+    networks:
+      - jobpilot-network
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  rabbitmq_data:
+    driver: local
+
+networks:
+  jobpilot-network:
+    driver: bridge

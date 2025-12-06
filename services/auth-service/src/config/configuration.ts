@@ -1,6 +1,6 @@
 export default () => ({
   nodeEnv: process.env.NODE_ENV || 'development',
-  port: parseInt(process.env.PORT, 10) || 3001,
+  port: parseInt(process.env.PORT || '3001', 10),
 
   // API Configuration
   apiBaseUrl: process.env.API_BASE_URL || 'http://localhost:3001',
@@ -10,7 +10,7 @@ export default () => ({
   // Database Configuration
   database: {
     host: process.env.DB_HOST || 'localhost',
-    port: parseInt(process.env.DB_PORT, 10) || 5432,
+    port: parseInt(process.env.DB_PORT || '5432', 10),
     username: process.env.DB_USERNAME || 'postgres',
     password: process.env.DB_PASSWORD || 'postgres',
     database: process.env.DB_NAME || 'jobpilot_auth',
@@ -30,10 +30,10 @@ export default () => ({
   // Redis Configuration
   redis: {
     host: process.env.REDIS_HOST || 'localhost',
-    port: parseInt(process.env.REDIS_PORT, 10) || 6379,
+    port: parseInt(process.env.REDIS_PORT || '6379', 10),
     password: process.env.REDIS_PASSWORD || undefined,
-    db: parseInt(process.env.REDIS_DB, 10) || 0,
-    ttl: parseInt(process.env.REDIS_TTL, 10) || 3600,
+    db: parseInt(process.env.REDIS_DB || '0', 10),
+    ttl: parseInt(process.env.REDIS_TTL || '3600', 10),
   },
 
   // OAuth Configuration
@@ -52,7 +52,7 @@ export default () => ({
   // Email Configuration
   email: {
     host: process.env.EMAIL_HOST || 'smtp.gmail.com',
-    port: parseInt(process.env.EMAIL_PORT, 10) || 587,
+    port: parseInt(process.env.EMAIL_PORT || '587', 10),
     secure: process.env.EMAIL_SECURE === 'true' || false,
     auth: {
       user: process.env.EMAIL_USER || '',
@@ -63,8 +63,8 @@ export default () => ({
 
   // Password Configuration
   password: {
-    saltRounds: parseInt(process.env.BCRYPT_SALT_ROUNDS, 10) || 10,
-    minLength: parseInt(process.env.PASSWORD_MIN_LENGTH, 10) || 8,
+    saltRounds: parseInt(process.env.BCRYPT_SALT_ROUNDS || '10', 10),
+    minLength: parseInt(process.env.PASSWORD_MIN_LENGTH || '8', 10),
     requireUppercase: process.env.PASSWORD_REQUIRE_UPPERCASE === 'true' || true,
     requireLowercase: process.env.PASSWORD_REQUIRE_LOWERCASE === 'true' || true,
     requireNumbers: process.env.PASSWORD_REQUIRE_NUMBERS === 'true' || true,
@@ -73,27 +73,27 @@ export default () => ({
 
   // Rate Limiting
   throttle: {
-    ttl: parseInt(process.env.THROTTLE_TTL, 10) || 60000, // 1 minute
-    limit: parseInt(process.env.THROTTLE_LIMIT, 10) || 10,
+    ttl: parseInt(process.env.THROTTLE_TTL || '60000', 10), // 1 minute
+    limit: parseInt(process.env.THROTTLE_LIMIT || '10', 10),
   },
 
   // MFA Configuration
   mfa: {
     enabled: process.env.MFA_ENABLED === 'true' || false,
     issuer: process.env.MFA_ISSUER || 'JobPilot AI',
-    window: parseInt(process.env.MFA_WINDOW, 10) || 2,
+    window: parseInt(process.env.MFA_WINDOW || '2', 10),
   },
 
   // Token Configuration
   tokens: {
-    emailVerificationExpiry: parseInt(process.env.EMAIL_VERIFICATION_EXPIRY, 10) || 86400, // 24 hours
-    passwordResetExpiry: parseInt(process.env.PASSWORD_RESET_EXPIRY, 10) || 3600, // 1 hour
+    emailVerificationExpiry: parseInt(process.env.EMAIL_VERIFICATION_EXPIRY || '86400', 10), // 24 hours
+    passwordResetExpiry: parseInt(process.env.PASSWORD_RESET_EXPIRY || '3600', 10), // 1 hour
   },
 
   // Security
   security: {
-    bcryptRounds: parseInt(process.env.BCRYPT_ROUNDS, 10) || 10,
-    maxLoginAttempts: parseInt(process.env.MAX_LOGIN_ATTEMPTS, 10) || 5,
-    lockoutDuration: parseInt(process.env.LOCKOUT_DURATION, 10) || 900, // 15 minutes
+    bcryptRounds: parseInt(process.env.BCRYPT_ROUNDS || '10', 10),
+    maxLoginAttempts: parseInt(process.env.MAX_LOGIN_ATTEMPTS || '5', 10),
+    lockoutDuration: parseInt(process.env.LOCKOUT_DURATION || '900', 10), // 15 minutes
   },
 });

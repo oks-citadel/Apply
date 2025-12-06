@@ -26,7 +26,7 @@ export function useJobs(filters?: JobSearchFilters) {
     queryKey: jobKeys.list(filters),
     queryFn: () => jobsApi.searchJobs(filters || {}),
     staleTime: 2 * 60 * 1000, // 2 minutes
-    keepPreviousData: true, // Keep previous data while fetching new data
+    placeholderData: (previousData) => previousData, // Keep previous data while fetching new data
   });
 }
 

@@ -1,0 +1,79 @@
+version: '3.9'
+
+# ============================================================================
+# Docker Build Configuration
+# ============================================================================
+# Build all service images locally
+# Usage: docker-compose -f docker-compose.build.yml build
+# ============================================================================
+
+services:
+  # Web Application (Next.js)
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    image: citadelplatforms/applyai:web-latest
+
+  # Auth Service
+  auth-service:
+    build:
+      context: .
+      dockerfile: services/auth-service/Dockerfile
+    image: citadelplatforms/applyai:auth-service-latest
+
+  # AI Service (Python FastAPI)
+  ai-service:
+    build:
+      context: services/ai-service
+      dockerfile: Dockerfile
+    image: citadelplatforms/applyai:ai-service-latest
+
+  # Resume Service
+  resume-service:
+    build:
+      context: .
+      dockerfile: services/resume-service/Dockerfile
+    image: citadelplatforms/applyai:resume-service-latest
+
+  # Job Service
+  job-service:
+    build:
+      context: .
+      dockerfile: services/job-service/Dockerfile
+    image: citadelplatforms/applyai:job-service-latest
+
+  # Auto-Apply Service
+  auto-apply-service:
+    build:
+      context: .
+      dockerfile: services/auto-apply-service/Dockerfile
+    image: citadelplatforms/applyai:auto-apply-service-latest
+
+  # User Service
+  user-service:
+    build:
+      context: .
+      dockerfile: services/user-service/Dockerfile
+    image: citadelplatforms/applyai:user-service-latest
+
+  # Notification Service
+  notification-service:
+    build:
+      context: .
+      dockerfile: services/notification-service/Dockerfile
+    image: citadelplatforms/applyai:notification-service-latest
+
+  # Analytics Service
+  analytics-service:
+    build:
+      context: .
+      dockerfile: services/analytics-service/Dockerfile
+    image: citadelplatforms/applyai:analytics-service-latest
+
+  # Orchestrator Service (Master Controller)
+  orchestrator-service:
+    build:
+      context: .
+      dockerfile: services/orchestrator-service/Dockerfile
+    image: citadelplatforms/applyai:orchestrator-service-latest

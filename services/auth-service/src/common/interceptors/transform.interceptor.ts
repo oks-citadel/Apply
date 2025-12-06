@@ -28,11 +28,11 @@ export class TransformInterceptor<T>
 
     return next.handle().pipe(
       map((data) => ({
-        data: classToPlain(data),
+        data: classToPlain(data) as T,
         statusCode,
         timestamp: new Date().toISOString(),
         path: request.url,
       })),
-    );
+    ) as Observable<Response<T>>;
   }
 }

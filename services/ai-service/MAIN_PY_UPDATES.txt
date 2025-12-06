@@ -1,0 +1,118 @@
+=================================================
+MAIN.PY UPDATE INSTRUCTIONS
+=================================================
+
+Add these changes to services/ai-service/src/main.py:
+
+-------------------------------------------------
+1. ADD TO IMPORTS (around line 30, after existing route imports)
+-------------------------------------------------
+
+from .agents import (
+    CompetitiveAnalysisAgent,
+    FraudDetectionAgent,
+    EmotionalIntelligenceAgent,
+    MultiLanguageAgent
+)
+from .api.routes import agents as agents_routes
+
+-------------------------------------------------
+2. UPDATE ServiceState CLASS (around line 63)
+-------------------------------------------------
+
+class ServiceState:
+    """Container for global service instances."""
+
+    llm_service: LLMService
+    embedding_service: EmbeddingService
+    vector_store: VectorStore
+    job_matcher: JobMatcher
+    resume_optimizer: ResumeOptimizer
+    salary_predictor: SalaryPredictor
+    # ADD THESE LINES:
+    competitive_analysis_agent: CompetitiveAnalysisAgent
+    fraud_detection_agent: FraudDetectionAgent
+    emotional_intelligence_agent: EmotionalIntelligenceAgent
+    multi_language_agent: MultiLanguageAgent
+
+-------------------------------------------------
+3. ADD TO LIFESPAN FUNCTION - STARTUP SECTION (around line 126, after salary_predictor initialization)
+-------------------------------------------------
+
+        state.salary_predictor = SalaryPredictor(llm_service=state.llm_service)
+        logger.info("Salary Predictor initialized")
+
+        # ADD THESE LINES:
+        # Initialize AI Agents
+        state.competitive_analysis_agent = CompetitiveAnalysisAgent(
+            llm_service=state.llm_service
+        )
+        logger.info("Competitive Analysis Agent initialized")
+
+        state.fraud_detection_agent = FraudDetectionAgent(
+            llm_service=state.llm_service
+        )
+        logger.info("Fraud Detection Agent initialized")
+
+        state.emotional_intelligence_agent = EmotionalIntelligenceAgent(
+            llm_service=state.llm_service
+        )
+        logger.info("Emotional Intelligence Agent initialized")
+
+        state.multi_language_agent = MultiLanguageAgent(
+            llm_service=state.llm_service
+        )
+        logger.info("Multi-Language Agent initialized")
+
+-------------------------------------------------
+4. ADD TO APP STATE STORAGE (around line 134, after salary_predictor)
+-------------------------------------------------
+
+        app.state.salary_predictor = state.salary_predictor
+
+        # ADD THESE LINES:
+        app.state.competitive_analysis_agent = state.competitive_analysis_agent
+        app.state.fraud_detection_agent = state.fraud_detection_agent
+        app.state.emotional_intelligence_agent = state.emotional_intelligence_agent
+        app.state.multi_language_agent = state.multi_language_agent
+
+-------------------------------------------------
+5. ADD ROUTER (around line 337, after ai_endpoints router)
+-------------------------------------------------
+
+app.include_router(
+    ai_endpoints.router,
+    prefix="/ai",
+    tags=["AI Services"],
+)
+
+# ADD THESE LINES:
+app.include_router(
+    agents_routes.router,
+    prefix="/api/ai/agents",
+    tags=["AI Agents"],
+)
+
+=================================================
+VERIFICATION
+=================================================
+
+After making these changes:
+
+1. Check imports are correct:
+   python -c "from src.agents import CompetitiveAnalysisAgent; print('OK')"
+
+2. Start the service:
+   python -m src.main
+
+3. Check the docs at:
+   http://localhost:8000/docs
+
+4. You should see new endpoints under "AI Agents":
+   - POST /api/ai/agents/competitive-analysis
+   - POST /api/ai/agents/fraud-detection
+   - POST /api/ai/agents/emotional-intelligence
+   - POST /api/ai/agents/translate
+   - GET /api/ai/agents/health
+
+=================================================

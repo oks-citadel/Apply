@@ -4,12 +4,45 @@ import { DataSource } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { Client } from '@elastic/elasticsearch';
 import Redis from 'ioredis';
-import {
-  checkDatabaseConnection,
-  checkRedisConnection,
-  checkElasticsearchConnection,
-  createHealthResponse,
-} from '@jobpilot/utils';
+
+// Inline health check utilities (replacing @jobpilot/utils)
+const checkDatabaseConnection = async (dataSource: any) => {
+  try {
+    await dataSource.query('SELECT 1');
+    return { status: 'up', message: 'Database connection successful' };
+  } catch (error) {
+    return { status: 'down', message: error.message };
+  }
+};
+
+const checkRedisConnection = async (redis: Redis) => {
+  try {
+    await redis.ping();
+    return { status: 'up', message: 'Redis connection successful' };
+  } catch (error) {
+    return { status: 'down', message: error.message };
+  }
+};
+
+const checkElasticsearchConnection = async (client: Client) => {
+  try {
+    await client.ping();
+    return { status: 'up', message: 'Elasticsearch connection successful' };
+  } catch (error) {
+    return { status: 'down', message: error.message };
+  }
+};
+
+const createHealthResponse = (serviceName: string, version: string, checks: any) => {
+  const allUp = Object.values(checks).every((check: any) => check.status === 'up');
+  return {
+    status: allUp ? 'healthy' : 'degraded',
+    service: serviceName,
+    version,
+    timestamp: new Date(),
+    checks,
+  };
+};
 
 /**
  * Health Service for Job Service

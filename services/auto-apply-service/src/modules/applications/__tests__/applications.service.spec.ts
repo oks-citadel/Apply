@@ -1,0 +1,860 @@
+import { Test, TestingModule } from '@nestjs/testing';
+import { ApplicationsService } from '../applications.service';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Application, ApplicationStatus } from '../entities/application.entity';
+import { CreateApplicationDto } from '../dto/create-application.dto';
+import { UpdateApplicationDto, UpdateStatusDto } from '../dto/update-application.dto';
+import { QueryApplicationDto } from '../dto/query-application.dto';
+import { NotFoundException, BadRequestException } from '@nestjs/common';
+
+describe('ApplicationsService - Comprehensive Test Suite', () => {
+  let service: ApplicationsService;
+  let repository: jest.Mocked<Repository<Application>>;
+
+  const mockQueryBuilder = {
+    where: jest.fn().mockReturnThis(),
+    andWhere: jest.fn().mockReturnThis(),
+    orderBy: jest.fn().mockReturnThis(),
+    skip: jest.fn().mockReturnThis(),
+    take: jest.fn().mockReturnThis(),
+    getCount: jest.fn(),
+    getMany: jest.fn(),
+  };
+
+  const mockRepository = {
+    create: jest.fn(),
+    save: jest.fn(),
+    findOne: jest.fn(),
+    find: jest.fn(),
+    remove: jest.fn(),
+    update: jest.fn(),
+    createQueryBuilder: jest.fn(() => mockQueryBuilder),
+  };
+
+  const mockApplication: Application = {
+    id: '123e4567-e89b-12d3-a456-426614174000',
+    user_id: '123e4567-e89b-12d3-a456-426614174001',
+    job_id: '123e4567-e89b-12d3-a456-426614174002',
+    resume_id: '123e4567-e89b-12d3-a456-426614174003',
+    cover_letter_id: '123e4567-e89b-12d3-a456-426614174004',
+    status: ApplicationStatus.APPLIED,
+    applied_at: new Date('2024-01-15'),
+    response_received_at: null,
+    match_score: 85.5,
+    auto_applied: true,
+    notes: 'Test application',
+    company_name: 'Test Company',
+    position_title: 'Software Engineer',
+    application_url: 'https://test.com/apply',
+    ats_platform: 'greenhouse',
+    application_reference_id: 'APP-12345',
+    screenshot_url: 'https://screenshots.com/test.png',
+    form_responses: { question1: 'answer1' },
+    error_log: null,
+    retry_count: 0,
+    queue_status: 'completed',
+    created_at: new Date('2024-01-15'),
+    updated_at: new Date('2024-01-15'),
+  };
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        ApplicationsService,
+        {
+          provide: getRepositoryToken(Application),
+          useValue: mockRepository,
+        },
+      ],
+    }).compile();
+
+    service = module.get<ApplicationsService>(ApplicationsService);
+    repository = module.get(getRepositoryToken(Application));
+
+    jest.clearAllMocks();
+  });
+
+  it('should be defined', () => {
+    expect(service).toBeDefined();
+  });
+
+  describe('Application Submission', () => {
+    describe('create', () => {
+      it('should create a new application with all fields', async () => {
+        const createDto: CreateApplicationDto = {
+          user_id: '123e4567-e89b-12d3-a456-426614174001',
+          job_id: '123e4567-e89b-12d3-a456-426614174002',
+          resume_id: '123e4567-e89b-12d3-a456-426614174003',
+          cover_letter_id: '123e4567-e89b-12d3-a456-426614174004',
+          company_name: 'Test Company',
+          position_title: 'Software Engineer',
+          match_score: 85.5,
+          application_url: 'https://test.com/apply',
+          ats_platform: 'greenhouse',
+        };
+
+        mockRepository.create.mockReturnValue(mockApplication);
+        mockRepository.save.mockResolvedValue(mockApplication);
+
+        const result = await service.create(createDto);
+
+        expect(result).toEqual(mockApplication);
+        expect(mockRepository.create).toHaveBeenCalledWith({
+          ...createDto,
+          applied_at: expect.any(Date),
+        });
+        expect(mockRepository.save).toHaveBeenCalledWith(mockApplication);
+      });
+
+      it('should create application without optional fields', async () => {
+        const createDto: CreateApplicationDto = {
+          user_id: '123e4567-e89b-12d3-a456-426614174001',
+          job_id: '123e4567-e89b-12d3-a456-426614174002',
+        };
+
+        const minimalApplication = {
+          ...mockApplication,
+          resume_id: null,
+          cover_letter_id: null,
+          match_score: null,
+        };
+
+        mockRepository.create.mockReturnValue(minimalApplication);
+        mockRepository.save.mockResolvedValue(minimalApplication);
+
+        const result = await service.create(createDto);
+
+        expect(result).toBeDefined();
+        expect(mockRepository.create).toHaveBeenCalledWith({
+          ...createDto,
+          applied_at: expect.any(Date),
+        });
+      });
+
+      it('should set applied_at timestamp on creation', async () => {
+        const createDto: CreateApplicationDto = {
+          user_id: '123e4567-e89b-12d3-a456-426614174001',
+          job_id: '123e4567-e89b-12d3-a456-426614174002',
+        };
+
+        mockRepository.create.mockReturnValue(mockApplication);
+        mockRepository.save.mockResolvedValue(mockApplication);
+
+        await service.create(createDto);
+
+        expect(mockRepository.create).toHaveBeenCalledWith(
+          expect.objectContaining({
+            applied_at: expect.any(Date),
+          }),
+        );
+      });
+
+      it('should handle form responses in application', async () => {
+        const createDto: CreateApplicationDto = {
+          user_id: '123e4567-e89b-12d3-a456-426614174001',
+          job_id: '123e4567-e89b-12d3-a456-426614174002',
+          form_responses: {
+            'years_of_experience': '5',
+            'willing_to_relocate': 'yes',
+            'expected_salary': '120000',
+          },
+        };
+
+        mockRepository.create.mockReturnValue({
+          ...mockApplication,
+          form_responses: createDto.form_responses,
+        });
+        mockRepository.save.mockResolvedValue({
+          ...mockApplication,
+          form_responses: createDto.form_responses,
+        });
+
+        const result = await service.create(createDto);
+
+        expect(result.form_responses).toEqual(createDto.form_responses);
+      });
+    });
+
+    describe('logManualApplication', () => {
+      it('should create manual application with correct flags', async () => {
+        const createDto: CreateApplicationDto = {
+          user_id: '123e4567-e89b-12d3-a456-426614174001',
+          job_id: '123e4567-e89b-12d3-a456-426614174002',
+          company_name: 'Manual Company',
+          position_title: 'Manual Position',
+        };
+
+        const manualApplication = {
+          ...mockApplication,
+          auto_applied: false,
+          queue_status: 'completed',
+        };
+
+        mockRepository.create.mockReturnValue(manualApplication);
+        mockRepository.save.mockResolvedValue(manualApplication);
+
+        const result = await service.logManualApplication(createDto);
+
+        expect(result.auto_applied).toBe(false);
+        expect(result.queue_status).toBe('completed');
+        expect(mockRepository.create).toHaveBeenCalledWith({
+          ...createDto,
+          auto_applied: false,
+          applied_at: expect.any(Date),
+          queue_status: 'completed',
+        });
+      });
+    });
+  });
+
+  describe('Application Retrieval and Filtering', () => {
+    describe('findAll', () => {
+      it('should return paginated applications with default parameters', async () => {
+        const userId = '123e4567-e89b-12d3-a456-426614174001';
+        const query: QueryApplicationDto = {
+          page: 1,
+          limit: 20,
+          sort_by: 'created_at',
+          sort_order: 'DESC',
+        };
+
+        const applications = [mockApplication];
+        mockQueryBuilder.getCount.mockResolvedValue(1);
+        mockQueryBuilder.getMany.mockResolvedValue(applications);
+
+        const result = await service.findAll(userId, query);
+
+        expect(result.data).toEqual(applications);
+        expect(result.meta).toEqual({
+          total: 1,
+          page: 1,
+          limit: 20,
+          total_pages: 1,
+        });
+        expect(mockRepository.createQueryBuilder).toHaveBeenCalledWith('application');
+        expect(mockQueryBuilder.where).toHaveBeenCalledWith('application.user_id = :userId', { userId });
+      });
+
+      it('should filter by status', async () => {
+        const userId = '123e4567-e89b-12d3-a456-426614174001';
+        const query: QueryApplicationDto = {
+          page: 1,
+          limit: 20,
+          status: ApplicationStatus.INTERVIEWING,
+          sort_by: 'created_at',
+          sort_order: 'DESC',
+        };
+
+        mockQueryBuilder.getCount.mockResolvedValue(1);
+        mockQueryBuilder.getMany.mockResolvedValue([mockApplication]);
+
+        await service.findAll(userId, query);
+
+        expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+          'application.status = :status',
+          { status: ApplicationStatus.INTERVIEWING },
+        );
+      });
+
+      it('should filter by company name with case-insensitive search', async () => {
+        const userId = '123e4567-e89b-12d3-a456-426614174001';
+        const query: QueryApplicationDto = {
+          page: 1,
+          limit: 20,
+          company_name: 'Google',
+          sort_by: 'created_at',
+          sort_order: 'DESC',
+        };
+
+        mockQueryBuilder.getCount.mockResolvedValue(1);
+        mockQueryBuilder.getMany.mockResolvedValue([mockApplication]);
+
+        await service.findAll(userId, query);
+
+        expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+          'application.company_name ILIKE :company_name',
+          { company_name: '%Google%' },
+        );
+      });
+
+      it('should filter by ATS platform', async () => {
+        const userId = '123e4567-e89b-12d3-a456-426614174001';
+        const query: QueryApplicationDto = {
+          page: 1,
+          limit: 20,
+          ats_platform: 'workday',
+          sort_by: 'created_at',
+          sort_order: 'DESC',
+        };
+
+        mockQueryBuilder.getCount.mockResolvedValue(1);
+        mockQueryBuilder.getMany.mockResolvedValue([mockApplication]);
+
+        await service.findAll(userId, query);
+
+        expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+          'application.ats_platform = :ats_platform',
+          { ats_platform: 'workday' },
+        );
+      });
+
+      it('should handle pagination with large result sets', async () => {
+        const userId = '123e4567-e89b-12d3-a456-426614174001';
+        const query: QueryApplicationDto = {
+          page: 5,
+          limit: 25,
+          sort_by: 'created_at',
+          sort_order: 'DESC',
+        };
+
+        mockQueryBuilder.getCount.mockResolvedValue(200);
+        mockQueryBuilder.getMany.mockResolvedValue([mockApplication]);
+
+        const result = await service.findAll(userId, query);
+
+        expect(mockQueryBuilder.skip).toHaveBeenCalledWith(100); // (5 - 1) * 25
+        expect(mockQueryBuilder.take).toHaveBeenCalledWith(25);
+        expect(result.meta.total_pages).toBe(8); // Math.ceil(200 / 25)
+      });
+
+      it('should support custom sorting by different fields', async () => {
+        const userId = '123e4567-e89b-12d3-a456-426614174001';
+        const query: QueryApplicationDto = {
+          page: 1,
+          limit: 20,
+          sort_by: 'applied_at',
+          sort_order: 'ASC',
+        };
+
+        mockQueryBuilder.getCount.mockResolvedValue(1);
+        mockQueryBuilder.getMany.mockResolvedValue([mockApplication]);
+
+        await service.findAll(userId, query);
+
+        expect(mockQueryBuilder.orderBy).toHaveBeenCalledWith('application.applied_at', 'ASC');
+      });
+
+      it('should combine all filters together', async () => {
+        const userId = '123e4567-e89b-12d3-a456-426614174001';
+        const query: QueryApplicationDto = {
+          page: 2,
+          limit: 10,
+          status: ApplicationStatus.OFFERED,
+          company_name: 'Facebook',
+          ats_platform: 'lever',
+          sort_by: 'company_name',
+          sort_order: 'ASC',
+        };
+
+        mockQueryBuilder.getCount.mockResolvedValue(5);
+        mockQueryBuilder.getMany.mockResolvedValue([]);
+
+        await service.findAll(userId, query);
+
+        expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+          'application.status = :status',
+          { status: ApplicationStatus.OFFERED },
+        );
+        expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+          'application.company_name ILIKE :company_name',
+          { company_name: '%Facebook%' },
+        );
+        expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+          'application.ats_platform = :ats_platform',
+          { ats_platform: 'lever' },
+        );
+      });
+    });
+
+    describe('findOne', () => {
+      it('should return application by ID for authorized user', async () => {
+        const id = '123e4567-e89b-12d3-a456-426614174000';
+        const userId = '123e4567-e89b-12d3-a456-426614174001';
+
+        mockRepository.findOne.mockResolvedValue(mockApplication);
+
+        const result = await service.findOne(id, userId);
+
+        expect(result).toEqual(mockApplication);
+        expect(mockRepository.findOne).toHaveBeenCalledWith({
+          where: { id, user_id: userId },
+        });
+      });
+
+      it('should throw NotFoundException when application does not exist', async () => {
+        const id = 'non-existent-id';
+        const userId = '123e4567-e89b-12d3-a456-426614174001';
+
+        mockRepository.findOne.mockResolvedValue(null);
+
+        await expect(service.findOne(id, userId)).rejects.toThrow(NotFoundException);
+        await expect(service.findOne(id, userId)).rejects.toThrow(
+          `Application with ID ${id} not found`,
+        );
+      });
+
+      it('should prevent unauthorized access to other users applications', async () => {
+        const id = '123e4567-e89b-12d3-a456-426614174000';
+        const unauthorizedUserId = 'different-user-id';
+
+        mockRepository.findOne.mockResolvedValue(null);
+
+        await expect(service.findOne(id, unauthorizedUserId)).rejects.toThrow(NotFoundException);
+      });
+    });
+  });
+
+  describe('Application Status Management', () => {
+    describe('updateStatus', () => {
+      it('should update status to VIEWED and set response timestamp', async () => {
+        const id = '123e4567-e89b-12d3-a456-426614174000';
+        const userId = '123e4567-e89b-12d3-a456-426614174001';
+        const updateStatusDto: UpdateStatusDto = {
+          status: ApplicationStatus.VIEWED,
+        };
+
+        const applicationWithoutResponse = {
+          ...mockApplication,
+          response_received_at: null,
+        };
+
+        mockRepository.findOne.mockResolvedValue(applicationWithoutResponse);
+        mockRepository.save.mockResolvedValue({
+          ...applicationWithoutResponse,
+          status: ApplicationStatus.VIEWED,
+          response_received_at: new Date(),
+        });
+
+        const result = await service.updateStatus(id, userId, updateStatusDto);
+
+        expect(result.status).toBe(ApplicationStatus.VIEWED);
+        const savedApplication = mockRepository.save.mock.calls[0][0];
+        expect(savedApplication.response_received_at).toBeInstanceOf(Date);
+      });
+
+      it('should update to INTERVIEWING status with notes', async () => {
+        const id = '123e4567-e89b-12d3-a456-426614174000';
+        const userId = '123e4567-e89b-12d3-a456-426614174001';
+        const updateStatusDto: UpdateStatusDto = {
+          status: ApplicationStatus.INTERVIEWING,
+          notes: 'Phone screen scheduled for Monday',
+        };
+
+        mockRepository.findOne.mockResolvedValue(mockApplication);
+        mockRepository.save.mockResolvedValue({
+          ...mockApplication,
+          status: ApplicationStatus.INTERVIEWING,
+          notes: 'Phone screen scheduled for Monday',
+        });
+
+        const result = await service.updateStatus(id, userId, updateStatusDto);
+
+        expect(result.status).toBe(ApplicationStatus.INTERVIEWING);
+        expect(result.notes).toBe('Phone screen scheduled for Monday');
+      });
+
+      it('should update to OFFERED status', async () => {
+        const id = '123e4567-e89b-12d3-a456-426614174000';
+        const userId = '123e4567-e89b-12d3-a456-426614174001';
+        const updateStatusDto: UpdateStatusDto = {
+          status: ApplicationStatus.OFFERED,
+          notes: 'Offer: $120k, benefits, remote work',
+        };
+
+        mockRepository.findOne.mockResolvedValue(mockApplication);
+        mockRepository.save.mockResolvedValue({
+          ...mockApplication,
+          status: ApplicationStatus.OFFERED,
+          notes: 'Offer: $120k, benefits, remote work',
+        });
+
+        const result = await service.updateStatus(id, userId, updateStatusDto);
+
+        expect(result.status).toBe(ApplicationStatus.OFFERED);
+      });
+
+      it('should update to REJECTED status', async () => {
+        const id = '123e4567-e89b-12d3-a456-426614174000';
+        const userId = '123e4567-e89b-12d3-a456-426614174001';
+        const updateStatusDto: UpdateStatusDto = {
+          status: ApplicationStatus.REJECTED,
+          notes: 'Position filled internally',
+        };
+
+        mockRepository.findOne.mockResolvedValue(mockApplication);
+        mockRepository.save.mockResolvedValue({
+          ...mockApplication,
+          status: ApplicationStatus.REJECTED,
+          notes: 'Position filled internally',
+        });
+
+        const result = await service.updateStatus(id, userId, updateStatusDto);
+
+        expect(result.status).toBe(ApplicationStatus.REJECTED);
+      });
+
+      it('should update to WITHDRAWN status', async () => {
+        const id = '123e4567-e89b-12d3-a456-426614174000';
+        const userId = '123e4567-e89b-12d3-a456-426614174001';
+        const updateStatusDto: UpdateStatusDto = {
+          status: ApplicationStatus.WITHDRAWN,
+          notes: 'Accepted another offer',
+        };
+
+        mockRepository.findOne.mockResolvedValue(mockApplication);
+        mockRepository.save.mockResolvedValue({
+          ...mockApplication,
+          status: ApplicationStatus.WITHDRAWN,
+          notes: 'Accepted another offer',
+        });
+
+        const result = await service.updateStatus(id, userId, updateStatusDto);
+
+        expect(result.status).toBe(ApplicationStatus.WITHDRAWN);
+      });
+
+      it('should not update response_received_at if already set', async () => {
+        const id = '123e4567-e89b-12d3-a456-426614174000';
+        const userId = '123e4567-e89b-12d3-a456-426614174001';
+        const existingDate = new Date('2024-01-10');
+        const updateStatusDto: UpdateStatusDto = {
+          status: ApplicationStatus.INTERVIEWING,
+        };
+
+        const applicationWithResponse = {
+          ...mockApplication,
+          response_received_at: existingDate,
+        };
+
+        mockRepository.findOne.mockResolvedValue(applicationWithResponse);
+        mockRepository.save.mockResolvedValue(applicationWithResponse);
+
+        await service.updateStatus(id, userId, updateStatusDto);
+
+        const savedApplication = mockRepository.save.mock.calls[0][0];
+        expect(savedApplication.response_received_at).toEqual(existingDate);
+      });
+
+      it('should not set response_received_at when status is APPLIED', async () => {
+        const id = '123e4567-e89b-12d3-a456-426614174000';
+        const userId = '123e4567-e89b-12d3-a456-426614174001';
+        const updateStatusDto: UpdateStatusDto = {
+          status: ApplicationStatus.APPLIED,
+        };
+
+        mockRepository.findOne.mockResolvedValue(mockApplication);
+        mockRepository.save.mockResolvedValue(mockApplication);
+
+        await service.updateStatus(id, userId, updateStatusDto);
+
+        const savedApplication = mockRepository.save.mock.calls[0][0];
+        expect(savedApplication.status).toBe(ApplicationStatus.APPLIED);
+      });
+    });
+  });
+
+  describe('Application Updates', () => {
+    describe('update', () => {
+      it('should update application fields', async () => {
+        const id = '123e4567-e89b-12d3-a456-426614174000';
+        const userId = '123e4567-e89b-12d3-a456-426614174001';
+        const updateDto: UpdateApplicationDto = {
+          notes: 'Interview went well, expecting callback',
+        };
+
+        const updatedApplication = { ...mockApplication, ...updateDto };
+
+        mockRepository.findOne.mockResolvedValue(mockApplication);
+        mockRepository.save.mockResolvedValue(updatedApplication);
+
+        const result = await service.update(id, userId, updateDto);
+
+        expect(result.notes).toBe('Interview went well, expecting callback');
+        expect(mockRepository.save).toHaveBeenCalledWith(
+          expect.objectContaining(updateDto),
+        );
+      });
+
+      it('should throw NotFoundException for non-existent application', async () => {
+        const id = 'non-existent-id';
+        const userId = '123e4567-e89b-12d3-a456-426614174001';
+        const updateDto: UpdateApplicationDto = { notes: 'Test' };
+
+        mockRepository.findOne.mockResolvedValue(null);
+
+        await expect(service.update(id, userId, updateDto)).rejects.toThrow(NotFoundException);
+      });
+    });
+  });
+
+  describe('Application Deletion', () => {
+    describe('remove', () => {
+      it('should delete application successfully', async () => {
+        const id = '123e4567-e89b-12d3-a456-426614174000';
+        const userId = '123e4567-e89b-12d3-a456-426614174001';
+
+        mockRepository.findOne.mockResolvedValue(mockApplication);
+        mockRepository.remove.mockResolvedValue(mockApplication);
+
+        await service.remove(id, userId);
+
+        expect(mockRepository.remove).toHaveBeenCalledWith(mockApplication);
+      });
+
+      it('should throw NotFoundException when deleting non-existent application', async () => {
+        const id = 'non-existent-id';
+        const userId = '123e4567-e89b-12d3-a456-426614174001';
+
+        mockRepository.findOne.mockResolvedValue(null);
+
+        await expect(service.remove(id, userId)).rejects.toThrow(NotFoundException);
+        expect(mockRepository.remove).not.toHaveBeenCalled();
+      });
+    });
+  });
+
+  describe('Analytics and Reporting', () => {
+    describe('getAnalytics', () => {
+      it('should calculate comprehensive analytics', async () => {
+        const userId = '123e4567-e89b-12d3-a456-426614174001';
+        const applications: Application[] = [
+          { ...mockApplication, status: ApplicationStatus.APPLIED, auto_applied: true, match_score: 85 },
+          { ...mockApplication, id: '2', status: ApplicationStatus.VIEWED, auto_applied: true, match_score: 90, response_received_at: new Date() },
+          { ...mockApplication, id: '3', status: ApplicationStatus.INTERVIEWING, auto_applied: false, match_score: 95, response_received_at: new Date() },
+          { ...mockApplication, id: '4', status: ApplicationStatus.REJECTED, auto_applied: true, match_score: 70, response_received_at: new Date(), ats_platform: 'lever' },
+        ];
+
+        mockRepository.find.mockResolvedValue(applications);
+
+        const result = await service.getAnalytics(userId);
+
+        expect(result.total_applications).toBe(4);
+        expect(result.auto_applied_count).toBe(3);
+        expect(result.manual_applied_count).toBe(1);
+        expect(result.average_match_score).toBe(85);
+        expect(result.response_rate).toBe(75);
+        expect(result.status_breakdown[ApplicationStatus.APPLIED]).toBe(1);
+        expect(result.platform_breakdown.greenhouse).toBe(3);
+        expect(result.platform_breakdown.lever).toBe(1);
+      });
+
+      it('should handle empty application list', async () => {
+        const userId = '123e4567-e89b-12d3-a456-426614174001';
+
+        mockRepository.find.mockResolvedValue([]);
+
+        const result = await service.getAnalytics(userId);
+
+        expect(result.total_applications).toBe(0);
+        expect(result.auto_applied_count).toBe(0);
+        expect(result.manual_applied_count).toBe(0);
+        expect(result.average_match_score).toBe(0);
+        expect(result.response_rate).toBe(0);
+        expect(result.status_breakdown).toEqual({});
+      });
+
+      it('should calculate applications in last 30 days', async () => {
+        const userId = '123e4567-e89b-12d3-a456-426614174001';
+        const now = new Date();
+        const old = new Date();
+        old.setDate(old.getDate() - 35);
+
+        const applications: Application[] = [
+          { ...mockApplication, created_at: now },
+          { ...mockApplication, id: '2', created_at: new Date(now.getTime() - 15 * 24 * 60 * 60 * 1000) },
+          { ...mockApplication, id: '3', created_at: old },
+        ];
+
+        mockRepository.find.mockResolvedValue(applications);
+
+        const result = await service.getAnalytics(userId);
+
+        expect(result.applications_last_30_days).toBe(2);
+      });
+
+      it('should handle applications without match scores', async () => {
+        const userId = '123e4567-e89b-12d3-a456-426614174001';
+        const applications: Application[] = [
+          { ...mockApplication, match_score: null },
+          { ...mockApplication, id: '2', match_score: 80 },
+        ];
+
+        mockRepository.find.mockResolvedValue(applications);
+
+        const result = await service.getAnalytics(userId);
+
+        expect(result.average_match_score).toBe(40);
+      });
+
+      it('should handle applications without ATS platform', async () => {
+        const userId = '123e4567-e89b-12d3-a456-426614174001';
+        const applications: Application[] = [
+          { ...mockApplication, ats_platform: null },
+          { ...mockApplication, id: '2', ats_platform: 'greenhouse' },
+        ];
+
+        mockRepository.find.mockResolvedValue(applications);
+
+        const result = await service.getAnalytics(userId);
+
+        expect(result.platform_breakdown.greenhouse).toBe(1);
+        expect(Object.keys(result.platform_breakdown)).toHaveLength(1);
+      });
+    });
+  });
+
+  describe('Auto-Apply Integration', () => {
+    describe('updateApplicationScreenshot', () => {
+      it('should update screenshot URL', async () => {
+        const id = '123e4567-e89b-12d3-a456-426614174000';
+        const screenshotUrl = 'https://screenshots.com/new-screenshot.png';
+
+        mockRepository.update.mockResolvedValue(undefined);
+
+        await service.updateApplicationScreenshot(id, screenshotUrl);
+
+        expect(mockRepository.update).toHaveBeenCalledWith(id, { screenshot_url: screenshotUrl });
+      });
+    });
+
+    describe('updateApplicationError', () => {
+      it('should log application error with retry count', async () => {
+        const id = '123e4567-e89b-12d3-a456-426614174000';
+        const error = {
+          message: 'CAPTCHA verification required',
+          code: 'CAPTCHA_ERROR',
+          timestamp: new Date().toISOString(),
+        };
+        const retryCount = 3;
+
+        mockRepository.update.mockResolvedValue(undefined);
+
+        await service.updateApplicationError(id, error, retryCount);
+
+        expect(mockRepository.update).toHaveBeenCalledWith(id, {
+          error_log: error,
+          retry_count: retryCount,
+          queue_status: 'failed',
+        });
+      });
+
+      it('should handle timeout errors', async () => {
+        const id = '123e4567-e89b-12d3-a456-426614174000';
+        const error = {
+          message: 'Application submission timeout',
+          code: 'TIMEOUT_ERROR',
+        };
+        const retryCount = 1;
+
+        mockRepository.update.mockResolvedValue(undefined);
+
+        await service.updateApplicationError(id, error, retryCount);
+
+        expect(mockRepository.update).toHaveBeenCalledWith(id, {
+          error_log: error,
+          retry_count: retryCount,
+          queue_status: 'failed',
+        });
+      });
+    });
+
+    describe('updateApplicationSuccess', () => {
+      it('should update application on successful submission', async () => {
+        const id = '123e4567-e89b-12d3-a456-426614174000';
+        const applicationReferenceId = 'REF-98765';
+        const screenshotUrl = 'https://screenshots.com/success.png';
+
+        mockRepository.update.mockResolvedValue(undefined);
+
+        await service.updateApplicationSuccess(id, applicationReferenceId, screenshotUrl);
+
+        expect(mockRepository.update).toHaveBeenCalledWith(id, {
+          application_reference_id: applicationReferenceId,
+          screenshot_url: screenshotUrl,
+          queue_status: 'completed',
+          applied_at: expect.any(Date),
+        });
+      });
+    });
+  });
+
+  describe('Duplicate Prevention', () => {
+    it('should prevent duplicate applications for the same job', async () => {
+      const createDto: CreateApplicationDto = {
+        user_id: '123e4567-e89b-12d3-a456-426614174001',
+        job_id: '123e4567-e89b-12d3-a456-426614174002',
+      };
+
+      mockRepository.create.mockReturnValue(mockApplication);
+      mockRepository.save.mockRejectedValue(
+        new Error('Duplicate entry for user_id and job_id'),
+      );
+
+      await expect(service.create(createDto)).rejects.toThrow();
+    });
+  });
+
+  describe('Application Timeline Tracking', () => {
+    it('should track complete application lifecycle', async () => {
+      const userId = '123e4567-e89b-12d3-a456-426614174001';
+      const applications: Application[] = [
+        {
+          ...mockApplication,
+          applied_at: new Date('2024-01-15T10:00:00Z'),
+          response_received_at: new Date('2024-01-20T14:30:00Z'),
+          created_at: new Date('2024-01-15T09:30:00Z'),
+          updated_at: new Date('2024-01-25T16:00:00Z'),
+          status: ApplicationStatus.OFFERED,
+        },
+      ];
+
+      mockRepository.find.mockResolvedValue(applications);
+
+      const result = await service.getAnalytics(userId);
+
+      expect(result.total_applications).toBe(1);
+      expect(result.status_breakdown[ApplicationStatus.OFFERED]).toBe(1);
+    });
+  });
+
+  describe('Edge Cases and Error Handling', () => {
+    it('should handle database connection errors', async () => {
+      const userId = '123e4567-e89b-12d3-a456-426614174001';
+      const query: QueryApplicationDto = {
+        page: 1,
+        limit: 20,
+        sort_by: 'created_at',
+        sort_order: 'DESC',
+      };
+
+      mockQueryBuilder.getCount.mockRejectedValue(new Error('Database connection failed'));
+
+      await expect(service.findAll(userId, query)).rejects.toThrow('Database connection failed');
+    });
+
+    it('should handle concurrent updates gracefully', async () => {
+      const id = '123e4567-e89b-12d3-a456-426614174000';
+      const userId = '123e4567-e89b-12d3-a456-426614174001';
+      const updateDto: UpdateApplicationDto = {
+        notes: 'Updated notes',
+      };
+
+      mockRepository.findOne.mockResolvedValue(mockApplication);
+      mockRepository.save.mockResolvedValue({ ...mockApplication, ...updateDto });
+
+      const result = await service.update(id, userId, updateDto);
+
+      expect(result.notes).toBe('Updated notes');
+    });
+
+    it('should handle invalid UUID formats', async () => {
+      const invalidId = 'invalid-uuid';
+      const userId = '123e4567-e89b-12d3-a456-426614174001';
+
+      mockRepository.findOne.mockResolvedValue(null);
+
+      await expect(service.findOne(invalidId, userId)).rejects.toThrow(NotFoundException);
+    });
+  });
+});

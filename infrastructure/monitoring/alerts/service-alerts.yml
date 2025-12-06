@@ -1,0 +1,196 @@
+# Service-level Alerting Rules for JobPilot AI Platform
+
+groups:
+  - name: service_alerts
+    interval: 30s
+    rules:
+      # Service Down Alert
+      - alert: ServiceDown
+        expr: up{job=~".*-service"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          category: availability
+        annotations:
+          summary: "Service {{ $labels.service }} is down"
+          description: "Service {{ $labels.service }} has been down for more than 1 minute. Current value: {{ $value }}"
+          runbook_url: "https://docs.jobpilot.ai/runbooks/service-down"
+
+      # High Error Rate
+      - alert: HighErrorRate
+        expr: |
+          (
+            sum(rate(http_request_errors_total[5m])) by (service)
+            /
+            sum(rate(http_requests_total[5m])) by (service)
+          ) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          category: errors
+        annotations:
+          summary: "High error rate detected for {{ $labels.service }}"
+          description: "Error rate for {{ $labels.service }} is {{ $value | humanizePercentage }}. Threshold is 5%."
+          runbook_url: "https://docs.jobpilot.ai/runbooks/high-error-rate"
+
+      # Critical Error Rate
+      - alert: CriticalErrorRate
+        expr: |
+          (
+            sum(rate(http_request_errors_total[5m])) by (service)
+            /
+            sum(rate(http_requests_total[5m])) by (service)
+          ) > 0.10
+        for: 2m
+        labels:
+          severity: critical
+          category: errors
+        annotations:
+          summary: "Critical error rate detected for {{ $labels.service }}"
+          description: "Error rate for {{ $labels.service }} is {{ $value | humanizePercentage }}. Threshold is 10%."
+          runbook_url: "https://docs.jobpilot.ai/runbooks/critical-error-rate"
+
+      # High Latency (P99)
+      - alert: HighLatencyP99
+        expr: |
+          histogram_quantile(0.99,
+            sum(rate(http_request_duration_seconds_bucket[5m])) by (service, le)
+          ) > 2
+        for: 5m
+        labels:
+          severity: warning
+          category: performance
+        annotations:
+          summary: "High latency (P99) detected for {{ $labels.service }}"
+          description: "P99 latency for {{ $labels.service }} is {{ $value }}s. Threshold is 2s."
+          runbook_url: "https://docs.jobpilot.ai/runbooks/high-latency"
+
+      # Very High Latency (P99)
+      - alert: VeryHighLatencyP99
+        expr: |
+          histogram_quantile(0.99,
+            sum(rate(http_request_duration_seconds_bucket[5m])) by (service, le)
+          ) > 5
+        for: 2m
+        labels:
+          severity: critical
+          category: performance
+        annotations:
+          summary: "Very high latency (P99) detected for {{ $labels.service }}"
+          description: "P99 latency for {{ $labels.service }} is {{ $value }}s. Threshold is 5s."
+          runbook_url: "https://docs.jobpilot.ai/runbooks/very-high-latency"
+
+      # High Request Rate
+      - alert: HighRequestRate
+        expr: sum(rate(http_requests_total[5m])) by (service) > 1000
+        for: 5m
+        labels:
+          severity: info
+          category: traffic
+        annotations:
+          summary: "High request rate for {{ $labels.service }}"
+          description: "Request rate for {{ $labels.service }} is {{ $value }} req/s."
+          runbook_url: "https://docs.jobpilot.ai/runbooks/high-request-rate"
+
+      # Low Request Rate (potential issue)
+      - alert: LowRequestRate
+        expr: |
+          sum(rate(http_requests_total[5m])) by (service) < 0.1
+          and
+          sum(rate(http_requests_total[30m] offset 1h)) by (service) > 1
+        for: 15m
+        labels:
+          severity: warning
+          category: traffic
+        annotations:
+          summary: "Unusually low request rate for {{ $labels.service }}"
+          description: "Request rate for {{ $labels.service }} is {{ $value }} req/s, which is significantly lower than normal."
+          runbook_url: "https://docs.jobpilot.ai/runbooks/low-request-rate"
+
+      # Queue Size Too Large
+      - alert: QueueSizeTooLarge
+        expr: sum(queue_size{status="waiting"}) by (queue_name) > 1000
+        for: 10m
+        labels:
+          severity: warning
+          category: queue
+        annotations:
+          summary: "Queue {{ $labels.queue_name }} size is too large"
+          description: "Queue {{ $labels.queue_name }} has {{ $value }} waiting jobs."
+          runbook_url: "https://docs.jobpilot.ai/runbooks/queue-size-too-large"
+
+      # Queue Processing Too Slow
+      - alert: QueueProcessingTooSlow
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(queue_job_processing_duration_seconds_bucket[5m])) by (queue_name, le)
+          ) > 60
+        for: 10m
+        labels:
+          severity: warning
+          category: queue
+        annotations:
+          summary: "Queue {{ $labels.queue_name }} processing is too slow"
+          description: "P95 processing time for {{ $labels.queue_name }} is {{ $value }}s."
+          runbook_url: "https://docs.jobpilot.ai/runbooks/queue-processing-slow"
+
+      # High Queue Job Failure Rate
+      - alert: HighQueueJobFailureRate
+        expr: |
+          (
+            sum(rate(queue_job_errors_total[5m])) by (queue_name)
+            /
+            sum(rate(queue_jobs_total[5m])) by (queue_name)
+          ) > 0.10
+        for: 5m
+        labels:
+          severity: warning
+          category: queue
+        annotations:
+          summary: "High job failure rate in queue {{ $labels.queue_name }}"
+          description: "Failure rate for {{ $labels.queue_name }} is {{ $value | humanizePercentage }}."
+          runbook_url: "https://docs.jobpilot.ai/runbooks/high-queue-failure-rate"
+
+      # Database Connection Pool Exhaustion
+      - alert: DatabaseConnectionPoolExhaustion
+        expr: db_connection_pool_active / db_connection_pool_size > 0.9
+        for: 5m
+        labels:
+          severity: critical
+          category: database
+        annotations:
+          summary: "Database connection pool nearly exhausted"
+          description: "Database connection pool is {{ $value | humanizePercentage }} utilized."
+          runbook_url: "https://docs.jobpilot.ai/runbooks/db-pool-exhaustion"
+
+      # Slow Database Queries
+      - alert: SlowDatabaseQueries
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(db_query_duration_seconds_bucket[5m])) by (le)
+          ) > 1
+        for: 10m
+        labels:
+          severity: warning
+          category: database
+        annotations:
+          summary: "Slow database queries detected"
+          description: "P95 query duration is {{ $value }}s."
+          runbook_url: "https://docs.jobpilot.ai/runbooks/slow-db-queries"
+
+      # Low Cache Hit Rate
+      - alert: LowCacheHitRate
+        expr: |
+          (
+            sum(rate(cache_hits_total[5m])) by (cache_name)
+            /
+            (sum(rate(cache_hits_total[5m])) by (cache_name) + sum(rate(cache_misses_total[5m])) by (cache_name))
+          ) < 0.5
+        for: 15m
+        labels:
+          severity: warning
+          category: cache
+        annotations:
+          summary: "Low cache hit rate for {{ $labels.cache_name }}"
+          description: "Cache hit rate for {{ $labels.cache_name }} is {{ $value | humanizePercentage }}."
+          runbook_url: "https://docs.jobpilot.ai/runbooks/low-cache-hit-rate"

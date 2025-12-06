@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        line-height: 1.6;
+        color: #333;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+      }
+      .container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #ffffff;
+      }
+      .header {
+        background: #4F46E5;
+        color: white;
+        padding: 20px;
+        text-align: center;
+        border-radius: 5px 5px 0 0;
+      }
+      .content {
+        background: #f9f9f9;
+        padding: 30px;
+        border-radius: 0 0 5px 5px;
+      }
+      .button {
+        display: inline-block;
+        padding: 14px 35px;
+        background: #4F46E5;
+        color: white !important;
+        text-decoration: none;
+        border-radius: 5px;
+        margin: 20px 0;
+        font-weight: bold;
+        font-size: 16px;
+      }
+      .verification-code {
+        background: white;
+        padding: 15px;
+        border-radius: 5px;
+        text-align: center;
+        font-size: 24px;
+        font-weight: bold;
+        letter-spacing: 3px;
+        color: #4F46E5;
+        margin: 20px 0;
+      }
+      .footer {
+        text-align: center;
+        margin-top: 20px;
+        font-size: 12px;
+        color: #666;
+        padding: 20px;
+        border-top: 1px solid #e0e0e0;
+      }
+      .note {
+        background: #FEF3C7;
+        border-left: 4px solid #F59E0B;
+        padding: 15px;
+        margin: 20px 0;
+        font-size: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>Verify Your Email Address</h1>
+      </div>
+      <div class="content">
+        <p>Hello {{name}},</p>
+
+        <p>Thank you for registering with Job Apply Platform! Please verify your email address to activate your account and start using our services.</p>
+
+        <div style="text-align: center;">
+          <a href="{{verificationUrl}}" class="button">Verify Email Address</a>
+        </div>
+
+        <p>Or copy and paste this link into your browser:</p>
+        <p style="word-break: break-all; color: #4F46E5; background: white; padding: 10px; border-radius: 5px;">{{verificationUrl}}</p>
+
+        <div class="note">
+          <strong>Security Notice:</strong>
+          <ul style="margin: 10px 0;">
+            <li>This verification link will expire in 24 hours</li>
+            <li>If you didn't create an account, please ignore this email</li>
+            <li>Never share this link with anyone</li>
+          </ul>
+        </div>
+
+        <p>If you're having trouble clicking the button, copy and paste the URL above into your web browser.</p>
+      </div>
+      <div class="footer">
+        <p>&copy; {{year}} Job Apply Platform. All rights reserved.</p>
+      </div>
+    </div>
+  </body>
+</html>

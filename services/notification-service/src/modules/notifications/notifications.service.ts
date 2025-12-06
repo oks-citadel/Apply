@@ -6,16 +6,20 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, FindOptionsWhere } from 'typeorm';
+import { InjectQueue } from '@nestjs/bull';
+import { Queue } from 'bull';
 import {
   Notification,
   NotificationStatus,
   NotificationType,
 } from './entities/notification.entity';
+import { NotificationPreferences } from './entities/notification-preferences.entity';
 import {
   CreateNotificationDto,
   QueryNotificationsDto,
   SendEmailDto,
   SendPushDto,
+  UpdatePreferencesDto,
 } from './dto';
 import { EmailService } from '../email/email.service';
 
@@ -26,6 +30,10 @@ export class NotificationsService {
   constructor(
     @InjectRepository(Notification)
     private readonly notificationRepository: Repository<Notification>,
+    @InjectRepository(NotificationPreferences)
+    private readonly preferencesRepository: Repository<NotificationPreferences>,
+    @InjectQueue('email') private readonly emailQueue: Queue,
+    @InjectQueue('notifications') private readonly notificationQueue: Queue,
     private readonly emailService: EmailService,
   ) {}
 
@@ -135,11 +143,66 @@ export class NotificationsService {
     return { deleted: result.affected || 0 };
   }
 
+  // Preference Management
+  async getPreferences(userId: string): Promise<NotificationPreferences> {
+    let preferences = await this.preferencesRepository.findOne({
+      where: { userId },
+    });
+
+    // Create default preferences if they don't exist
+    if (!preferences) {
+      preferences = this.preferencesRepository.create({
+        userId,
+      });
+      await this.preferencesRepository.save(preferences);
+    }
+
+    return preferences;
+  }
+
+  async updatePreferences(
+    userId: string,
+    updatePreferencesDto: UpdatePreferencesDto,
+  ): Promise<NotificationPreferences> {
+    let preferences = await this.preferencesRepository.findOne({
+      where: { userId },
+    });
+
+    if (!preferences) {
+      preferences = this.preferencesRepository.create({
+        userId,
+        ...updatePreferencesDto,
+      });
+    } else {
+      Object.assign(preferences, updatePreferencesDto);
+    }
+
+    return await this.preferencesRepository.save(preferences);
+  }
+
+  private async checkPreferences(
+    userId: string,
+    preferenceType: string,
+  ): Promise<boolean> {
+    const preferences = await this.getPreferences(userId);
+    return preferences[preferenceType] ?? true;
+  }
+
+  // Email sending with queue
   async sendEmail(sendEmailDto: SendEmailDto): Promise<Notification> {
     const { to, subject, body, template, templateData, userId, metadata } =
       sendEmailDto;
 
     try {
+      // Check preferences if userId is provided
+      if (userId) {
+        const emailEnabled = await this.checkPreferences(userId, 'emailEnabled');
+        if (!emailEnabled) {
+          this.logger.warn(`Email notifications disabled for user ${userId}`);
+          throw new BadRequestException('Email notifications are disabled for this user');
+        }
+      }
+
       // Create notification record
       const notification = await this.create({
         userId: userId || 'system',
@@ -150,54 +213,143 @@ export class NotificationsService {
         category: 'email',
       });
 
-      // Send email
-      let result;
-      if (template && templateData) {
-        // Use template-based email
-        result = await this.emailService.sendTemplatedEmail(
-          to,
-          subject,
-          template,
-          templateData,
-        );
-      } else {
-        // Send plain email
-        result = await this.emailService.sendEmail(to, subject, body);
-      }
+      // Queue email for async processing
+      await this.emailQueue.add('send-email', {
+        to,
+        subject,
+        body,
+        template,
+        templateData,
+        isHtml: true,
+      });
 
       // Update notification status
       notification.status = NotificationStatus.SENT;
       notification.sentAt = new Date();
       await this.notificationRepository.save(notification);
 
-      this.logger.log(`Email sent successfully to ${to}`);
+      this.logger.log(`Email queued successfully to ${to}`);
       return notification;
     } catch (error) {
-      this.logger.error(`Failed to send email to ${to}:`, error.message);
-
-      // Update notification with failure
-      const notification = await this.notificationRepository.findOne({
-        where: {
-          userId: userId || 'system',
-          data: { to } as any,
-        },
-        order: { createdAt: 'DESC' },
-      });
-
-      if (notification) {
-        notification.status = NotificationStatus.FAILED;
-        notification.failedReason = error.message;
-        await this.notificationRepository.save(notification);
-      }
-
+      this.logger.error(`Failed to queue email to ${to}:`, error.message);
       throw new BadRequestException(`Failed to send email: ${error.message}`);
     }
+  }
+
+  async sendWelcomeEmail(
+    email: string,
+    name: string,
+    userId: string,
+  ): Promise<void> {
+    const preferences = await this.getPreferences(userId);
+
+    if (!preferences.emailEnabled || !preferences.emailWelcome) {
+      this.logger.warn(`Welcome email disabled for user ${userId}`);
+      return;
+    }
+
+    await this.emailQueue.add('send-welcome-email', {
+      email,
+      name,
+      userId,
+    });
+
+    this.logger.log(`Welcome email queued for ${email}`);
+  }
+
+  async sendVerificationEmail(
+    email: string,
+    name: string,
+    verificationToken: string,
+    userId: string,
+  ): Promise<void> {
+    const preferences = await this.getPreferences(userId);
+
+    if (!preferences.emailEnabled || !preferences.emailVerification) {
+      this.logger.warn(`Verification email disabled for user ${userId}`);
+      return;
+    }
+
+    await this.emailQueue.add('send-verification-email', {
+      email,
+      name,
+      verificationToken,
+    });
+
+    this.logger.log(`Verification email queued for ${email}`);
+  }
+
+  async sendPasswordResetEmail(
+    email: string,
+    name: string,
+    resetToken: string,
+    userId: string,
+  ): Promise<void> {
+    const preferences = await this.getPreferences(userId);
+
+    if (!preferences.emailEnabled || !preferences.emailPasswordReset) {
+      this.logger.warn(`Password reset email disabled for user ${userId}`);
+      return;
+    }
+
+    await this.emailQueue.add('send-password-reset-email', {
+      email,
+      name,
+      resetToken,
+    });
+
+    this.logger.log(`Password reset email queued for ${email}`);
+  }
+
+  async sendApplicationStatusEmail(
+    email: string,
+    name: string,
+    jobTitle: string,
+    companyName: string,
+    status: string,
+    userId: string,
+    message?: string,
+  ): Promise<void> {
+    const preferences = await this.getPreferences(userId);
+
+    if (!preferences.emailEnabled || !preferences.emailApplicationStatus) {
+      this.logger.warn(`Application status email disabled for user ${userId}`);
+      return;
+    }
+
+    await this.emailQueue.add('send-application-status-email', {
+      email,
+      name,
+      jobTitle,
+      companyName,
+      status,
+      message,
+    });
+
+    // Create in-app notification
+    await this.create({
+      userId,
+      type: NotificationType.IN_APP,
+      title: `Application Update: ${jobTitle}`,
+      message: `Your application status for ${jobTitle} at ${companyName} has been updated to ${status}`,
+      category: 'application',
+      data: { jobTitle, companyName, status },
+    });
+
+    this.logger.log(`Application status email queued for ${email}`);
   }
 
   async sendPush(sendPushDto: SendPushDto): Promise<Notification> {
     const { userId, title, message, actionUrl, data, icon, image } = sendPushDto;
 
     try {
+      // Check preferences
+      const pushEnabled = await this.checkPreferences(userId, 'pushEnabled');
+      if (!pushEnabled) {
+        this.logger.warn(`Push notifications disabled for user ${userId}`);
+        throw new BadRequestException('Push notifications are disabled for this user');
+      }
+
       // Create notification record
       const notification = await this.create({
         userId,
@@ -209,14 +361,18 @@ export class NotificationsService {
         category: 'push',
       });
 
-      // TODO: Implement actual push notification sending
-      // This is a placeholder for future implementation
-      // You would integrate with services like Firebase Cloud Messaging (FCM)
-      // or Apple Push Notification service (APNs)
+      // Queue push notification
+      await this.notificationQueue.add('send-push-notification', {
+        userId,
+        type: 'push',
+        title,
+        message,
+        data: { ...data, actionUrl, icon, image },
+      });
 
-      this.logger.log(`Push notification placeholder for user ${userId}: ${title}`);
+      this.logger.log(`Push notification queued for user ${userId}: ${title}`);
 
-      // Mark as sent (for now, since it's a placeholder)
+      // Mark as sent
       notification.status = NotificationStatus.SENT;
       notification.sentAt = new Date();
       await this.notificationRepository.save(notification);

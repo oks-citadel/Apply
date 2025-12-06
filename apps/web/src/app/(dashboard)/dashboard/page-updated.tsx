@@ -11,12 +11,13 @@ import { useApplicationAnalytics, useApplications } from '@/hooks/useApplication
 import { useResumes } from '@/hooks/useResumes';
 import { useSavedJobs, useRecommendedJobs } from '@/hooks/useJobs';
 import { formatDistanceToNow } from 'date-fns';
+import type { ApplicationListResponse } from '@/types/application';
 
 export default function DashboardPage() {
   const { data: analytics, isLoading: analyticsLoading, error: analyticsError, refetch: refetchAnalytics } = useApplicationAnalytics();
   const { data: resumesData, isLoading: resumesLoading } = useResumes({ limit: 1 });
   const { data: savedJobsData, isLoading: savedJobsLoading } = useSavedJobs({ limit: 1 });
-  const { data: recentApplications, isLoading: applicationsLoading } = useApplications({ limit: 3, sortBy: 'appliedAt', sortOrder: 'desc' });
+  const { data: recentApplications, isLoading: applicationsLoading } = useApplications({ limit: 3, sortBy: 'appliedAt', sortOrder: 'desc' }) as { data: ApplicationListResponse | undefined; isLoading: boolean };
   const { data: recommendedJobs, isLoading: recommendedLoading } = useRecommendedJobs({ limit: 3 });
 
   const isLoading = analyticsLoading || resumesLoading || savedJobsLoading;

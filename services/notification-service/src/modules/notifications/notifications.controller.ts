@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Put,
+  Patch,
   Delete,
   Body,
   Param,
@@ -23,8 +24,10 @@ import {
   QueryNotificationsDto,
   SendEmailDto,
   SendPushDto,
+  UpdatePreferencesDto,
 } from './dto';
 import { Notification } from './entities/notification.entity';
+import { NotificationPreferences } from './entities/notification-preferences.entity';
 
 @ApiTags('notifications')
 @Controller('notifications')
@@ -78,6 +81,38 @@ export class NotificationsController {
     return await this.notificationsService.findAll(query);
   }
 
+  @Get('preferences/:userId')
+  @ApiOperation({ summary: 'Get user notification preferences' })
+  @ApiParam({ name: 'userId', description: 'User ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns user notification preferences',
+    type: NotificationPreferences,
+  })
+  async getPreferences(
+    @Param('userId') userId: string,
+  ): Promise<NotificationPreferences> {
+    return await this.notificationsService.getPreferences(userId);
+  }
+
+  @Put('preferences/:userId')
+  @ApiOperation({ summary: 'Update user notification preferences' })
+  @ApiParam({ name: 'userId', description: 'User ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Preferences updated successfully',
+    type: NotificationPreferences,
+  })
+  async updatePreferences(
+    @Param('userId') userId: string,
+    @Body() updatePreferencesDto: UpdatePreferencesDto,
+  ): Promise<NotificationPreferences> {
+    return await this.notificationsService.updatePreferences(
+      userId,
+      updatePreferencesDto,
+    );
+  }
+
   @Get('user/:userId')
   @ApiOperation({ summary: 'Get notifications for a specific user' })
   @ApiParam({ name: 'userId', description: 'User ID' })
@@ -122,7 +157,7 @@ export class NotificationsController {
     return await this.notificationsService.findOne(id);
   }
 
-  @Put(':id/read')
+  @Patch(':id/read')
   @ApiOperation({ summary: 'Mark notification as read' })
   @ApiParam({ name: 'id', description: 'Notification ID' })
   @ApiResponse({
@@ -135,7 +170,7 @@ export class NotificationsController {
     return await this.notificationsService.markAsRead(id);
   }
 
-  @Put('user/:userId/read-all')
+  @Patch('user/:userId/read-all')
   @ApiOperation({ summary: 'Mark all user notifications as read' })
   @ApiParam({ name: 'userId', description: 'User ID' })
   @ApiResponse({

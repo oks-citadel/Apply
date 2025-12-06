@@ -29,11 +29,11 @@ class Settings(BaseSettings):
     port: int = Field(default=8000, alias="PORT")
 
     # API Keys
-    openai_api_key: str = Field(alias="OPENAI_API_KEY")
-    anthropic_api_key: str = Field(alias="ANTHROPIC_API_KEY")
+    openai_api_key: str = Field(default="", alias="OPENAI_API_KEY")
+    anthropic_api_key: str = Field(default="", alias="ANTHROPIC_API_KEY")
 
     # Vector Database
-    pinecone_api_key: str = Field(alias="PINECONE_API_KEY")
+    pinecone_api_key: str = Field(default="", alias="PINECONE_API_KEY")
     pinecone_environment: str = Field(default="us-west1-gcp", alias="PINECONE_ENVIRONMENT")
     pinecone_index_name: str = Field(default="jobpilot-vectors", alias="PINECONE_INDEX_NAME")
 
@@ -49,7 +49,7 @@ class Settings(BaseSettings):
     job_service_url: str = Field(default="http://localhost:3002", alias="JOB_SERVICE_URL")
 
     # Security
-    jwt_secret: str = Field(alias="JWT_SECRET")
+    jwt_secret: str = Field(default="dev-secret-key", alias="JWT_SECRET")
 
     # LLM Configuration
     default_llm_provider: str = Field(default="openai", alias="DEFAULT_LLM_PROVIDER")

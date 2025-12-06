@@ -186,6 +186,7 @@ function NotificationSettings() {
         email: {
           applicationUpdates: newSettings.applicationUpdates,
           newJobs: newSettings.newJobs,
+          weeklyDigest: true,
           marketingEmails: newSettings.marketingEmails,
         },
         push: {

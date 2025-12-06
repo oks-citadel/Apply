@@ -5,7 +5,7 @@ import { BullModule } from '@nestjs/bull';
 import { ScheduleModule } from '@nestjs/schedule';
 import { HttpModule } from '@nestjs/axios';
 import { APP_INTERCEPTOR } from '@nestjs/core';
-import { LoggingModule, LoggingInterceptor } from '@jobpilot/logging';
+// import { LoggingModule, LoggingInterceptor } from '@jobpilot/logging';
 
 // Configuration
 import { databaseConfig } from './config/database.config';
@@ -17,8 +17,10 @@ import { JobsModule } from './modules/jobs/jobs.module';
 import { CompaniesModule } from './modules/companies/companies.module';
 import { AlertsModule } from './modules/alerts/alerts.module';
 import { SearchModule } from './modules/search/search.module';
-import { AggregatorModule } from './modules/aggregator/aggregator.module';
+import { ReportsModule } from './modules/reports/reports.module';
+// import { AggregatorModule } from './modules/aggregator/aggregator.module';
 import { HealthModule } from './health/health.module';
+import { SeederModule } from './seeds/seeder.module';
 
 @Module({
   imports: [
@@ -30,18 +32,18 @@ import { HealthModule } from './health/health.module';
     }),
 
     // Logging module
-    LoggingModule.forRootAsync({
-      isGlobal: true,
-      useFactory: (configService: ConfigService) => ({
-        serviceName: 'job-service',
-        environment: configService.get<string>('NODE_ENV', 'development'),
-        version: configService.get<string>('SERVICE_VERSION', '1.0.0'),
-        appInsightsKey: configService.get<string>('APPLICATIONINSIGHTS_INSTRUMENTATION_KEY'),
-        enableConsole: true,
-        logLevel: configService.get<string>('LOG_LEVEL', 'info') as any,
-      }),
-      inject: [ConfigService],
-    }),
+    // LoggingModule.forRootAsync({
+    //   isGlobal: true,
+    //   useFactory: (configService: ConfigService) => ({
+    //     serviceName: 'job-service',
+    //     environment: configService.get<string>('NODE_ENV', 'development'),
+    //     version: configService.get<string>('SERVICE_VERSION', '1.0.0'),
+    //     appInsightsKey: configService.get<string>('APPLICATIONINSIGHTS_INSTRUMENTATION_KEY'),
+    //     enableConsole: true,
+    //     logLevel: configService.get<string>('LOG_LEVEL', 'info') as any,
+    //   }),
+    //   inject: [ConfigService],
+    // }),
 
     // TypeORM
     TypeOrmModule.forRootAsync({
@@ -82,7 +84,7 @@ import { HealthModule } from './health/health.module';
           port: configService.get('redis.port'),
           password: configService.get('redis.password'),
           db: configService.get('redis.db'),
-          tls: configService.get('REDIS_TLS') === 'true',
+          tls: configService.get('REDIS_TLS') === 'true' ? {} : undefined,
         },
         defaultJobOptions: {
           removeOnComplete: 100,
@@ -114,14 +116,16 @@ import { HealthModule } from './health/health.module';
     CompaniesModule,
     AlertsModule,
     SearchModule,
-    AggregatorModule,
+    ReportsModule,
+    SeederModule,
+    // AggregatorModule,
   ],
   controllers: [],
   providers: [
-    {
-      provide: APP_INTERCEPTOR,
-      useClass: LoggingInterceptor,
-    },
+    // {
+    //   provide: APP_INTERCEPTOR,
+    //   useClass: LoggingInterceptor,
+    // },
   ],
 })
 export class AppModule {}

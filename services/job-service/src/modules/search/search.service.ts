@@ -339,11 +339,11 @@ export class SearchService implements OnModuleInit {
       }));
 
       const facets = {
-        remote_types: response.aggregations?.remote_types?.buckets || [],
-        experience_levels: response.aggregations?.experience_levels?.buckets || [],
-        employment_types: response.aggregations?.employment_types?.buckets || [],
-        top_skills: response.aggregations?.top_skills?.buckets || [],
-        top_locations: response.aggregations?.top_locations?.buckets || [],
+        remote_types: (response.aggregations?.remote_types as any)?.buckets || [],
+        experience_levels: (response.aggregations?.experience_levels as any)?.buckets || [],
+        employment_types: (response.aggregations?.employment_types as any)?.buckets || [],
+        top_skills: (response.aggregations?.top_skills as any)?.buckets || [],
+        top_locations: (response.aggregations?.top_locations as any)?.buckets || [],
       };
 
       return {
@@ -410,7 +410,7 @@ export class SearchService implements OnModuleInit {
         },
       });
 
-      return response.suggest?.autocomplete[0]?.options.map((opt: any) => opt.text) || [];
+      return (response.suggest?.autocomplete[0]?.options as any[])?.map((opt: any) => opt.text) || [];
     } catch (error) {
       this.logger.error(`Error autocomplete: ${error.message}`, error.stack);
       return [];
@@ -429,5 +429,107 @@ export class SearchService implements OnModuleInit {
     } catch (error) {
       this.logger.error(`Error deleting job ${jobId}: ${error.message}`, error.stack);
     }
+  }
+
+  /**
+   * Get search suggestions across multiple fields
+   */
+  async getSuggestions(query: string): Promise<{
+    titles: string[];
+    companies: string[];
+    skills: string[];
+    locations: string[];
+  }> {
+    try {
+      const [titles, companies, skills, locations] = await Promise.all([
+        this.autocomplete('title', query, 5),
+        this.autocomplete('company_name', query, 5),
+        this.autocomplete('skills', query, 5),
+        this.autocomplete('city', query, 5),
+      ]);
+
+      return { titles, companies, skills, locations };
+    } catch (error) {
+      this.logger.error(`Error getting suggestions: ${error.message}`, error.stack);
+      return { titles: [], companies: [], skills: [], locations: [] };
+    }
+  }
+
+  /**
+   * Search for locations
+   */
+  async locationSearch(query: string, limit: number = 10): Promise<Array<{
+    city: string;
+    state: string;
+    country: string;
+  }>> {
+    try {
+      const response = await this.elasticsearchClient.search({
+        index: this.indexName,
+        body: {
+          size: 0,
+          query: {
+            bool: {
+              should: [
+                { match: { city: { query, fuzziness: 'AUTO' } } },
+                { match: { state: { query, fuzziness: 'AUTO' } } },
+                { match: { country: { query, fuzziness: 'AUTO' } } },
+              ],
+              minimum_should_match: 1,
+            },
+          },
+          aggs: {
+            locations: {
+              composite: {
+                size: limit,
+                sources: [
+                  { city: { terms: { field: 'city' } } },
+                  { state: { terms: { field: 'state' } } },
+                  { country: { terms: { field: 'country' } } },
+                ],
+              },
+            },
+          },
+        },
+      });
+
+      return (response.aggregations?.locations as any)?.buckets?.map((bucket: any) => ({
+        city: bucket.key.city,
+        state: bucket.key.state,
+        country: bucket.key.country,
+      })) || [];
+    } catch (error) {
+      this.logger.error(`Error searching locations: ${error.message}`, error.stack);
+      return [];
+    }
+  }
+
+  /**
+   * Get recent searches for a user
+   */
+  async getRecentSearches(userId: string, limit: number = 10): Promise<Array<{
+    query: string;
+    timestamp: string;
+  }>> {
+    // This would typically come from a database table
+    // For now, return empty array as placeholder
+    this.logger.log(`Getting recent searches for user ${userId}`);
+    return [];
+  }
+
+  /**
+   * Save a search query
+   */
+  async saveSearch(userId: string, query: string): Promise<void> {
+    // This would typically save to a database table
+    this.logger.log(`Saving search for user ${userId}: ${query}`);
+  }
+
+  /**
+   * Delete a recent search
+   */
+  async deleteRecentSearch(userId: string, searchId: string): Promise<void> {
+    // This would typically delete from a database table
+    this.logger.log(`Deleting search ${searchId} for user ${userId}`);
   }
 }

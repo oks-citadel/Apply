@@ -1,0 +1,337 @@
+version: '3.9'
+
+# ============================================================================
+# Local Development Docker Compose
+# ============================================================================
+# Runs all services locally with Docker Hub images
+# Usage: docker-compose -f docker-compose.local.yml up -d
+# ============================================================================
+
+services:
+  # ==========================================================================
+  # Infrastructure Services
+  # ==========================================================================
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: applyai-postgres
+    restart: unless-stopped
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+      POSTGRES_DB: jobpilot
+      POSTGRES_INITDB_ARGS: '-A md5'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infrastructure/docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - applyai-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: applyai-redis
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+    command: redis-server --appendonly yes --requirepass redis123
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', '-a', 'redis123', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - applyai-network
+
+  # Elasticsearch for search
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: applyai-elasticsearch
+    restart: unless-stopped
+    ports:
+      - '9200:9200'
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - 'ES_JAVA_OPTS=-Xms512m -Xmx512m'
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -f http://localhost:9200/_cluster/health || exit 1']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - applyai-network
+
+  # RabbitMQ Message Broker
+  rabbitmq:
+    image: rabbitmq:3.12-management-alpine
+    container_name: applyai-rabbitmq
+    restart: unless-stopped
+    ports:
+      - '5672:5672'
+      - '15672:15672'
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin123
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ['CMD', 'rabbitmq-diagnostics', 'ping']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - applyai-network
+
+  # ==========================================================================
+  # Application Services
+  # ==========================================================================
+
+  # Web Application (Next.js)
+  web:
+    image: citadelplatforms/applyai:web-latest
+    container_name: applyai-web
+    restart: unless-stopped
+    ports:
+      - '3000:3000'
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      NEXT_PUBLIC_API_URL: http://localhost:4000
+      NEXT_PUBLIC_AI_SERVICE_URL: http://localhost:5000
+      DATABASE_URL: postgresql://postgres:postgres123@postgres:5432/jobpilot
+      REDIS_URL: redis://:redis123@redis:6379
+      NEXTAUTH_URL: http://localhost:3000
+      NEXTAUTH_SECRET: super-secret-nextauth-key-change-in-production
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - applyai-network
+
+  # Auth Service
+  auth-service:
+    image: citadelplatforms/applyai:auth-service-latest
+    container_name: applyai-auth
+    restart: unless-stopped
+    ports:
+      - '4000:4000'
+    environment:
+      NODE_ENV: development
+      PORT: 4000
+      DATABASE_URL: postgresql://postgres:postgres123@postgres:5432/jobpilot
+      REDIS_URL: redis://:redis123@redis:6379
+      JWT_SECRET: super-secret-jwt-key-change-in-production
+      JWT_EXPIRES_IN: 7d
+      REFRESH_TOKEN_SECRET: super-secret-refresh-token-key
+      REFRESH_TOKEN_EXPIRES_IN: 30d
+      RABBITMQ_URL: amqp://admin:admin123@rabbitmq:5672
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - applyai-network
+
+  # AI Service (Python FastAPI)
+  ai-service:
+    image: citadelplatforms/applyai:ai-service-latest
+    container_name: applyai-ai
+    restart: unless-stopped
+    ports:
+      - '5000:5000'
+    environment:
+      ENVIRONMENT: development
+      PORT: 5000
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-sk-your-openai-key}
+      OPENAI_MODEL: gpt-4
+      REDIS_URL: redis://:redis123@redis:6379
+      RABBITMQ_URL: amqp://admin:admin123@rabbitmq:5672
+    depends_on:
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - applyai-network
+
+  # Resume Service
+  resume-service:
+    image: citadelplatforms/applyai:resume-service-latest
+    container_name: applyai-resume
+    restart: unless-stopped
+    ports:
+      - '4001:4001'
+    environment:
+      NODE_ENV: development
+      PORT: 4001
+      DATABASE_URL: postgresql://postgres:postgres123@postgres:5432/jobpilot
+      REDIS_URL: redis://:redis123@redis:6379
+      AI_SERVICE_URL: http://ai-service:5000
+      RABBITMQ_URL: amqp://admin:admin123@rabbitmq:5672
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - applyai-network
+
+  # Job Service
+  job-service:
+    image: citadelplatforms/applyai:job-service-latest
+    container_name: applyai-job
+    restart: unless-stopped
+    ports:
+      - '4002:4002'
+    environment:
+      NODE_ENV: development
+      PORT: 4002
+      DATABASE_URL: postgresql://postgres:postgres123@postgres:5432/jobpilot
+      REDIS_URL: redis://:redis123@redis:6379
+      ELASTICSEARCH_URL: http://elasticsearch:9200
+      RABBITMQ_URL: amqp://admin:admin123@rabbitmq:5672
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+    networks:
+      - applyai-network
+
+  # Auto-Apply Service
+  auto-apply-service:
+    image: citadelplatforms/applyai:auto-apply-service-latest
+    container_name: applyai-auto-apply
+    restart: unless-stopped
+    ports:
+      - '4003:4003'
+    environment:
+      NODE_ENV: development
+      PORT: 4003
+      DATABASE_URL: postgresql://postgres:postgres123@postgres:5432/jobpilot
+      REDIS_URL: redis://:redis123@redis:6379
+      JOB_SERVICE_URL: http://job-service:4002
+      RESUME_SERVICE_URL: http://resume-service:4001
+      AI_SERVICE_URL: http://ai-service:5000
+      RABBITMQ_URL: amqp://admin:admin123@rabbitmq:5672
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - applyai-network
+
+  # User Service
+  user-service:
+    image: citadelplatforms/applyai:user-service-latest
+    container_name: applyai-user
+    restart: unless-stopped
+    ports:
+      - '4004:4004'
+    environment:
+      NODE_ENV: development
+      PORT: 4004
+      DATABASE_URL: postgresql://postgres:postgres123@postgres:5432/jobpilot
+      REDIS_URL: redis://:redis123@redis:6379
+      RABBITMQ_URL: amqp://admin:admin123@rabbitmq:5672
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - applyai-network
+
+  # Notification Service
+  notification-service:
+    image: citadelplatforms/applyai:notification-service-latest
+    container_name: applyai-notification
+    restart: unless-stopped
+    ports:
+      - '4005:4005'
+    environment:
+      NODE_ENV: development
+      PORT: 4005
+      DATABASE_URL: postgresql://postgres:postgres123@postgres:5432/jobpilot
+      REDIS_URL: redis://:redis123@redis:6379
+      RABBITMQ_URL: amqp://admin:admin123@rabbitmq:5672
+      SMTP_HOST: mailhog
+      SMTP_PORT: 1025
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - applyai-network
+
+  # ==========================================================================
+  # Development Tools (Optional)
+  # ==========================================================================
+
+  # PgAdmin
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: applyai-pgadmin
+    restart: unless-stopped
+    ports:
+      - '5050:80'
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@applyai.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+    depends_on:
+      - postgres
+    networks:
+      - applyai-network
+    profiles:
+      - tools
+
+  # Mailhog for email testing
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: applyai-mailhog
+    restart: unless-stopped
+    ports:
+      - '1025:1025'
+      - '8025:8025'
+    networks:
+      - applyai-network
+    profiles:
+      - tools
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  elasticsearch_data:
+    driver: local
+  rabbitmq_data:
+    driver: local
+
+networks:
+  applyai-network:
+    driver: bridge

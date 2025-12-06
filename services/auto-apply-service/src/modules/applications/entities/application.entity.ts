@@ -16,6 +16,12 @@ export enum ApplicationStatus {
   WITHDRAWN = 'withdrawn',
 }
 
+export enum ApplicationSource {
+  MANUAL = 'manual',
+  AUTO_APPLY = 'auto_apply',
+  QUICK_APPLY = 'quick_apply',
+}
+
 @Entity('applications')
 @Index(['user_id', 'created_at'])
 @Index(['status', 'created_at'])
@@ -88,6 +94,14 @@ export class Application {
 
   @Column({ type: 'varchar', length: 50, nullable: true })
   queue_status: string;
+
+  @Column({
+    type: 'enum',
+    enum: ApplicationSource,
+    default: ApplicationSource.MANUAL,
+    nullable: true,
+  })
+  source: ApplicationSource;
 
   @CreateDateColumn()
   created_at: Date;

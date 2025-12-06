@@ -23,6 +23,7 @@ resources:
   - services/analytics-service.yaml
   - services/notification-service.yaml
   - services/auto-apply-service.yaml
+  - services/orchestrator-service.yaml
   - services/web-app.yaml
 
 commonLabels:
@@ -49,6 +50,8 @@ images:
   - name: jobpilotacr.azurecr.io/notification-service
     newTag: latest
   - name: jobpilotacr.azurecr.io/auto-apply-service
+    newTag: latest
+  - name: jobpilotacr.azurecr.io/orchestrator-service
     newTag: latest
   - name: jobpilotacr.azurecr.io/web-app
     newTag: latest

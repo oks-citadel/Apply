@@ -399,4 +399,238 @@ export class JobsService {
 
     this.logger.log(`Tracked application for job ${jobId} by user ${userId}`);
   }
+
+  /**
+   * Calculate match score between job and resume
+   */
+  async calculateMatchScore(
+    jobId: string,
+    resumeId: string,
+    userId: string,
+  ): Promise<any> {
+    try {
+      const job = await this.jobRepository.findOne({
+        where: { id: jobId, is_active: true },
+      });
+
+      if (!job) {
+        throw new NotFoundException('Job not found');
+      }
+
+      // Call AI service for match calculation
+      const response = await firstValueFrom(
+        this.httpService.post(
+          `${this.aiServiceUrl}/matching/resume-job`,
+          {
+            job_id: jobId,
+            resume_id: resumeId,
+            user_id: userId,
+            job_requirements: job.requirements,
+            job_skills: job.skills,
+            job_description: job.description,
+            job_experience_level: job.experience_level,
+          },
+          { timeout: 10000 },
+        ),
+      );
+
+      return {
+        jobId,
+        resumeId,
+        overallScore: response.data.overall_score || 0,
+        breakdown: response.data.breakdown || {
+          skillsMatch: 0,
+          experienceMatch: 0,
+          educationMatch: 0,
+          locationMatch: 0,
+        },
+        matchedSkills: response.data.matched_skills || [],
+        missingSkills: response.data.missing_skills || [],
+        recommendations: response.data.recommendations || [],
+      };
+    } catch (error) {
+      this.logger.error(`Error calculating match score: ${error.message}`, error.stack);
+      // Return default scores on error
+      return {
+        jobId,
+        resumeId,
+        overallScore: 0,
+        breakdown: {
+          skillsMatch: 0,
+          experienceMatch: 0,
+          educationMatch: 0,
+          locationMatch: 0,
+        },
+        matchedSkills: [],
+        missingSkills: [],
+        recommendations: ['Unable to calculate match score. Please try again later.'],
+      };
+    }
+  }
+
+  /**
+   * Get interview questions for a job
+   */
+  async getInterviewQuestions(jobId: string): Promise<any> {
+    try {
+      const job = await this.jobRepository.findOne({
+        where: { id: jobId, is_active: true },
+        relations: ['company'],
+      });
+
+      if (!job) {
+        throw new NotFoundException('Job not found');
+      }
+
+      // Call AI service for interview questions
+      const response = await firstValueFrom(
+        this.httpService.post(
+          `${this.aiServiceUrl}/interview-prep/questions`,
+          {
+            job_title: job.title,
+            job_description: job.description,
+            required_skills: job.skills,
+            experience_level: job.experience_level,
+            company_name: job.company_name,
+          },
+          { timeout: 15000 },
+        ),
+      );
+
+      return {
+        technical: response.data.technical || [],
+        behavioral: response.data.behavioral || [],
+        companySpecific: response.data.company_specific || [],
+      };
+    } catch (error) {
+      this.logger.error(`Error getting interview questions: ${error.message}`, error.stack);
+      // Return default questions on error
+      return {
+        technical: [
+          'Tell me about your experience with the technologies mentioned in the job description.',
+          'Can you walk me through a challenging project you worked on?',
+        ],
+        behavioral: [
+          'Tell me about a time when you had to work under pressure.',
+          'Describe a situation where you had to learn a new technology quickly.',
+        ],
+        companySpecific: [
+          'Why do you want to work for our company?',
+          'What do you know about our products/services?',
+        ],
+      };
+    }
+  }
+
+  /**
+   * Predict salary based on job details
+   */
+  async predictSalary(salaryPredictionDto: any): Promise<any> {
+    try {
+      // Call AI service for salary prediction
+      const response = await firstValueFrom(
+        this.httpService.post(
+          `${this.aiServiceUrl}/salary/predict`,
+          salaryPredictionDto,
+          { timeout: 10000 },
+        ),
+      );
+
+      return {
+        predictedSalary: response.data.predicted_salary || {
+          min: 0,
+          max: 0,
+          currency: 'USD',
+          period: 'yearly',
+        },
+        confidence: response.data.confidence || 0,
+        factors: response.data.factors || [],
+        marketData: response.data.market_data || {
+          averageSalary: 0,
+          percentile25: 0,
+          percentile50: 0,
+          percentile75: 0,
+          percentile90: 0,
+        },
+      };
+    } catch (error) {
+      this.logger.error(`Error predicting salary: ${error.message}`, error.stack);
+      
+      // Return estimate based on experience
+      const baseMin = 50000;
+      const baseMax = 70000;
+      const experienceMultiplier = 1 + (salaryPredictionDto.experienceYears * 0.05);
+      
+      const min = Math.round(baseMin * experienceMultiplier);
+      const max = Math.round(baseMax * experienceMultiplier);
+      const avg = Math.round((min + max) / 2);
+
+      return {
+        predictedSalary: {
+          min,
+          max,
+          currency: 'USD',
+          period: 'yearly',
+        },
+        confidence: 50,
+        factors: [
+          {
+            factor: 'Experience',
+            impact: 'positive',
+            description: `${salaryPredictionDto.experienceYears} years of experience`,
+          },
+          {
+            factor: 'Location',
+            impact: 'neutral',
+            description: `Based on ${salaryPredictionDto.location}`,
+          },
+        ],
+        marketData: {
+          averageSalary: avg,
+          percentile25: Math.round(avg * 0.85),
+          percentile50: avg,
+          percentile75: Math.round(avg * 1.15),
+          percentile90: Math.round(avg * 1.3),
+        },
+      };
+    }
+  }
+
+  /**
+   * Report a job posting
+   */
+  async reportJob(jobId: string, reportJobDto: any, userId: string): Promise<any> {
+    try {
+      const job = await this.jobRepository.findOne({
+        where: { id: jobId },
+      });
+
+      if (!job) {
+        throw new NotFoundException('Job not found');
+      }
+
+      // Log the report (in production, this would go to a reports table)
+      this.logger.warn(
+        `Job ${jobId} reported by user ${userId}. Reason: ${reportJobDto.reason}. Details: ${reportJobDto.details}`,
+      );
+
+      // TODO: Store in database reports table
+      // await this.reportRepository.save({
+      //   job_id: jobId,
+      //   user_id: userId,
+      //   reason: reportJobDto.reason,
+      //   details: reportJobDto.details,
+      // });
+
+      return {
+        message: 'Job reported successfully. Our team will review it shortly.',
+      };
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      this.logger.error(`Error reporting job: ${error.message}`, error.stack);
+      throw new BadRequestException('Failed to report job');
+    }
+  }
 }

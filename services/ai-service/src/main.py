@@ -27,7 +27,7 @@ telemetry_config = TelemetryConfig(
 init_telemetry(telemetry_config)
 
 from .config import settings
-from .api.routes import generate, optimize, match, interview, salary
+from .api.routes import generate, optimize, match, interview, salary, ai_endpoints
 from .api.middleware import RequestLoggingMiddleware, TimingMiddleware
 from .schemas.response_schemas import HealthResponse, ErrorResponse
 from .services.llm_service import LLMService
@@ -330,6 +330,11 @@ app.include_router(
     tags=["Salary Prediction"],
 )
 
+app.include_router(
+    ai_endpoints.router,
+    prefix="/ai",
+    tags=["AI Services"],
+)
 
 # Main entry point
 if __name__ == "__main__":

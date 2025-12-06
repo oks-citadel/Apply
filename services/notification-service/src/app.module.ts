@@ -1,10 +1,12 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { APP_INTERCEPTOR } from '@nestjs/core';
-import { LoggingModule, LoggingInterceptor } from '@jobpilot/logging';
+import { BullModule } from '@nestjs/bull';
+// import { APP_INTERCEPTOR } from '@nestjs/core';
+// import { LoggingModule, LoggingInterceptor } from '@jobpilot/logging';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { EmailModule } from './modules/email/email.module';
+import { PushModule } from './modules/push/push.module';
 import { HealthModule } from './health/health.module';
 
 @Module({
@@ -13,15 +15,27 @@ import { HealthModule } from './health/health.module';
       isGlobal: true,
       envFilePath: '.env',
     }),
-    LoggingModule.forRootAsync({
-      isGlobal: true,
-      useFactory: (configService: ConfigService) => ({
-        serviceName: 'notification-service',
-        environment: configService.get<string>('NODE_ENV', 'development'),
-        version: configService.get<string>('SERVICE_VERSION', '1.0.0'),
-        appInsightsKey: configService.get<string>('APPLICATIONINSIGHTS_INSTRUMENTATION_KEY'),
-        enableConsole: true,
-        logLevel: configService.get<string>('LOG_LEVEL', 'info') as any,
+    // LoggingModule.forRootAsync({
+    //   isGlobal: true,
+    //   useFactory: (configService: ConfigService) => ({
+    //     serviceName: 'notification-service',
+    //     environment: configService.get<string>('NODE_ENV', 'development'),
+    //     version: configService.get<string>('SERVICE_VERSION', '1.0.0'),
+    //     appInsightsKey: configService.get<string>('APPLICATIONINSIGHTS_INSTRUMENTATION_KEY'),
+    //     enableConsole: true,
+    //     logLevel: configService.get<string>('LOG_LEVEL', 'info') as any,
+    //   }),
+    //   inject: [ConfigService],
+    // }),
+    BullModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        redis: {
+          host: configService.get('REDIS_HOST', 'localhost'),
+          port: configService.get('REDIS_PORT', 6379),
+          password: configService.get('REDIS_PASSWORD'),
+          db: configService.get('REDIS_DB', 0),
+        },
       }),
       inject: [ConfigService],
     }),
@@ -31,7 +45,7 @@ import { HealthModule } from './health/health.module';
       useFactory: (configService: ConfigService) => ({
         type: 'postgres',
         host: configService.get('DB_HOST', 'localhost'),
-        port: configService.get('DB_PORT', 5432),
+        port: configService.get('DB_PORT', 5434),
         username: configService.get('DB_USERNAME', 'postgres'),
         password: configService.get('DB_PASSWORD', 'postgres'),
         database: configService.get('DB_DATABASE', 'notification_service'),
@@ -55,14 +69,15 @@ import { HealthModule } from './health/health.module';
     }),
     NotificationsModule,
     EmailModule,
+    PushModule,
     HealthModule,
   ],
   controllers: [],
   providers: [
-    {
-      provide: APP_INTERCEPTOR,
-      useClass: LoggingInterceptor,
-    },
+    // {
+    //   provide: APP_INTERCEPTOR,
+    //   useClass: LoggingInterceptor,
+    // },
   ],
 })
 export class AppModule {}

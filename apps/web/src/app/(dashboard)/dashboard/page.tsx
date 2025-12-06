@@ -1,14 +1,31 @@
-import { FileText, Briefcase, Send, TrendingUp } from 'lucide-react';
+'use client';
+
+import { FileText, Briefcase, Send, TrendingUp, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import Link from 'next/link';
-
-export const metadata = {
-  title: 'Dashboard - JobPilot AI',
-  description: 'Your job search dashboard',
-};
+import { useDashboardStats } from '@/hooks/useUser';
+import { useApplications } from '@/hooks/useApplications';
+import { useJobs } from '@/hooks/useJobs';
 
 export default function DashboardPage() {
+  const { data: stats, isLoading: statsLoading } = useDashboardStats();
+  const { data: applications, isLoading: applicationsLoading } = useApplications({ limit: 3, sortBy: 'appliedAt', sortOrder: 'desc' });
+  const { data: recommendedJobs, isLoading: jobsLoading } = useJobs({ limit: 3 });
+
+  const isLoading = statsLoading || applicationsLoading || jobsLoading;
+
+  // Fallback stats if API not available
+  const dashboardStats = stats || {
+    totalResumes: 0,
+    jobsSaved: 0,
+    applicationsSent: 0,
+    responseRate: 0,
+  };
+
+  const recentApplications = applications?.applications || [];
+  const jobs = recommendedJobs?.jobs || [];
+
   return (
     <div className="space-y-8">
       <div>
@@ -24,27 +41,27 @@ export default function DashboardPage() {
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Total Resumes"
-          value="5"
+          value={statsLoading ? '...' : String(dashboardStats.totalResumes)}
           icon={<FileText className="w-5 h-5" />}
-          trend="+2 this month"
+          loading={statsLoading}
         />
         <StatCard
           title="Jobs Saved"
-          value="23"
+          value={statsLoading ? '...' : String(dashboardStats.jobsSaved)}
           icon={<Briefcase className="w-5 h-5" />}
-          trend="+12 this week"
+          loading={statsLoading}
         />
         <StatCard
           title="Applications Sent"
-          value="18"
+          value={statsLoading ? '...' : String(dashboardStats.applicationsSent)}
           icon={<Send className="w-5 h-5" />}
-          trend="+5 this week"
+          loading={statsLoading}
         />
         <StatCard
           title="Response Rate"
-          value="22%"
+          value={statsLoading ? '...' : `${dashboardStats.responseRate}%`}
           icon={<TrendingUp className="w-5 h-5" />}
-          trend="+5% from last month"
+          loading={statsLoading}
         />
       </div>
 
@@ -58,7 +75,7 @@ export default function DashboardPage() {
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <Link href="/dashboard/resumes">
+            <Link href="/resumes">
               <Button variant="outline" className="w-full justify-start h-auto py-4">
                 <FileText className="w-5 h-5 mr-3" />
                 <div className="text-left">
@@ -67,7 +84,7 @@ export default function DashboardPage() {
                 </div>
               </Button>
             </Link>
-            <Link href="/dashboard/jobs">
+            <Link href="/jobs">
               <Button variant="outline" className="w-full justify-start h-auto py-4">
                 <Briefcase className="w-5 h-5 mr-3" />
                 <div className="text-left">
@@ -76,7 +93,7 @@ export default function DashboardPage() {
                 </div>
               </Button>
             </Link>
-            <Link href="/dashboard/applications">
+            <Link href="/applications">
               <Button variant="outline" className="w-full justify-start h-auto py-4">
                 <Send className="w-5 h-5 mr-3" />
                 <div className="text-left">
@@ -97,26 +114,30 @@ export default function DashboardPage() {
             <CardDescription>Your latest job applications</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              <ActivityItem
-                title="Senior Frontend Developer"
-                company="Tech Corp"
-                status="Under Review"
-                date="2 days ago"
-              />
-              <ActivityItem
-                title="Full Stack Engineer"
-                company="StartupXYZ"
-                status="Interview Scheduled"
-                date="5 days ago"
-              />
-              <ActivityItem
-                title="React Developer"
-                company="Digital Agency"
-                status="Applied"
-                date="1 week ago"
-              />
-            </div>
+            {applicationsLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+              </div>
+            ) : recentApplications.length > 0 ? (
+              <div className="space-y-4">
+                {recentApplications.map((app: any) => (
+                  <ActivityItem
+                    key={app.id}
+                    title={app.jobTitle || app.job?.title || 'Untitled Position'}
+                    company={app.company || app.job?.company || 'Unknown Company'}
+                    status={app.status || 'Applied'}
+                    date={formatDate(app.appliedAt || app.createdAt)}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <p>No applications yet</p>
+                <Link href="/jobs">
+                  <Button variant="link" className="mt-2">Start applying to jobs</Button>
+                </Link>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -126,26 +147,30 @@ export default function DashboardPage() {
             <CardDescription>Based on your profile</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              <JobItem
-                title="Software Engineer"
-                company="Innovation Labs"
-                location="Remote"
-                salary="$120k - $150k"
-              />
-              <JobItem
-                title="Frontend Developer"
-                company="Design Studio"
-                location="New York, NY"
-                salary="$100k - $130k"
-              />
-              <JobItem
-                title="Full Stack Developer"
-                company="E-commerce Co"
-                location="San Francisco, CA"
-                salary="$130k - $160k"
-              />
-            </div>
+            {jobsLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+              </div>
+            ) : jobs.length > 0 ? (
+              <div className="space-y-4">
+                {jobs.map((job: any) => (
+                  <JobItem
+                    key={job.id}
+                    title={job.title}
+                    company={job.company}
+                    location={job.location}
+                    salary={formatSalary(job.salaryMin, job.salaryMax)}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <p>No job recommendations yet</p>
+                <Link href="/jobs">
+                  <Button variant="link" className="mt-2">Browse all jobs</Button>
+                </Link>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -157,12 +182,12 @@ function StatCard({
   title,
   value,
   icon,
-  trend,
+  loading,
 }: {
   title: string;
   value: string;
   icon: React.ReactNode;
-  trend: string;
+  loading?: boolean;
 }) {
   return (
     <Card>
@@ -171,8 +196,13 @@ function StatCard({
           <span className="text-sm font-medium text-gray-600 dark:text-gray-400">{title}</span>
           <div className="text-gray-400">{icon}</div>
         </div>
-        <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1">{value}</div>
-        <p className="text-xs text-gray-500">{trend}</p>
+        <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
+          {loading ? (
+            <Loader2 className="w-6 h-6 animate-spin" />
+          ) : (
+            value
+          )}
+        </div>
       </CardContent>
     </Card>
   );
@@ -189,6 +219,14 @@ function ActivityItem({
   status: string;
   date: string;
 }) {
+  const statusColors: Record<string, string> = {
+    'Applied': 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
+    'Under Review': 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300',
+    'Interview Scheduled': 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
+    'Rejected': 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
+    'Offered': 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300',
+  };
+
   return (
     <div className="flex items-start justify-between pb-4 border-b last:border-0">
       <div>
@@ -196,7 +234,7 @@ function ActivityItem({
         <p className="text-sm text-gray-600 dark:text-gray-400">{company}</p>
       </div>
       <div className="text-right">
-        <span className="inline-block px-2 py-1 text-xs font-medium bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300 rounded">
+        <span className={`inline-block px-2 py-1 text-xs font-medium rounded ${statusColors[status] || 'bg-gray-100 text-gray-700'}`}>
           {status}
         </span>
         <p className="text-xs text-gray-500 mt-1">{date}</p>
@@ -228,4 +266,30 @@ function JobItem({
       </div>
     </div>
   );
+}
+
+function formatDate(dateString: string): string {
+  if (!dateString) return 'Unknown';
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffDays === 0) return 'Today';
+  if (diffDays === 1) return 'Yesterday';
+  if (diffDays < 7) return `${diffDays} days ago`;
+  if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+  return date.toLocaleDateString();
+}
+
+function formatSalary(min?: number, max?: number): string {
+  if (!min && !max) return 'Competitive';
+  const formatNum = (n: number) => {
+    if (n >= 1000) return `$${Math.round(n / 1000)}k`;
+    return `$${n}`;
+  };
+  if (min && max) return `${formatNum(min)} - ${formatNum(max)}`;
+  if (min) return `From ${formatNum(min)}`;
+  if (max) return `Up to ${formatNum(max)}`;
+  return 'Competitive';
 }

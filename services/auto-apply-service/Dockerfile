@@ -1,75 +1,43 @@
-# Base stage - shared dependencies
-FROM node:20-alpine AS base
+# Build stage
+FROM node:20-alpine AS builder
 
-# Install pnpm
-RUN corepack enable && corepack prepare pnpm@8.15.0 --activate
-
-# Set working directory
 WORKDIR /app
 
+RUN corepack enable && corepack prepare pnpm@8.15.0 --activate
+
 # Copy package files
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY services/auto-apply-service/package.json ./
 
-# Dependencies stage
-FROM base AS dependencies
+# Install dependencies
+RUN pnpm install
 
-# Install all dependencies (including dev dependencies)
-RUN pnpm install --frozen-lockfile
-
-# Production dependencies stage
-FROM base AS prod-dependencies
-
-# Install only production dependencies
-RUN pnpm install --frozen-lockfile --prod
-
-# Build stage
-FROM base AS build
-
-# Copy dependencies from dependencies stage
-COPY --from=dependencies /app/node_modules ./node_modules
-
-# Copy source code
-COPY . .
-
-# Build the application
-RUN pnpm --filter auto-apply-service build
+# Copy source and build
+COPY services/auto-apply-service/ ./
+RUN pnpm run build
 
 # Production stage
 FROM node:20-alpine AS production
 
-# Install dumb-init for proper signal handling
-RUN apk add --no-cache dumb-init
+RUN apk add --no-cache dumb-init curl
 
-# Create non-root user
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nodejs -u 1001
 
-# Set working directory
 WORKDIR /app
 
-# Copy production dependencies
-COPY --from=prod-dependencies --chown=nodejs:nodejs /app/node_modules ./node_modules
+COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
+COPY --from=builder --chown=nodejs:nodejs /app/package.json ./
+COPY --from=builder --chown=nodejs:nodejs /app/node_modules ./node_modules
 
-# Copy built application
-COPY --from=build --chown=nodejs:nodejs /app/services/auto-apply-service/dist ./dist
-COPY --from=build --chown=nodejs:nodejs /app/services/auto-apply-service/package.json ./package.json
-
-# Switch to non-root user
 USER nodejs
 
-# Set environment variables
 ENV NODE_ENV=production
-ENV PORT=8005
+ENV PORT=4003
 
-# Expose port
-EXPOSE 8005
+EXPOSE 4003
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD node -e "require('http').get('http://localhost:8005/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+    CMD curl -f http://localhost:4003/health || exit 1
 
-# Use dumb-init to handle signals properly
 ENTRYPOINT ["dumb-init", "--"]
-
-# Start the application
-CMD ["node", "dist/index.js"]
+CMD ["node", "dist/main.js"]

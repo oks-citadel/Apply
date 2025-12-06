@@ -7,6 +7,9 @@ metadata:
     app: web-app
     tier: frontend
     component: web
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted
 spec:
   replicas: 3
   strategy:
@@ -23,10 +26,15 @@ spec:
         app: web-app
         tier: frontend
         component: web
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/port: "3000"
         prometheus.io/path: "/metrics"
+        # Pod Security Standards - Restricted profile
+        seccomp.security.alpha.kubernetes.io/pod: runtime/default
     spec:
       serviceAccountName: jobpilot-service-account
       securityContext:
@@ -37,8 +45,8 @@ spec:
           type: RuntimeDefault
       containers:
       - name: web-app
-        image: jobpilotacr.azurecr.io/web-app:latest
-        imagePullPolicy: Always
+        image: jobpilotacr.azurecr.io/web-app:${VERSION:-v1.0.0}
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 3000
           name: http

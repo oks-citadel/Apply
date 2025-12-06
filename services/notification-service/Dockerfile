@@ -1,36 +1,43 @@
 # Build stage
-FROM node:18-alpine AS builder
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
+RUN corepack enable && corepack prepare pnpm@8.15.0 --activate
+
 # Copy package files
-COPY package*.json ./
+COPY services/notification-service/package.json ./
 
 # Install dependencies
-RUN npm ci
+RUN pnpm install
 
-# Copy source code
-COPY . .
-
-# Build application
-RUN npm run build
+# Copy source and build
+COPY services/notification-service/ ./
+RUN pnpm run build
 
 # Production stage
-FROM node:18-alpine
+FROM node:20-alpine AS production
+
+RUN apk add --no-cache dumb-init curl
+
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001
 
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
+COPY --from=builder --chown=nodejs:nodejs /app/package.json ./
+COPY --from=builder --chown=nodejs:nodejs /app/node_modules ./node_modules
 
-# Install production dependencies only
-RUN npm ci --only=production
+USER nodejs
 
-# Copy built application from builder
-COPY --from=builder /app/dist ./dist
+ENV NODE_ENV=production
+ENV PORT=4005
 
-# Expose port
-EXPOSE 8007
+EXPOSE 4005
 
-# Start application
-CMD ["node", "dist/main"]
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+    CMD curl -f http://localhost:4005/health || exit 1
+
+ENTRYPOINT ["dumb-init", "--"]
+CMD ["node", "dist/main.js"]

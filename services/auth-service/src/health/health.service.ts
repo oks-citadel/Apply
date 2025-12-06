@@ -1,10 +1,27 @@
 import { Injectable, HttpStatus } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
-import {
-  checkDatabaseConnection,
-  createHealthResponse,
-} from '@jobpilot/utils';
+
+// Inline health check utilities (replaces @jobpilot/utils)
+async function checkDatabaseConnection(dataSource: DataSource): Promise<{ status: string; message?: string }> {
+  try {
+    await dataSource.query('SELECT 1');
+    return { status: 'ok' };
+  } catch (error) {
+    return { status: 'error', message: error instanceof Error ? error.message : 'Unknown error' };
+  }
+}
+
+function createHealthResponse(serviceName: string, version: string, checks: Record<string, { status: string; message?: string }>) {
+  const allOk = Object.values(checks).every(check => check.status === 'ok');
+  return {
+    status: allOk ? 'ok' : 'degraded',
+    service: serviceName,
+    version,
+    timestamp: new Date().toISOString(),
+    checks,
+  };
+}
 
 /**
  * Health Service for Auth Service

@@ -4,7 +4,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerGuard } from '@nestjs/throttler';
-import { LoggingModule, LoggingInterceptor } from '@jobpilot/logging';
+// TODO: Re-enable workspace package after build
+// import { LoggingModule, LoggingInterceptor } from '@jobpilot/logging';
 import configuration from './config/configuration';
 import { databaseConfig } from './config/database.config';
 import { AuthModule } from './modules/auth/auth.module';
@@ -21,19 +22,20 @@ import { HealthModule } from './health/health.module';
       cache: true,
     }),
 
+    // TODO: Re-enable workspace package after build
     // Logging module
-    LoggingModule.forRootAsync({
-      isGlobal: true,
-      useFactory: (configService: ConfigService) => ({
-        serviceName: 'auth-service',
-        environment: configService.get<string>('NODE_ENV', 'development'),
-        version: configService.get<string>('SERVICE_VERSION', '1.0.0'),
-        appInsightsKey: configService.get<string>('APPLICATIONINSIGHTS_INSTRUMENTATION_KEY'),
-        enableConsole: true,
-        logLevel: configService.get<string>('LOG_LEVEL', 'info') as any,
-      }),
-      inject: [ConfigService],
-    }),
+    // LoggingModule.forRootAsync({
+    //   isGlobal: true,
+    //   useFactory: (configService: ConfigService) => ({
+    //     serviceName: 'auth-service',
+    //     environment: configService.get<string>('NODE_ENV', 'development'),
+    //     version: configService.get<string>('SERVICE_VERSION', '1.0.0'),
+    //     appInsightsKey: configService.get<string>('APPLICATIONINSIGHTS_INSTRUMENTATION_KEY'),
+    //     enableConsole: true,
+    //     logLevel: configService.get<string>('LOG_LEVEL', 'info') as any,
+    //   }),
+    //   inject: [ConfigService],
+    // }),
 
     // Database module
     TypeOrmModule.forRootAsync({
@@ -66,10 +68,11 @@ import { HealthModule } from './health/health.module';
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
     },
-    {
-      provide: APP_INTERCEPTOR,
-      useClass: LoggingInterceptor,
-    },
+    // TODO: Re-enable workspace package after build
+    // {
+    //   provide: APP_INTERCEPTOR,
+    //   useClass: LoggingInterceptor,
+    // },
   ],
 })
 export class AppModule {}

@@ -3,14 +3,16 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Profile } from './entities/profile.entity';
 import { UpdateProfileDto } from './dto/update-profile.dto';
-import { StorageService } from '../storage/storage.service';
+// TODO: Re-enable when StorageService is implemented
+// import { StorageService } from '../storage/storage.service';
 
 @Injectable()
 export class ProfileService {
   constructor(
     @InjectRepository(Profile)
     private profileRepository: Repository<Profile>,
-    private storageService: StorageService,
+    // TODO: Re-enable when StorageService is implemented
+    // private storageService: StorageService,
   ) {}
 
   async getProfile(userId: string): Promise<Profile> {
@@ -53,7 +55,10 @@ export class ProfileService {
   }
 
   async uploadProfilePhoto(userId: string, file: Express.Multer.File): Promise<{ url: string }> {
-    const profile = await this.getProfile(userId);
+    // TODO: Re-enable when StorageService is implemented
+    throw new Error('StorageService not yet implemented');
+
+    /* const profile = await this.getProfile(userId);
 
     // Delete old photo if exists
     if (profile.profile_photo_url) {
@@ -72,18 +77,21 @@ export class ProfileService {
 
     await this.profileRepository.save(profile);
 
-    return { url: photoUrl };
+    return { url: photoUrl }; */
   }
 
   async deleteProfilePhoto(userId: string): Promise<void> {
-    const profile = await this.getProfile(userId);
+    // TODO: Re-enable when StorageService is implemented
+    throw new Error('StorageService not yet implemented');
+
+    /* const profile = await this.getProfile(userId);
 
     if (profile.profile_photo_url) {
       await this.storageService.deleteFile(profile.profile_photo_url);
       profile.profile_photo_url = null;
       profile.completeness_score = this.calculateCompletenessScore(profile);
       await this.profileRepository.save(profile);
-    }
+    } */
   }
 
   async getCompletenessScore(userId: string): Promise<{ score: number; missing: string[] }> {

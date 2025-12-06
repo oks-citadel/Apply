@@ -19,7 +19,8 @@ export const dataSourceOptions: DataSourceOptions = {
   database: configService.get('DB_DATABASE', 'resume_service'),
   entities: [Resume, ResumeVersion, Section, Template],
   migrations: ['dist/migrations/*.js'],
-  synchronize: configService.get('NODE_ENV') !== 'production',
+  migrationsRun: configService.get('RUN_MIGRATIONS', 'false') === 'true',
+  synchronize: false, // Never use synchronize in production - use migrations instead,
   logging: configService.get('NODE_ENV') === 'development',
   ssl: configService.get('NODE_ENV') === 'production' ? {
     rejectUnauthorized: true,

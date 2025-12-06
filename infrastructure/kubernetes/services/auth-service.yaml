@@ -7,6 +7,9 @@ metadata:
     app: auth-service
     tier: backend
     component: authentication
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted
 spec:
   replicas: 3
   strategy:
@@ -23,10 +26,15 @@ spec:
         app: auth-service
         tier: backend
         component: authentication
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/port: "3001"
         prometheus.io/path: "/metrics"
+        # Pod Security Standards - Restricted profile
+        seccomp.security.alpha.kubernetes.io/pod: runtime/default
     spec:
       serviceAccountName: jobpilot-service-account
       labels:
@@ -40,8 +48,8 @@ spec:
       containers:
       - name: auth-service
         # ACR image - authentication via managed identity (no imagePullSecrets needed)
-        image: ${ACR_LOGIN_SERVER}/auth-service:latest
-        imagePullPolicy: Always
+        image: ${ACR_LOGIN_SERVER}/auth-service:${VERSION:-v1.0.0}
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 3001
           name: http

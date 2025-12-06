@@ -310,7 +310,7 @@ export function useActivityLogs(params?: {
     queryKey: userKeys.activityLogs(params),
     queryFn: () => userApi.getActivityLogs(params),
     staleTime: 2 * 60 * 1000,
-    keepPreviousData: true,
+    placeholderData: (previousData) => previousData,
   });
 }
 

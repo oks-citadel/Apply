@@ -2,6 +2,9 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
 import { Transporter } from 'nodemailer';
+import * as handlebars from 'handlebars';
+import * as fs from 'fs';
+import * as path from 'path';
 
 export interface EmailOptions {
   to: string;
@@ -11,6 +14,21 @@ export interface EmailOptions {
   from?: string;
 }
 
+interface WeeklyDigestData {
+  applications: number;
+  interviews: number;
+  offers: number;
+  rejections: number;
+  newJobs: number;
+  topJobs?: Array<{
+    title: string;
+    company: string;
+    location: string;
+    salary?: string;
+    url: string;
+  }>;
+}
+
 @Injectable()
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
@@ -18,6 +36,7 @@ export class EmailService {
   private readonly frontendUrl: string;
   private readonly emailFrom: string;
   private readonly emailFromName: string;
+  private templateCache: Map<string, handlebars.TemplateDelegate> = new Map();
 
   constructor(private configService: ConfigService) {
     this.frontendUrl = this.configService.get<string>(
@@ -34,16 +53,67 @@ export class EmailService {
     );
 
     this.transporter = nodemailer.createTransport({
-      host: this.configService.get<string>('SMTP_HOST', 'smtp.gmail.com'),
-      port: this.configService.get<number>('SMTP_PORT', 587),
+      host: this.configService.get<string>('SMTP_HOST', 'localhost'),
+      port: this.configService.get<number>('SMTP_PORT', 1025),
       secure: this.configService.get<boolean>('SMTP_SECURE', false),
-      auth: {
-        user: this.configService.get<string>('SMTP_USER'),
-        pass: this.configService.get<string>('SMTP_PASSWORD'),
+      auth: this.configService.get<string>('SMTP_USER')
+        ? {
+            user: this.configService.get<string>('SMTP_USER'),
+            pass: this.configService.get<string>('SMTP_PASSWORD'),
+          }
+        : undefined,
+      // For MailHog, we don't need auth
+      tls: {
+        rejectUnauthorized: false,
       },
     });
 
     this.logger.log('Email service initialized');
+    this.registerHandlebarsHelpers();
+  }
+
+  private registerHandlebarsHelpers() {
+    // Register custom Handlebars helpers
+    handlebars.registerHelper('eq', function (a, b) {
+      return a === b;
+    });
+
+    handlebars.registerHelper('gt', function (a, b) {
+      return a > b;
+    });
+
+    handlebars.registerHelper('formatDate', function (date) {
+      return new Date(date).toLocaleDateString();
+    });
+  }
+
+  private async loadTemplate(templateName: string): Promise<handlebars.TemplateDelegate> {
+    // Check cache first
+    if (this.templateCache.has(templateName)) {
+      return this.templateCache.get(templateName);
+    }
+
+    try {
+      const templatePath = path.join(
+        __dirname,
+        '..',
+        '..',
+        'templates',
+        'emails',
+        `${templateName}.hbs`,
+      );
+
+      const templateContent = fs.readFileSync(templatePath, 'utf-8');
+      const compiledTemplate = handlebars.compile(templateContent);
+
+      // Cache the compiled template
+      this.templateCache.set(templateName, compiledTemplate);
+
+      return compiledTemplate;
+    } catch (error) {
+      this.logger.error(`Failed to load template ${templateName}:`, error);
+      throw new Error(`Template ${templateName} not found`);
+    }
   }
 
   async sendEmail(
@@ -77,11 +147,28 @@ export class EmailService {
   async sendTemplatedEmail(
     to: string,
     subject: string,
-    template: string,
+    templateName: string,
     data: Record<string, any>,
   ): Promise<any> {
-    const html = this.renderTemplate(template, data);
-    return this.sendEmail(to, subject, html, true);
+    try {
+      const template = await this.loadTemplate(templateName);
+      const html = template({
+        ...data,
+        year: new Date().getFullYear(),
+      });
+
+      return this.sendEmail(to, subject, html, true);
+    } catch (error) {
+      this.logger.error(`Failed to send templated email to ${to}:`, error);
+      throw error;
+    }
+  }
+
+  async sendWelcomeEmail(to: string, name: string): Promise<any> {
+    return this.sendTemplatedEmail(to, 'Welcome to Job Apply Platform!', 'welcome', {
+      name,
+      dashboardUrl: `${this.frontendUrl}/dashboard`,
+    });
   }
 
   async sendVerificationEmail(
@@ -91,45 +178,15 @@ export class EmailService {
   ): Promise<any> {
     const verificationUrl = `${this.frontendUrl}/verify-email?token=${verificationToken}`;
 
-    const html = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="utf-8">
-          <style>
-            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { background: #4F46E5; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0; }
-            .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 5px 5px; }
-            .button { display: inline-block; padding: 12px 30px; background: #4F46E5; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }
-            .footer { text-align: center; margin-top: 20px; font-size: 12px; color: #666; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <h1>Verify Your Email</h1>
-            </div>
-            <div class="content">
-              <p>Hello ${name},</p>
-              <p>Thank you for registering with Job Apply Platform. Please verify your email address by clicking the button below:</p>
-              <div style="text-align: center;">
-                <a href="${verificationUrl}" class="button">Verify Email Address</a>
-              </div>
-              <p>Or copy and paste this link into your browser:</p>
-              <p style="word-break: break-all; color: #4F46E5;">${verificationUrl}</p>
-              <p>This link will expire in 24 hours.</p>
-              <p>If you didn't create an account, please ignore this email.</p>
-            </div>
-            <div class="footer">
-              <p>&copy; ${new Date().getFullYear()} Job Apply Platform. All rights reserved.</p>
-            </div>
-          </div>
-        </body>
-      </html>
-    `;
-
-    return this.sendEmail(to, 'Verify Your Email Address', html, true);
+    return this.sendTemplatedEmail(
+      to,
+      'Verify Your Email Address',
+      'verification',
+      {
+        name,
+        verificationUrl,
+      },
+    );
   }
 
   async sendPasswordResetEmail(
@@ -139,47 +196,10 @@ export class EmailService {
   ): Promise<any> {
     const resetUrl = `${this.frontendUrl}/reset-password?token=${resetToken}`;
 
-    const html = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="utf-8">
-          <style>
-            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { background: #DC2626; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0; }
-            .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 5px 5px; }
-            .button { display: inline-block; padding: 12px 30px; background: #DC2626; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }
-            .footer { text-align: center; margin-top: 20px; font-size: 12px; color: #666; }
-            .warning { background: #FEF3C7; border-left: 4px solid #F59E0B; padding: 10px; margin: 20px 0; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <h1>Password Reset Request</h1>
-            </div>
-            <div class="content">
-              <p>Hello ${name},</p>
-              <p>We received a request to reset your password. Click the button below to create a new password:</p>
-              <div style="text-align: center;">
-                <a href="${resetUrl}" class="button">Reset Password</a>
-              </div>
-              <p>Or copy and paste this link into your browser:</p>
-              <p style="word-break: break-all; color: #DC2626;">${resetUrl}</p>
-              <div class="warning">
-                <strong>Security Notice:</strong> This link will expire in 1 hour. If you didn't request a password reset, please ignore this email and your password will remain unchanged.
-              </div>
-            </div>
-            <div class="footer">
-              <p>&copy; ${new Date().getFullYear()} Job Apply Platform. All rights reserved.</p>
-            </div>
-          </div>
-        </body>
-      </html>
-    `;
-
-    return this.sendEmail(to, 'Reset Your Password', html, true);
+    return this.sendTemplatedEmail(to, 'Reset Your Password', 'password-reset', {
+      name,
+      resetUrl,
+    });
   }
 
   async sendApplicationStatusEmail(
@@ -201,53 +221,19 @@ export class EmailService {
     const statusColor = statusColors[status.toLowerCase()] || '#6B7280';
     const applicationUrl = `${this.frontendUrl}/applications`;
 
-    const html = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="utf-8">
-          <style>
-            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { background: ${statusColor}; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0; }
-            .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 5px 5px; }
-            .job-info { background: white; padding: 15px; border-radius: 5px; margin: 20px 0; }
-            .status-badge { display: inline-block; padding: 5px 15px; background: ${statusColor}; color: white; border-radius: 20px; font-size: 14px; }
-            .button { display: inline-block; padding: 12px 30px; background: ${statusColor}; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }
-            .footer { text-align: center; margin-top: 20px; font-size: 12px; color: #666; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <h1>Application Status Update</h1>
-            </div>
-            <div class="content">
-              <p>Hello ${name},</p>
-              <p>Your application status has been updated:</p>
-              <div class="job-info">
-                <h3 style="margin-top: 0;">${jobTitle}</h3>
-                <p style="color: #666; margin: 5px 0;">${companyName}</p>
-                <p><span class="status-badge">${status.toUpperCase()}</span></p>
-              </div>
-              ${message ? `<p><strong>Message:</strong></p><p>${message}</p>` : ''}
-              <div style="text-align: center;">
-                <a href="${applicationUrl}" class="button">View Application</a>
-              </div>
-            </div>
-            <div class="footer">
-              <p>&copy; ${new Date().getFullYear()} Job Apply Platform. All rights reserved.</p>
-            </div>
-          </div>
-        </body>
-      </html>
-    `;
-
-    return this.sendEmail(
+    return this.sendTemplatedEmail(
       to,
       `Application Update: ${jobTitle} at ${companyName}`,
-      html,
-      true,
+      'application-status',
+      {
+        name,
+        jobTitle,
+        companyName,
+        status,
+        message,
+        statusColor,
+        applicationUrl,
+      },
     );
   }
 
@@ -325,16 +311,45 @@ export class EmailService {
     );
   }
 
-  private renderTemplate(
-    template: string,
-    data: Record<string, any>,
-  ): string {
-    let html = template;
-    for (const [key, value] of Object.entries(data)) {
-      const regex = new RegExp(`{{${key}}}`, 'g');
-      html = html.replace(regex, String(value));
-    }
-    return html;
+  async sendWeeklyDigestEmail(
+    to: string,
+    name: string,
+    digestData: WeeklyDigestData,
+  ): Promise<any> {
+    const today = new Date();
+    const weekAgo = new Date(today);
+    weekAgo.setDate(weekAgo.getDate() - 7);
+
+    const jobSearchTips = [
+      'Customize your resume for each application to highlight relevant skills and experience.',
+      'Follow up on applications 1-2 weeks after submission to show your continued interest.',
+      'Network actively on LinkedIn by engaging with posts and connecting with professionals in your field.',
+      'Practice common interview questions and prepare specific examples from your experience.',
+      'Keep your skills updated by taking online courses or working on personal projects.',
+      'Research companies thoroughly before applying to ensure cultural fit and alignment with your values.',
+      'Update your LinkedIn profile regularly and keep it consistent with your resume.',
+    ];
+
+    const randomTip = jobSearchTips[Math.floor(Math.random() * jobSearchTips.length)];
+
+    return this.sendTemplatedEmail(
+      to,
+      'Your Weekly Job Search Summary',
+      'weekly-digest',
+      {
+        name,
+        startDate: weekAgo.toLocaleDateString(),
+        endDate: today.toLocaleDateString(),
+        applications: digestData.applications,
+        interviews: digestData.interviews,
+        offers: digestData.offers,
+        newJobs: digestData.newJobs,
+        topJobs: digestData.topJobs,
+        tip: randomTip,
+        dashboardUrl: `${this.frontendUrl}/dashboard`,
+        preferencesUrl: `${this.frontendUrl}/settings/notifications`,
+      },
+    );
   }
 
   async verifyConnection(): Promise<boolean> {

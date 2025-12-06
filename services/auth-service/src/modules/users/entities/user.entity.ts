@@ -41,23 +41,23 @@ export class User {
 
   @Column({ unique: true, nullable: true })
   @Index()
-  username: string;
+  username: string | null;
 
   @Column({ nullable: true })
   @Exclude()
-  password: string;
+  password: string | null;
 
   @Column({ nullable: true })
-  firstName: string;
+  firstName: string | null;
 
   @Column({ nullable: true })
-  lastName: string;
+  lastName: string | null;
 
   @Column({ nullable: true })
-  phoneNumber: string;
+  phoneNumber: string | null;
 
   @Column({ nullable: true })
-  profilePicture: string;
+  profilePicture: string | null;
 
   @Column({
     type: 'enum',
@@ -81,47 +81,47 @@ export class User {
   authProvider: AuthProvider;
 
   @Column({ nullable: true })
-  providerId: string;
+  providerId: string | null;
 
   @Column({ default: false })
   isEmailVerified: boolean;
 
   @Column({ nullable: true })
   @Exclude()
-  emailVerificationToken: string;
+  emailVerificationToken: string | null;
 
   @Column({ nullable: true })
-  emailVerificationExpiry: Date;
+  emailVerificationExpiry: Date | null;
 
   @Column({ nullable: true })
   @Exclude()
-  passwordResetToken: string;
+  passwordResetToken: string | null;
 
   @Column({ nullable: true })
-  passwordResetExpiry: Date;
+  passwordResetExpiry: Date | null;
 
   @Column({ default: false })
   isMfaEnabled: boolean;
 
   @Column({ nullable: true })
   @Exclude()
-  mfaSecret: string;
+  mfaSecret: string | null;
 
   @Column({ nullable: true })
-  lastLoginAt: Date;
+  lastLoginAt: Date | null;
 
   @Column({ nullable: true })
-  lastLoginIp: string;
+  lastLoginIp: string | null;
 
   @Column({ default: 0 })
   loginAttempts: number;
 
   @Column({ nullable: true })
-  lockedUntil: Date;
+  lockedUntil: Date | null;
 
   @Column({ nullable: true })
   @Exclude()
-  refreshToken: string;
+  refreshToken: string | null;
 
   @Column({ type: 'jsonb', nullable: true })
   metadata: Record<string, any>;

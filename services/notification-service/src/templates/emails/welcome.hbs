@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        line-height: 1.6;
+        color: #333;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+      }
+      .container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #ffffff;
+      }
+      .header {
+        background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+        color: white;
+        padding: 30px 20px;
+        text-align: center;
+        border-radius: 5px 5px 0 0;
+      }
+      .header h1 {
+        margin: 0;
+        font-size: 28px;
+      }
+      .content {
+        background: #f9f9f9;
+        padding: 30px;
+        border-radius: 0 0 5px 5px;
+      }
+      .button {
+        display: inline-block;
+        padding: 12px 30px;
+        background: #4F46E5;
+        color: white !important;
+        text-decoration: none;
+        border-radius: 5px;
+        margin: 20px 0;
+        font-weight: bold;
+      }
+      .features {
+        background: white;
+        padding: 20px;
+        border-radius: 5px;
+        margin: 20px 0;
+      }
+      .feature {
+        padding: 10px 0;
+        border-bottom: 1px solid #e0e0e0;
+      }
+      .feature:last-child {
+        border-bottom: none;
+      }
+      .feature-icon {
+        display: inline-block;
+        width: 30px;
+        height: 30px;
+        background: #4F46E5;
+        color: white;
+        text-align: center;
+        line-height: 30px;
+        border-radius: 50%;
+        margin-right: 10px;
+      }
+      .footer {
+        text-align: center;
+        margin-top: 30px;
+        font-size: 12px;
+        color: #666;
+        padding: 20px;
+        border-top: 1px solid #e0e0e0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>Welcome to Job Apply Platform!</h1>
+      </div>
+      <div class="content">
+        <p>Hello {{name}},</p>
+
+        <p>Welcome aboard! We're thrilled to have you join Job Apply Platform, your all-in-one solution for managing your job search journey.</p>
+
+        <div class="features">
+          <div class="feature">
+            <span class="feature-icon">📝</span>
+            <strong>Track Applications:</strong> Keep all your job applications organized in one place
+          </div>
+          <div class="feature">
+            <span class="feature-icon">🔔</span>
+            <strong>Smart Alerts:</strong> Get notified about new opportunities matching your preferences
+          </div>
+          <div class="feature">
+            <span class="feature-icon">📊</span>
+            <strong>Analytics:</strong> Track your progress with detailed insights and statistics
+          </div>
+          <div class="feature">
+            <span class="feature-icon">📄</span>
+            <strong>Document Management:</strong> Store and manage your resumes and cover letters
+          </div>
+        </div>
+
+        <p>Ready to get started? Click the button below to access your dashboard:</p>
+
+        <div style="text-align: center;">
+          <a href="{{dashboardUrl}}" class="button">Go to Dashboard</a>
+        </div>
+
+        <p>If you have any questions or need assistance, our support team is here to help!</p>
+
+        <p>Best regards,<br>The Job Apply Platform Team</p>
+      </div>
+      <div class="footer">
+        <p>&copy; {{year}} Job Apply Platform. All rights reserved.</p>
+        <p>You're receiving this email because you created an account with us.</p>
+      </div>
+    </div>
+  </body>
+</html>
