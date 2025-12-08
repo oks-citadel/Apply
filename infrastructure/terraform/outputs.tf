@@ -147,37 +147,37 @@ output "log_analytics_workspace_id" {
 }
 
 # ============================================================================
-# SQL Database Outputs
+# SQL Database Outputs (conditional - only when SQL is enabled)
 # ============================================================================
 
 output "sql_server_name" {
   description = "Name of the SQL Server"
-  value       = module.sql_database.server_name
+  value       = var.enable_sql_database ? module.sql_database[0].server_name : null
 }
 
 output "sql_server_fqdn" {
   description = "Fully qualified domain name of the SQL Server"
-  value       = module.sql_database.server_fqdn
+  value       = var.enable_sql_database ? module.sql_database[0].server_fqdn : null
 }
 
 output "sql_database_name" {
   description = "Name of the SQL Database"
-  value       = module.sql_database.database_name
+  value       = var.enable_sql_database ? module.sql_database[0].database_name : null
 }
 
 output "sql_server_id" {
   description = "ID of the SQL Server"
-  value       = module.sql_database.server_id
+  value       = var.enable_sql_database ? module.sql_database[0].server_id : null
 }
 
 output "sql_database_id" {
   description = "ID of the SQL Database"
-  value       = module.sql_database.database_id
+  value       = var.enable_sql_database ? module.sql_database[0].database_id : null
 }
 
 output "sql_connection_string" {
   description = "SQL Server connection string"
-  value       = module.sql_database.connection_string
+  value       = var.enable_sql_database ? module.sql_database[0].connection_string : null
   sensitive   = true
 }
 

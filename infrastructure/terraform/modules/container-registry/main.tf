@@ -45,13 +45,8 @@ resource "azurerm_container_registry" "acr" {
   # Zone redundancy (Premium SKU only)
   zone_redundancy_enabled = var.environment == "prod"
 
-  # Network rule set for Basic and Standard SKUs
-  dynamic "network_rule_set" {
-    for_each = var.environment != "prod" ? [1] : []
-    content {
-      default_action = "Allow"
-    }
-  }
+  # Note: network_rule_set is only supported on Premium SKU
+  # Basic and Standard SKUs don't support network rules
 
   # Retention policy for untagged manifests (Standard and Premium)
   dynamic "retention_policy" {

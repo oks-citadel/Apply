@@ -64,21 +64,21 @@ spec:
           tier: backend
     ports:
     - protocol: TCP
-      port: 3001
+      port: 4000  # auth-service
     - protocol: TCP
-      port: 3002
+      port: 4001  # user-service
     - protocol: TCP
-      port: 3003
+      port: 4002  # job-service
     - protocol: TCP
-      port: 3004
+      port: 4003  # resume-service
     - protocol: TCP
-      port: 3005
+      port: 4004  # analytics-service
     - protocol: TCP
-      port: 3006
+      port: 4005  # notification-service
     - protocol: TCP
-      port: 3007
+      port: 4006  # auto-apply-service
     - protocol: TCP
-      port: 3008
+      port: 8000  # ai-service
   # Allow HTTPS to external services
   - to:
     - namespaceSelector: {}
@@ -109,7 +109,7 @@ spec:
           name: ingress-nginx
     ports:
     - protocol: TCP
-      port: 3001
+      port: 4000
   # Allow from other services
   - from:
     - podSelector:
@@ -120,7 +120,7 @@ spec:
           tier: frontend
     ports:
     - protocol: TCP
-      port: 3001
+      port: 4000
   egress:
   # Allow to User Service
   - to:
@@ -129,7 +129,7 @@ spec:
           app: user-service
     ports:
     - protocol: TCP
-      port: 3002
+      port: 4001
   # Allow to PostgreSQL
   - to:
     - namespaceSelector: {}
@@ -174,7 +174,7 @@ spec:
           name: ingress-nginx
     ports:
     - protocol: TCP
-      port: 3002
+      port: 4001
   # Allow from other services
   - from:
     - podSelector:
@@ -185,7 +185,7 @@ spec:
           tier: frontend
     ports:
     - protocol: TCP
-      port: 3002
+      port: 4001
   egress:
   # Allow to PostgreSQL
   - to:
@@ -231,7 +231,7 @@ spec:
           name: ingress-nginx
     ports:
     - protocol: TCP
-      port: 3003
+      port: 4002
   # Allow from other services
   - from:
     - podSelector:
@@ -242,7 +242,7 @@ spec:
           tier: frontend
     ports:
     - protocol: TCP
-      port: 3003
+      port: 4002
   egress:
   # Allow to AI Service
   - to:
@@ -251,7 +251,7 @@ spec:
           app: ai-service
     ports:
     - protocol: TCP
-      port: 3004
+      port: 8000
   # Allow to PostgreSQL
   - to:
     - namespaceSelector: {}
@@ -296,7 +296,7 @@ spec:
           name: ingress-nginx
     ports:
     - protocol: TCP
-      port: 3004
+      port: 8000
   # Allow from other services
   - from:
     - podSelector:
@@ -307,7 +307,7 @@ spec:
           tier: frontend
     ports:
     - protocol: TCP
-      port: 3004
+      port: 8000
   egress:
   # Allow to PostgreSQL
   - to:
@@ -353,7 +353,7 @@ spec:
           name: ingress-nginx
     ports:
     - protocol: TCP
-      port: 3005
+      port: 4003
   # Allow from other services
   - from:
     - podSelector:
@@ -364,7 +364,7 @@ spec:
           tier: frontend
     ports:
     - protocol: TCP
-      port: 3005
+      port: 4003
   egress:
   # Allow to AI Service
   - to:
@@ -373,7 +373,7 @@ spec:
           app: ai-service
     ports:
     - protocol: TCP
-      port: 3004
+      port: 8000
   # Allow to PostgreSQL
   - to:
     - namespaceSelector: {}
@@ -410,7 +410,7 @@ spec:
           name: ingress-nginx
     ports:
     - protocol: TCP
-      port: 3006
+      port: 4004
   # Allow from other services
   - from:
     - podSelector:
@@ -421,7 +421,7 @@ spec:
           tier: frontend
     ports:
     - protocol: TCP
-      port: 3006
+      port: 4004
   egress:
   # Allow to PostgreSQL
   - to:
@@ -461,7 +461,7 @@ spec:
           name: ingress-nginx
     ports:
     - protocol: TCP
-      port: 3007
+      port: 4005
   # Allow from other services
   - from:
     - podSelector:
@@ -472,7 +472,7 @@ spec:
           tier: frontend
     ports:
     - protocol: TCP
-      port: 3007
+      port: 4005
   egress:
   # Allow to PostgreSQL
   - to:
@@ -522,7 +522,7 @@ spec:
           name: ingress-nginx
     ports:
     - protocol: TCP
-      port: 3008
+      port: 4006
   # Allow from other services
   - from:
     - podSelector:
@@ -533,7 +533,7 @@ spec:
           tier: frontend
     ports:
     - protocol: TCP
-      port: 3008
+      port: 4006
   egress:
   # Allow to Job Service
   - to:
@@ -542,7 +542,7 @@ spec:
           app: job-service
     ports:
     - protocol: TCP
-      port: 3003
+      port: 4002
   # Allow to Resume Service
   - to:
     - podSelector:
@@ -550,7 +550,7 @@ spec:
           app: resume-service
     ports:
     - protocol: TCP
-      port: 3005
+      port: 4003
   # Allow to AI Service
   - to:
     - podSelector:
@@ -558,7 +558,7 @@ spec:
           app: ai-service
     ports:
     - protocol: TCP
-      port: 3004
+      port: 8000
   # Allow to PostgreSQL
   - to:
     - namespaceSelector: {}

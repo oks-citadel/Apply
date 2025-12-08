@@ -173,7 +173,7 @@ resource "azurerm_monitor_metric_alert" "app_service_response_time" {
 
 # Database DTU Alert
 resource "azurerm_monitor_metric_alert" "sql_server_dtu" {
-  count = var.enable_sql_monitoring ? 1 : 0
+  count = var.enable_sql_monitoring && var.sql_server_id != null ? 1 : 0
 
   name                = "${var.project_name}-${var.environment}-sql-high-dtu"
   resource_group_name = var.resource_group_name

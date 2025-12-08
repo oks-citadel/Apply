@@ -12,7 +12,7 @@ output "namespace_name" {
 
 output "connection_string" {
   description = "Primary connection string for the Service Bus namespace"
-  value       = azurerm_servicebus_namespace_authorization_rule.main.primary_connection_string
+  value       = azurerm_servicebus_namespace_authorization_rule.app.primary_connection_string
   sensitive   = true
 }
 
@@ -45,12 +45,12 @@ output "subscriptions" {
 
 output "primary_key" {
   description = "Primary key for the Service Bus namespace"
-  value       = azurerm_servicebus_namespace_authorization_rule.main.primary_key
+  value       = azurerm_servicebus_namespace_authorization_rule.app.primary_key
   sensitive   = true
 }
 
 output "secondary_key" {
   description = "Secondary key for the Service Bus namespace"
-  value       = azurerm_servicebus_namespace_authorization_rule.main.secondary_key
+  value       = azurerm_servicebus_namespace_authorization_rule.app.secondary_key
   sensitive   = true
 }

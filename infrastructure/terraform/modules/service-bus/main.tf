@@ -35,18 +35,14 @@ resource "azurerm_servicebus_queue" "job_applications" {
   # Message handling
   max_size_in_megabytes              = var.sku == "Premium" ? 81920 : 5120
   default_message_ttl                = "P14D"  # 14 days
-  lock_duration                      = "PT5M"  # 5 minutes
+  lock_duration                      = "PT5M"  # 5 minutes (max allowed)
   max_delivery_count                 = 10
   enable_batched_operations          = true
-  enable_express                     = var.sku == "Standard" ? true : false
+  # Note: enable_express cannot be used with requires_duplicate_detection
   enable_partitioning                = var.sku == "Standard" ? true : false
 
   # Dead letter queue
   dead_lettering_on_message_expiration = true
-
-  # Duplicate detection
-  requires_duplicate_detection = true
-  duplicate_detection_history_time_window = "PT10M"
 }
 
 # Queue: Resume Processing
@@ -57,18 +53,14 @@ resource "azurerm_servicebus_queue" "resume_processing" {
   # Message handling
   max_size_in_megabytes              = var.sku == "Premium" ? 81920 : 5120
   default_message_ttl                = "P7D"   # 7 days
-  lock_duration                      = "PT10M" # 10 minutes (longer for processing)
+  lock_duration                      = "PT5M"  # 5 minutes (max allowed)
   max_delivery_count                 = 5
   enable_batched_operations          = true
-  enable_express                     = var.sku == "Standard" ? true : false
+  # Note: enable_express cannot be used with requires_duplicate_detection
   enable_partitioning                = var.sku == "Standard" ? true : false
 
   # Dead letter queue
   dead_lettering_on_message_expiration = true
-
-  # Duplicate detection
-  requires_duplicate_detection = true
-  duplicate_detection_history_time_window = "PT10M"
 }
 
 # Queue: Notifications
@@ -82,15 +74,11 @@ resource "azurerm_servicebus_queue" "notifications" {
   lock_duration                      = "PT1M"  # 1 minute
   max_delivery_count                 = 10
   enable_batched_operations          = true
-  enable_express                     = var.sku == "Standard" ? true : false
+  # Note: enable_express cannot be used with requires_duplicate_detection
   enable_partitioning                = var.sku == "Standard" ? true : false
 
   # Dead letter queue
   dead_lettering_on_message_expiration = true
-
-  # Duplicate detection
-  requires_duplicate_detection = true
-  duplicate_detection_history_time_window = "PT10M"
 }
 
 # Queue: Analytics Events
@@ -104,15 +92,11 @@ resource "azurerm_servicebus_queue" "analytics_events" {
   lock_duration                      = "PT5M"  # 5 minutes
   max_delivery_count                 = 10
   enable_batched_operations          = true
-  enable_express                     = var.sku == "Standard" ? true : false
+  # Note: enable_express cannot be used with requires_duplicate_detection
   enable_partitioning                = var.sku == "Standard" ? true : false
 
   # Dead letter queue
   dead_lettering_on_message_expiration = true
-
-  # Duplicate detection
-  requires_duplicate_detection = true
-  duplicate_detection_history_time_window = "PT10M"
 }
 
 # Topic: Application Events
@@ -124,13 +108,9 @@ resource "azurerm_servicebus_topic" "application_events" {
   max_size_in_megabytes              = var.sku == "Premium" ? 81920 : 5120
   default_message_ttl                = "P14D"  # 14 days
   enable_batched_operations          = true
-  enable_express                     = var.sku == "Standard" ? true : false
+  # Note: enable_express cannot be used with requires_duplicate_detection
   enable_partitioning                = var.sku == "Standard" ? true : false
   support_ordering                   = true
-
-  # Duplicate detection
-  requires_duplicate_detection = true
-  duplicate_detection_history_time_window = "PT10M"
 }
 
 # Subscription: Application Created Events
@@ -181,12 +161,13 @@ resource "azurerm_servicebus_subscription" "analytics_aggregation" {
   enable_batched_operations            = true
 }
 
-# Authorization Rule: Root Manage Shared Access Key
-resource "azurerm_servicebus_namespace_authorization_rule" "main" {
-  name         = "RootManageSharedAccessKey"
+# Note: RootManageSharedAccessKey is automatically created by Azure
+# We use a custom authorization rule with a different name
+resource "azurerm_servicebus_namespace_authorization_rule" "app" {
+  name         = "AppSharedAccessKey"
   namespace_id = azurerm_servicebus_namespace.main.id
 
   listen = true
   send   = true
-  manage = true
+  manage = false
 }

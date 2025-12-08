@@ -288,9 +288,9 @@ variable "load_balancer_outbound_ip_count" {
 }
 
 variable "availability_zones" {
-  description = "Availability zones for node pools"
+  description = "Availability zones for node pools (eastus supports zones 1 and 2)"
   type        = list(string)
-  default     = ["1", "2", "3"]
+  default     = ["1", "2"]
 }
 
 # Maintenance Configuration

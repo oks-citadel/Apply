@@ -199,13 +199,13 @@ variable "aks_memory_threshold_percent" {
 # ============================================================================
 
 variable "availability_test_locations" {
-  description = "List of Azure regions for availability tests"
+  description = "List of Azure Application Insights geo-locations for availability tests (see: https://learn.microsoft.com/en-us/azure/azure-monitor/app/monitor-web-app-availability)"
   type        = list(string)
   default = [
-    "us-east-1",
-    "us-west-1",
-    "eu-west-1",
-    "apac-southeast"
+    "us-va-ash-azr",
+    "us-ca-sjc-azr",
+    "emea-nl-ams-azr",
+    "apac-sg-sin-azr"
   ]
 }
 

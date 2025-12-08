@@ -165,10 +165,11 @@ module "app_insights" {
 }
 
 # ============================================================================
-# Module: SQL Database
+# Module: SQL Database (Optional - disabled when provisioning restrictions apply)
 # ============================================================================
 
 module "sql_database" {
+  count  = var.enable_sql_database ? 1 : 0
   source = "./modules/sql-database"
 
   resource_group_name = azurerm_resource_group.main.name
@@ -284,7 +285,7 @@ module "app_services" {
 # ============================================================================
 
 module "private_endpoints" {
-  count  = var.enable_private_endpoints ? 1 : 0
+  count  = var.enable_private_endpoints && var.enable_sql_database ? 1 : 0
   source = "./modules/private-endpoints"
 
   resource_group_name = azurerm_resource_group.main.name
@@ -297,7 +298,7 @@ module "private_endpoints" {
   subnet_id = module.networking.private_endpoints_subnet_id
 
   key_vault_id   = module.key_vault.vault_id
-  sql_server_id  = module.sql_database.server_id
+  sql_server_id  = var.enable_sql_database ? module.sql_database[0].server_id : null
   redis_cache_id = module.redis_cache.cache_id
 
   depends_on = [
@@ -412,7 +413,7 @@ module "key_vault_secrets" {
 
   key_vault_id = module.key_vault.vault_id
 
-  sql_connection_string           = module.sql_database.connection_string
+  sql_connection_string           = var.enable_sql_database ? module.sql_database[0].connection_string : ""
   redis_connection_string         = module.redis_cache.primary_connection_string
   servicebus_connection_string    = module.service_bus.connection_string
   app_insights_key                = module.app_insights.instrumentation_key
@@ -443,7 +444,7 @@ module "monitoring" {
   app_insights_id            = module.app_insights.app_insights_id
   log_analytics_workspace_id = module.app_insights.workspace_id
 
-  sql_server_id  = module.sql_database.server_id
+  sql_server_id  = var.enable_sql_database ? module.sql_database[0].server_id : null
   redis_cache_id = module.redis_cache.cache_id
 
   web_app_ids = module.app_services.app_service_ids
@@ -481,7 +482,7 @@ module "dashboards" {
   log_analytics_workspace_id = module.app_insights.workspace_id
 
   web_app_ids    = module.app_services.app_service_ids
-  sql_server_id  = module.sql_database.server_id
+  sql_server_id  = var.enable_sql_database ? module.sql_database[0].server_id : null
   redis_cache_id = module.redis_cache.cache_id
 
   application_gateway_id = var.enable_application_gateway ? module.application_gateway[0].application_gateway_id : null

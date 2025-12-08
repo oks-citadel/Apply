@@ -147,7 +147,17 @@
       "Bash(terraform validate:*)",
       "Bash(terraform plan:*)",
       "Bash(git status:*)",
-      "Bash(npx next lint:*)"
+      "Bash(npx next lint:*)",
+      "WebFetch(domain:dev.azure.com)",
+      "Bash(perl -i -p0e:*)",
+      "Bash(export:*)",
+      "Bash(pnpm --version:*)",
+      "Bash(terraform apply:*)",
+      "Bash(terraform import:*)",
+      "Bash(MSYS_NO_PATHCONV=1 terraform import:*)",
+      "Bash(terraform state push:*)",
+      "Bash(terraform force-unlock:*)",
+      "Bash(terraform output:*)"
     ],
     "deny": [],
     "ask": []

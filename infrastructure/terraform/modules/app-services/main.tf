@@ -112,8 +112,8 @@ resource "azurerm_linux_web_app" "web_app" {
     health_check_path = local.services["web-app"].health_check
 
     cors {
-      allowed_origins = local.services["web-app"].cors_origins
-      support_credentials = true
+      allowed_origins     = local.services["web-app"].cors_origins
+      support_credentials = false
     }
 
     ftps_state = "FtpsOnly"
@@ -178,8 +178,8 @@ resource "azurerm_linux_web_app" "auth_service" {
     health_check_path = local.services["auth-service"].health_check
 
     cors {
-      allowed_origins = local.services["auth-service"].cors_origins
-      support_credentials = true
+      allowed_origins     = local.services["auth-service"].cors_origins
+      support_credentials = false
     }
 
     ftps_state = "FtpsOnly"
@@ -243,8 +243,8 @@ resource "azurerm_linux_web_app" "user_service" {
     health_check_path = local.services["user-service"].health_check
 
     cors {
-      allowed_origins = local.services["user-service"].cors_origins
-      support_credentials = true
+      allowed_origins     = local.services["user-service"].cors_origins
+      support_credentials = false
     }
 
     ftps_state = "FtpsOnly"
@@ -308,8 +308,8 @@ resource "azurerm_linux_web_app" "job_service" {
     health_check_path = local.services["job-service"].health_check
 
     cors {
-      allowed_origins = local.services["job-service"].cors_origins
-      support_credentials = true
+      allowed_origins     = local.services["job-service"].cors_origins
+      support_credentials = false
     }
 
     ftps_state = "FtpsOnly"
@@ -373,8 +373,8 @@ resource "azurerm_linux_web_app" "resume_service" {
     health_check_path = local.services["resume-service"].health_check
 
     cors {
-      allowed_origins = local.services["resume-service"].cors_origins
-      support_credentials = true
+      allowed_origins     = local.services["resume-service"].cors_origins
+      support_credentials = false
     }
 
     ftps_state = "FtpsOnly"
@@ -438,8 +438,8 @@ resource "azurerm_linux_web_app" "analytics_service" {
     health_check_path = local.services["analytics-service"].health_check
 
     cors {
-      allowed_origins = local.services["analytics-service"].cors_origins
-      support_credentials = true
+      allowed_origins     = local.services["analytics-service"].cors_origins
+      support_credentials = false
     }
 
     ftps_state = "FtpsOnly"
@@ -503,8 +503,8 @@ resource "azurerm_linux_web_app" "auto_apply_service" {
     health_check_path = local.services["auto-apply-service"].health_check
 
     cors {
-      allowed_origins = local.services["auto-apply-service"].cors_origins
-      support_credentials = true
+      allowed_origins     = local.services["auto-apply-service"].cors_origins
+      support_credentials = false
     }
 
     ftps_state = "FtpsOnly"
@@ -568,8 +568,8 @@ resource "azurerm_linux_web_app" "ai_service" {
     health_check_path = local.services["ai-service"].health_check
 
     cors {
-      allowed_origins = local.services["ai-service"].cors_origins
-      support_credentials = true
+      allowed_origins     = local.services["ai-service"].cors_origins
+      support_credentials = false
     }
 
     ftps_state = "FtpsOnly"

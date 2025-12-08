@@ -82,10 +82,11 @@ resource "azurerm_subnet" "aks" {
   name                 = "${var.project_name}-subnet-aks-${var.environment}"
   resource_group_name  = var.resource_group_name
   virtual_network_name = azurerm_virtual_network.main.name
+  # Using /23 subnets aligned to proper CIDR boundaries
   address_prefixes = [
-    var.environment == "dev" ? "10.0.5.0/23" :
-    var.environment == "staging" ? "10.1.5.0/23" :
-    "10.2.5.0/23"
+    var.environment == "dev" ? "10.0.8.0/23" :
+    var.environment == "staging" ? "10.1.8.0/23" :
+    "10.2.8.0/23"
   ]
 
   service_endpoints = [

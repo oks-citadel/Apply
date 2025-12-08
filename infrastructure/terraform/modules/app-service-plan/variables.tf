@@ -25,12 +25,12 @@ variable "environment" {
 }
 
 variable "plan_sku" {
-  description = "SKU for the App Service Plan (e.g., B2, S1, P1v3)"
+  description = "SKU for the App Service Plan (e.g., F1, B2, S1, P1v3)"
   type        = string
   default     = "B2"
   validation {
-    condition     = can(regex("^(B[1-3]|S[1-3]|P[1-3]v[2-3]|P[0-3]v3)$", var.plan_sku))
-    error_message = "SKU must be a valid App Service Plan SKU (B1-B3, S1-S3, P1v3-P3v3, etc.)."
+    condition     = can(regex("^(F1|D1|B[1-3]|S[1-3]|P[1-3]v[2-3]|P[0-3]v3)$", var.plan_sku))
+    error_message = "SKU must be a valid App Service Plan SKU (F1, D1, B1-B3, S1-S3, P1v3-P3v3, etc.)."
   }
 }
 

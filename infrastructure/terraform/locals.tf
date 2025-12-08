@@ -22,8 +22,9 @@ locals {
   environment_configs = {
     dev = {
       # App Service Plan configuration
+      # Using B1 (Basic tier) - Free and Standard tiers have quota = 0
       app_service_plan_sku = {
-        name     = "B2"
+        name     = "B1"
         tier     = "Basic"
         capacity = 1
       }

@@ -59,6 +59,12 @@ variable "project_name" {
 # Database Configuration Variables
 # ============================================================================
 
+variable "enable_sql_database" {
+  description = "Enable Azure SQL Database deployment"
+  type        = bool
+  default     = true
+}
+
 variable "sql_admin_username" {
   description = "SQL Server administrator username"
   type        = string
