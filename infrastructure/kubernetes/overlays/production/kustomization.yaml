@@ -6,7 +6,6 @@ namespace: jobpilot
 bases:
 - ../../base
 - ../../services
-- ../../monitoring
 
 commonLabels:
   environment: production
