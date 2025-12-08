@@ -88,7 +88,7 @@ resource "azurerm_mssql_firewall_rule" "azure_services" {
 
 # Virtual Network Rule for subnet access
 resource "azurerm_mssql_virtual_network_rule" "main" {
-  count = var.subnet_id != null ? 1 : 0
+  count = var.enable_vnet_rule ? 1 : 0
 
   name      = "vnet-rule-${var.environment}"
   server_id = azurerm_mssql_server.main.id

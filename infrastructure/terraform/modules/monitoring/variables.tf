@@ -226,6 +226,35 @@ variable "failed_auth_threshold" {
 }
 
 # ============================================================================
+# EXPLICIT ENABLE FLAGS
+# ============================================================================
+# These flags explicitly enable monitoring resources to avoid plan-time count errors
+
+variable "enable_sql_monitoring" {
+  description = "Enable SQL Server monitoring alerts"
+  type        = bool
+  default     = true
+}
+
+variable "enable_redis_monitoring" {
+  description = "Enable Redis Cache monitoring alerts"
+  type        = bool
+  default     = true
+}
+
+variable "enable_log_query_alerts" {
+  description = "Enable Log Analytics query-based alerts"
+  type        = bool
+  default     = true
+}
+
+variable "enable_aks_monitoring" {
+  description = "Enable AKS cluster monitoring alerts"
+  type        = bool
+  default     = false
+}
+
+# ============================================================================
 # TAGS
 # ============================================================================
 

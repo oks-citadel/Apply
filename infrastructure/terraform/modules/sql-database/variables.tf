@@ -96,6 +96,12 @@ variable "subnet_id" {
   default     = null
 }
 
+variable "enable_vnet_rule" {
+  description = "Enable virtual network rule (set explicitly to avoid plan-time errors)"
+  type        = bool
+  default     = false
+}
+
 variable "enable_private_endpoint" {
   description = "Enable private endpoint for SQL Server"
   type        = bool

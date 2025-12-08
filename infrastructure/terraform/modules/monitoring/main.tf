@@ -173,7 +173,7 @@ resource "azurerm_monitor_metric_alert" "app_service_response_time" {
 
 # Database DTU Alert
 resource "azurerm_monitor_metric_alert" "sql_server_dtu" {
-  count = var.sql_server_id != null ? 1 : 0
+  count = var.enable_sql_monitoring ? 1 : 0
 
   name                = "${var.project_name}-${var.environment}-sql-high-dtu"
   resource_group_name = var.resource_group_name
@@ -201,7 +201,7 @@ resource "azurerm_monitor_metric_alert" "sql_server_dtu" {
 
 # Redis Cache Memory Alert
 resource "azurerm_monitor_metric_alert" "redis_memory" {
-  count = var.redis_cache_id != null ? 1 : 0
+  count = var.enable_redis_monitoring ? 1 : 0
 
   name                = "${var.project_name}-${var.environment}-redis-high-memory"
   resource_group_name = var.resource_group_name
@@ -229,7 +229,7 @@ resource "azurerm_monitor_metric_alert" "redis_memory" {
 
 # Redis Server Load Alert
 resource "azurerm_monitor_metric_alert" "redis_server_load" {
-  count = var.redis_cache_id != null ? 1 : 0
+  count = var.enable_redis_monitoring ? 1 : 0
 
   name                = "${var.project_name}-${var.environment}-redis-high-load"
   resource_group_name = var.resource_group_name
@@ -322,7 +322,7 @@ resource "azurerm_application_insights_standard_web_test" "web_app" {
 
 # Error Rate Spike Detection
 resource "azurerm_monitor_scheduled_query_rules_alert_v2" "error_rate_spike" {
-  count = var.log_analytics_workspace_id != null ? 1 : 0
+  count = var.enable_log_query_alerts ? 1 : 0
 
   name                 = "${var.project_name}-${var.environment}-error-rate-spike"
   resource_group_name  = var.resource_group_name
@@ -363,7 +363,7 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "error_rate_spike" {
 
 # Failed Authentication Attempts Detection
 resource "azurerm_monitor_scheduled_query_rules_alert_v2" "failed_auth" {
-  count = var.log_analytics_workspace_id != null ? 1 : 0
+  count = var.enable_log_query_alerts ? 1 : 0
 
   name                 = "${var.project_name}-${var.environment}-failed-auth-attempts"
   resource_group_name  = var.resource_group_name
@@ -405,7 +405,7 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "failed_auth" {
 
 # AKS Node CPU Alert (if AKS cluster ID provided)
 resource "azurerm_monitor_metric_alert" "aks_node_cpu" {
-  count = var.aks_cluster_id != null ? 1 : 0
+  count = var.enable_aks_monitoring ? 1 : 0
 
   name                = "${var.project_name}-${var.environment}-aks-node-high-cpu"
   resource_group_name = var.resource_group_name
@@ -433,7 +433,7 @@ resource "azurerm_monitor_metric_alert" "aks_node_cpu" {
 
 # AKS Node Memory Alert (if AKS cluster ID provided)
 resource "azurerm_monitor_metric_alert" "aks_node_memory" {
-  count = var.aks_cluster_id != null ? 1 : 0
+  count = var.enable_aks_monitoring ? 1 : 0
 
   name                = "${var.project_name}-${var.environment}-aks-node-high-memory"
   resource_group_name = var.resource_group_name

@@ -139,12 +139,13 @@ module "key_vault" {
   environment         = var.environment
   tags                = local.common_tags
 
-  unique_suffix           = local.unique_suffix
-  enable_diagnostics      = var.enable_diagnostics
-  enable_private_endpoint = var.enable_private_endpoints
-  allowed_ip_addresses    = var.allowed_ip_addresses
+  unique_suffix              = local.unique_suffix
+  enable_diagnostics         = var.enable_diagnostics
+  enable_private_endpoint    = var.enable_private_endpoints
+  allowed_ip_addresses       = var.allowed_ip_addresses
+  log_analytics_workspace_id = module.app_insights.workspace_id
 
-  depends_on = [module.managed_identity]
+  depends_on = [module.managed_identity, module.app_insights]
 }
 
 # ============================================================================
@@ -181,9 +182,10 @@ module "sql_database" {
   sql_admin_password      = var.sql_admin_password
   azuread_admin_login     = "citadelcloudmanagement@gmail.com"
   azuread_admin_object_id = data.azurerm_client_config.current.object_id
-  database_sku            = "${local.config.sql_database_sku.tier}_${local.config.sql_database_sku.name}"
+  database_sku            = local.config.sql_database_sku.name
   enable_defender         = var.enable_defender
   subnet_id               = module.networking.database_subnet_id
+  enable_vnet_rule        = true
   enable_private_endpoint = var.enable_private_endpoints
 
   depends_on = [module.networking]
