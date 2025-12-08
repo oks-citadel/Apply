@@ -8,6 +8,9 @@ import type {
   RecommendedJobsResponse,
   InterviewQuestions,
   SalaryPrediction,
+  JobReport,
+  JobReportsResponse,
+  UpdateReportStatusDto,
 } from '@/types/job';
 
 export const jobsApi = {
@@ -189,6 +192,40 @@ export const jobsApi = {
         reason,
         details,
       });
+      return response.data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+
+  /**
+   * Get all job reports (Admin only)
+   */
+  getJobReports: async (params?: {
+    page?: number;
+    limit?: number;
+    status?: string;
+    reason?: string;
+  }): Promise<JobReportsResponse> => {
+    try {
+      const response = await apiClient.get<JobReportsResponse>('/jobs/reports', {
+        params,
+      });
+      return response.data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+
+  /**
+   * Update job report status (Admin only)
+   */
+  updateReportStatus: async (
+    reportId: string,
+    data: UpdateReportStatusDto
+  ): Promise<JobReport> => {
+    try {
+      const response = await apiClient.put<JobReport>(`/jobs/reports/${reportId}/status`, data);
       return response.data;
     } catch (error) {
       throw handleApiError(error);

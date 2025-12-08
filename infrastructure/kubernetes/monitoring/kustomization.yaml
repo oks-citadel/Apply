@@ -36,6 +36,10 @@ resources:
 
   # Grafana components
   - grafana.yaml
+  - dashboards-configmap.yaml
+
+  # Loki components (log aggregation)
+  - loki.yaml
 
 # ConfigMap generator for additional configurations
 configMapGenerator:
@@ -73,6 +77,10 @@ images:
     newTag: v0.26.0
   - name: grafana/grafana
     newTag: 10.2.2
+  - name: grafana/loki
+    newTag: 2.9.3
+  - name: grafana/promtail
+    newTag: 2.9.3
 
 # Patches to apply to resources
 patches:

@@ -1,6 +1,16 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import {
+  analyticsApi,
+  type AnalyticsFilters,
+  type DashboardSummary,
+  type ApplicationAnalytics,
+  type JobAnalytics,
+  type ActivityMetrics,
+  type ResponseTrend,
+} from '@/lib/api/analytics';
 
 interface AnalyticsStats {
   totalApplications: number;
@@ -156,6 +166,152 @@ export function useAnalytics(options: UseAnalyticsOptions = {}) {
     error,
     refetch,
   };
+}
+
+// New comprehensive analytics hook using React Query
+interface UseAnalyticsV2Return {
+  dashboardSummary: DashboardSummary | undefined;
+  applicationAnalytics: ApplicationAnalytics | undefined;
+  jobAnalytics: JobAnalytics | undefined;
+  activityMetrics: ActivityMetrics | undefined;
+  responseTrends: ResponseTrend[] | undefined;
+  isLoading: {
+    dashboard: boolean;
+    applications: boolean;
+    jobs: boolean;
+    activity: boolean;
+    responseTrends: boolean;
+  };
+  error: {
+    dashboard: Error | null;
+    applications: Error | null;
+    jobs: Error | null;
+    activity: Error | null;
+    responseTrends: Error | null;
+  };
+  refetch: () => void;
+}
+
+export function useAnalyticsV2(filters?: AnalyticsFilters): UseAnalyticsV2Return {
+  // Dashboard summary query
+  const {
+    data: dashboardSummary,
+    isLoading: isDashboardLoading,
+    error: dashboardError,
+    refetch: refetchDashboard,
+  } = useQuery({
+    queryKey: ['analytics', 'dashboard', filters],
+    queryFn: () => analyticsApi.getDashboardSummary(filters),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  // Application analytics query
+  const {
+    data: applicationAnalytics,
+    isLoading: isApplicationsLoading,
+    error: applicationsError,
+    refetch: refetchApplications,
+  } = useQuery({
+    queryKey: ['analytics', 'applications', filters],
+    queryFn: () => analyticsApi.getApplicationAnalytics(filters),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Job analytics query
+  const {
+    data: jobAnalytics,
+    isLoading: isJobsLoading,
+    error: jobsError,
+    refetch: refetchJobs,
+  } = useQuery({
+    queryKey: ['analytics', 'jobs', filters],
+    queryFn: () => analyticsApi.getJobAnalytics(filters),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Activity metrics query
+  const {
+    data: activityMetrics,
+    isLoading: isActivityLoading,
+    error: activityError,
+    refetch: refetchActivity,
+  } = useQuery({
+    queryKey: ['analytics', 'activity', filters],
+    queryFn: () => analyticsApi.getActivityMetrics(filters),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Response trends query
+  const {
+    data: responseTrends,
+    isLoading: isResponseTrendsLoading,
+    error: responseTrendsError,
+    refetch: refetchResponseTrends,
+  } = useQuery({
+    queryKey: ['analytics', 'response-trends', filters],
+    queryFn: () => analyticsApi.getResponseTrends(filters),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Refetch all data
+  const refetch = () => {
+    refetchDashboard();
+    refetchApplications();
+    refetchJobs();
+    refetchActivity();
+    refetchResponseTrends();
+  };
+
+  return {
+    dashboardSummary,
+    applicationAnalytics,
+    jobAnalytics,
+    activityMetrics,
+    responseTrends,
+    isLoading: {
+      dashboard: isDashboardLoading,
+      applications: isApplicationsLoading,
+      jobs: isJobsLoading,
+      activity: isActivityLoading,
+      responseTrends: isResponseTrendsLoading,
+    },
+    error: {
+      dashboard: dashboardError as Error | null,
+      applications: applicationsError as Error | null,
+      jobs: jobsError as Error | null,
+      activity: activityError as Error | null,
+      responseTrends: responseTrendsError as Error | null,
+    },
+    refetch,
+  };
+}
+
+// Hook for exporting analytics data
+export function useExportAnalytics() {
+  const exportData = async (format: 'csv' | 'pdf', filters?: AnalyticsFilters) => {
+    try {
+      const blob = await analyticsApi.exportData(format, filters);
+
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `analytics-export-${new Date().toISOString().split('T')[0]}.${format}`;
+      document.body.appendChild(link);
+      link.click();
+
+      // Cleanup
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      return true;
+    } catch (error) {
+      console.error('Export failed:', error);
+      return false;
+    }
+  };
+
+  return { exportData };
 }
 
 export function useMockAnalytics(): AnalyticsData & { isLoading: boolean } {

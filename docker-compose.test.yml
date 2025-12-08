@@ -1,0 +1,312 @@
+version: '3.9'
+
+services:
+  # Test PostgreSQL Database
+  postgres-test:
+    image: postgres:15-alpine
+    container_name: jobpilot-postgres-test
+    restart: unless-stopped
+    ports:
+      - '5433:5432'
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: jobpilot_test
+      POSTGRES_INITDB_ARGS: '-A md5'
+    volumes:
+      - postgres_test_data:/var/lib/postgresql/data
+      - ./infrastructure/docker/postgres/init-test.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - test-network
+
+  # Test Redis Cache
+  redis-test:
+    image: redis:7-alpine
+    container_name: jobpilot-redis-test
+    restart: unless-stopped
+    ports:
+      - '6380:6379'
+    command: redis-server --appendonly yes --requirepass ""
+    volumes:
+      - redis_test_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - test-network
+
+  # Test Elasticsearch
+  elasticsearch-test:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: jobpilot-elasticsearch-test
+    restart: unless-stopped
+    ports:
+      - '9201:9200'
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - xpack.security.enrollment.enabled=false
+      - 'ES_JAVA_OPTS=-Xms256m -Xmx256m'
+    volumes:
+      - elasticsearch_test_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -f http://localhost:9200/_cluster/health || exit 1']
+      interval: 10s
+      timeout: 10s
+      retries: 5
+    networks:
+      - test-network
+
+  # Auth Service (Test)
+  auth-service-test:
+    build:
+      context: ./services/auth-service
+      dockerfile: Dockerfile
+    container_name: jobpilot-auth-service-test
+    restart: unless-stopped
+    ports:
+      - '3001:3001'
+    environment:
+      NODE_ENV: test
+      PORT: 3001
+      DB_HOST: postgres-test
+      DB_PORT: 5432
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      DB_DATABASE: auth_service_test
+      REDIS_HOST: redis-test
+      REDIS_PORT: 6379
+      JWT_SECRET: test-jwt-secret-key
+      JWT_EXPIRES_IN: 1h
+      JWT_REFRESH_EXPIRES_IN: 7d
+    depends_on:
+      postgres-test:
+        condition: service_healthy
+      redis-test:
+        condition: service_healthy
+    networks:
+      - test-network
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:3001/api/v1/health']
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # User Service (Test)
+  user-service-test:
+    build:
+      context: ./services/user-service
+      dockerfile: Dockerfile
+    container_name: jobpilot-user-service-test
+    restart: unless-stopped
+    ports:
+      - '8002:8002'
+    environment:
+      NODE_ENV: test
+      PORT: 8002
+      DB_HOST: postgres-test
+      DB_PORT: 5432
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      DB_DATABASE: user_service_test
+      AUTH_SERVICE_URL: http://auth-service-test:3001
+    depends_on:
+      postgres-test:
+        condition: service_healthy
+      auth-service-test:
+        condition: service_healthy
+    networks:
+      - test-network
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:8002/api/v1/health']
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # Job Service (Test)
+  job-service-test:
+    build:
+      context: ./services/job-service
+      dockerfile: Dockerfile
+    container_name: jobpilot-job-service-test
+    restart: unless-stopped
+    ports:
+      - '3003:3003'
+    environment:
+      NODE_ENV: test
+      PORT: 3003
+      DB_HOST: postgres-test
+      DB_PORT: 5432
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      DB_DATABASE: job_service_test
+      ELASTICSEARCH_NODE: http://elasticsearch-test:9200
+      REDIS_HOST: redis-test
+      REDIS_PORT: 6379
+    depends_on:
+      postgres-test:
+        condition: service_healthy
+      elasticsearch-test:
+        condition: service_healthy
+      redis-test:
+        condition: service_healthy
+    networks:
+      - test-network
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:3003/api/v1/health']
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # Resume Service (Test)
+  resume-service-test:
+    build:
+      context: ./services/resume-service
+      dockerfile: Dockerfile
+    container_name: jobpilot-resume-service-test
+    restart: unless-stopped
+    ports:
+      - '3004:3004'
+    environment:
+      NODE_ENV: test
+      PORT: 3004
+      DB_HOST: postgres-test
+      DB_PORT: 5432
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      DB_DATABASE: resume_service_test
+    depends_on:
+      postgres-test:
+        condition: service_healthy
+    networks:
+      - test-network
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:3004/api/v1/health']
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # AI Service (Test)
+  ai-service-test:
+    build:
+      context: ./services/ai-service
+      dockerfile: Dockerfile
+    container_name: jobpilot-ai-service-test
+    restart: unless-stopped
+    ports:
+      - '8000:8000'
+    environment:
+      ENVIRONMENT: test
+      PORT: 8000
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-test-key}
+      REDIS_HOST: redis-test
+      REDIS_PORT: 6379
+    depends_on:
+      redis-test:
+        condition: service_healthy
+    networks:
+      - test-network
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:8000/health']
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # Notification Service (Test)
+  notification-service-test:
+    build:
+      context: ./services/notification-service
+      dockerfile: Dockerfile
+    container_name: jobpilot-notification-service-test
+    restart: unless-stopped
+    ports:
+      - '3006:3006'
+    environment:
+      NODE_ENV: test
+      PORT: 3006
+      DB_HOST: postgres-test
+      DB_PORT: 5432
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      DB_DATABASE: notification_service_test
+      REDIS_HOST: redis-test
+      REDIS_PORT: 6379
+      SMTP_HOST: mailhog-test
+      SMTP_PORT: 1025
+    depends_on:
+      postgres-test:
+        condition: service_healthy
+      redis-test:
+        condition: service_healthy
+    networks:
+      - test-network
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:3006/api/v1/health']
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # Auto-Apply Service (Test)
+  auto-apply-service-test:
+    build:
+      context: ./services/auto-apply-service
+      dockerfile: Dockerfile
+    container_name: jobpilot-auto-apply-service-test
+    restart: unless-stopped
+    ports:
+      - '3007:3007'
+    environment:
+      NODE_ENV: test
+      PORT: 3007
+      DB_HOST: postgres-test
+      DB_PORT: 5432
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      DB_DATABASE: auto_apply_service_test
+      REDIS_HOST: redis-test
+      REDIS_PORT: 6379
+      JOB_SERVICE_URL: http://job-service-test:3003
+    depends_on:
+      postgres-test:
+        condition: service_healthy
+      redis-test:
+        condition: service_healthy
+      job-service-test:
+        condition: service_healthy
+    networks:
+      - test-network
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:3007/api/v1/health']
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # Mailhog for testing email notifications
+  mailhog-test:
+    image: mailhog/mailhog:latest
+    container_name: jobpilot-mailhog-test
+    restart: unless-stopped
+    ports:
+      - '1026:1025' # SMTP
+      - '8026:8025' # Web UI
+    networks:
+      - test-network
+
+volumes:
+  postgres_test_data:
+    driver: local
+  redis_test_data:
+    driver: local
+  elasticsearch_test_data:
+    driver: local
+
+networks:
+  test-network:
+    driver: bridge

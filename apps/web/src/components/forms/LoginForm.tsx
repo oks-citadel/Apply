@@ -9,6 +9,8 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { useAuthStore } from '@/stores/authStore';
+import { MfaVerification } from '@/components/auth/MfaVerification';
+import { SocialLoginButtons } from '@/components/auth/SocialLoginButtons';
 import { AlertCircle } from 'lucide-react';
 
 const loginSchema = z.object({
@@ -21,7 +23,10 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 export function LoginForm() {
   const [serverError, setServerError] = useState<string | null>(null);
-  const { login, isLoading } = useAuthStore();
+  const [showMfaVerification, setShowMfaVerification] = useState(false);
+  const [mfaTempToken, setMfaTempToken] = useState<string | null>(null);
+  const [loginEmail, setLoginEmail] = useState<string>('');
+  const { login, verifyMfaLogin, isLoading, resetMfaState } = useAuthStore();
   const router = useRouter();
 
   const {
@@ -39,17 +44,57 @@ export function LoginForm() {
 
   const onSubmit = async (data: LoginFormData) => {
     setServerError(null);
+    setLoginEmail(data.email);
     try {
-      await login({
+      const result = await login({
         email: data.email,
         password: data.password,
         rememberMe: data.rememberMe,
       });
-      router.push('/dashboard');
+
+      if (result.requiresMfa && result.tempToken) {
+        // MFA is required, show verification screen
+        setMfaTempToken(result.tempToken);
+        setShowMfaVerification(true);
+      } else {
+        // Regular login success
+        router.push('/dashboard');
+      }
     } catch (error: any) {
       setServerError(error.message || 'Login failed. Please try again.');
     }
   };
+
+  const handleMfaVerify = async (code: string) => {
+    if (!mfaTempToken) return;
+
+    setServerError(null);
+    try {
+      await verifyMfaLogin(mfaTempToken, code);
+      router.push('/dashboard');
+    } catch (error: any) {
+      throw error;
+    }
+  };
+
+  const handleCancelMfa = () => {
+    setShowMfaVerification(false);
+    setMfaTempToken(null);
+    resetMfaState();
+  };
+
+  // Show MFA verification screen if required
+  if (showMfaVerification) {
+    return (
+      <MfaVerification
+        onVerify={handleMfaVerify}
+        onCancel={handleCancelMfa}
+        isLoading={isLoading}
+        error={serverError || undefined}
+        email={loginEmail}
+      />
+    );
+  }
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -113,6 +158,8 @@ export function LoginForm() {
       <Button type="submit" loading={isLoading} className="w-full" size="lg">
         Sign In
       </Button>
+
+      <SocialLoginButtons isLoading={isLoading} />
 
       <p className="text-center text-sm text-gray-600 dark:text-gray-400">
         Don't have an account?{' '}

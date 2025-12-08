@@ -13,6 +13,14 @@ export class InitialSchema1733300000000 implements MigrationInterface {
       END $$;
     `);
 
+    await queryRunner.query(`
+      DO $$ BEGIN
+        CREATE TYPE application_source AS ENUM ('manual', 'auto_apply', 'quick_apply');
+      EXCEPTION
+        WHEN duplicate_object THEN null;
+      END $$;
+    `);
+
     // Create applications table
     await queryRunner.createTable(
       new Table({
@@ -135,6 +143,13 @@ export class InitialSchema1733300000000 implements MigrationInterface {
             isNullable: true,
           },
           {
+            name: 'source',
+            type: 'enum',
+            enum: ['manual', 'auto_apply', 'quick_apply'],
+            default: "'manual'",
+            isNullable: true,
+          },
+          {
             name: 'created_at',
             type: 'timestamp with time zone',
             default: 'CURRENT_TIMESTAMP',
@@ -197,6 +212,83 @@ export class InitialSchema1733300000000 implements MigrationInterface {
       new TableIndex({
         name: 'IDX_APPLICATIONS_AUTO_APPLIED',
         columnNames: ['auto_applied'],
+      })
+    );
+
+    // Create auto_apply_settings table
+    await queryRunner.createTable(
+      new Table({
+        name: 'auto_apply_settings',
+        columns: [
+          {
+            name: 'id',
+            type: 'uuid',
+            isPrimary: true,
+            default: 'uuid_generate_v4()',
+          },
+          {
+            name: 'user_id',
+            type: 'uuid',
+            isNullable: false,
+            isUnique: true,
+          },
+          {
+            name: 'enabled',
+            type: 'boolean',
+            default: false,
+            isNullable: false,
+          },
+          {
+            name: 'filters',
+            type: 'jsonb',
+            isNullable: true,
+          },
+          {
+            name: 'resume_id',
+            type: 'uuid',
+            isNullable: false,
+          },
+          {
+            name: 'cover_letter_template',
+            type: 'text',
+            isNullable: true,
+          },
+          {
+            name: 'max_applications_per_day',
+            type: 'integer',
+            default: 50,
+            isNullable: false,
+          },
+          {
+            name: 'auto_response',
+            type: 'boolean',
+            default: false,
+            isNullable: false,
+          },
+          {
+            name: 'created_at',
+            type: 'timestamp with time zone',
+            default: 'CURRENT_TIMESTAMP',
+            isNullable: false,
+          },
+          {
+            name: 'updated_at',
+            type: 'timestamp with time zone',
+            default: 'CURRENT_TIMESTAMP',
+            isNullable: false,
+          },
+        ],
+      }),
+      true
+    );
+
+    // Create index on auto_apply_settings
+    await queryRunner.createIndex(
+      'auto_apply_settings',
+      new TableIndex({
+        name: 'IDX_AUTO_APPLY_SETTINGS_USER_ID',
+        columnNames: ['user_id'],
+        isUnique: true,
       })
     );
 
@@ -358,6 +450,7 @@ export class InitialSchema1733300000000 implements MigrationInterface {
     await queryRunner.dropIndex('form_mappings', 'IDX_FORM_MAPPINGS_SEMANTIC_FIELD');
     await queryRunner.dropIndex('form_mappings', 'IDX_FORM_MAPPINGS_ATS_PLATFORM');
     await queryRunner.dropIndex('form_mappings', 'IDX_FORM_MAPPINGS_COMPANY_ATS');
+    await queryRunner.dropIndex('auto_apply_settings', 'IDX_AUTO_APPLY_SETTINGS_USER_ID');
     await queryRunner.dropIndex('applications', 'IDX_APPLICATIONS_AUTO_APPLIED');
     await queryRunner.dropIndex('applications', 'IDX_APPLICATIONS_STATUS');
     await queryRunner.dropIndex('applications', 'IDX_APPLICATIONS_STATUS_CREATED_AT');
@@ -367,9 +460,11 @@ export class InitialSchema1733300000000 implements MigrationInterface {
 
     // Drop tables
     await queryRunner.dropTable('form_mappings');
+    await queryRunner.dropTable('auto_apply_settings');
     await queryRunner.dropTable('applications');
 
     // Drop enum types
     await queryRunner.query(`DROP TYPE IF EXISTS application_status`);
+    await queryRunner.query(`DROP TYPE IF EXISTS application_source`);
   }
 }

@@ -1,0 +1,26 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "commonjs",
+    "outDir": "../../dist/tests/integration",
+    "rootDir": ".",
+    "baseUrl": ".",
+    "paths": {
+      "@test-utils/*": ["./utils/*"],
+      "@test-mocks/*": ["./mocks/*"],
+      "@test-fixtures/*": ["./fixtures/*"]
+    },
+    "types": ["jest", "node", "supertest"],
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true
+  },
+  "include": [
+    "**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
+}

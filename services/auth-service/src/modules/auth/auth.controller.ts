@@ -9,7 +9,9 @@ import {
   Ip,
   Logger,
   Req,
+  Res,
 } from '@nestjs/common';
+import { Response } from 'express';
 import {
   ApiTags,
   ApiOperation,
@@ -34,13 +36,20 @@ import { User } from '../users/entities/user.entity';
 import { Throttle } from '@nestjs/throttler';
 import { AuthGuard } from '@nestjs/passport';
 import { Request } from 'express';
+import { ConfigService } from '@nestjs/config';
 
 @ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
   private readonly logger = new Logger(AuthController.name);
+  private readonly frontendUrl: string;
 
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly configService: ConfigService,
+  ) {
+    this.frontendUrl = this.configService.get<string>('frontendUrl', 'http://localhost:3000');
+  }
 
   /**
    * Register a new user
@@ -213,6 +222,34 @@ export class AuthController {
   }
 
   /**
+   * Resend verification email
+   */
+  @Post('resend-verification')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Throttle({ default: { limit: 3, ttl: 60000 } }) // 3 requests per minute
+  @ApiOperation({ summary: 'Resend email verification link' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Verification email sent successfully',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Email already verified or rate limit exceeded',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Unauthorized',
+  })
+  async resendVerification(
+    @CurrentUser() user: User,
+  ): Promise<{ message: string }> {
+    this.logger.log(`Resend verification request for user: ${user.id}`);
+    return this.authService.resendVerificationEmail(user.id);
+  }
+
+  /**
    * Initiate Google OAuth login
    */
   @Public()
@@ -236,14 +273,133 @@ export class AuthController {
   @UseGuards(AuthGuard('google'))
   @ApiOperation({ summary: 'Google OAuth callback' })
   @ApiResponse({
-    status: HttpStatus.OK,
-    description: 'User authenticated via Google',
-    type: TokenResponseDto,
+    status: HttpStatus.FOUND,
+    description: 'Redirects to frontend with authentication tokens',
   })
-  async googleCallback(@Req() req: Request): Promise<TokenResponseDto> {
-    const user = req.user as User;
-    this.logger.log(`Google OAuth callback for user: ${user.id}`);
-    return this.authService.googleLogin(user);
+  async googleCallback(@Req() req: Request, @Res() res: Response): Promise<void> {
+    try {
+      const user = req.user as User;
+
+      if (!user) {
+        throw new Error('User not found after OAuth authentication');
+      }
+
+      this.logger.log(`Google OAuth callback for user: ${user.id}`);
+
+      const tokenResponse = await this.authService.googleLogin(user);
+
+      // Redirect to frontend with tokens in URL
+      const redirectUrl = `${this.frontendUrl}/oauth/callback?access_token=${tokenResponse.accessToken}&refresh_token=${tokenResponse.refreshToken}`;
+      res.redirect(redirectUrl);
+    } catch (error: any) {
+      this.logger.error(`Google OAuth callback error: ${error.message}`, error.stack);
+
+      // Redirect to frontend with error
+      const errorUrl = `${this.frontendUrl}/oauth/callback?error=server_error&error_description=${encodeURIComponent(error.message || 'Authentication failed')}`;
+      res.redirect(errorUrl);
+    }
+  }
+
+  /**
+   * Initiate LinkedIn OAuth login
+   */
+  @Public()
+  @Get('linkedin')
+  @UseGuards(AuthGuard('linkedin'))
+  @ApiOperation({ summary: 'Initiate LinkedIn OAuth login' })
+  @ApiResponse({
+    status: HttpStatus.FOUND,
+    description: 'Redirects to LinkedIn OAuth',
+  })
+  async linkedinLogin(): Promise<void> {
+    // Guard handles the redirect to LinkedIn
+    this.logger.log(`LinkedIn OAuth login initiated`);
+  }
+
+  /**
+   * LinkedIn OAuth callback
+   */
+  @Public()
+  @Get('linkedin/callback')
+  @UseGuards(AuthGuard('linkedin'))
+  @ApiOperation({ summary: 'LinkedIn OAuth callback' })
+  @ApiResponse({
+    status: HttpStatus.FOUND,
+    description: 'Redirects to frontend with authentication tokens',
+  })
+  async linkedinCallback(@Req() req: Request, @Res() res: Response): Promise<void> {
+    try {
+      const user = req.user as User;
+
+      if (!user) {
+        throw new Error('User not found after OAuth authentication');
+      }
+
+      this.logger.log(`LinkedIn OAuth callback for user: ${user.id}`);
+
+      const tokenResponse = await this.authService.oauthLogin(user);
+
+      // Redirect to frontend with tokens in URL
+      const redirectUrl = `${this.frontendUrl}/oauth/callback?access_token=${tokenResponse.accessToken}&refresh_token=${tokenResponse.refreshToken}`;
+      res.redirect(redirectUrl);
+    } catch (error: any) {
+      this.logger.error(`LinkedIn OAuth callback error: ${error.message}`, error.stack);
+
+      // Redirect to frontend with error
+      const errorUrl = `${this.frontendUrl}/oauth/callback?error=server_error&error_description=${encodeURIComponent(error.message || 'Authentication failed')}`;
+      res.redirect(errorUrl);
+    }
+  }
+
+  /**
+   * Initiate GitHub OAuth login
+   */
+  @Public()
+  @Get('github')
+  @UseGuards(AuthGuard('github'))
+  @ApiOperation({ summary: 'Initiate GitHub OAuth login' })
+  @ApiResponse({
+    status: HttpStatus.FOUND,
+    description: 'Redirects to GitHub OAuth',
+  })
+  async githubLogin(): Promise<void> {
+    // Guard handles the redirect to GitHub
+    this.logger.log(`GitHub OAuth login initiated`);
+  }
+
+  /**
+   * GitHub OAuth callback
+   */
+  @Public()
+  @Get('github/callback')
+  @UseGuards(AuthGuard('github'))
+  @ApiOperation({ summary: 'GitHub OAuth callback' })
+  @ApiResponse({
+    status: HttpStatus.FOUND,
+    description: 'Redirects to frontend with authentication tokens',
+  })
+  async githubCallback(@Req() req: Request, @Res() res: Response): Promise<void> {
+    try {
+      const user = req.user as User;
+
+      if (!user) {
+        throw new Error('User not found after OAuth authentication');
+      }
+
+      this.logger.log(`GitHub OAuth callback for user: ${user.id}`);
+
+      const tokenResponse = await this.authService.oauthLogin(user);
+
+      // Redirect to frontend with tokens in URL
+      const redirectUrl = `${this.frontendUrl}/oauth/callback?access_token=${tokenResponse.accessToken}&refresh_token=${tokenResponse.refreshToken}`;
+      res.redirect(redirectUrl);
+    } catch (error: any) {
+      this.logger.error(`GitHub OAuth callback error: ${error.message}`, error.stack);
+
+      // Redirect to frontend with error
+      const errorUrl = `${this.frontendUrl}/oauth/callback?error=server_error&error_description=${encodeURIComponent(error.message || 'Authentication failed')}`;
+      res.redirect(errorUrl);
+    }
   }
 
   /**
@@ -349,11 +505,39 @@ export class AuthController {
       role: user.role,
       status: user.status,
       authProvider: user.authProvider,
+      providerId: user.providerId,
       isEmailVerified: user.isEmailVerified,
       isMfaEnabled: user.isMfaEnabled,
       lastLoginAt: user.lastLoginAt,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     };
+  }
+
+  /**
+   * Disconnect OAuth provider from account
+   */
+  @Post('oauth/disconnect')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Disconnect OAuth provider from account' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'OAuth provider disconnected successfully',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Cannot disconnect - account requires authentication method',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Unauthorized',
+  })
+  async disconnectOAuth(
+    @CurrentUser() user: User,
+  ): Promise<{ message: string }> {
+    this.logger.log(`OAuth disconnect request for user: ${user.id}`);
+    return this.authService.disconnectOAuth(user.id);
   }
 }

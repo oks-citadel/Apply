@@ -139,25 +139,50 @@ export class BrowserService implements OnModuleDestroy {
 
   async fillForm(page: Page, selector: string, value: string, delay: number = 50): Promise<void> {
     try {
-      await page.waitForSelector(selector, { timeout: 5000 });
+      await page.waitForSelector(selector, { timeout: 5000, state: 'visible' });
+
+      // Clear existing value first
       await page.fill(selector, '');
+      await page.waitForTimeout(100);
+
+      // Type with human-like delay
       await page.type(selector, value, { delay });
+
+      // Verify the value was set
+      const actualValue = await page.inputValue(selector);
+      if (actualValue !== value) {
+        this.logger.warn(`Value mismatch for ${selector}. Expected: ${value}, Actual: ${actualValue}`);
+      }
+
       this.logger.debug(`Filled form field ${selector} with value`);
     } catch (error) {
       this.logger.error(`Error filling form field ${selector}: ${error.message}`);
-      throw error;
+      throw new Error(`Failed to fill field ${selector}: ${error.message}`);
     }
   }
 
   async clickElement(page: Page, selector: string, delay: number = 100): Promise<void> {
     try {
-      await page.waitForSelector(selector, { timeout: 5000 });
-      await page.click(selector);
+      await page.waitForSelector(selector, { timeout: 5000, state: 'visible' });
+
+      // Scroll element into view
+      await page.evaluate((sel) => {
+        const element = document.querySelector(sel);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, selector);
+
+      await page.waitForTimeout(300);
+
+      // Click the element
+      await page.click(selector, { force: false });
       await page.waitForTimeout(delay);
+
       this.logger.debug(`Clicked element: ${selector}`);
     } catch (error) {
       this.logger.error(`Error clicking element ${selector}: ${error.message}`);
-      throw error;
+      throw new Error(`Failed to click element ${selector}: ${error.message}`);
     }
   }
 
@@ -174,12 +199,20 @@ export class BrowserService implements OnModuleDestroy {
 
   async uploadFile(page: Page, selector: string, filePath: string): Promise<void> {
     try {
-      await page.waitForSelector(selector, { timeout: 5000 });
+      await page.waitForSelector(selector, { timeout: 5000, state: 'attached' });
+
+      // Check if file exists (this would need to be implemented based on your file storage)
+      this.logger.log(`Uploading file ${filePath} to ${selector}`);
+
       await page.setInputFiles(selector, filePath);
+
+      // Wait for upload to complete
+      await page.waitForTimeout(1000);
+
       this.logger.debug(`Uploaded file to ${selector}`);
     } catch (error) {
       this.logger.error(`Error uploading file to ${selector}: ${error.message}`);
-      throw error;
+      throw new Error(`Failed to upload file to ${selector}: ${error.message}`);
     }
   }
 

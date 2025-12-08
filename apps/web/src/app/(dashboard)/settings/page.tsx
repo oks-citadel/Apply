@@ -1,12 +1,13 @@
 'use client';
 
-import { Bell, User, Lock, CreditCard, Globe, Shield, Copy, Check, AlertCircle } from 'lucide-react';
+import { Bell, User, Lock, CreditCard, Globe, Shield, Copy, Check, AlertCircle, Download } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Modal, ModalFooter } from '@/components/ui/Modal';
 import { ProfileForm } from '@/components/forms/ProfileForm';
+import { TOTPInput } from '@/components/ui/TOTPInput';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -401,33 +402,28 @@ function SecuritySettings() {
 }
 
 function TwoFactorSetupModal({ onClose }: { onClose: () => void }) {
-  const [step, setStep] = useState<'setup' | 'verify' | 'backup'>('setup');
+  const [step, setStep] = useState<'setup' | 'verify'>('setup');
   const [verificationCode, setVerificationCode] = useState('');
-  const [backupCodes, setBackupCodes] = useState<string[]>([]);
-  const [copiedCodes, setCopiedCodes] = useState(false);
 
   const setupMfa = useSetupMfa();
   const verifyMfa = useVerifyMfa();
 
   const handleSetup = async () => {
-    const result = await setupMfa.mutateAsync();
-    setBackupCodes(result.backupCodes);
-    setStep('verify');
+    try {
+      await setupMfa.mutateAsync();
+      setStep('verify');
+    } catch (error) {
+      console.error('MFA setup error:', error);
+    }
   };
 
   const handleVerify = async () => {
-    await verifyMfa.mutateAsync(verificationCode);
-    setStep('backup');
-  };
-
-  const handleCopyBackupCodes = () => {
-    navigator.clipboard.writeText(backupCodes.join('\n'));
-    setCopiedCodes(true);
-    setTimeout(() => setCopiedCodes(false), 2000);
-  };
-
-  const handleComplete = () => {
-    onClose();
+    try {
+      await verifyMfa.mutateAsync(verificationCode);
+      onClose();
+    } catch (error) {
+      console.error('MFA verification error:', error);
+    }
   };
 
   return (
@@ -438,9 +434,7 @@ function TwoFactorSetupModal({ onClose }: { onClose: () => void }) {
       description={
         step === 'setup'
           ? 'Secure your account with 2FA'
-          : step === 'verify'
-          ? 'Scan the QR code with your authenticator app'
-          : 'Save your backup codes'
+          : 'Scan the QR code with your authenticator app'
       }
       size="lg"
     >
@@ -487,12 +481,11 @@ function TwoFactorSetupModal({ onClose }: { onClose: () => void }) {
             </code>
           </div>
 
-          <Input
+          <TOTPInput
             label="Verification Code"
-            placeholder="Enter 6-digit code"
             value={verificationCode}
-            onChange={(e) => setVerificationCode(e.target.value)}
-            helperText="Enter the 6-digit code from your authenticator app"
+            onChange={setVerificationCode}
+            autoFocus
           />
 
           <ModalFooter>
@@ -508,59 +501,6 @@ function TwoFactorSetupModal({ onClose }: { onClose: () => void }) {
           </ModalFooter>
         </div>
       )}
-
-      {step === 'backup' && (
-        <div className="space-y-4">
-          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-            <div className="flex items-start">
-              <AlertCircle className="w-5 h-5 text-yellow-600 dark:text-yellow-400 mr-3 mt-0.5" />
-              <div>
-                <h4 className="font-medium text-yellow-900 dark:text-yellow-100">
-                  Save these backup codes
-                </h4>
-                <p className="text-sm text-yellow-800 dark:text-yellow-200 mt-1">
-                  Store these codes in a safe place. You can use them to access your account if you
-                  lose your device.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
-            <div className="grid grid-cols-2 gap-2 font-mono text-sm">
-              {backupCodes.map((code, index) => (
-                <div key={index} className="text-center py-1">
-                  {code}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <Button
-            variant="outline"
-            className="w-full"
-            onClick={handleCopyBackupCodes}
-          >
-            {copiedCodes ? (
-              <>
-                <Check className="w-4 h-4 mr-2" />
-                Copied!
-              </>
-            ) : (
-              <>
-                <Copy className="w-4 h-4 mr-2" />
-                Copy Backup Codes
-              </>
-            )}
-          </Button>
-
-          <ModalFooter>
-            <Button onClick={handleComplete} className="w-full">
-              Done
-            </Button>
-          </ModalFooter>
-        </div>
-      )}
     </Modal>
   );
 }
@@ -570,8 +510,12 @@ function TwoFactorDisableModal({ onClose }: { onClose: () => void }) {
   const disableMfa = useDisableMfa();
 
   const handleDisable = async () => {
-    await disableMfa.mutateAsync(verificationCode);
-    onClose();
+    try {
+      await disableMfa.mutateAsync(verificationCode);
+      onClose();
+    } catch (error) {
+      console.error('Failed to disable MFA:', error);
+    }
   };
 
   return (
@@ -595,12 +539,11 @@ function TwoFactorDisableModal({ onClose }: { onClose: () => void }) {
           </div>
         </div>
 
-        <Input
+        <TOTPInput
           label="Verification Code"
-          placeholder="Enter 6-digit code"
           value={verificationCode}
-          onChange={(e) => setVerificationCode(e.target.value)}
-          helperText="Enter the code from your authenticator app"
+          onChange={setVerificationCode}
+          autoFocus
         />
 
         <ModalFooter>

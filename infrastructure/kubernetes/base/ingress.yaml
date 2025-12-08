@@ -30,7 +30,7 @@ metadata:
 
     # CORS
     nginx.ingress.kubernetes.io/enable-cors: "true"
-    nginx.ingress.kubernetes.io/cors-allow-origin: "https://jobpilot.com,https://www.jobpilot.com"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "https://applyforus.com,https://www.applyforus.com,https://api.applyforus.com"
     nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, PUT, DELETE, PATCH, OPTIONS"
     nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
 
@@ -52,14 +52,14 @@ metadata:
 spec:
   tls:
   - hosts:
-    - jobpilot.com
-    - www.jobpilot.com
-    - api.jobpilot.com
-    secretName: jobpilot-tls-cert
+    - applyforus.com
+    - www.applyforus.com
+    - api.applyforus.com
+    secretName: applyforus-tls-cert
 
   rules:
   # Main Website
-  - host: jobpilot.com
+  - host: applyforus.com
     http:
       paths:
       - path: /
@@ -70,7 +70,7 @@ spec:
             port:
               number: 3000
 
-  - host: www.jobpilot.com
+  - host: www.applyforus.com
     http:
       paths:
       - path: /
@@ -82,7 +82,7 @@ spec:
               number: 3000
 
   # API Gateway
-  - host: api.jobpilot.com
+  - host: api.applyforus.com
     http:
       paths:
       # Auth Service
@@ -92,7 +92,7 @@ spec:
           service:
             name: auth-service
             port:
-              number: 3001
+              number: 4000
 
       # User Service
       - path: /api/users
@@ -101,7 +101,7 @@ spec:
           service:
             name: user-service
             port:
-              number: 3002
+              number: 4004
 
       # Job Service
       - path: /api/jobs
@@ -110,7 +110,7 @@ spec:
           service:
             name: job-service
             port:
-              number: 3003
+              number: 4002
 
       # AI Service
       - path: /api/ai
@@ -119,7 +119,7 @@ spec:
           service:
             name: ai-service
             port:
-              number: 3004
+              number: 5000
 
       # Resume Service
       - path: /api/resumes
@@ -128,7 +128,7 @@ spec:
           service:
             name: resume-service
             port:
-              number: 3005
+              number: 4001
 
       # Analytics Service
       - path: /api/analytics
@@ -137,7 +137,7 @@ spec:
           service:
             name: analytics-service
             port:
-              number: 3006
+              number: 3007
 
       # Notification Service
       - path: /api/notifications
@@ -146,7 +146,7 @@ spec:
           service:
             name: notification-service
             port:
-              number: 3007
+              number: 4005
 
       # Auto Apply Service
       - path: /api/auto-apply
@@ -155,7 +155,16 @@ spec:
           service:
             name: auto-apply-service
             port:
-              number: 3008
+              number: 4003
+
+      # Orchestrator Service
+      - path: /api/orchestrator
+        pathType: Prefix
+        backend:
+          service:
+            name: orchestrator-service
+            port:
+              number: 3009
 
       # Health Check Endpoints
       - path: /api/health
@@ -164,7 +173,7 @@ spec:
           service:
             name: auth-service
             port:
-              number: 3001
+              number: 4000
 ---
 # Certificate Issuer for Let's Encrypt
 apiVersion: cert-manager.io/v1
@@ -174,7 +183,7 @@ metadata:
 spec:
   acme:
     server: https://acme-v02.api.letsencrypt.org/directory
-    email: admin@jobpilot.com
+    email: admin@applyforus.com
     privateKeySecretRef:
       name: letsencrypt-prod
     solvers:
@@ -190,7 +199,7 @@ metadata:
 spec:
   acme:
     server: https://acme-staging-v02.api.letsencrypt.org/directory
-    email: admin@jobpilot.com
+    email: admin@applyforus.com
     privateKeySecretRef:
       name: letsencrypt-staging
     solvers:

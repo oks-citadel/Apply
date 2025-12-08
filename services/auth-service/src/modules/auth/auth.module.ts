@@ -10,6 +10,8 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
 import { LocalStrategy } from './strategies/local.strategy';
 import { GoogleStrategy } from './strategies/google.strategy';
+import { LinkedInStrategy } from './strategies/linkedin.strategy';
+import { GitHubStrategy } from './strategies/github.strategy';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
 @Module({
@@ -37,6 +39,8 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
     JwtRefreshStrategy,
     LocalStrategy,
     GoogleStrategy,
+    LinkedInStrategy,
+    GitHubStrategy,
     JwtAuthGuard,
   ],
   exports: [AuthService, JwtModule, PassportModule],

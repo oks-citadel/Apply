@@ -21,6 +21,7 @@ export interface Job {
   postedAt: string;
   expiresAt?: string;
   isSaved?: boolean;
+  isReported?: boolean;
   matchScore?: number;
   createdAt: string;
   updatedAt: string;
@@ -109,4 +110,33 @@ export interface SalaryPrediction {
     percentile75: number;
     percentile90: number;
   };
+}
+
+export interface JobReport {
+  id: string;
+  jobId: string;
+  userId: string;
+  reason: 'spam' | 'misleading' | 'discriminatory' | 'expired' | 'duplicate' | 'other';
+  details?: string;
+  status: 'pending' | 'reviewing' | 'resolved' | 'dismissed';
+  createdAt: string;
+  updatedAt: string;
+  job?: Job;
+  user?: {
+    id: string;
+    email: string;
+    name?: string;
+  };
+}
+
+export interface JobReportsResponse {
+  reports: JobReport[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export interface UpdateReportStatusDto {
+  status: 'reviewing' | 'resolved' | 'dismissed';
+  adminNotes?: string;
 }

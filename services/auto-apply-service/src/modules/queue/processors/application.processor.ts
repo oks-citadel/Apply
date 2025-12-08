@@ -28,7 +28,25 @@ export class ApplicationProcessor {
   async handleApplicationSubmission(job: Job<ApplicationData>) {
     this.logger.log(`Processing application job ${job.id} for job: ${job.data.jobUrl}`);
 
+    let applicationId: string | undefined;
+
     try {
+      // Create application record first
+      const application = await this.applicationsService.create({
+        user_id: job.data.userId,
+        job_id: job.data.jobUrl, // In production, this should be a proper job_id
+        resume_id: job.data.resumePath, // In production, this should be a proper resume_id
+        cover_letter_id: job.data.coverLetterPath,
+        status: 'applied' as any,
+        auto_applied: true,
+        application_url: job.data.jobUrl,
+        queue_status: 'processing',
+        source: 'auto_apply' as any,
+      } as any);
+
+      applicationId = application.id;
+      this.logger.log(`Created application record ${applicationId} for job ${job.id}`);
+
       // Detect platform and select appropriate adapter
       const adapter = this.selectAdapter(job.data.jobUrl);
 
@@ -44,7 +62,7 @@ export class ApplicationProcessor {
       if (result.success) {
         // Update application record as successful
         await this.applicationsService.updateApplicationSuccess(
-          job.data.userId,
+          applicationId,
           result.applicationId || 'unknown',
           result.screenshotPath || '',
         );
@@ -57,7 +75,7 @@ export class ApplicationProcessor {
           this.logger.warn(`Application job ${job.id} requires manual intervention`);
 
           await this.applicationsService.updateApplicationError(
-            job.data.userId,
+            applicationId,
             {
               error: result.error,
               captcha_detected: result.captchaDetected,
@@ -77,16 +95,18 @@ export class ApplicationProcessor {
     } catch (error) {
       this.logger.error(`Application job ${job.id} failed: ${error.message}`);
 
-      // Update application record with error
-      await this.applicationsService.updateApplicationError(
-        job.data.userId,
-        {
-          error: error.message,
-          stack: error.stack,
-          attempt: job.attemptsMade,
-        },
-        job.attemptsMade,
-      );
+      // Update application record with error if we created one
+      if (applicationId) {
+        await this.applicationsService.updateApplicationError(
+          applicationId,
+          {
+            error: error.message,
+            stack: error.stack,
+            attempt: job.attemptsMade,
+          },
+          job.attemptsMade,
+        );
+      }
 
       throw error;
     }

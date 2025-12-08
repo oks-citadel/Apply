@@ -68,21 +68,21 @@ spec:
               name: jobpilot-config
               key: REDIS_PORT
         - name: AUTH_SERVICE_URL
-          value: "http://auth-service:3001"
+          value: "http://auth-service:4000"
         - name: USER_SERVICE_URL
-          value: "http://user-service:3002"
+          value: "http://user-service:4004"
         - name: JOB_SERVICE_URL
-          value: "http://job-service:3003"
+          value: "http://job-service:4002"
         - name: AI_SERVICE_URL
-          value: "http://ai-service:3004"
+          value: "http://ai-service:5000"
         - name: RESUME_SERVICE_URL
-          value: "http://resume-service:3005"
+          value: "http://resume-service:4001"
         - name: ANALYTICS_SERVICE_URL
-          value: "http://analytics-service:3006"
+          value: "http://analytics-service:3007"
         - name: NOTIFICATION_SERVICE_URL
-          value: "http://notification-service:3007"
+          value: "http://notification-service:4005"
         - name: AUTO_APPLY_SERVICE_URL
-          value: "http://auto-apply-service:3008"
+          value: "http://auto-apply-service:4003"
         envFrom:
         - configMapRef:
             name: jobpilot-config

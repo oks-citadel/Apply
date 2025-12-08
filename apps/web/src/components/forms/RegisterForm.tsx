@@ -9,6 +9,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { useAuthStore } from '@/stores/authStore';
+import { SocialLoginButtons } from '@/components/auth/SocialLoginButtons';
 import { AlertCircle } from 'lucide-react';
 
 const registerSchema = z
@@ -168,6 +169,8 @@ export function RegisterForm() {
       <Button type="submit" loading={isLoading} className="w-full" size="lg">
         Create Account
       </Button>
+
+      <SocialLoginButtons isLoading={isLoading} />
 
       <p className="text-center text-sm text-gray-600 dark:text-gray-400">
         Already have an account?{' '}

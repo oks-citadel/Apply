@@ -1,0 +1,194 @@
+# ============================================================================
+# cert-manager ClusterIssuers for Let's Encrypt
+# ============================================================================
+# These ClusterIssuers configure cert-manager to obtain SSL/TLS certificates
+# from Let's Encrypt using the ACME protocol with HTTP-01 challenges.
+#
+# Two issuers are configured:
+# 1. letsencrypt-prod: Production certificates (strict rate limits)
+# 2. letsencrypt-staging: Testing certificates (generous rate limits)
+#
+# Usage:
+#   kubectl apply -f infrastructure/kubernetes/cert-manager/cluster-issuers.yaml
+#
+# Reference in Ingress:
+#   annotations:
+#     cert-manager.io/cluster-issuer: "letsencrypt-prod"
+
+---
+# ============================================================================
+# Let's Encrypt Production ClusterIssuer
+# ============================================================================
+# Issues real, trusted SSL certificates.
+# Rate limit: 50 certificates per registered domain per week
+# Use for: Production environments only
+
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+  labels:
+    app: cert-manager
+    environment: production
+spec:
+  acme:
+    # Let's Encrypt Production ACME server
+    server: https://acme-v02.api.letsencrypt.org/directory
+
+    # Email address for:
+    # - Certificate expiration notifications
+    # - Let's Encrypt service updates
+    # - Rate limit notifications
+    # IMPORTANT: Change this to your actual email
+    email: admin@applyforus.com
+
+    # Secret to store the ACME account private key
+    # This secret will be created automatically in cert-manager namespace
+    privateKeySecretRef:
+      name: letsencrypt-prod-account-key
+
+    # Configure HTTP-01 challenge solver
+    solvers:
+    - http01:
+        ingress:
+          # NGINX ingress class
+          class: nginx
+
+          # Pod template for ACME challenge solver
+          podTemplate:
+            metadata:
+              labels:
+                app: cert-manager-acme-solver
+                environment: production
+            spec:
+              # Node selector to run on Linux nodes
+              nodeSelector:
+                kubernetes.io/os: linux
+
+              # Security context for solver pods
+              securityContext:
+                runAsNonRoot: true
+                runAsUser: 1000
+                fsGroup: 1000
+                seccompProfile:
+                  type: RuntimeDefault
+
+              # Resource limits for solver pods
+              containers:
+              - name: acme-solver
+                resources:
+                  requests:
+                    cpu: 10m
+                    memory: 64Mi
+                  limits:
+                    cpu: 100m
+                    memory: 128Mi
+
+---
+# ============================================================================
+# Let's Encrypt Staging ClusterIssuer
+# ============================================================================
+# Issues test certificates (not trusted by browsers, shows warning).
+# Rate limit: Much higher than production (ideal for testing)
+# Use for: Development, staging, and testing
+
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-staging
+  labels:
+    app: cert-manager
+    environment: staging
+spec:
+  acme:
+    # Let's Encrypt Staging ACME server
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
+
+    # Email address for notifications
+    # IMPORTANT: Change this to your actual email
+    email: admin@applyforus.com
+
+    # Secret to store the ACME account private key
+    privateKeySecretRef:
+      name: letsencrypt-staging-account-key
+
+    # Configure HTTP-01 challenge solver
+    solvers:
+    - http01:
+        ingress:
+          # NGINX ingress class
+          class: nginx
+
+          # Pod template for ACME challenge solver
+          podTemplate:
+            metadata:
+              labels:
+                app: cert-manager-acme-solver
+                environment: staging
+            spec:
+              # Node selector to run on Linux nodes
+              nodeSelector:
+                kubernetes.io/os: linux
+
+              # Security context for solver pods
+              securityContext:
+                runAsNonRoot: true
+                runAsUser: 1000
+                fsGroup: 1000
+                seccompProfile:
+                  type: RuntimeDefault
+
+              # Resource limits for solver pods
+              containers:
+              - name: acme-solver
+                resources:
+                  requests:
+                    cpu: 10m
+                    memory: 64Mi
+                  limits:
+                    cpu: 100m
+                    memory: 128Mi
+
+---
+# ============================================================================
+# DNS-01 ClusterIssuer (Optional - for wildcard certificates)
+# ============================================================================
+# Uncomment and configure if you need wildcard certificates (*.applyforus.com)
+# Requires DNS provider API access (Azure DNS in this example)
+
+# apiVersion: cert-manager.io/v1
+# kind: ClusterIssuer
+# metadata:
+#   name: letsencrypt-dns-prod
+#   labels:
+#     app: cert-manager
+#     environment: production
+# spec:
+#   acme:
+#     server: https://acme-v02.api.letsencrypt.org/directory
+#     email: admin@applyforus.com
+#     privateKeySecretRef:
+#       name: letsencrypt-dns-prod-account-key
+#
+#     # DNS-01 challenge solver using Azure DNS
+#     solvers:
+#     - dns01:
+#         azureDNS:
+#           # Azure DNS zone resource group
+#           resourceGroupName: jobpilot-prod-rg
+#
+#           # Azure subscription ID
+#           subscriptionID: "YOUR_SUBSCRIPTION_ID"
+#
+#           # DNS zone name
+#           hostedZoneName: applyforus.com
+#
+#           # Azure credentials (service principal)
+#           # Create secret with:
+#           # kubectl create secret generic azuredns-config \
+#           #   --from-literal=client-secret='YOUR_CLIENT_SECRET' \
+#           #   -n cert-manager
+#           environment: AzurePublicCloud
+#           managedIdentity:
+#             # Use managed identity if available
+#             clientID: "YOUR_MANAGED_IDENTITY_CLIENT_ID"

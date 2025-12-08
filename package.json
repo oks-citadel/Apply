@@ -11,6 +11,11 @@
     "dev": "turbo run dev",
     "build": "turbo run build",
     "test": "turbo run test",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:debug": "playwright test --debug",
+    "test:e2e:report": "playwright show-report",
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,css,md}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,css,md}\"",
@@ -23,12 +28,13 @@
     "docker:logs": "docker-compose logs -f"
   },
   "devDependencies": {
-    "turbo": "^2.0.0",
-    "typescript": "^5.3.0",
-    "prettier": "^3.1.0",
-    "eslint": "^8.56.0",
+    "@playwright/test": "^1.40.0",
+    "@typescript-eslint/eslint-plugin": "^6.19.0",
     "@typescript-eslint/parser": "^6.19.0",
-    "@typescript-eslint/eslint-plugin": "^6.19.0"
+    "eslint": "^8.56.0",
+    "prettier": "^3.1.0",
+    "turbo": "^2.0.0",
+    "typescript": "^5.3.0"
   },
   "engines": {
     "node": ">=20.0.0",

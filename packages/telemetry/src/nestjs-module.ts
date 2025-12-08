@@ -11,6 +11,9 @@ import {
 } from '@willsoto/nestjs-prometheus';
 import { MetricsService } from './metrics';
 import { StructuredLogger } from './logger';
+import { PrometheusMetricsService } from './prometheus-metrics.service';
+import { PrometheusController } from './prometheus.controller';
+import { PrometheusInterceptor } from './prometheus.interceptor';
 
 export interface TelemetryModuleOptions {
   serviceName: string;
@@ -113,11 +116,20 @@ export class TelemetryModule implements NestModule {
     providers.push(loggerProvider);
     exports.push(StructuredLogger);
 
+    // Add PrometheusMetricsService
+    providers.push(PrometheusMetricsService);
+    exports.push(PrometheusMetricsService);
+
+    // Add PrometheusInterceptor
+    providers.push(PrometheusInterceptor);
+    exports.push(PrometheusInterceptor);
+
     return {
       module: TelemetryModule,
       imports,
       providers,
       exports,
+      controllers: [PrometheusController],
       global: true,
     };
   }
@@ -233,4 +245,10 @@ export class LoggingInterceptor implements NestInterceptor {
 /**
  * Export interceptors and module
  */
-export { MetricsInterceptor, LoggingInterceptor };
+export {
+  MetricsInterceptor,
+  LoggingInterceptor,
+  PrometheusMetricsService,
+  PrometheusController,
+  PrometheusInterceptor,
+};

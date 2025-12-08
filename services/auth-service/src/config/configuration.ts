@@ -49,6 +49,12 @@ export default () => ({
     callbackUrl: process.env.LINKEDIN_CALLBACK_URL || 'http://localhost:3001/api/v1/auth/linkedin/callback',
   },
 
+  github: {
+    clientId: process.env.GITHUB_CLIENT_ID || '',
+    clientSecret: process.env.GITHUB_CLIENT_SECRET || '',
+    callbackUrl: process.env.GITHUB_CALLBACK_URL || 'http://localhost:3001/api/v1/auth/github/callback',
+  },
+
   // Email Configuration
   email: {
     host: process.env.EMAIL_HOST || 'smtp.gmail.com',

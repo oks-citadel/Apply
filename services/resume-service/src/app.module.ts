@@ -12,6 +12,7 @@ import { SectionsModule } from './modules/sections/sections.module';
 import { TemplatesModule } from './modules/templates/templates.module';
 import { ParserModule } from './modules/parser/parser.module';
 import { ExportModule } from './modules/export/export.module';
+import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
@@ -68,6 +69,7 @@ import { ExportModule } from './modules/export/export.module';
     TemplatesModule,
     ParserModule,
     ExportModule,
+    HealthModule,
   ],
   controllers: [],
   providers: [

@@ -1,14 +1,29 @@
 import { apiClient, handleApiError } from './client';
-import type { User, LoginCredentials, RegisterData, AuthResponse } from '@/types/auth';
+import type { User, LoginCredentials, RegisterData, AuthResponse, MfaRequiredResponse } from '@/types/auth';
 import type { MfaSetup, MfaVerification } from '@/types/user';
 
 export const authApi = {
   /**
    * Login user with email and password
    */
-  login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
+  login: async (credentials: LoginCredentials): Promise<AuthResponse | MfaRequiredResponse> => {
     try {
-      const response = await apiClient.post<AuthResponse>('/auth/login', credentials);
+      const response = await apiClient.post<AuthResponse | MfaRequiredResponse>('/auth/login', credentials);
+      return response.data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+
+  /**
+   * Verify MFA code during login
+   */
+  verifyMfaLogin: async (tempToken: string, code: string): Promise<AuthResponse> => {
+    try {
+      const response = await apiClient.post<AuthResponse>('/auth/mfa/login', {
+        tempToken,
+        code,
+      });
       return response.data;
     } catch (error) {
       throw handleApiError(error);
@@ -134,11 +149,11 @@ export const authApi = {
   /**
    * Verify MFA code and enable MFA
    */
-  verifyMfa: async (code: string): Promise<{ message: string; backupCodes: string[] }> => {
+  verifyMfa: async (code: string): Promise<{ message: string }> => {
     try {
-      const response = await apiClient.post<{ message: string; backupCodes: string[] }>(
+      const response = await apiClient.post<{ message: string }>(
         '/auth/mfa/verify',
-        { code }
+        { token: code }
       );
       return response.data;
     } catch (error) {
@@ -149,10 +164,10 @@ export const authApi = {
   /**
    * Disable MFA
    */
-  disableMfa: async (code: string): Promise<{ message: string }> => {
+  disableMfa: async (code?: string): Promise<{ message: string }> => {
     try {
       const response = await apiClient.post<{ message: string }>('/auth/mfa/disable', {
-        code,
+        token: code,
       });
       return response.data;
     } catch (error) {

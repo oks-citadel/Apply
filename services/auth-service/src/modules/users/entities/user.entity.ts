@@ -26,6 +26,7 @@ export enum AuthProvider {
   LOCAL = 'local',
   GOOGLE = 'google',
   LINKEDIN = 'linkedin',
+  GITHUB = 'github',
 }
 
 @Entity('users')

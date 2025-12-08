@@ -31,7 +31,7 @@ spec:
         pod-security.kubernetes.io/warn: restricted
       annotations:
         prometheus.io/scrape: "true"
-        prometheus.io/port: "3007"
+        prometheus.io/port: "4005"
         prometheus.io/path: "/metrics"
         # Pod Security Standards - Restricted profile
         seccomp.security.alpha.kubernetes.io/pod: runtime/default
@@ -48,12 +48,12 @@ spec:
         image: jobpilotacr.azurecr.io/notification-service:${VERSION:-v1.0.0}
         imagePullPolicy: IfNotPresent
         ports:
-        - containerPort: 3007
+        - containerPort: 4005
           name: http
           protocol: TCP
         env:
         - name: PORT
-          value: "3007"
+          value: "4005"
         - name: SERVICE_NAME
           value: "notification-service"
         envFrom:
@@ -70,8 +70,8 @@ spec:
             memory: 512Mi
         livenessProbe:
           httpGet:
-            path: /health
-            port: 3007
+            path: /health/live
+            port: 4005
             scheme: HTTP
           initialDelaySeconds: 30
           periodSeconds: 10
@@ -80,8 +80,8 @@ spec:
           failureThreshold: 3
         readinessProbe:
           httpGet:
-            path: /ready
-            port: 3007
+            path: /health/ready
+            port: 4005
             scheme: HTTP
           initialDelaySeconds: 10
           periodSeconds: 5
@@ -132,8 +132,8 @@ spec:
   selector:
     app: notification-service
   ports:
-  - port: 3007
-    targetPort: 3007
+  - port: 4005
+    targetPort: 4005
     protocol: TCP
     name: http
   sessionAffinity: None

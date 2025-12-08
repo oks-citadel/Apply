@@ -363,9 +363,65 @@ export class AuthService {
     // Verify email
     await this.usersService.verifyEmail(user.id);
 
+    // Send welcome email
+    try {
+      await this.emailService.sendWelcomeEmail(user.email, user.firstName);
+    } catch (error) {
+      this.logger.error(
+        `Failed to send welcome email to: ${user.email}`,
+        error.stack,
+      );
+      // Don't fail verification if welcome email fails
+    }
+
     this.logger.log(`Email verified successfully for user: ${user.id}`);
 
     return { message: 'Email verified successfully' };
+  }
+
+  /**
+   * Resend verification email
+   */
+  async resendVerificationEmail(userId: string): Promise<{ message: string }> {
+    this.logger.log(`Resending verification email for user: ${userId}`);
+
+    const user = await this.usersService.findByIdOrFail(userId);
+
+    // Check if already verified
+    if (user.isEmailVerified) {
+      throw new BadRequestException('Email is already verified');
+    }
+
+    // Check if user has a recent verification email (rate limiting)
+    if (
+      user.emailVerificationExpiry &&
+      user.emailVerificationExpiry > new Date(Date.now() + this.emailVerificationExpiresIn * 1000 - 300000) // Within 5 minutes of last email
+    ) {
+      throw new BadRequestException(
+        'Verification email was recently sent. Please check your inbox or wait a few minutes before requesting another.',
+      );
+    }
+
+    // Generate new verification token
+    const token = await this.generateEmailVerificationToken(user);
+
+    // Send verification email
+    try {
+      await this.emailService.sendVerificationEmail(user.email, token);
+      this.logger.log(
+        `Verification email resent successfully to: ${user.email}`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Failed to resend verification email to: ${user.email}`,
+        error.stack,
+      );
+      throw new BadRequestException('Failed to send verification email');
+    }
+
+    return {
+      message: 'Verification email has been sent. Please check your inbox.',
+    };
   }
 
   /**
@@ -373,6 +429,23 @@ export class AuthService {
    */
   async googleLogin(user: User): Promise<TokenResponseDto> {
     this.logger.log(`Google OAuth login for user: ${user.id}`);
+
+    // Generate tokens
+    const tokens = await this.generateTokens(user);
+
+    return new TokenResponseDto(
+      tokens.accessToken,
+      tokens.refreshToken,
+      user,
+      this.parseExpiresIn(this.accessTokenExpiresIn),
+    );
+  }
+
+  /**
+   * Handle generic OAuth login (LinkedIn, GitHub, etc.)
+   */
+  async oauthLogin(user: User): Promise<TokenResponseDto> {
+    this.logger.log(`OAuth login for user: ${user.id}`);
 
     // Generate tokens
     const tokens = await this.generateTokens(user);
@@ -518,6 +591,32 @@ export class AuthService {
     this.logger.log(`MFA disabled successfully for user: ${userId}`);
 
     return { message: 'MFA disabled successfully' };
+  }
+
+  /**
+   * Disconnect OAuth provider from user account
+   */
+  async disconnectOAuth(userId: string): Promise<{ message: string }> {
+    this.logger.log(`Disconnecting OAuth for user: ${userId}`);
+
+    const user = await this.usersService.findByIdOrFail(userId);
+
+    // Check if user has a password set (can't disconnect if it's their only auth method)
+    if (!user.password && user.authProvider !== AuthProvider.LOCAL) {
+      throw new BadRequestException(
+        'Cannot disconnect OAuth provider. Please set a password first to maintain account access.',
+      );
+    }
+
+    // Reset OAuth-related fields
+    await this.usersService.update(userId, {
+      providerId: null,
+      authProvider: AuthProvider.LOCAL,
+    });
+
+    this.logger.log(`OAuth disconnected successfully for user: ${userId}`);
+
+    return { message: 'OAuth provider disconnected successfully' };
   }
 
   /**

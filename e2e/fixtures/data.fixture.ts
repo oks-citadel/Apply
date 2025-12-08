@@ -375,3 +375,152 @@ export const TEST_NOTIFICATION_SETTINGS = {
     },
   },
 };
+
+/**
+ * Test email verification codes
+ */
+export const TEST_VERIFICATION_CODES = {
+  valid: '123456',
+  invalid: '000000',
+  expired: '999999',
+  short: '123',
+  long: '12345678',
+};
+
+/**
+ * Test cover letters
+ */
+export const TEST_COVER_LETTERS = {
+  basic: `Dear Hiring Manager,
+
+I am writing to express my strong interest in the software engineer position at your company. With my background in full-stack development and passion for creating innovative solutions, I believe I would be a valuable addition to your team.
+
+My experience includes working with modern web technologies such as React, Node.js, and TypeScript. I have successfully delivered multiple projects from conception to deployment, always focusing on code quality, scalability, and user experience.
+
+I am particularly excited about this opportunity because it aligns perfectly with my career goals and allows me to contribute to meaningful projects. I am confident that my technical skills and collaborative approach would make me a strong fit for your team.
+
+Thank you for considering my application. I look forward to discussing how I can contribute to your company's success.
+
+Best regards,
+[Your Name]`,
+
+  customized: `Dear [Hiring Manager],
+
+I am excited to apply for the [Position] role at [Company]. Your company's mission to [Company Mission] deeply resonates with my professional values and career aspirations.
+
+In my current role at [Current Company], I have [Key Achievement]. This experience has equipped me with the skills necessary to excel in this position, particularly in [Specific Skill Area].
+
+I am particularly drawn to this opportunity because [Specific Reason]. I believe my background in [Relevant Experience] would enable me to make immediate contributions to your team.
+
+I would welcome the opportunity to discuss how my skills and experience align with your needs.
+
+Thank you for your consideration.
+
+Sincerely,
+[Your Name]`,
+
+  minimal: 'I am very interested in this position and believe my skills are a great fit.',
+};
+
+/**
+ * Test search queries
+ */
+export const TEST_SEARCH_QUERIES = {
+  popular: [
+    'software engineer',
+    'frontend developer',
+    'backend developer',
+    'full stack developer',
+    'data scientist',
+    'product manager',
+    'UX designer',
+    'devops engineer',
+  ],
+  specific: [
+    'senior react developer',
+    'junior python developer',
+    'remote typescript engineer',
+    'entry level software engineer',
+  ],
+  invalid: [
+    '',
+    ' ',
+    '<script>alert("xss")</script>',
+    'a'.repeat(1000),
+  ],
+};
+
+/**
+ * Test filter combinations
+ */
+export const TEST_FILTERS = {
+  remote: {
+    remote: true,
+    jobType: 'full-time',
+  },
+  location: {
+    location: 'San Francisco',
+    remote: false,
+  },
+  salary: {
+    salaryMin: 100000,
+    salaryMax: 150000,
+  },
+  experienceLevel: {
+    experienceLevel: 'senior',
+  },
+  combined: {
+    remote: true,
+    jobType: 'full-time',
+    salaryMin: 120000,
+    experienceLevel: 'mid',
+  },
+};
+
+/**
+ * Test error messages
+ */
+export const TEST_ERROR_MESSAGES = {
+  auth: {
+    invalidCredentials: /invalid credentials|incorrect|wrong password/i,
+    accountLocked: /account locked|too many attempts/i,
+    emailNotVerified: /email not verified|verify your email/i,
+  },
+  validation: {
+    requiredField: /required|cannot be empty/i,
+    invalidEmail: /invalid email|valid email address/i,
+    weakPassword: /weak password|password too weak/i,
+    passwordMismatch: /passwords do not match|passwords must match/i,
+  },
+  application: {
+    alreadyApplied: /already applied|duplicate application/i,
+    noResume: /resume required|select a resume/i,
+  },
+};
+
+/**
+ * Helper function to generate unique email
+ */
+export function generateUniqueEmail(prefix: string = 'test'): string {
+  const timestamp = Date.now();
+  const random = Math.floor(Math.random() * 1000);
+  return `${prefix}.${timestamp}.${random}@example.com`;
+}
+
+/**
+ * Helper function to generate test resume
+ */
+export function generateTestResume(overrides?: Partial<typeof TEST_RESUME.basic>) {
+  return {
+    ...TEST_RESUME.basic,
+    ...overrides,
+    title: overrides?.title || `Test Resume ${Date.now()}`,
+  };
+}
+
+/**
+ * Helper function to wait with timeout
+ */
+export async function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}

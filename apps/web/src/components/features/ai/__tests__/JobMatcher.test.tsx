@@ -212,7 +212,7 @@ describe('JobMatcher', () => {
 
       // Click to expand details
       const firstJob = screen.getByText('Senior Backend Engineer');
-      await user.click(firstJob);
+      user.click(firstJob);
 
       await waitFor(() => {
         expect(screen.getByText(/skill match.*95/i)).toBeInTheDocument();
@@ -225,7 +225,7 @@ describe('JobMatcher', () => {
 
       await waitFor(() => {
         const firstJob = screen.getByText('Senior Backend Engineer');
-        await user.click(firstJob);
+        user.click(firstJob);
       });
 
       await waitFor(() => {
@@ -239,7 +239,7 @@ describe('JobMatcher', () => {
 
       await waitFor(() => {
         const firstJob = screen.getByText('Senior Backend Engineer');
-        await user.click(firstJob);
+        user.click(firstJob);
       });
 
       await waitFor(() => {
@@ -253,7 +253,7 @@ describe('JobMatcher', () => {
 
       await waitFor(() => {
         const firstJob = screen.getByText('Senior Backend Engineer');
-        await user.click(firstJob);
+        user.click(firstJob);
       });
 
       await waitFor(() => {
@@ -269,7 +269,7 @@ describe('JobMatcher', () => {
 
       await waitFor(() => {
         const firstJob = screen.getByText('Senior Backend Engineer');
-        await user.click(firstJob);
+        user.click(firstJob);
       });
 
       await waitFor(() => {
@@ -284,7 +284,7 @@ describe('JobMatcher', () => {
 
       await waitFor(() => {
         const thirdJob = screen.getByText('Backend Developer');
-        await user.click(thirdJob);
+        user.click(thirdJob);
       });
 
       await waitFor(() => {
@@ -299,7 +299,7 @@ describe('JobMatcher', () => {
 
       await waitFor(() => {
         const jobCard = screen.getByText('Senior Backend Engineer');
-        await user.click(jobCard);
+        user.click(jobCard);
       });
 
       await waitFor(() => {
@@ -319,7 +319,7 @@ describe('JobMatcher', () => {
       });
 
       const locationInput = screen.getByLabelText(/location/i);
-      await user.type(locationInput, 'San Francisco');
+      user.type(locationInput, 'San Francisco');
 
       await waitFor(() => {
         expect(screen.getByText('Senior Backend Engineer')).toBeInTheDocument();
@@ -335,7 +335,7 @@ describe('JobMatcher', () => {
       });
 
       const remoteCheckbox = screen.getByLabelText(/remote/i);
-      await user.click(remoteCheckbox);
+      user.click(remoteCheckbox);
 
       await waitFor(() => {
         expect(screen.getByText('Staff Software Engineer')).toBeInTheDocument();
@@ -352,9 +352,9 @@ describe('JobMatcher', () => {
       });
 
       const minScoreSlider = screen.getByLabelText(/minimum match score/i);
-      await user.click(minScoreSlider);
+      user.click(minScoreSlider);
       // Simulate setting value to 80
-      await user.keyboard('{ArrowRight}{ArrowRight}{ArrowRight}');
+      user.keyboard('{ArrowRight}{ArrowRight}{ArrowRight}');
 
       await waitFor(() => {
         expect(screen.queryByText('Backend Developer')).not.toBeInTheDocument();
@@ -366,7 +366,7 @@ describe('JobMatcher', () => {
       render(<JobMatcher />, { wrapper: createWrapper() });
 
       const minSalaryInput = screen.getByLabelText(/minimum salary/i);
-      await user.type(minSalaryInput, '150000');
+      user.type(minSalaryInput, '150000');
 
       await waitFor(() => {
         expect(screen.queryByText('Backend Developer')).not.toBeInTheDocument();
@@ -379,7 +379,7 @@ describe('JobMatcher', () => {
 
       // Apply filters
       const remoteCheckbox = screen.getByLabelText(/remote/i);
-      await user.click(remoteCheckbox);
+      user.click(remoteCheckbox);
 
       await waitFor(() => {
         expect(screen.getAllByRole('article').length).toBeLessThan(3);
@@ -387,7 +387,7 @@ describe('JobMatcher', () => {
 
       // Clear filters
       const clearButton = screen.getByRole('button', { name: /clear filters/i });
-      await user.click(clearButton);
+      user.click(clearButton);
 
       await waitFor(() => {
         expect(screen.getAllByRole('article')).toHaveLength(3);
@@ -412,7 +412,7 @@ describe('JobMatcher', () => {
 
       await waitFor(() => {
         const sortSelect = screen.getByLabelText(/sort by/i);
-        await user.selectOptions(sortSelect, 'salary');
+        user.selectOptions(sortSelect, 'salary');
       });
 
       await waitFor(() => {
@@ -427,7 +427,7 @@ describe('JobMatcher', () => {
       render(<JobMatcher />, { wrapper: createWrapper() });
 
       const sortSelect = screen.getByLabelText(/sort by/i);
-      await user.selectOptions(sortSelect, 'company');
+      user.selectOptions(sortSelect, 'company');
 
       await waitFor(() => {
         const jobCards = screen.getAllByRole('article');
@@ -440,7 +440,7 @@ describe('JobMatcher', () => {
       render(<JobMatcher />, { wrapper: createWrapper() });
 
       const reverseButton = screen.getByRole('button', { name: /reverse/i });
-      await user.click(reverseButton);
+      user.click(reverseButton);
 
       await waitFor(() => {
         const jobCards = screen.getAllByRole('article');
@@ -461,7 +461,7 @@ describe('JobMatcher', () => {
       });
 
       const saveButton = screen.getAllByRole('button', { name: /save/i })[0];
-      await user.click(saveButton);
+      user.click(saveButton);
 
       await waitFor(() => {
         expect(screen.getByText(/saved/i)).toBeInTheDocument();
@@ -478,7 +478,7 @@ describe('JobMatcher', () => {
       });
 
       const applyButton = screen.getAllByRole('button', { name: /apply/i })[0];
-      await user.click(applyButton);
+      user.click(applyButton);
 
       await waitFor(() => {
         expect(screen.getByText(/application started/i)).toBeInTheDocument();
@@ -491,7 +491,7 @@ describe('JobMatcher', () => {
 
       await waitFor(() => {
         const viewButtons = screen.getAllByRole('button', { name: /view details/i });
-        await user.click(viewButtons[0]);
+        user.click(viewButtons[0]);
       });
 
       await waitFor(() => {
@@ -505,7 +505,7 @@ describe('JobMatcher', () => {
 
       await waitFor(() => {
         const dismissButtons = screen.getAllByRole('button', { name: /dismiss/i });
-        await user.click(dismissButtons[0]);
+        user.click(dismissButtons[0]);
       });
 
       await waitFor(() => {
@@ -530,7 +530,7 @@ describe('JobMatcher', () => {
 
       await waitFor(() => {
         const firstJob = screen.getByText('Senior Backend Engineer');
-        await user.click(firstJob);
+        user.click(firstJob);
       });
 
       await waitFor(() => {
@@ -544,7 +544,7 @@ describe('JobMatcher', () => {
 
       await waitFor(() => {
         const firstJob = screen.getByText('Senior Backend Engineer');
-        await user.click(firstJob);
+        user.click(firstJob);
       });
 
       await waitFor(() => {
@@ -620,7 +620,7 @@ describe('JobMatcher', () => {
       );
 
       const retryButton = screen.getByRole('button', { name: /retry/i });
-      await user.click(retryButton);
+      user.click(retryButton);
 
       await waitFor(() => {
         expect(screen.getByText('Senior Backend Engineer')).toBeInTheDocument();
@@ -656,7 +656,7 @@ describe('JobMatcher', () => {
       });
 
       // Tab through job cards
-      await user.tab();
+      user.tab();
       const firstJobCard = screen.getByText('Senior Backend Engineer').closest('article');
       expect(firstJobCard).toHaveClass(/focus/);
     });
@@ -701,7 +701,7 @@ describe('JobMatcher', () => {
       const locationInput = screen.getByLabelText(/location/i);
 
       // Type rapidly
-      await user.type(locationInput, 'San Francisco');
+      user.type(locationInput, 'San Francisco');
 
       // Should not trigger API call for every keystroke
       expect(locationInput).toHaveValue('San Francisco');

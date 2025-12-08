@@ -40,6 +40,8 @@ jobs:
           - notification-service
           - auto-apply-service
           - ai-service
+          - analytics-service
+          - orchestrator-service
 
     steps:
       - name: Checkout code
@@ -117,7 +119,7 @@ jobs:
         run: |
           echo "Creating backup of current deployments..."
           mkdir -p deployment-backup
-          for service in web auth-service user-service job-service resume-service notification-service auto-apply-service ai-service; do
+          for service in web auth-service user-service job-service resume-service notification-service auto-apply-service ai-service analytics-service orchestrator-service; do
             kubectl get deployment/$service -n jobpilot -o yaml > deployment-backup/$service.yaml || echo "Deployment $service not found"
           done
 
@@ -132,7 +134,7 @@ jobs:
         id: deploy
         run: |
           echo "Deploying to staging environment..."
-          services=(web auth-service user-service job-service resume-service notification-service auto-apply-service ai-service)
+          services=(web auth-service user-service job-service resume-service notification-service auto-apply-service ai-service analytics-service orchestrator-service)
 
           for service in "${services[@]}"; do
             echo "Deploying $service..."
@@ -143,7 +145,7 @@ jobs:
         id: rollout
         run: |
           echo "Waiting for all deployments to complete..."
-          services=(web auth-service user-service job-service resume-service notification-service auto-apply-service ai-service)
+          services=(web auth-service user-service job-service resume-service notification-service auto-apply-service ai-service analytics-service orchestrator-service)
 
           for service in "${services[@]}"; do
             echo "Checking rollout status for $service..."
@@ -177,7 +179,7 @@ jobs:
         if: failure() && (steps.rollout.outcome == 'failure' || steps.smoke-tests.outcome == 'failure')
         run: |
           echo "Deployment failed, rolling back..."
-          services=(web auth-service user-service job-service resume-service notification-service auto-apply-service ai-service)
+          services=(web auth-service user-service job-service resume-service notification-service auto-apply-service ai-service analytics-service orchestrator-service)
 
           for service in "${services[@]}"; do
             if [ -f deployment-backup/$service.yaml ]; then
@@ -238,7 +240,7 @@ jobs:
           mkdir -p prod-deployment-backup
           timestamp=$(date +%Y%m%d-%H%M%S)
 
-          for service in web auth-service user-service job-service resume-service notification-service auto-apply-service ai-service; do
+          for service in web auth-service user-service job-service resume-service notification-service auto-apply-service ai-service analytics-service orchestrator-service; do
             kubectl get deployment/$service -n jobpilot -o yaml > prod-deployment-backup/$service-$timestamp.yaml || echo "Deployment $service not found"
           done
 
@@ -255,7 +257,7 @@ jobs:
           echo "Starting production deployment..."
 
           # Deploy backend services with rolling update
-          services=(auth-service user-service job-service resume-service notification-service auto-apply-service ai-service)
+          services=(auth-service user-service job-service resume-service notification-service auto-apply-service ai-service analytics-service orchestrator-service)
 
           for service in "${services[@]}"; do
             echo "Deploying $service with rolling update..."
@@ -351,7 +353,7 @@ jobs:
           echo "CRITICAL: Production deployment failed, initiating rollback..."
 
           # Rollback services
-          services=(web auth-service user-service job-service resume-service notification-service auto-apply-service ai-service)
+          services=(web auth-service user-service job-service resume-service notification-service auto-apply-service ai-service analytics-service orchestrator-service)
 
           for service in "${services[@]}"; do
             backup_file=$(ls -t prod-deployment-backup/$service-*.yaml 2>/dev/null | head -1)

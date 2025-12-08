@@ -258,7 +258,42 @@ async def general_exception_handler(request: Request, exc: Exception) -> JSONRes
 @app.get("/health", response_model=HealthResponse, tags=["Health"])
 async def health_check() -> HealthResponse:
     """
-    Health check endpoint.
+    Basic health check endpoint.
+    Returns service status without checking external dependencies.
+
+    Returns:
+        Health status of the service
+    """
+    return HealthResponse(
+        status="healthy",
+        version=settings.app_version,
+        dependencies={},
+    )
+
+
+@app.get("/health/live", tags=["Health"])
+async def liveness_check() -> dict:
+    """
+    Liveness probe endpoint.
+    Used by Kubernetes to determine if the service is alive.
+    Should return quickly without checking external dependencies.
+
+    Returns:
+        Basic liveness status
+    """
+    return {
+        "status": "ok",
+        "service": settings.app_name,
+        "timestamp": time.time(),
+    }
+
+
+@app.get("/health/ready", response_model=HealthResponse, tags=["Health"])
+async def readiness_check() -> HealthResponse:
+    """
+    Readiness probe endpoint.
+    Used by Kubernetes to determine if the service is ready to accept traffic.
+    Checks all critical dependencies.
 
     Returns:
         Health status of the service and its dependencies
@@ -293,6 +328,24 @@ async def health_check() -> HealthResponse:
         version=settings.app_version,
         dependencies=dependencies,
     )
+
+
+# Backward compatibility: /ready endpoint
+@app.get("/ready", tags=["Health"])
+async def ready_check() -> dict:
+    """
+    Readiness check endpoint (backward compatibility).
+    Redirects to /health/ready logic.
+
+    Returns:
+        Readiness status
+    """
+    result = await readiness_check()
+    return {
+        "status": result.status,
+        "version": result.version,
+        "dependencies": result.dependencies,
+    }
 
 
 @app.get("/", tags=["Root"])

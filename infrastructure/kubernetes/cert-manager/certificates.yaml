@@ -1,0 +1,192 @@
+# ============================================================================
+# SSL/TLS Certificates for ApplyforUs Platform
+# ============================================================================
+# These Certificate resources define the SSL/TLS certificates to be issued
+# by cert-manager using Let's Encrypt.
+#
+# Certificates are automatically renewed 30 days before expiration.
+#
+# Usage:
+#   kubectl apply -f infrastructure/kubernetes/cert-manager/certificates.yaml
+#
+# Note: In most cases, certificates are automatically created by ingress
+# annotations. This file provides explicit Certificate resources for:
+# - Better visibility and control
+# - Custom renewal configuration
+# - Advanced certificate options
+
+---
+# ============================================================================
+# Production Certificate - applyforus.com
+# ============================================================================
+# Main SSL certificate for production domains:
+# - applyforus.com (root domain)
+# - www.applyforus.com (www subdomain)
+# - api.applyforus.com (API subdomain)
+
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: applyforus-tls-cert
+  namespace: jobpilot
+  labels:
+    app: jobpilot-platform
+    environment: production
+    certificate-type: production
+spec:
+  # Secret name where certificate will be stored
+  # This secret is referenced by the Ingress resource
+  secretName: applyforus-tls-cert
+
+  # Certificate duration (Let's Encrypt default: 90 days)
+  duration: 2160h  # 90 days
+
+  # Renew certificate 30 days before expiration
+  renewBefore: 720h  # 30 days
+
+  # Reference to ClusterIssuer
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+    group: cert-manager.io
+
+  # Common Name (primary domain)
+  commonName: applyforus.com
+
+  # Subject Alternative Names (SAN)
+  # All domains covered by this certificate
+  dnsNames:
+  - applyforus.com
+  - www.applyforus.com
+  - api.applyforus.com
+
+  # Private key configuration
+  privateKey:
+    algorithm: RSA
+    encoding: PKCS1
+    size: 2048
+    rotationPolicy: Always
+
+  # Certificate usages
+  usages:
+  - digital signature
+  - key encipherment
+  - server auth
+
+  # Secret template (optional metadata for the secret)
+  secretTemplate:
+    labels:
+      app: jobpilot-platform
+      certificate: production
+    annotations:
+      managed-by: cert-manager
+
+---
+# ============================================================================
+# Staging Certificate - staging.applyforus.com
+# ============================================================================
+# SSL certificate for staging environment
+
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: staging-tls-cert
+  namespace: jobpilot
+  labels:
+    app: jobpilot-platform
+    environment: staging
+    certificate-type: staging
+spec:
+  # Secret name where certificate will be stored
+  secretName: staging-tls-cert
+
+  # Certificate duration
+  duration: 2160h  # 90 days
+
+  # Renew certificate 30 days before expiration
+  renewBefore: 720h  # 30 days
+
+  # Use staging issuer for testing
+  # Change to letsencrypt-prod when ready for production
+  issuerRef:
+    name: letsencrypt-staging
+    kind: ClusterIssuer
+    group: cert-manager.io
+
+  # Common Name
+  commonName: staging.applyforus.com
+
+  # DNS names
+  dnsNames:
+  - staging.applyforus.com
+
+  # Private key configuration
+  privateKey:
+    algorithm: RSA
+    encoding: PKCS1
+    size: 2048
+    rotationPolicy: Always
+
+  # Certificate usages
+  usages:
+  - digital signature
+  - key encipherment
+  - server auth
+
+  # Secret template
+  secretTemplate:
+    labels:
+      app: jobpilot-platform
+      certificate: staging
+    annotations:
+      managed-by: cert-manager
+
+---
+# ============================================================================
+# Wildcard Certificate (Optional - Requires DNS-01 Challenge)
+# ============================================================================
+# Uncomment if you need a wildcard certificate (*.applyforus.com)
+# Requires DNS-01 challenge solver configured in ClusterIssuer
+
+# apiVersion: cert-manager.io/v1
+# kind: Certificate
+# metadata:
+#   name: applyforus-wildcard-cert
+#   namespace: jobpilot
+#   labels:
+#     app: jobpilot-platform
+#     environment: production
+#     certificate-type: wildcard
+# spec:
+#   secretName: applyforus-wildcard-cert
+#   duration: 2160h
+#   renewBefore: 720h
+#
+#   issuerRef:
+#     name: letsencrypt-dns-prod  # Requires DNS-01 issuer
+#     kind: ClusterIssuer
+#     group: cert-manager.io
+#
+#   commonName: "*.applyforus.com"
+#
+#   dnsNames:
+#   - "*.applyforus.com"
+#   - applyforus.com  # Include root domain
+#
+#   privateKey:
+#     algorithm: RSA
+#     encoding: PKCS1
+#     size: 2048
+#     rotationPolicy: Always
+#
+#   usages:
+#   - digital signature
+#   - key encipherment
+#   - server auth
+#
+#   secretTemplate:
+#     labels:
+#       app: jobpilot-platform
+#       certificate: wildcard
+#     annotations:
+#       managed-by: cert-manager

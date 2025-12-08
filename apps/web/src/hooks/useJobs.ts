@@ -218,12 +218,16 @@ export function useSalaryPrediction() {
  * Report job posting
  */
 export function useReportJob() {
+  const queryClient = useQueryClient();
   const { toast } = useToast();
 
   return useMutation({
     mutationFn: ({ jobId, reason, details }: { jobId: string; reason: string; details?: string }) =>
       jobsApi.reportJob(jobId, reason, details),
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
+      // Invalidate the specific job to refetch with updated isReported flag
+      queryClient.invalidateQueries({ queryKey: jobKeys.detail(variables.jobId) });
+
       toast({
         title: 'Report submitted',
         description: 'Thank you for reporting this job. We will review it shortly.',
@@ -233,6 +237,59 @@ export function useReportJob() {
     onError: (error: any) => {
       toast({
         title: 'Failed to submit report',
+        description: error.message || 'An error occurred.',
+        variant: 'error',
+      });
+    },
+  });
+}
+
+/**
+ * Get job reports (Admin only)
+ */
+export function useJobReports(params?: {
+  page?: number;
+  limit?: number;
+  status?: string;
+  reason?: string;
+}) {
+  return useQuery({
+    queryKey: [...jobKeys.all, 'reports', params],
+    queryFn: () => jobsApi.getJobReports(params),
+    staleTime: 1 * 60 * 1000, // 1 minute
+  });
+}
+
+/**
+ * Update job report status (Admin only)
+ */
+export function useUpdateReportStatus() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: ({
+      reportId,
+      status,
+      adminNotes,
+    }: {
+      reportId: string;
+      status: 'reviewing' | 'resolved' | 'dismissed';
+      adminNotes?: string;
+    }) => jobsApi.updateReportStatus(reportId, { status, adminNotes }),
+    onSuccess: () => {
+      // Invalidate reports list
+      queryClient.invalidateQueries({ queryKey: [...jobKeys.all, 'reports'] });
+
+      toast({
+        title: 'Report updated',
+        description: 'The report status has been updated successfully.',
+        variant: 'success',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Failed to update report',
         description: error.message || 'An error occurred.',
         variant: 'error',
       });

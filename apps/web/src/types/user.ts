@@ -135,11 +135,21 @@ export interface CheckoutSession {
 export interface MfaSetup {
   secret: string;
   qrCode: string;
-  backupCodes: string[];
+  otpauthUrl: string;
 }
 
 export interface MfaVerification {
   code: string;
+}
+
+export interface MfaSetupResponse {
+  secret: string;
+  qrCode: string;
+  otpauthUrl: string;
+}
+
+export interface MfaVerifyResponse {
+  message: string;
 }
 
 export interface ActivityLog {

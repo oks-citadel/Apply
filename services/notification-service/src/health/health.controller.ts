@@ -1,38 +1,70 @@
 import { Controller, Get } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { HealthService } from './health.service';
 
-@ApiTags('health')
+/**
+ * Health Check Controller for Notification Service
+ * Provides endpoints for service health monitoring
+ */
+@ApiTags('Health')
 @Controller('health')
 export class HealthController {
+  constructor(private readonly healthService: HealthService) {}
+
+  /**
+   * Basic health check endpoint
+   * Returns service status without checking external dependencies
+   */
   @Get()
-  @ApiOperation({ summary: 'Health check endpoint' })
-  @ApiResponse({ status: 200, description: 'Service is healthy' })
-  check() {
-    return {
-      status: 'ok',
-      timestamp: new Date().toISOString(),
-      service: 'notification-service',
-      version: '1.0.0',
-    };
+  @ApiOperation({ summary: 'Basic health check' })
+  @ApiResponse({
+    status: 200,
+    description: 'Service is running',
+    schema: {
+      type: 'object',
+      properties: {
+        status: { type: 'string', example: 'ok' },
+        service: { type: 'string', example: 'notification-service' },
+        version: { type: 'string', example: '1.0.0' },
+        timestamp: { type: 'string', format: 'date-time' },
+      },
+    },
+  })
+  async getHealth() {
+    return this.healthService.getBasicHealth();
   }
 
-  @Get('ready')
-  @ApiOperation({ summary: 'Readiness check endpoint' })
-  @ApiResponse({ status: 200, description: 'Service is ready' })
-  ready() {
-    return {
-      status: 'ready',
-      timestamp: new Date().toISOString(),
-    };
-  }
-
+  /**
+   * Liveness probe endpoint
+   * Used by Kubernetes to determine if the service is alive
+   * Should return quickly without checking external dependencies
+   */
   @Get('live')
-  @ApiOperation({ summary: 'Liveness check endpoint' })
-  @ApiResponse({ status: 200, description: 'Service is live' })
-  live() {
-    return {
-      status: 'live',
-      timestamp: new Date().toISOString(),
-    };
+  @ApiOperation({ summary: 'Liveness probe' })
+  @ApiResponse({
+    status: 200,
+    description: 'Service is alive',
+  })
+  async getLiveness() {
+    return this.healthService.getLiveness();
+  }
+
+  /**
+   * Readiness probe endpoint
+   * Used by Kubernetes to determine if the service is ready to accept traffic
+   * Checks database, Redis and other critical dependencies
+   */
+  @Get('ready')
+  @ApiOperation({ summary: 'Readiness probe' })
+  @ApiResponse({
+    status: 200,
+    description: 'Service is ready',
+  })
+  @ApiResponse({
+    status: 503,
+    description: 'Service is not ready',
+  })
+  async getReadiness() {
+    return this.healthService.getReadiness();
   }
 }

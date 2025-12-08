@@ -125,7 +125,14 @@
       "Bash(npm run type-check:*)",
       "Bash(git fetch:*)",
       "Bash(git pull:*)",
-      "Bash(git stash:*)"
+      "Bash(git stash:*)",
+      "Bash(az devops configure:*)",
+      "Bash(export AZURE_DEVOPS_EXT_PAT=\"AYhpMYbwfVyMuLVU54Xx4H7lRi6a3ZvPTf7z8yT6k6v5yXoeX9nlJQQJ99BLACAAAAAAAAAAAAASAZDO3hzv\")",
+      "Bash(\"https://dev.azure.com/citadelcloudmanagement/ApplyPlatform/_apis/pipelines/environments?api-version=6.0-preview.1\")",
+      "Bash(\"https://dev.azure.com/citadelcloudmanagement/ApplyPlatform/_apis/build/builds/93/timeline?api-version=6.0\")",
+      "Bash(\"https://dev.azure.com/citadelcloudmanagement/ApplyPlatform/_apis/build/builds/95?api-version=6.0\")",
+      "Bash(npx tsc:*)",
+      "Bash(npm ls:*)"
     ],
     "deny": [],
     "ask": []

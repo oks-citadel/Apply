@@ -8,6 +8,7 @@ import { LoggingModule, LoggingInterceptor } from '@jobpilot/logging';
 import configuration from './config/configuration';
 import { databaseConfig } from './config/database.config';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
+import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
@@ -54,6 +55,7 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
 
     // Feature modules
     AnalyticsModule,
+    HealthModule,
   ],
   providers: [
     {

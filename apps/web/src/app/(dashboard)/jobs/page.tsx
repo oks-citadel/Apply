@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { Search, MapPin, Briefcase, DollarSign, Bookmark, ExternalLink, Loader2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -11,6 +12,7 @@ import { useJobs, useSaveJob, useUnsaveJob } from '@/hooks/useJobs';
 import { useDebounce } from '@/hooks/useDebounce';
 
 export default function JobsPage() {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [location, setLocation] = useState('');
   const [jobType, setJobType] = useState('');
@@ -254,11 +256,18 @@ export default function JobsPage() {
                         Posted {formatDate(job.postedAt || job.createdAt)}
                       </span>
                       <div className="flex gap-2">
-                        <Button variant="outline" size="sm">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => router.push(`/dashboard/jobs/${job.id}`)}
+                        >
                           <ExternalLink className="w-4 h-4 mr-2" />
                           View Details
                         </Button>
-                        <Button size="sm">
+                        <Button
+                          size="sm"
+                          onClick={() => router.push(`/dashboard/jobs/${job.id}`)}
+                        >
                           Apply Now
                         </Button>
                       </div>
