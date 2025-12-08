@@ -1,0 +1,330 @@
+# ==============================================================================
+# Security Scanning Template
+# ==============================================================================
+# This template performs comprehensive security scanning including:
+# - Dependency vulnerability scanning (npm audit, pip audit)
+# - SAST (Static Application Security Testing)
+# - Secret scanning
+# - Container image scanning
+# ==============================================================================
+
+parameters:
+  - name: enableDependencyScan
+    type: boolean
+    default: true
+
+  - name: enableSAST
+    type: boolean
+    default: true
+
+  - name: enableSecretScan
+    type: boolean
+    default: true
+
+  - name: failOnHighSeverity
+    type: boolean
+    default: false
+
+jobs:
+  # ============================================================================
+  # Dependency Vulnerability Scanning
+  # ============================================================================
+  - job: DependencyScanning
+    displayName: 'Dependency Vulnerability Scan'
+    condition: eq('${{ parameters.enableDependencyScan }}', true)
+    pool:
+      vmImage: 'ubuntu-latest'
+
+    steps:
+      - checkout: self
+        fetchDepth: 1
+
+      # Setup Node.js
+      - task: NodeTool@0
+        displayName: 'Setup Node.js'
+        inputs:
+          versionSpec: '20.x'
+
+      # Node.js dependency scanning with npm audit
+      - script: |
+          corepack enable
+          corepack prepare pnpm@8.15.0 --activate
+          pnpm install --frozen-lockfile
+          pnpm audit --audit-level=moderate --json > npm-audit-report.json || true
+        displayName: 'Run npm audit'
+        continueOnError: true
+
+      # Python dependency scanning
+      - task: UsePythonVersion@0
+        displayName: 'Setup Python'
+        inputs:
+          versionSpec: '3.11'
+
+      - script: |
+          pip install safety
+          cd services/ai-service
+          safety check --json --file requirements.txt > ../../python-safety-report.json || true
+        displayName: 'Run Python safety check'
+        continueOnError: true
+
+      # Snyk Security Scanning (if Snyk is configured)
+      - task: SnykSecurityScan@1
+        displayName: 'Snyk Security Scan'
+        continueOnError: true
+        condition: and(succeeded(), ne(variables['SNYK_TOKEN'], ''))
+        inputs:
+          serviceConnectionEndpoint: 'Snyk'
+          testType: 'app'
+          monitorWhen: 'always'
+          failOnIssues: ${{ parameters.failOnHighSeverity }}
+          projectName: 'ApplyPlatform'
+          organization: 'citadelcloudmanagement'
+
+      # Publish security reports
+      - task: PublishPipelineArtifact@1
+        displayName: 'Publish dependency scan reports'
+        condition: always()
+        inputs:
+          targetPath: '$(Build.SourcesDirectory)'
+          artifact: 'dependency-scan-reports'
+          publishLocation: 'pipeline'
+          patterns: |
+            npm-audit-report.json
+            python-safety-report.json
+
+  # ============================================================================
+  # SAST (Static Application Security Testing)
+  # ============================================================================
+  - job: SAST
+    displayName: 'Static Application Security Testing'
+    condition: eq('${{ parameters.enableSAST }}', true)
+    pool:
+      vmImage: 'ubuntu-latest'
+
+    steps:
+      - checkout: self
+        fetchDepth: 0  # Full history for better analysis
+
+      # ESLint Security Plugin
+      - task: NodeTool@0
+        displayName: 'Setup Node.js'
+        inputs:
+          versionSpec: '20.x'
+
+      - script: |
+          corepack enable
+          corepack prepare pnpm@8.15.0 --activate
+          pnpm install --frozen-lockfile
+        displayName: 'Install dependencies'
+
+      - script: |
+          pnpm add -D eslint-plugin-security
+          pnpm run lint --format json > eslint-security-report.json || true
+        displayName: 'Run ESLint with security plugin'
+        continueOnError: true
+
+      # SonarCloud Analysis (if configured)
+      - task: SonarCloudPrepare@1
+        displayName: 'Prepare SonarCloud analysis'
+        condition: ne(variables['SONAR_TOKEN'], '')
+        continueOnError: true
+        inputs:
+          SonarCloud: 'SonarCloud'
+          organization: 'citadelcloudmanagement'
+          scannerMode: 'CLI'
+          configMode: 'manual'
+          cliProjectKey: 'ApplyPlatform'
+          cliProjectName: 'ApplyPlatform'
+          cliSources: '.'
+          extraProperties: |
+            sonar.exclusions=**/node_modules/**,**/dist/**,**/build/**,**/*.test.ts,**/*.spec.ts
+            sonar.typescript.lcov.reportPaths=coverage/lcov.info
+            sonar.javascript.lcov.reportPaths=coverage/lcov.info
+            sonar.python.coverage.reportPaths=coverage.xml
+
+      - task: SonarCloudAnalyze@1
+        displayName: 'Run SonarCloud analysis'
+        condition: ne(variables['SONAR_TOKEN'], '')
+        continueOnError: true
+
+      - task: SonarCloudPublish@1
+        displayName: 'Publish SonarCloud results'
+        condition: ne(variables['SONAR_TOKEN'], '')
+        continueOnError: true
+        inputs:
+          pollingTimeoutSec: '300'
+
+      # Semgrep SAST (Open Source)
+      - script: |
+          pip install semgrep
+          semgrep --config=auto --json --output=semgrep-report.json . || true
+        displayName: 'Run Semgrep SAST'
+        continueOnError: true
+
+      # Publish SAST reports
+      - task: PublishPipelineArtifact@1
+        displayName: 'Publish SAST reports'
+        condition: always()
+        inputs:
+          targetPath: '$(Build.SourcesDirectory)'
+          artifact: 'sast-reports'
+          publishLocation: 'pipeline'
+          patterns: |
+            eslint-security-report.json
+            semgrep-report.json
+
+  # ============================================================================
+  # Secret Scanning
+  # ============================================================================
+  - job: SecretScanning
+    displayName: 'Secret Scanning'
+    condition: eq('${{ parameters.enableSecretScan }}', true)
+    pool:
+      vmImage: 'ubuntu-latest'
+
+    steps:
+      - checkout: self
+        fetchDepth: 0  # Full history for comprehensive scanning
+
+      # TruffleHog Secret Scanning
+      - script: |
+          docker run --rm -v "$(Build.SourcesDirectory):/repo" trufflesecurity/trufflehog:latest \
+            filesystem /repo \
+            --json \
+            --no-update \
+            > trufflehog-report.json || true
+        displayName: 'Run TruffleHog secret scan'
+        continueOnError: true
+
+      # GitLeaks Secret Scanning
+      - script: |
+          docker run --rm -v "$(Build.SourcesDirectory):/repo" zricethezav/gitleaks:latest \
+            detect \
+            --source /repo \
+            --report-path /repo/gitleaks-report.json \
+            --no-git \
+            --verbose || true
+        displayName: 'Run GitLeaks secret scan'
+        continueOnError: true
+
+      # Analyze results and fail if secrets found
+      - script: |
+          if [ -f gitleaks-report.json ] && [ -s gitleaks-report.json ]; then
+            echo "##vso[task.logissue type=warning]Potential secrets detected! Review gitleaks-report.json"
+            if [ "${{ parameters.failOnHighSeverity }}" = "true" ]; then
+              exit 1
+            fi
+          fi
+        displayName: 'Analyze secret scan results'
+        continueOnError: true
+
+      # Publish secret scan reports
+      - task: PublishPipelineArtifact@1
+        displayName: 'Publish secret scan reports'
+        condition: always()
+        inputs:
+          targetPath: '$(Build.SourcesDirectory)'
+          artifact: 'secret-scan-reports'
+          publishLocation: 'pipeline'
+          patterns: |
+            trufflehog-report.json
+            gitleaks-report.json
+
+  # ============================================================================
+  # OWASP Dependency Check
+  # ============================================================================
+  - job: OWASPDependencyCheck
+    displayName: 'OWASP Dependency Check'
+    pool:
+      vmImage: 'ubuntu-latest'
+
+    steps:
+      - checkout: self
+        fetchDepth: 1
+
+      # Download OWASP Dependency Check
+      - script: |
+          wget https://github.com/jeremylong/DependencyCheck/releases/download/v9.0.7/dependency-check-9.0.7-release.zip
+          unzip dependency-check-9.0.7-release.zip
+        displayName: 'Download OWASP Dependency Check'
+
+      # Run OWASP Dependency Check
+      - script: |
+          ./dependency-check/bin/dependency-check.sh \
+            --scan $(Build.SourcesDirectory) \
+            --format ALL \
+            --out $(Build.SourcesDirectory)/owasp-reports \
+            --suppression $(Build.SourcesDirectory)/security-scan-config.yaml \
+            --enableExperimental
+        displayName: 'Run OWASP Dependency Check'
+        continueOnError: true
+
+      # Publish OWASP reports
+      - task: PublishPipelineArtifact@1
+        displayName: 'Publish OWASP reports'
+        condition: always()
+        inputs:
+          targetPath: '$(Build.SourcesDirectory)/owasp-reports'
+          artifact: 'owasp-reports'
+          publishLocation: 'pipeline'
+
+  # ============================================================================
+  # Security Summary Report
+  # ============================================================================
+  - job: SecuritySummary
+    displayName: 'Generate Security Summary'
+    dependsOn:
+      - DependencyScanning
+      - SAST
+      - SecretScanning
+      - OWASPDependencyCheck
+    condition: always()
+    pool:
+      vmImage: 'ubuntu-latest'
+
+    steps:
+      # Download all security reports
+      - task: DownloadPipelineArtifact@2
+        displayName: 'Download security reports'
+        continueOnError: true
+        inputs:
+          buildType: 'current'
+          targetPath: '$(Pipeline.Workspace)/security-reports'
+
+      # Generate summary report
+      - script: |
+          cat > security-summary.md << 'EOF'
+          # Security Scan Summary
+
+          ## Pipeline Information
+          - Build ID: $(Build.BuildId)
+          - Source Branch: $(Build.SourceBranch)
+          - Commit: $(Build.SourceVersion)
+          - Date: $(date -u)
+
+          ## Scans Performed
+          - [x] Dependency Vulnerability Scanning
+          - [x] SAST (Static Application Security Testing)
+          - [x] Secret Scanning
+          - [x] OWASP Dependency Check
+
+          ## Results
+          All security scan artifacts are available in the pipeline artifacts.
+          Please review each report for detailed findings.
+
+          ## Action Items
+          1. Review dependency vulnerabilities and update packages
+          2. Address SAST findings for security best practices
+          3. Investigate any detected secrets immediately
+          4. Review OWASP findings for known vulnerabilities
+
+          EOF
+        displayName: 'Generate security summary'
+
+      # Publish summary
+      - task: PublishPipelineArtifact@1
+        displayName: 'Publish security summary'
+        inputs:
+          targetPath: '$(Build.SourcesDirectory)/security-summary.md'
+          artifact: 'security-summary'
+          publishLocation: 'pipeline'

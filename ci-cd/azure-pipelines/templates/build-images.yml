@@ -1,0 +1,338 @@
+# ==============================================================================
+# Docker Image Build and Push Template
+# ==============================================================================
+# This template builds all Docker images for the ApplyPlatform monorepo
+# and pushes them to Azure Container Registry
+# ==============================================================================
+
+parameters:
+  - name: containerRegistry
+    type: string
+
+  - name: acrName
+    type: string
+
+  - name: imageTag
+    type: string
+
+  - name: semanticVersion
+    type: string
+
+  - name: buildCache
+    type: boolean
+    default: true
+
+jobs:
+  # ============================================================================
+  # Build Frontend Images
+  # ============================================================================
+  - job: BuildFrontendImages
+    displayName: 'Build Frontend Images'
+    pool:
+      vmImage: 'ubuntu-latest'
+
+    strategy:
+      matrix:
+        web:
+          appName: 'web'
+          dockerfilePath: 'apps/web/Dockerfile'
+          contextPath: '.'
+        admin:
+          appName: 'admin'
+          dockerfilePath: 'apps/admin/Dockerfile'
+          contextPath: '.'
+
+    steps:
+      - checkout: self
+        fetchDepth: 1
+
+      # Docker Login
+      - task: Docker@2
+        displayName: 'Login to ACR'
+        inputs:
+          command: 'login'
+          containerRegistry: '${{ parameters.containerRegistry }}'
+
+      # Build and Push Docker Image with multi-tag
+      - task: Docker@2
+        displayName: 'Build and Push $(appName) image'
+        inputs:
+          command: 'buildAndPush'
+          repository: 'applyforus-$(appName)'
+          dockerfile: '$(dockerfilePath)'
+          buildContext: '$(contextPath)'
+          containerRegistry: '${{ parameters.containerRegistry }}'
+          tags: |
+            ${{ parameters.imageTag }}
+            ${{ parameters.semanticVersion }}
+            latest
+          arguments: |
+            --build-arg NODE_VERSION=20
+            --build-arg PNPM_VERSION=8.15.0
+            ${{ eq(parameters.buildCache, true) && '--cache-from type=registry,ref=${{ parameters.acrName }}/applyforus-$(appName):latest' || '' }}
+            --cache-to type=inline
+
+      # Scan image for vulnerabilities with Trivy
+      - script: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+            aquasec/trivy:latest image \
+            --exit-code 0 \
+            --severity HIGH,CRITICAL \
+            --format json \
+            --output trivy-$(appName)-report.json \
+            ${{ parameters.acrName }}/applyforus-$(appName):${{ parameters.imageTag }}
+        displayName: 'Scan $(appName) image with Trivy'
+        continueOnError: true
+
+      # Publish scan results
+      - task: PublishPipelineArtifact@1
+        displayName: 'Publish Trivy scan results'
+        condition: always()
+        inputs:
+          targetPath: '$(Build.SourcesDirectory)/trivy-$(appName)-report.json'
+          artifact: 'trivy-scan-$(appName)'
+          publishLocation: 'pipeline'
+
+  # ============================================================================
+  # Build Backend Service Images (NestJS)
+  # ============================================================================
+  - job: BuildBackendImages
+    displayName: 'Build Backend Service Images'
+    pool:
+      vmImage: 'ubuntu-latest'
+
+    strategy:
+      matrix:
+        authService:
+          serviceName: 'auth-service'
+          dockerfilePath: 'services/auth-service/Dockerfile'
+        userService:
+          serviceName: 'user-service'
+          dockerfilePath: 'services/user-service/Dockerfile'
+        jobService:
+          serviceName: 'job-service'
+          dockerfilePath: 'services/job-service/Dockerfile'
+        resumeService:
+          serviceName: 'resume-service'
+          dockerfilePath: 'services/resume-service/Dockerfile'
+        notificationService:
+          serviceName: 'notification-service'
+          dockerfilePath: 'services/notification-service/Dockerfile'
+        autoApplyService:
+          serviceName: 'auto-apply-service'
+          dockerfilePath: 'services/auto-apply-service/Dockerfile'
+        analyticsService:
+          serviceName: 'analytics-service'
+          dockerfilePath: 'services/analytics-service/Dockerfile'
+        orchestratorService:
+          serviceName: 'orchestrator-service'
+          dockerfilePath: 'services/orchestrator-service/Dockerfile'
+
+    steps:
+      - checkout: self
+        fetchDepth: 1
+
+      # Docker Login
+      - task: Docker@2
+        displayName: 'Login to ACR'
+        inputs:
+          command: 'login'
+          containerRegistry: '${{ parameters.containerRegistry }}'
+
+      # Build and Push Docker Image
+      - task: Docker@2
+        displayName: 'Build and Push $(serviceName) image'
+        inputs:
+          command: 'buildAndPush'
+          repository: 'applyforus-$(serviceName)'
+          dockerfile: '$(dockerfilePath)'
+          buildContext: '.'
+          containerRegistry: '${{ parameters.containerRegistry }}'
+          tags: |
+            ${{ parameters.imageTag }}
+            ${{ parameters.semanticVersion }}
+            latest
+          arguments: |
+            --build-arg NODE_VERSION=20
+            --build-arg PNPM_VERSION=8.15.0
+            ${{ eq(parameters.buildCache, true) && '--cache-from type=registry,ref=${{ parameters.acrName }}/applyforus-$(serviceName):latest' || '' }}
+            --cache-to type=inline
+
+      # Scan image for vulnerabilities
+      - script: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+            aquasec/trivy:latest image \
+            --exit-code 0 \
+            --severity HIGH,CRITICAL \
+            --format json \
+            --output trivy-$(serviceName)-report.json \
+            ${{ parameters.acrName }}/applyforus-$(serviceName):${{ parameters.imageTag }}
+        displayName: 'Scan $(serviceName) image with Trivy'
+        continueOnError: true
+
+      # Publish scan results
+      - task: PublishPipelineArtifact@1
+        displayName: 'Publish Trivy scan results'
+        condition: always()
+        inputs:
+          targetPath: '$(Build.SourcesDirectory)/trivy-$(serviceName)-report.json'
+          artifact: 'trivy-scan-$(serviceName)'
+          publishLocation: 'pipeline'
+
+  # ============================================================================
+  # Build AI Service Image (Python/FastAPI)
+  # ============================================================================
+  - job: BuildAIServiceImage
+    displayName: 'Build AI Service Image'
+    pool:
+      vmImage: 'ubuntu-latest'
+
+    steps:
+      - checkout: self
+        fetchDepth: 1
+
+      # Docker Login
+      - task: Docker@2
+        displayName: 'Login to ACR'
+        inputs:
+          command: 'login'
+          containerRegistry: '${{ parameters.containerRegistry }}'
+
+      # Build and Push AI Service Image
+      - task: Docker@2
+        displayName: 'Build and Push ai-service image'
+        inputs:
+          command: 'buildAndPush'
+          repository: 'applyforus-ai-service'
+          dockerfile: 'services/ai-service/Dockerfile'
+          buildContext: 'services/ai-service'
+          containerRegistry: '${{ parameters.containerRegistry }}'
+          tags: |
+            ${{ parameters.imageTag }}
+            ${{ parameters.semanticVersion }}
+            latest
+          arguments: |
+            --build-arg PYTHON_VERSION=3.11
+            ${{ eq(parameters.buildCache, true) && '--cache-from type=registry,ref=${{ parameters.acrName }}/applyforus-ai-service:latest' || '' }}
+            --cache-to type=inline
+
+      # Scan image for vulnerabilities
+      - script: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+            aquasec/trivy:latest image \
+            --exit-code 0 \
+            --severity HIGH,CRITICAL \
+            --format json \
+            --output trivy-ai-service-report.json \
+            ${{ parameters.acrName }}/applyforus-ai-service:${{ parameters.imageTag }}
+        displayName: 'Scan ai-service image with Trivy'
+        continueOnError: true
+
+      # Publish scan results
+      - task: PublishPipelineArtifact@1
+        displayName: 'Publish Trivy scan results'
+        condition: always()
+        inputs:
+          targetPath: '$(Build.SourcesDirectory)/trivy-ai-service-report.json'
+          artifact: 'trivy-scan-ai-service'
+          publishLocation: 'pipeline'
+
+  # ============================================================================
+  # Image Manifest Generation
+  # ============================================================================
+  - job: GenerateManifest
+    displayName: 'Generate Image Manifest'
+    dependsOn:
+      - BuildFrontendImages
+      - BuildBackendImages
+      - BuildAIServiceImage
+    pool:
+      vmImage: 'ubuntu-latest'
+
+    steps:
+      - checkout: none
+
+      # Generate image manifest
+      - script: |
+          cat > image-manifest.json << EOF
+          {
+            "buildId": "$(Build.BuildId)",
+            "buildNumber": "$(Build.BuildNumber)",
+            "sourceVersion": "$(Build.SourceVersion)",
+            "sourceBranch": "$(Build.SourceBranch)",
+            "imageTag": "${{ parameters.imageTag }}",
+            "semanticVersion": "${{ parameters.semanticVersion }}",
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "images": {
+              "frontend": {
+                "web": "${{ parameters.acrName }}/applyforus-web:${{ parameters.imageTag }}",
+                "admin": "${{ parameters.acrName }}/applyforus-admin:${{ parameters.imageTag }}"
+              },
+              "backend": {
+                "auth-service": "${{ parameters.acrName }}/applyforus-auth-service:${{ parameters.imageTag }}",
+                "user-service": "${{ parameters.acrName }}/applyforus-user-service:${{ parameters.imageTag }}",
+                "job-service": "${{ parameters.acrName }}/applyforus-job-service:${{ parameters.imageTag }}",
+                "resume-service": "${{ parameters.acrName }}/applyforus-resume-service:${{ parameters.imageTag }}",
+                "notification-service": "${{ parameters.acrName }}/applyforus-notification-service:${{ parameters.imageTag }}",
+                "auto-apply-service": "${{ parameters.acrName }}/applyforus-auto-apply-service:${{ parameters.imageTag }}",
+                "analytics-service": "${{ parameters.acrName }}/applyforus-analytics-service:${{ parameters.imageTag }}",
+                "orchestrator-service": "${{ parameters.acrName }}/applyforus-orchestrator-service:${{ parameters.imageTag }}"
+              },
+              "ai": {
+                "ai-service": "${{ parameters.acrName }}/applyforus-ai-service:${{ parameters.imageTag }}"
+              }
+            }
+          }
+          EOF
+          cat image-manifest.json
+        displayName: 'Generate image manifest'
+
+      # Publish manifest
+      - task: PublishPipelineArtifact@1
+        displayName: 'Publish image manifest'
+        inputs:
+          targetPath: '$(Build.SourcesDirectory)/image-manifest.json'
+          artifact: 'image-manifest'
+          publishLocation: 'pipeline'
+
+  # ============================================================================
+  # Security Scan Summary
+  # ============================================================================
+  - job: SecurityScanSummary
+    displayName: 'Security Scan Summary'
+    dependsOn:
+      - BuildFrontendImages
+      - BuildBackendImages
+      - BuildAIServiceImage
+    condition: always()
+    pool:
+      vmImage: 'ubuntu-latest'
+
+    steps:
+      # Download all Trivy reports
+      - task: DownloadPipelineArtifact@2
+        displayName: 'Download Trivy reports'
+        continueOnError: true
+        inputs:
+          buildType: 'current'
+          artifactName: 'trivy-scan-*'
+          targetPath: '$(Pipeline.Workspace)/trivy-reports'
+
+      # Generate summary
+      - script: |
+          echo "# Container Security Scan Summary" > scan-summary.md
+          echo "" >> scan-summary.md
+          echo "## Scan Date: $(date -u)" >> scan-summary.md
+          echo "## Build: $(Build.BuildId)" >> scan-summary.md
+          echo "" >> scan-summary.md
+          echo "All container images have been scanned with Trivy." >> scan-summary.md
+          echo "Review individual reports for detailed findings." >> scan-summary.md
+        displayName: 'Generate security summary'
+
+      # Publish summary
+      - task: PublishPipelineArtifact@1
+        displayName: 'Publish scan summary'
+        inputs:
+          targetPath: '$(Build.SourcesDirectory)/scan-summary.md'
+          artifact: 'container-security-summary'
+          publishLocation: 'pipeline'

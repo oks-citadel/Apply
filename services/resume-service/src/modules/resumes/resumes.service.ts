@@ -7,15 +7,21 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull } from 'typeorm';
+import { HttpService } from '@nestjs/axios';
+import { ConfigService } from '@nestjs/config';
+import { firstValueFrom } from 'rxjs';
 import { Resume } from './entities/resume.entity';
 import { ResumeVersion } from './entities/resume-version.entity';
 import { CreateResumeDto } from './dto/create-resume.dto';
 import { UpdateResumeDto } from './dto/update-resume.dto';
+import { OptimizeResumeDto } from './dto/optimize-resume.dto';
+import { ResumeOptimizationResponseDto } from './dto/resume-optimization-response.dto';
 import { ParserService } from '../parser/parser.service';
 
 @Injectable()
 export class ResumesService {
   private readonly logger = new Logger(ResumesService.name);
+  private readonly aiServiceUrl: string;
 
   constructor(
     @InjectRepository(Resume)
@@ -23,7 +29,11 @@ export class ResumesService {
     @InjectRepository(ResumeVersion)
     private readonly versionRepository: Repository<ResumeVersion>,
     private readonly parserService: ParserService,
-  ) {}
+    private readonly httpService: HttpService,
+    private readonly configService: ConfigService,
+  ) {
+    this.aiServiceUrl = this.configService.get<string>('AI_SERVICE_URL');
+  }
 
   async create(userId: string, createResumeDto: CreateResumeDto): Promise<Resume> {
     this.logger.log(`Creating resume for user ${userId}`);
@@ -290,5 +300,76 @@ export class ResumesService {
     await this.resumeRepository.save(resume);
 
     return resume.atsScore;
+  }
+
+  async optimizeResume(
+    resumeId: string,
+    userId: string,
+    optimizeDto: OptimizeResumeDto,
+  ): Promise<ResumeOptimizationResponseDto> {
+    this.logger.log(`Optimizing resume ${resumeId} for user ${userId}`);
+
+    // Fetch the resume
+    const resume = await this.findOne(resumeId, userId);
+
+    // Calculate original ATS score
+    const originalScore = resume.atsScore || await this.calculateAtsScore(resumeId, userId);
+
+    try {
+      // Call AI service for optimization
+      const response = await firstValueFrom(
+        this.httpService.post(
+          `${this.aiServiceUrl}/resume/optimize`,
+          {
+            resume_id: resumeId,
+            user_id: userId,
+            resume_content: resume.content,
+            job_description: optimizeDto.jobDescription,
+            job_title: optimizeDto.jobTitle,
+            company_name: optimizeDto.companyName,
+          },
+          {
+            timeout: 30000, // 30 seconds for AI processing
+          },
+        ),
+      );
+
+      const aiResponse = response.data;
+
+      // Structure the response
+      const optimizationResponse: ResumeOptimizationResponseDto = {
+        resumeId: resume.id,
+        originalContent: resume.content,
+        optimizedContent: aiResponse.optimized_content || resume.content,
+        suggestions: aiResponse.suggestions || [],
+        originalScore: originalScore,
+        projectedScore: aiResponse.projected_score || originalScore,
+        summary: aiResponse.summary || 'Resume optimization completed successfully.',
+        missingKeywords: aiResponse.missing_keywords || [],
+        matchedKeywords: aiResponse.matched_keywords || [],
+      };
+
+      this.logger.log(
+        `Resume ${resumeId} optimized successfully. Score improved from ${originalScore} to ${aiResponse.projected_score || originalScore}`,
+      );
+
+      return optimizationResponse;
+    } catch (error) {
+      this.logger.error(
+        `Failed to optimize resume ${resumeId}: ${error.message}`,
+        error.stack,
+      );
+
+      // If AI service is unavailable, return basic optimization
+      if (error.code === 'ECONNREFUSED' || error.response?.status >= 500) {
+        throw new BadRequestException(
+          'Resume optimization service is currently unavailable. Please try again later.',
+        );
+      }
+
+      throw new BadRequestException(
+        `Failed to optimize resume: ${error.response?.data?.message || error.message}`,
+      );
+    }
   }
 }

@@ -1,12 +1,13 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { Filter, Download, MoreVertical, Loader2, XCircle } from 'lucide-react';
+import { Filter, Download, MoreVertical, Loader2, XCircle, Eye } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/Table';
 import { Select } from '@/components/ui/Select';
+import Link from 'next/link';
 import { useApplications, useWithdrawApplication, useExportApplications, useApplicationAnalytics } from '@/hooks/useApplications';
 import type { ApplicationStatus, ApplicationFilters } from '@/types/application';
 
@@ -165,8 +166,12 @@ export default function ApplicationsPage() {
                 </TableHeader>
                 <TableBody>
                   {applications.map((app: any) => (
-                    <TableRow key={app.id}>
-                      <TableCell className="font-medium">{app.jobTitle || app.job?.title || 'Untitled'}</TableCell>
+                    <TableRow key={app.id} className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                      <TableCell className="font-medium">
+                        <Link href={`/applications/${app.id}`} className="hover:text-primary-600 dark:hover:text-primary-400">
+                          {app.jobTitle || app.job?.title || 'Untitled'}
+                        </Link>
+                      </TableCell>
                       <TableCell>{app.company || app.job?.company || 'Unknown'}</TableCell>
                       <TableCell>{formatDate(app.appliedAt || app.createdAt)}</TableCell>
                       <TableCell>{getStatusBadge(app.status)}</TableCell>
@@ -178,20 +183,23 @@ export default function ApplicationsPage() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">
+                          <Link href={`/applications/${app.id}`}>
+                            <Button variant="ghost" size="sm" title="View details">
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                          </Link>
                           {app.status !== 'withdrawn' && app.status !== 'rejected' && app.status !== 'offer' && (
                             <Button
                               variant="ghost"
                               size="sm"
                               onClick={() => handleWithdraw(app.id)}
                               disabled={withdrawApplication.isPending}
-                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                              title="Withdraw application"
                             >
                               <XCircle className="w-4 h-4" />
                             </Button>
                           )}
-                          <Button variant="ghost" size="sm">
-                            <MoreVertical className="w-4 h-4" />
-                          </Button>
                         </div>
                       </TableCell>
                     </TableRow>

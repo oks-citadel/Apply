@@ -25,6 +25,7 @@ import { LoginDto } from './dto/login.dto';
 import { TokenResponseDto } from './dto/token-response.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { MfaSetupResponseDto } from './dto/mfa-setup.dto';
@@ -196,6 +197,35 @@ export class AuthController {
   ): Promise<{ message: string }> {
     this.logger.log(`Password reset request`);
     return this.authService.resetPassword(resetPasswordDto);
+  }
+
+  /**
+   * Change password for authenticated user
+   */
+  @Post('password/change')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Throttle({ default: { limit: 5, ttl: 60000 } }) // 5 requests per minute
+  @ApiOperation({ summary: 'Change password for authenticated user' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Password changed successfully',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Invalid current password or new password is same as current',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Unauthorized or incorrect current password',
+  })
+  async changePassword(
+    @CurrentUser() user: User,
+    @Body() changePasswordDto: ChangePasswordDto,
+  ): Promise<{ message: string }> {
+    this.logger.log(`Password change request for user: ${user.id}`);
+    return this.authService.changePassword(user.id, changePasswordDto);
   }
 
   /**

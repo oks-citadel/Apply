@@ -1,0 +1,303 @@
+# ==============================================================================
+# Azure DevOps Variable Groups Configuration
+# ==============================================================================
+# This file documents all variable groups needed for the ApplyPlatform pipeline
+# Create these variable groups in Azure DevOps: Pipelines > Library
+# ==============================================================================
+
+# ==============================================================================
+# Variable Group: ApplyPlatform-Common
+# ==============================================================================
+# Scope: All environments
+# Description: Common variables shared across all environments
+# ==============================================================================
+ApplyPlatform-Common:
+  # Build Configuration
+  NODE_VERSION: '20.x'
+  PNPM_VERSION: '8.15.0'
+  PYTHON_VERSION: '3.11'
+
+  # Container Registry
+  CONTAINER_REGISTRY: 'applyforus-acr'
+  ACR_NAME: 'applyforusacr.azurecr.io'
+
+  # Monitoring
+  LOG_LEVEL: 'info'
+  TELEMETRY_ENABLED: 'true'
+
+  # Feature Flags
+  FEATURE_FLAGS_ENABLED: 'true'
+
+# ==============================================================================
+# Variable Group: ApplyPlatform-Dev
+# ==============================================================================
+# Scope: Development environment
+# Description: Development environment specific variables
+# ==============================================================================
+ApplyPlatform-Dev:
+  # Environment
+  ENVIRONMENT: 'dev'
+  NODE_ENV: 'development'
+
+  # Azure Resources
+  AKS_RESOURCE_GROUP: 'applyforus-dev-rg'
+  AKS_CLUSTER_NAME: 'applyforus-dev-aks'
+  K8S_NAMESPACE: 'applyforus-dev'
+
+  # Domain
+  APP_URL: 'https://dev.applyforus.com'
+  API_URL: 'https://api-dev.applyforus.com'
+
+  # Database (PostgreSQL)
+  DATABASE_HOST: 'applyforus-dev-postgres.postgres.database.azure.com'
+  DATABASE_PORT: '5432'
+  DATABASE_NAME: 'applyforus_dev'
+  DATABASE_USER: 'applyforus_admin'
+  # DATABASE_PASSWORD: stored as secret
+
+  # Redis
+  REDIS_HOST: 'applyforus-dev-redis.redis.cache.windows.net'
+  REDIS_PORT: '6380'
+  REDIS_TLS: 'true'
+  # REDIS_PASSWORD: stored as secret
+
+  # Storage (Azure Blob Storage)
+  AZURE_STORAGE_ACCOUNT: 'applyforusdevstorage'
+  AZURE_STORAGE_CONTAINER: 'uploads'
+  # AZURE_STORAGE_KEY: stored as secret
+
+  # External Services
+  SENDGRID_FROM_EMAIL: 'dev@applyforus.com'
+  SENDGRID_FROM_NAME: 'ApplyForUs Dev'
+
+  # OAuth Providers
+  GOOGLE_OAUTH_REDIRECT_URI: 'https://dev.applyforus.com/api/auth/google/callback'
+  GITHUB_OAUTH_REDIRECT_URI: 'https://dev.applyforus.com/api/auth/github/callback'
+  LINKEDIN_OAUTH_REDIRECT_URI: 'https://dev.applyforus.com/api/auth/linkedin/callback'
+
+  # Rate Limiting
+  RATE_LIMIT_MAX: '1000'
+  RATE_LIMIT_WINDOW: '900000'
+
+  # CORS
+  CORS_ORIGIN: 'https://dev.applyforus.com,http://localhost:3000'
+
+# ==============================================================================
+# Variable Group: ApplyPlatform-Staging
+# ==============================================================================
+# Scope: Staging environment
+# Description: Staging environment specific variables (pre-production)
+# ==============================================================================
+ApplyPlatform-Staging:
+  # Environment
+  ENVIRONMENT: 'staging'
+  NODE_ENV: 'production'
+
+  # Azure Resources
+  AKS_RESOURCE_GROUP: 'applyforus-staging-rg'
+  AKS_CLUSTER_NAME: 'applyforus-staging-aks'
+  K8S_NAMESPACE: 'applyforus-staging'
+
+  # Domain
+  APP_URL: 'https://staging.applyforus.com'
+  API_URL: 'https://api-staging.applyforus.com'
+
+  # Database (PostgreSQL)
+  DATABASE_HOST: 'applyforus-staging-postgres.postgres.database.azure.com'
+  DATABASE_PORT: '5432'
+  DATABASE_NAME: 'applyforus_staging'
+  DATABASE_USER: 'applyforus_admin'
+  # DATABASE_PASSWORD: stored as secret
+
+  # Redis
+  REDIS_HOST: 'applyforus-staging-redis.redis.cache.windows.net'
+  REDIS_PORT: '6380'
+  REDIS_TLS: 'true'
+  # REDIS_PASSWORD: stored as secret
+
+  # Storage (Azure Blob Storage)
+  AZURE_STORAGE_ACCOUNT: 'applyforusstagingstorage'
+  AZURE_STORAGE_CONTAINER: 'uploads'
+  # AZURE_STORAGE_KEY: stored as secret
+
+  # External Services
+  SENDGRID_FROM_EMAIL: 'staging@applyforus.com'
+  SENDGRID_FROM_NAME: 'ApplyForUs Staging'
+
+  # OAuth Providers
+  GOOGLE_OAUTH_REDIRECT_URI: 'https://staging.applyforus.com/api/auth/google/callback'
+  GITHUB_OAUTH_REDIRECT_URI: 'https://staging.applyforus.com/api/auth/github/callback'
+  LINKEDIN_OAUTH_REDIRECT_URI: 'https://staging.applyforus.com/api/auth/linkedin/callback'
+
+  # Rate Limiting
+  RATE_LIMIT_MAX: '500'
+  RATE_LIMIT_WINDOW: '900000'
+
+  # CORS
+  CORS_ORIGIN: 'https://staging.applyforus.com'
+
+# ==============================================================================
+# Variable Group: ApplyPlatform-Production
+# ==============================================================================
+# Scope: Production environment
+# Description: Production environment specific variables
+# ==============================================================================
+ApplyPlatform-Production:
+  # Environment
+  ENVIRONMENT: 'production'
+  NODE_ENV: 'production'
+
+  # Azure Resources
+  AKS_RESOURCE_GROUP: 'applyforus-prod-rg'
+  AKS_CLUSTER_NAME: 'applyforus-prod-aks'
+  K8S_NAMESPACE: 'applyforus'
+
+  # Domain
+  APP_URL: 'https://applyforus.com'
+  API_URL: 'https://api.applyforus.com'
+
+  # Database (PostgreSQL)
+  DATABASE_HOST: 'applyforus-prod-postgres.postgres.database.azure.com'
+  DATABASE_PORT: '5432'
+  DATABASE_NAME: 'applyforus_prod'
+  DATABASE_USER: 'applyforus_admin'
+  # DATABASE_PASSWORD: stored as secret
+
+  # Redis
+  REDIS_HOST: 'applyforus-prod-redis.redis.cache.windows.net'
+  REDIS_PORT: '6380'
+  REDIS_TLS: 'true'
+  # REDIS_PASSWORD: stored as secret
+
+  # Storage (Azure Blob Storage)
+  AZURE_STORAGE_ACCOUNT: 'applyforusprodstorage'
+  AZURE_STORAGE_CONTAINER: 'uploads'
+  # AZURE_STORAGE_KEY: stored as secret
+
+  # External Services
+  SENDGRID_FROM_EMAIL: 'noreply@applyforus.com'
+  SENDGRID_FROM_NAME: 'ApplyForUs'
+
+  # OAuth Providers
+  GOOGLE_OAUTH_REDIRECT_URI: 'https://applyforus.com/api/auth/google/callback'
+  GITHUB_OAUTH_REDIRECT_URI: 'https://applyforus.com/api/auth/github/callback'
+  LINKEDIN_OAUTH_REDIRECT_URI: 'https://applyforus.com/api/auth/linkedin/callback'
+
+  # Rate Limiting
+  RATE_LIMIT_MAX: '100'
+  RATE_LIMIT_WINDOW: '900000'
+
+  # CORS
+  CORS_ORIGIN: 'https://applyforus.com'
+
+  # Monitoring & Alerts
+  ALERT_EMAIL: 'ops@applyforus.com'
+  PAGERDUTY_ENABLED: 'true'
+
+# ==============================================================================
+# Variable Group: ApplyPlatform-Secrets
+# ==============================================================================
+# Scope: All environments (environment-specific values)
+# Description: Sensitive secrets (mark as secret in Azure DevOps)
+# NOTE: These should be linked from Azure Key Vault for better security
+# ==============================================================================
+ApplyPlatform-Secrets:
+  # Database Credentials
+  DATABASE_PASSWORD: # Secret - Link from Key Vault
+  DATABASE_URL: # Secret - Link from Key Vault (full connection string)
+
+  # Redis Credentials
+  REDIS_PASSWORD: # Secret - Link from Key Vault
+  REDIS_URL: # Secret - Link from Key Vault (full connection string)
+
+  # JWT & Encryption
+  JWT_SECRET: # Secret - Generate strong random string
+  JWT_REFRESH_SECRET: # Secret - Generate strong random string
+  ENCRYPTION_KEY: # Secret - 32-byte encryption key
+
+  # External API Keys
+  SENDGRID_API_KEY: # Secret - From SendGrid dashboard
+  OPENAI_API_KEY: # Secret - From OpenAI platform
+  ANTHROPIC_API_KEY: # Secret - From Anthropic console
+
+  # OAuth Client Secrets
+  GOOGLE_OAUTH_CLIENT_ID: # Public
+  GOOGLE_OAUTH_CLIENT_SECRET: # Secret - From Google Cloud Console
+  GITHUB_OAUTH_CLIENT_ID: # Public
+  GITHUB_OAUTH_CLIENT_SECRET: # Secret - From GitHub Developer Settings
+  LINKEDIN_OAUTH_CLIENT_ID: # Public
+  LINKEDIN_OAUTH_CLIENT_SECRET: # Secret - From LinkedIn Developer Portal
+
+  # Azure Storage
+  AZURE_STORAGE_KEY: # Secret - From Azure Storage Account
+  AZURE_STORAGE_CONNECTION_STRING: # Secret - Full connection string
+
+  # Session & Cookie Secrets
+  SESSION_SECRET: # Secret - Generate strong random string
+  COOKIE_SECRET: # Secret - Generate strong random string
+
+  # Monitoring & APM
+  DATADOG_API_KEY: # Secret - From Datadog (if used)
+  SENTRY_DSN: # Secret - From Sentry project settings
+  NEW_RELIC_LICENSE_KEY: # Secret - From New Relic (if used)
+
+  # Third-Party Integrations
+  STRIPE_SECRET_KEY: # Secret - From Stripe dashboard (if used)
+  STRIPE_WEBHOOK_SECRET: # Secret - From Stripe webhook settings
+
+  # Security Tools
+  SNYK_TOKEN: # Secret - From Snyk account
+  SONAR_TOKEN: # Secret - From SonarCloud
+
+# ==============================================================================
+# HOW TO CREATE VARIABLE GROUPS IN AZURE DEVOPS
+# ==============================================================================
+#
+# 1. Navigate to Azure DevOps Portal:
+#    https://dev.azure.com/citadelcloudmanagement/ApplyPlatform
+#
+# 2. Go to: Pipelines > Library > + Variable group
+#
+# 3. Create each variable group with the exact name specified above
+#
+# 4. Add variables as key-value pairs
+#
+# 5. For secrets:
+#    - Click the lock icon to mark as secret
+#    - OR link from Azure Key Vault (recommended):
+#      - Enable "Link secrets from an Azure key vault"
+#      - Select your Azure subscription
+#      - Select your Key Vault
+#      - Add variables by selecting from Key Vault secrets
+#
+# 6. Set permissions:
+#    - Grant pipeline access to variable groups
+#    - Control who can view/edit variable groups
+#
+# ==============================================================================
+# AZURE KEY VAULT INTEGRATION (RECOMMENDED)
+# ==============================================================================
+#
+# For production security, link secrets from Azure Key Vault:
+#
+# 1. Create Azure Key Vault:
+#    az keyvault create \
+#      --name applyforus-secrets \
+#      --resource-group applyforus-prod-rg \
+#      --location eastus
+#
+# 2. Add secrets to Key Vault:
+#    az keyvault secret set \
+#      --vault-name applyforus-secrets \
+#      --name DATABASE-PASSWORD \
+#      --value "your-secret-value"
+#
+# 3. Grant Azure DevOps access:
+#    - Service Principal needs "Get" and "List" permissions
+#    - Configure in Variable Group settings
+#
+# 4. Link in Variable Group:
+#    - Enable "Link secrets from an Azure key vault"
+#    - Select secrets to expose as variables
+#
+# ==============================================================================

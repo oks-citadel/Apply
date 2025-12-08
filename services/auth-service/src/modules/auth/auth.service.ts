@@ -17,6 +17,7 @@ import { TokenResponseDto } from './dto/token-response.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { MfaSetupResponseDto } from './dto/mfa-setup.dto';
 import { MfaVerifyDto } from './dto/mfa-verify.dto';
 import * as bcrypt from 'bcrypt';
@@ -335,6 +336,58 @@ export class AuthService {
     this.logger.log(`Password reset successfully for user: ${user.id}`);
 
     return { message: 'Password has been reset successfully' };
+  }
+
+  /**
+   * Change password for authenticated user
+   */
+  async changePassword(
+    userId: string,
+    changePasswordDto: ChangePasswordDto,
+  ): Promise<{ message: string }> {
+    this.logger.log(`Password change request for user: ${userId}`);
+
+    // Get user
+    const user = await this.usersService.findByIdOrFail(userId);
+
+    // Check if user has a password (OAuth users might not)
+    if (!user.password) {
+      throw new BadRequestException(
+        'This account uses social login. Please set a password first.',
+      );
+    }
+
+    // Validate current password
+    const isPasswordValid = await this.usersService.validatePassword(
+      changePasswordDto.currentPassword,
+      user.password,
+    );
+
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Current password is incorrect');
+    }
+
+    // Check if new password is the same as current password
+    const isSamePassword = await this.usersService.validatePassword(
+      changePasswordDto.newPassword,
+      user.password,
+    );
+
+    if (isSamePassword) {
+      throw new BadRequestException(
+        'New password must be different from current password',
+      );
+    }
+
+    // Update password
+    await this.usersService.resetPassword(userId, changePasswordDto.newPassword);
+
+    // Invalidate all existing refresh tokens for security
+    await this.usersService.updateRefreshToken(userId, null);
+
+    this.logger.log(`Password changed successfully for user: ${userId}`);
+
+    return { message: 'Password has been changed successfully. Please login again.' };
   }
 
   /**

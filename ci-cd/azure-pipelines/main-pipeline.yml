@@ -1,0 +1,541 @@
+# ==============================================================================
+# Azure DevOps CI/CD Pipeline for ApplyPlatform Monorepo
+# ==============================================================================
+# Organization: https://dev.azure.com/citadelcloudmanagement
+# Project: ApplyPlatform
+# Repository: ApplyPlatform
+# ==============================================================================
+
+name: $(Date:yyyyMMdd)$(Rev:.r)
+
+# ==============================================================================
+# Triggers
+# ==============================================================================
+trigger:
+  branches:
+    include:
+      - main
+      - develop
+      - feature/*
+      - hotfix/*
+  paths:
+    exclude:
+      - docs/**
+      - '*.md'
+      - .github/**
+
+pr:
+  branches:
+    include:
+      - main
+      - develop
+  paths:
+    exclude:
+      - docs/**
+      - '*.md'
+
+# ==============================================================================
+# Pipeline Resources
+# ==============================================================================
+resources:
+  repositories:
+    - repository: self
+      type: git
+
+# ==============================================================================
+# Variables
+# ==============================================================================
+variables:
+  - name: vmImageName
+    value: 'ubuntu-latest'
+
+  - name: nodeVersion
+    value: '20.x'
+
+  - name: pnpmVersion
+    value: '8.15.0'
+
+  - name: pythonVersion
+    value: '3.11'
+
+  # Docker Registry
+  - name: containerRegistry
+    value: 'applyforus-acr'
+
+  - name: acrName
+    value: 'applyforusacr.azurecr.io'
+
+  # Image Tag Strategy
+  - name: imageTag
+    value: '$(Build.SourceVersion)'
+
+  - name: semanticVersion
+    value: '1.0.$(Build.BuildId)'
+
+  # Build Configuration
+  - name: buildConfiguration
+    value: 'production'
+
+  # Cache Configuration
+  - name: pnpmCacheFolder
+    value: $(Pipeline.Workspace)/.pnpm-store
+
+  - name: pipCacheFolder
+    value: $(Pipeline.Workspace)/.pip
+
+  # Determine Environment
+  - name: isMain
+    value: ${{ eq(variables['Build.SourceBranch'], 'refs/heads/main') }}
+
+  - name: isDevelop
+    value: ${{ eq(variables['Build.SourceBranch'], 'refs/heads/develop') }}
+
+  - name: isPR
+    value: ${{ eq(variables['Build.Reason'], 'PullRequest') }}
+
+  # Environment Mapping
+  - name: targetEnvironment
+    ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/main') }}:
+      value: 'staging'
+    ${{ elseif eq(variables['Build.SourceBranch'], 'refs/heads/develop') }}:
+      value: 'dev'
+    ${{ else }}:
+      value: 'none'
+
+# ==============================================================================
+# Variable Groups (to be created in Azure DevOps)
+# ==============================================================================
+# - ApplyPlatform-Common
+# - ApplyPlatform-Dev
+# - ApplyPlatform-Staging
+# - ApplyPlatform-Production
+# - ApplyPlatform-Secrets
+
+# ==============================================================================
+# Stages
+# ==============================================================================
+stages:
+  # ============================================================================
+  # Stage 1: Build
+  # ============================================================================
+  - stage: Build
+    displayName: 'Build Stage'
+    jobs:
+      - job: BuildMonorepo
+        displayName: 'Build Monorepo'
+        pool:
+          vmImage: $(vmImageName)
+
+        steps:
+          # Checkout
+          - checkout: self
+            fetchDepth: 0
+            persistCredentials: true
+
+          # Setup Node.js
+          - task: NodeTool@0
+            displayName: 'Setup Node.js $(nodeVersion)'
+            inputs:
+              versionSpec: $(nodeVersion)
+
+          # Setup pnpm with caching
+          - script: |
+              corepack enable
+              corepack prepare pnpm@$(pnpmVersion) --activate
+            displayName: 'Setup pnpm'
+
+          # Cache pnpm dependencies
+          - task: Cache@2
+            displayName: 'Cache pnpm dependencies'
+            inputs:
+              key: 'pnpm | "$(Agent.OS)" | pnpm-lock.yaml'
+              path: $(pnpmCacheFolder)
+              restoreKeys: |
+                pnpm | "$(Agent.OS)"
+
+          # Install dependencies
+          - script: |
+              pnpm config set store-dir $(pnpmCacheFolder)
+              pnpm install --frozen-lockfile
+            displayName: 'Install Node.js dependencies'
+
+          # Lint all packages
+          - script: pnpm run lint
+            displayName: 'Run ESLint'
+            continueOnError: true
+
+          # Type checking
+          - script: pnpm run type-check
+            displayName: 'Run TypeScript type checking'
+
+          # Build all packages
+          - script: pnpm run build
+            displayName: 'Build all packages'
+            env:
+              NODE_ENV: production
+              NEXT_TELEMETRY_DISABLED: 1
+
+          # Archive build artifacts
+          - task: ArchiveFiles@2
+            displayName: 'Archive Node.js build artifacts'
+            inputs:
+              rootFolderOrFile: '$(Build.SourcesDirectory)'
+              includeRootFolder: false
+              archiveType: 'tar'
+              tarCompression: 'gz'
+              archiveFile: '$(Build.ArtifactStagingDirectory)/nodejs-build-$(Build.BuildId).tar.gz'
+              replaceExistingArchive: true
+
+          # Publish build artifacts
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish Node.js artifacts'
+            inputs:
+              targetPath: '$(Build.ArtifactStagingDirectory)/nodejs-build-$(Build.BuildId).tar.gz'
+              artifact: 'nodejs-build'
+              publishLocation: 'pipeline'
+
+      # Python AI Service Build
+      - job: BuildPythonServices
+        displayName: 'Build Python Services'
+        pool:
+          vmImage: $(vmImageName)
+
+        steps:
+          - checkout: self
+            fetchDepth: 1
+
+          # Setup Python
+          - task: UsePythonVersion@0
+            displayName: 'Setup Python $(pythonVersion)'
+            inputs:
+              versionSpec: $(pythonVersion)
+
+          # Cache pip dependencies
+          - task: Cache@2
+            displayName: 'Cache pip dependencies'
+            inputs:
+              key: 'pip | "$(Agent.OS)" | services/ai-service/requirements.txt'
+              path: $(pipCacheFolder)
+              restoreKeys: |
+                pip | "$(Agent.OS)"
+
+          # Install Python dependencies
+          - script: |
+              python -m pip install --upgrade pip setuptools wheel
+              pip install --cache-dir $(pipCacheFolder) -r services/ai-service/requirements.txt
+            displayName: 'Install Python dependencies'
+
+          # Run Python linting
+          - script: |
+              pip install flake8 black pylint
+              cd services/ai-service
+              flake8 src/ --max-line-length=120 --extend-ignore=E203,W503 || true
+            displayName: 'Run Python linting'
+            continueOnError: true
+
+          # Type checking with mypy
+          - script: |
+              pip install mypy
+              cd services/ai-service
+              mypy src/ --ignore-missing-imports || true
+            displayName: 'Run Python type checking'
+            continueOnError: true
+
+  # ============================================================================
+  # Stage 2: Test
+  # ============================================================================
+  - stage: Test
+    displayName: 'Test Stage'
+    dependsOn: Build
+    jobs:
+      # Unit Tests
+      - job: UnitTests
+        displayName: 'Run Unit Tests'
+        pool:
+          vmImage: $(vmImageName)
+
+        steps:
+          - checkout: self
+            fetchDepth: 1
+
+          # Download build artifacts
+          - task: DownloadPipelineArtifact@2
+            displayName: 'Download build artifacts'
+            inputs:
+              artifactName: 'nodejs-build'
+              targetPath: '$(Build.ArtifactStagingDirectory)'
+
+          # Extract artifacts
+          - script: |
+              tar -xzf $(Build.ArtifactStagingDirectory)/nodejs-build-$(Build.BuildId).tar.gz -C $(Build.SourcesDirectory)
+            displayName: 'Extract build artifacts'
+
+          # Setup Node.js
+          - task: NodeTool@0
+            displayName: 'Setup Node.js $(nodeVersion)'
+            inputs:
+              versionSpec: $(nodeVersion)
+
+          # Run unit tests with coverage
+          - script: |
+              corepack enable && corepack prepare pnpm@$(pnpmVersion) --activate
+              pnpm config set store-dir $(pnpmCacheFolder)
+              pnpm run test --coverage
+            displayName: 'Run unit tests'
+            continueOnError: false
+
+          # Publish test results
+          - task: PublishTestResults@2
+            displayName: 'Publish test results'
+            condition: succeededOrFailed()
+            inputs:
+              testResultsFormat: 'JUnit'
+              testResultsFiles: '**/junit.xml'
+              mergeTestResults: true
+              failTaskOnFailedTests: false
+
+          # Publish code coverage
+          - task: PublishCodeCoverageResults@1
+            displayName: 'Publish code coverage'
+            condition: succeededOrFailed()
+            inputs:
+              codeCoverageTool: 'Cobertura'
+              summaryFileLocation: '$(Build.SourcesDirectory)/**/coverage/cobertura-coverage.xml'
+              reportDirectory: '$(Build.SourcesDirectory)/**/coverage'
+
+      # Integration Tests
+      - job: IntegrationTests
+        displayName: 'Run Integration Tests'
+        pool:
+          vmImage: $(vmImageName)
+
+        steps:
+          - checkout: self
+            fetchDepth: 1
+
+          # Download build artifacts
+          - task: DownloadPipelineArtifact@2
+            displayName: 'Download build artifacts'
+            inputs:
+              artifactName: 'nodejs-build'
+              targetPath: '$(Build.ArtifactStagingDirectory)'
+
+          # Extract artifacts
+          - script: |
+              tar -xzf $(Build.ArtifactStagingDirectory)/nodejs-build-$(Build.BuildId).tar.gz -C $(Build.SourcesDirectory)
+            displayName: 'Extract build artifacts'
+
+          # Setup Node.js
+          - task: NodeTool@0
+            displayName: 'Setup Node.js $(nodeVersion)'
+            inputs:
+              versionSpec: $(nodeVersion)
+
+          # Start dependencies (PostgreSQL, Redis, etc.)
+          - script: |
+              docker-compose -f docker-compose.test.yml up -d postgres redis
+              sleep 10
+            displayName: 'Start test dependencies'
+
+          # Run integration tests
+          - script: |
+              corepack enable && corepack prepare pnpm@$(pnpmVersion) --activate
+              pnpm config set store-dir $(pnpmCacheFolder)
+              pnpm run test:integration || true
+            displayName: 'Run integration tests'
+            continueOnError: true
+
+          # Cleanup
+          - script: |
+              docker-compose -f docker-compose.test.yml down -v
+            displayName: 'Cleanup test environment'
+            condition: always()
+
+      # E2E Tests with Playwright
+      - job: E2ETests
+        displayName: 'Run E2E Tests'
+        condition: or(eq(variables.isDevelop, true), eq(variables.isMain, true))
+        pool:
+          vmImage: $(vmImageName)
+
+        steps:
+          - checkout: self
+            fetchDepth: 1
+
+          # Download build artifacts
+          - task: DownloadPipelineArtifact@2
+            displayName: 'Download build artifacts'
+            inputs:
+              artifactName: 'nodejs-build'
+              targetPath: '$(Build.ArtifactStagingDirectory)'
+
+          # Extract artifacts
+          - script: |
+              tar -xzf $(Build.ArtifactStagingDirectory)/nodejs-build-$(Build.BuildId).tar.gz -C $(Build.SourcesDirectory)
+            displayName: 'Extract build artifacts'
+
+          # Setup Node.js
+          - task: NodeTool@0
+            displayName: 'Setup Node.js $(nodeVersion)'
+            inputs:
+              versionSpec: $(nodeVersion)
+
+          # Install Playwright browsers
+          - script: |
+              corepack enable && corepack prepare pnpm@$(pnpmVersion) --activate
+              pnpm config set store-dir $(pnpmCacheFolder)
+              npx playwright install --with-deps chromium
+            displayName: 'Install Playwright browsers'
+
+          # Start application for E2E tests
+          - script: |
+              docker-compose -f docker-compose.test.yml up -d
+              sleep 30
+            displayName: 'Start application stack'
+
+          # Run E2E tests
+          - script: |
+              pnpm run test:e2e
+            displayName: 'Run Playwright E2E tests'
+            continueOnError: true
+
+          # Publish Playwright report
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish Playwright report'
+            condition: always()
+            inputs:
+              targetPath: 'playwright-report'
+              artifact: 'playwright-report'
+              publishLocation: 'pipeline'
+
+          # Cleanup
+          - script: |
+              docker-compose -f docker-compose.test.yml down -v
+            displayName: 'Cleanup E2E environment'
+            condition: always()
+
+  # ============================================================================
+  # Stage 3: Security Scanning
+  # ============================================================================
+  - stage: Security
+    displayName: 'Security Scanning'
+    dependsOn: Build
+    jobs:
+      - template: templates/security-scan.yml
+
+  # ============================================================================
+  # Stage 4: Build and Push Docker Images
+  # ============================================================================
+  - stage: Package
+    displayName: 'Package Docker Images'
+    dependsOn:
+      - Test
+      - Security
+    condition: and(succeeded(), or(eq(variables.isMain, true), eq(variables.isDevelop, true)))
+    jobs:
+      - template: templates/build-images.yml
+        parameters:
+          containerRegistry: $(containerRegistry)
+          acrName: $(acrName)
+          imageTag: $(imageTag)
+          semanticVersion: $(semanticVersion)
+
+  # ============================================================================
+  # Stage 5: Deploy to Dev
+  # ============================================================================
+  - stage: DeployDev
+    displayName: 'Deploy to Development'
+    dependsOn: Package
+    condition: and(succeeded(), eq(variables.isDevelop, true))
+    variables:
+      - group: ApplyPlatform-Dev
+      - name: environment
+        value: 'dev'
+    jobs:
+      - template: templates/deploy.yml
+        parameters:
+          environment: 'dev'
+          azureSubscription: 'ApplyPlatform-Azure-Connection'
+          aksResourceGroup: 'applyforus-dev-rg'
+          aksClusterName: 'applyforus-dev-aks'
+          namespace: 'applyforus-dev'
+          imageTag: $(imageTag)
+          requireApproval: false
+
+  # ============================================================================
+  # Stage 6: Deploy to Staging
+  # ============================================================================
+  - stage: DeployStaging
+    displayName: 'Deploy to Staging'
+    dependsOn: Package
+    condition: and(succeeded(), eq(variables.isMain, true))
+    variables:
+      - group: ApplyPlatform-Staging
+      - name: environment
+        value: 'staging'
+    jobs:
+      - template: templates/deploy.yml
+        parameters:
+          environment: 'staging'
+          azureSubscription: 'ApplyPlatform-Azure-Connection'
+          aksResourceGroup: 'applyforus-staging-rg'
+          aksClusterName: 'applyforus-staging-aks'
+          namespace: 'applyforus-staging'
+          imageTag: $(imageTag)
+          requireApproval: false
+
+  # ============================================================================
+  # Stage 7: Deploy to Production (Manual Approval Required)
+  # ============================================================================
+  - stage: DeployProduction
+    displayName: 'Deploy to Production'
+    dependsOn: DeployStaging
+    condition: and(succeeded(), eq(variables.isMain, true))
+    variables:
+      - group: ApplyPlatform-Production
+      - name: environment
+        value: 'production'
+    jobs:
+      - template: templates/deploy.yml
+        parameters:
+          environment: 'production'
+          azureSubscription: 'ApplyPlatform-Azure-Connection'
+          aksResourceGroup: 'applyforus-prod-rg'
+          aksClusterName: 'applyforus-prod-aks'
+          namespace: 'applyforus'
+          imageTag: $(imageTag)
+          requireApproval: true
+
+  # ============================================================================
+  # Stage 8: Post-Deployment Validation
+  # ============================================================================
+  - stage: PostDeploymentValidation
+    displayName: 'Post-Deployment Validation'
+    dependsOn:
+      - DeployDev
+      - DeployStaging
+      - DeployProduction
+    condition: succeededOrFailed()
+    jobs:
+      - job: SmokeTests
+        displayName: 'Run Smoke Tests'
+        pool:
+          vmImage: $(vmImageName)
+
+        steps:
+          - checkout: self
+            fetchDepth: 1
+
+          # Setup Node.js
+          - task: NodeTool@0
+            displayName: 'Setup Node.js $(nodeVersion)'
+            inputs:
+              versionSpec: $(nodeVersion)
+
+          # Run smoke tests
+          - script: |
+              # Add smoke test script here
+              echo "Running smoke tests against deployed environment..."
+              # curl health checks, API validation, etc.
+            displayName: 'Execute smoke tests'
+            continueOnError: true

@@ -31,7 +31,9 @@ import { ResumesService } from './resumes.service';
 import { ExportService } from '../export/export.service';
 import { CreateResumeDto } from './dto/create-resume.dto';
 import { UpdateResumeDto } from './dto/update-resume.dto';
+import { OptimizeResumeDto } from './dto/optimize-resume.dto';
 import { ResumeResponseDto, ResumeListResponseDto } from './dto/resume-response.dto';
+import { ResumeOptimizationResponseDto } from './dto/resume-optimization-response.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser, JwtPayload } from '../../common/decorators/current-user.decorator';
 
@@ -292,5 +294,36 @@ export class ResumesController {
   ) {
     const score = await this.resumesService.calculateAtsScore(id, user.userId);
     return { atsScore: score };
+  }
+
+  @Post(':id/optimize')
+  @ApiOperation({
+    summary: 'Optimize resume with AI suggestions',
+    description:
+      'Generate AI-powered optimization suggestions for a resume. Optionally provide a job description to tailor the optimization.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Resume optimization completed successfully',
+    type: ResumeOptimizationResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad request - Invalid resume ID or optimization failed',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Resume not found',
+  })
+  @ApiResponse({
+    status: 503,
+    description: 'AI service unavailable',
+  })
+  async optimizeResume(
+    @CurrentUser() user: JwtPayload,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() optimizeDto: OptimizeResumeDto,
+  ): Promise<ResumeOptimizationResponseDto> {
+    return await this.resumesService.optimizeResume(id, user.userId, optimizeDto);
   }
 }

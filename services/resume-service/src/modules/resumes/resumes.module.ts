@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { HttpModule } from '@nestjs/axios';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ResumesController } from './resumes.controller';
@@ -12,6 +13,7 @@ import { ExportModule } from '../export/export.module';
 @Module({
   imports: [
     TypeOrmModule.forFeature([Resume, ResumeVersion]),
+    HttpModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
