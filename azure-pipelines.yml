@@ -62,12 +62,6 @@ variables:
   # - Common secrets for all environments
   - group: common-secrets
 
-  # Environment-specific variable groups
-  - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/develop') }}:
-    - group: dev-secrets
-  - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/main') }}:
-    - group: prod-secrets
-
 stages:
   # ============================================================================
   # Stage 1: Build and Validation
@@ -198,16 +192,16 @@ stages:
         services:
           postgres:
             image: postgres:15-alpine
-            ports:
-              - 5432:5432
             env:
               POSTGRES_USER: postgres
               POSTGRES_PASSWORD: postgres
               POSTGRES_DB: jobpilot_test
+            ports:
+              5432:5432
           redis:
             image: redis:7-alpine
             ports:
-              - 6379:6379
+              6379:6379
         steps:
           - checkout: self
 
@@ -301,24 +295,24 @@ stages:
         services:
           postgres:
             image: postgres:15-alpine
-            ports:
-              - 5432:5432
             env:
               POSTGRES_USER: postgres
               POSTGRES_PASSWORD: postgres
               POSTGRES_DB: jobpilot_test
+            ports:
+              5432:5432
           redis:
             image: redis:7-alpine
             ports:
-              - 6379:6379
+              6379:6379
           elasticsearch:
             image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
-            ports:
-              - 9200:9200
             env:
               discovery.type: single-node
-              xpack.security.enabled: false
-              ES_JAVA_OPTS: -Xms512m -Xmx512m
+              xpack.security.enabled: "false"
+              ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+            ports:
+              9200:9200
         steps:
           - checkout: self
 
@@ -662,7 +656,7 @@ stages:
   - stage: DeployDev
     displayName: 'Deploy to Development'
     dependsOn: BuildDockerImages
-    condition: and(succeeded(), eq(variables.isDevelop, true))
+    condition: and(succeeded(), eq(variables['isDevelop'], 'true'))
     variables:
       - group: dev-secrets
       - name: ENVIRONMENT
@@ -736,11 +730,32 @@ stages:
                     manifests: |
                       infrastructure/kubernetes/base/ingress.yaml
 
-                - script: |
-                    kubectl rollout status deployment/web-app -n $(NAMESPACE) --timeout=300s
-                    kubectl rollout status deployment/auth-service -n $(NAMESPACE) --timeout=300s
-                    kubectl rollout status deployment/job-service -n $(NAMESPACE) --timeout=300s
-                  displayName: 'Wait for deployments to complete'
+                - task: Kubernetes@1
+                  displayName: 'Wait for web-app deployment'
+                  inputs:
+                    connectionType: 'Kubernetes Service Connection'
+                    kubernetesServiceEndpoint: 'K8s-Dev-ServiceConnection'
+                    namespace: '$(NAMESPACE)'
+                    command: 'rollout'
+                    arguments: 'status deployment/web-app --timeout=300s'
+
+                - task: Kubernetes@1
+                  displayName: 'Wait for auth-service deployment'
+                  inputs:
+                    connectionType: 'Kubernetes Service Connection'
+                    kubernetesServiceEndpoint: 'K8s-Dev-ServiceConnection'
+                    namespace: '$(NAMESPACE)'
+                    command: 'rollout'
+                    arguments: 'status deployment/auth-service --timeout=300s'
+
+                - task: Kubernetes@1
+                  displayName: 'Wait for job-service deployment'
+                  inputs:
+                    connectionType: 'Kubernetes Service Connection'
+                    kubernetesServiceEndpoint: 'K8s-Dev-ServiceConnection'
+                    namespace: '$(NAMESPACE)'
+                    command: 'rollout'
+                    arguments: 'status deployment/job-service --timeout=300s'
 
                 - script: |
                     echo "Running smoke tests on development environment..."
@@ -754,7 +769,7 @@ stages:
   - stage: DeployStaging
     displayName: 'Deploy to Staging'
     dependsOn: BuildDockerImages
-    condition: and(succeeded(), eq(variables.isMain, true))
+    condition: and(succeeded(), eq(variables['isMain'], 'true'))
     variables:
       - group: staging-secrets
       - name: ENVIRONMENT
@@ -828,10 +843,23 @@ stages:
                     manifests: |
                       infrastructure/kubernetes/base/ingress.yaml
 
-                - script: |
-                    kubectl rollout status deployment/web-app -n $(NAMESPACE) --timeout=300s
-                    kubectl rollout status deployment/auth-service -n $(NAMESPACE) --timeout=300s
-                  displayName: 'Wait for deployments to complete'
+                - task: Kubernetes@1
+                  displayName: 'Wait for web-app deployment'
+                  inputs:
+                    connectionType: 'Kubernetes Service Connection'
+                    kubernetesServiceEndpoint: 'K8s-Staging-ServiceConnection'
+                    namespace: '$(NAMESPACE)'
+                    command: 'rollout'
+                    arguments: 'status deployment/web-app --timeout=300s'
+
+                - task: Kubernetes@1
+                  displayName: 'Wait for auth-service deployment'
+                  inputs:
+                    connectionType: 'Kubernetes Service Connection'
+                    kubernetesServiceEndpoint: 'K8s-Staging-ServiceConnection'
+                    namespace: '$(NAMESPACE)'
+                    command: 'rollout'
+                    arguments: 'status deployment/auth-service --timeout=300s'
 
                 - script: |
                     echo "Running smoke tests on staging environment..."
@@ -844,7 +872,7 @@ stages:
   - stage: DeployProduction
     displayName: 'Deploy to Production'
     dependsOn: DeployStaging
-    condition: and(succeeded(), eq(variables.isMain, true))
+    condition: and(succeeded(), eq(variables['isMain'], 'true'))
     variables:
       - group: prod-secrets
       - name: ENVIRONMENT
@@ -931,17 +959,77 @@ stages:
                     manifests: |
                       infrastructure/kubernetes/base/ingress.yaml
 
-                - script: |
-                    echo "Waiting for deployments to complete..."
-                    kubectl rollout status deployment/web-app -n $(NAMESPACE) --timeout=600s
-                    kubectl rollout status deployment/auth-service -n $(NAMESPACE) --timeout=600s
-                    kubectl rollout status deployment/user-service -n $(NAMESPACE) --timeout=600s
-                    kubectl rollout status deployment/job-service -n $(NAMESPACE) --timeout=600s
-                    kubectl rollout status deployment/resume-service -n $(NAMESPACE) --timeout=600s
-                    kubectl rollout status deployment/notification-service -n $(NAMESPACE) --timeout=600s
-                    kubectl rollout status deployment/auto-apply-service -n $(NAMESPACE) --timeout=600s
-                    kubectl rollout status deployment/ai-service -n $(NAMESPACE) --timeout=600s
-                  displayName: 'Wait for all deployments to complete'
+                - task: Kubernetes@1
+                  displayName: 'Wait for web-app deployment'
+                  inputs:
+                    connectionType: 'Kubernetes Service Connection'
+                    kubernetesServiceEndpoint: 'K8s-Prod-ServiceConnection'
+                    namespace: '$(NAMESPACE)'
+                    command: 'rollout'
+                    arguments: 'status deployment/web-app --timeout=600s'
+
+                - task: Kubernetes@1
+                  displayName: 'Wait for auth-service deployment'
+                  inputs:
+                    connectionType: 'Kubernetes Service Connection'
+                    kubernetesServiceEndpoint: 'K8s-Prod-ServiceConnection'
+                    namespace: '$(NAMESPACE)'
+                    command: 'rollout'
+                    arguments: 'status deployment/auth-service --timeout=600s'
+
+                - task: Kubernetes@1
+                  displayName: 'Wait for user-service deployment'
+                  inputs:
+                    connectionType: 'Kubernetes Service Connection'
+                    kubernetesServiceEndpoint: 'K8s-Prod-ServiceConnection'
+                    namespace: '$(NAMESPACE)'
+                    command: 'rollout'
+                    arguments: 'status deployment/user-service --timeout=600s'
+
+                - task: Kubernetes@1
+                  displayName: 'Wait for job-service deployment'
+                  inputs:
+                    connectionType: 'Kubernetes Service Connection'
+                    kubernetesServiceEndpoint: 'K8s-Prod-ServiceConnection'
+                    namespace: '$(NAMESPACE)'
+                    command: 'rollout'
+                    arguments: 'status deployment/job-service --timeout=600s'
+
+                - task: Kubernetes@1
+                  displayName: 'Wait for resume-service deployment'
+                  inputs:
+                    connectionType: 'Kubernetes Service Connection'
+                    kubernetesServiceEndpoint: 'K8s-Prod-ServiceConnection'
+                    namespace: '$(NAMESPACE)'
+                    command: 'rollout'
+                    arguments: 'status deployment/resume-service --timeout=600s'
+
+                - task: Kubernetes@1
+                  displayName: 'Wait for notification-service deployment'
+                  inputs:
+                    connectionType: 'Kubernetes Service Connection'
+                    kubernetesServiceEndpoint: 'K8s-Prod-ServiceConnection'
+                    namespace: '$(NAMESPACE)'
+                    command: 'rollout'
+                    arguments: 'status deployment/notification-service --timeout=600s'
+
+                - task: Kubernetes@1
+                  displayName: 'Wait for auto-apply-service deployment'
+                  inputs:
+                    connectionType: 'Kubernetes Service Connection'
+                    kubernetesServiceEndpoint: 'K8s-Prod-ServiceConnection'
+                    namespace: '$(NAMESPACE)'
+                    command: 'rollout'
+                    arguments: 'status deployment/auto-apply-service --timeout=600s'
+
+                - task: Kubernetes@1
+                  displayName: 'Wait for ai-service deployment'
+                  inputs:
+                    connectionType: 'Kubernetes Service Connection'
+                    kubernetesServiceEndpoint: 'K8s-Prod-ServiceConnection'
+                    namespace: '$(NAMESPACE)'
+                    command: 'rollout'
+                    arguments: 'status deployment/ai-service --timeout=600s'
 
                 - script: |
                     echo "Running production smoke tests..."
