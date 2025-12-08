@@ -2,10 +2,9 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerModule } from '@nestjs/throttler';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerGuard } from '@nestjs/throttler';
-// TODO: Re-enable when @jobpilot/logging package is published
-// import { LoggingModule, LoggingInterceptor } from '@jobpilot/logging';
+import { LoggingModule, LoggingInterceptor } from '@jobpilot/logging';
 import configuration from './config/configuration';
 import { databaseConfig } from './config/database.config';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
@@ -24,6 +23,20 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: databaseConfig,
+      inject: [ConfigService],
+    }),
+
+    // Logging module
+    LoggingModule.forRootAsync({
+      isGlobal: true,
+      useFactory: (configService: ConfigService) => ({
+        serviceName: 'analytics-service',
+        environment: configService.get<string>('NODE_ENV', 'development'),
+        version: configService.get<string>('SERVICE_VERSION', '1.0.0'),
+        appInsightsKey: configService.get<string>('APPLICATIONINSIGHTS_INSTRUMENTATION_KEY'),
+        enableConsole: true,
+        logLevel: configService.get<string>('LOG_LEVEL', 'info') as any,
+      }),
       inject: [ConfigService],
     }),
 
@@ -46,6 +59,10 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: LoggingInterceptor,
     },
   ],
 })

@@ -134,4 +134,38 @@ export class JobsController {
   async reportJob(@Param('id') id: string, @Body() reportJobDto: ReportJobDto, @Request() req: any): Promise<ReportJobResponseDto> {
     return this.jobsService.reportJob(id, reportJobDto, req.user.id);
   }
+
+  @Get(':id/reports')
+  @ApiOperation({ summary: 'Get reports for a job' })
+  @ApiParam({ name: 'id', description: 'Job ID' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiResponse({ status: 200, description: 'List of reports for the job' })
+  async getJobReports(
+    @Param('id') id: string,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 20,
+  ) {
+    return this.jobsService.getJobReports(id, page, limit);
+  }
+
+  @Get(':id/report-count')
+  @ApiOperation({ summary: 'Get report count for a job' })
+  @ApiParam({ name: 'id', description: 'Job ID' })
+  @ApiResponse({ status: 200, description: 'Number of reports for the job' })
+  async getJobReportCount(@Param('id') id: string): Promise<{ count: number }> {
+    const count = await this.jobsService.getJobReportCount(id);
+    return { count };
+  }
+
+  @Get(':id/has-reported')
+  @UseGuards(AuthGuard())
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Check if user has reported this job' })
+  @ApiParam({ name: 'id', description: 'Job ID' })
+  @ApiResponse({ status: 200, description: 'Whether the user has reported this job' })
+  async hasUserReportedJob(@Param('id') id: string, @Request() req: any): Promise<{ hasReported: boolean }> {
+    const hasReported = await this.jobsService.hasUserReportedJob(req.user.id, id);
+    return { hasReported };
+  }
 }

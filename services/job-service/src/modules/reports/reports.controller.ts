@@ -49,6 +49,19 @@ export class ReportsController {
     return this.reportsService.getReports(queryDto);
   }
 
+  @Get('my-reports')
+  @UseGuards(AuthGuard())
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Get current user\'s reports' })
+  @ApiResponse({ status: 200, type: PaginatedReportsResponseDto })
+  async getMyReports(
+    @Request() req: any,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 20,
+  ): Promise<PaginatedReportsResponseDto> {
+    return this.reportsService.getReportsByUserId(req.user.id, page, limit);
+  }
+
   @Get('stats')
   @UseGuards(AuthGuard(), AdminGuard())
   @ApiBearerAuth('JWT-auth')

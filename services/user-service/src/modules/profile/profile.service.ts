@@ -3,16 +3,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Profile } from './entities/profile.entity';
 import { UpdateProfileDto } from './dto/update-profile.dto';
-// TODO: Re-enable when StorageService is implemented
-// import { StorageService } from '../storage/storage.service';
+import { StorageService } from '../storage/storage.service';
 
 @Injectable()
 export class ProfileService {
   constructor(
     @InjectRepository(Profile)
     private profileRepository: Repository<Profile>,
-    // TODO: Re-enable when StorageService is implemented
-    // private storageService: StorageService,
+    private storageService: StorageService,
   ) {}
 
   async getProfile(userId: string): Promise<Profile> {
@@ -55,21 +53,18 @@ export class ProfileService {
   }
 
   async uploadProfilePhoto(userId: string, file: Express.Multer.File): Promise<{ url: string }> {
-    // TODO: Re-enable when StorageService is implemented
-    throw new Error('StorageService not yet implemented');
-
-    /* const profile = await this.getProfile(userId);
+    const profile = await this.getProfile(userId);
 
     // Delete old photo if exists
     if (profile.profile_photo_url) {
       await this.storageService.deleteFile(profile.profile_photo_url);
     }
 
-    // Upload new photo
-    const photoUrl = await this.storageService.uploadFile(
-      file,
-      `profile-photos/${userId}`,
-      'image',
+    // Upload new photo using the dedicated profile picture method
+    const photoUrl = await this.storageService.uploadProfilePicture(
+      userId,
+      file.buffer,
+      file.mimetype,
     );
 
     profile.profile_photo_url = photoUrl;
@@ -77,21 +72,18 @@ export class ProfileService {
 
     await this.profileRepository.save(profile);
 
-    return { url: photoUrl }; */
+    return { url: photoUrl };
   }
 
   async deleteProfilePhoto(userId: string): Promise<void> {
-    // TODO: Re-enable when StorageService is implemented
-    throw new Error('StorageService not yet implemented');
-
-    /* const profile = await this.getProfile(userId);
+    const profile = await this.getProfile(userId);
 
     if (profile.profile_photo_url) {
       await this.storageService.deleteFile(profile.profile_photo_url);
       profile.profile_photo_url = null;
       profile.completeness_score = this.calculateCompletenessScore(profile);
       await this.profileRepository.save(profile);
-    } */
+    }
   }
 
   async getCompletenessScore(userId: string): Promise<{ score: number; missing: string[] }> {

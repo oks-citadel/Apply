@@ -1,17 +1,18 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { APP_INTERCEPTOR } from '@nestjs/core';
-// TODO: Re-enable workspace package
-// import { LoggingModule, LoggingInterceptor } from '@jobpilot/logging';
+import { ThrottlerModule } from '@nestjs/throttler';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { ThrottlerGuard } from '@nestjs/throttler';
+import { LoggingModule, LoggingInterceptor } from '@jobpilot/logging';
 import { ProfileModule } from './modules/profile/profile.module';
 import { CareerModule } from './modules/career/career.module';
 import { SkillsModule } from './modules/skills/skills.module';
 import { PreferencesModule } from './modules/preferences/preferences.module';
 import { SubscriptionModule } from './modules/subscription/subscription.module';
+import { StorageModule } from './modules/storage/storage.module';
 // TODO: Re-enable when modules are implemented
 // import { AnalyticsModule } from './modules/analytics/analytics.module';
-// import { StorageModule } from './modules/storage/storage.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { HealthModule } from './health/health.module';
 
@@ -23,20 +24,19 @@ import { HealthModule } from './health/health.module';
       envFilePath: '.env',
     }),
 
-    // TODO: Re-enable workspace package
     // Logging module
-    // LoggingModule.forRootAsync({
-    //   isGlobal: true,
-    //   useFactory: (configService: ConfigService) => ({
-    //     serviceName: 'user-service',
-    //     environment: configService.get<string>('NODE_ENV', 'development'),
-    //     version: configService.get<string>('SERVICE_VERSION', '1.0.0'),
-    //     appInsightsKey: configService.get<string>('APPLICATIONINSIGHTS_INSTRUMENTATION_KEY'),
-    //     enableConsole: true,
-    //     logLevel: configService.get<string>('LOG_LEVEL', 'info') as any,
-    //   }),
-    //   inject: [ConfigService],
-    // }),
+    LoggingModule.forRootAsync({
+      isGlobal: true,
+      useFactory: (configService: ConfigService) => ({
+        serviceName: 'user-service',
+        environment: configService.get<string>('NODE_ENV', 'development'),
+        version: configService.get<string>('SERVICE_VERSION', '1.0.0'),
+        appInsightsKey: configService.get<string>('APPLICATIONINSIGHTS_INSTRUMENTATION_KEY'),
+        enableConsole: true,
+        logLevel: configService.get<string>('LOG_LEVEL', 'info') as any,
+      }),
+      inject: [ConfigService],
+    }),
 
     // Database
     TypeOrmModule.forRootAsync({
@@ -68,10 +68,23 @@ import { HealthModule } from './health/health.module';
       }),
     }),
 
+    // Rate limiting
+    ThrottlerModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => [
+        {
+          ttl: configService.get<number>('THROTTLE_TTL', 60000),
+          limit: configService.get<number>('THROTTLE_LIMIT', 100),
+        },
+      ],
+    }),
+
     // Health Module
     HealthModule,
 
     // Feature Modules
+    StorageModule,
     AuthModule,
     ProfileModule,
     CareerModule,
@@ -80,14 +93,16 @@ import { HealthModule } from './health/health.module';
     SubscriptionModule,
     // TODO: Re-enable when modules are implemented
     // AnalyticsModule,
-    // StorageModule,
   ],
   providers: [
-    // TODO: Re-enable workspace package
-    // {
-    //   provide: APP_INTERCEPTOR,
-    //   useClass: LoggingInterceptor,
-    // },
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: LoggingInterceptor,
+    },
   ],
 })
 export class AppModule {}

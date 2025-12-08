@@ -29,6 +29,12 @@ init_telemetry(telemetry_config)
 from .config import settings
 from .api.routes import generate, optimize, match, interview, salary, ai_endpoints
 from .api.middleware import RequestLoggingMiddleware, TimingMiddleware
+from .api.middleware.security import (
+    SecurityHeadersMiddleware,
+    RateLimitMiddleware,
+    InputSanitizationMiddleware,
+    RequestSizeLimitMiddleware,
+)
 from .schemas.response_schemas import HealthResponse, ErrorResponse
 from .services.llm_service import LLMService
 from .services.embedding_service import EmbeddingService
@@ -170,14 +176,20 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
     allow_credentials=settings.cors_allow_credentials,
-    allow_methods=["*"],
-    allow_headers=["*"],
-    expose_headers=["X-Request-ID", "X-Process-Time"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization", "X-Request-ID", "X-CSRF-Token"],
+    expose_headers=["X-Request-ID", "X-Process-Time", "X-RateLimit-Limit", "X-RateLimit-Remaining", "X-RateLimit-Reset"],
 )
 
 
 # Instrument FastAPI with OpenTelemetry
 instrument_fastapi(app)
+
+# Add security middleware
+app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(RateLimitMiddleware, max_requests=100, window_seconds=60)
+app.add_middleware(InputSanitizationMiddleware)
+app.add_middleware(RequestSizeLimitMiddleware, max_size_mb=10)
 
 # Add custom middleware
 app.add_middleware(TimingMiddleware)

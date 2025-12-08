@@ -1,4 +1,4 @@
-import { Injectable, HttpStatus, Inject, Optional } from '@nestjs/common';
+import { Injectable, HttpStatus, Inject, Optional, Logger } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
@@ -51,6 +51,7 @@ const createHealthResponse = (serviceName: string, version: string, checks: any)
  */
 @Injectable()
 export class HealthService {
+  private readonly logger = new Logger(HealthService.name);
   private elasticsearchClient: Client;
   private redisClient: Redis;
 
@@ -90,7 +91,7 @@ export class HealthService {
 
     // Connect to Redis
     this.redisClient.connect().catch((err) => {
-      console.error('Failed to connect to Redis for health checks:', err);
+      this.logger.error('Failed to connect to Redis for health checks', err);
     });
   }
 

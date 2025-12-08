@@ -23,7 +23,10 @@
       "@/*": ["src/*"],
       "@modules/*": ["src/modules/*"],
       "@config/*": ["src/config/*"],
-      "@common/*": ["src/common/*"]
+      "@common/*": ["src/common/*"],
+      "@jobpilot/telemetry": ["../../packages/telemetry/src/index.ts"],
+      "@jobpilot/logging": ["../../packages/logging/src/index.ts"],
+      "@jobpilot/security": ["../../packages/security/src/index.ts"]
     }
   },
   "include": ["src/**/*"],

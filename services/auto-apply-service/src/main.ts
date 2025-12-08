@@ -14,7 +14,7 @@ async function bootstrap() {
 
   // Import NestJS modules AFTER telemetry initialization
   const { NestFactory } = await import('@nestjs/core');
-  const { ValidationPipe } = await import('@nestjs/common');
+  const { ValidationPipe, Logger } = await import('@nestjs/common');
   const { AppModule } = await import('./app.module');
 
   const app = await NestFactory.create(AppModule);
@@ -43,8 +43,9 @@ async function bootstrap() {
   const port = process.env.PORT || 8005;
   await app.listen(port);
 
-  console.log(`Auto-Apply Service is running on: http://localhost:${port}`);
-  console.log(`Health check: http://localhost:${port}/api/v1/health`);
+  const logger = new Logger('Bootstrap');
+  logger.log(`Auto-Apply Service is running on: http://localhost:${port}`);
+  logger.log(`Health check: http://localhost:${port}/api/v1/health`);
 }
 
 bootstrap();

@@ -298,6 +298,37 @@ export class ReportsService {
   }
 
   /**
+   * Get reports by user ID
+   */
+  async getReportsByUserId(
+    userId: string,
+    page: number = 1,
+    limit: number = 20,
+  ): Promise<PaginatedReportsResponseDto> {
+    const [reports, total] = await this.reportRepository.findAndCount({
+      where: { user_id: userId },
+      order: { created_at: 'DESC' },
+      take: limit,
+      skip: (page - 1) * limit,
+      relations: ['job'],
+    });
+
+    const data = reports.map((report) => this.mapToResponseDto(report));
+
+    return {
+      data,
+      pagination: {
+        page,
+        limit,
+        total,
+        total_pages: Math.ceil(total / limit),
+        has_next: page * limit < total,
+        has_prev: page > 1,
+      },
+    };
+  }
+
+  /**
    * Check if user has already reported a job
    */
   async hasUserReportedJob(userId: string, jobId: string): Promise<boolean> {

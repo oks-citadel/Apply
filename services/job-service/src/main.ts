@@ -12,7 +12,7 @@ async function bootstrap() {
 
   // Import NestJS modules
   const { NestFactory } = await import('@nestjs/core');
-  const { ValidationPipe } = await import('@nestjs/common');
+  const { ValidationPipe, Logger } = await import('@nestjs/common');
   const { SwaggerModule, DocumentBuilder } = await import('@nestjs/swagger');
   const { ConfigService } = await import('@nestjs/config');
   const compression = await import('compression');
@@ -92,14 +92,13 @@ async function bootstrap() {
 
   await app.listen(port);
 
-  console.log(`
-    =====================================================
-    🚀 Job Service is running!
-    📝 API: http://localhost:${port}/${apiPrefix}
-    📚 Swagger Docs: http://localhost:${port}/${apiPrefix}/docs
-    🌍 Environment: ${configService.get('NODE_ENV', 'development')}
-    =====================================================
-  `);
+  const logger = new Logger('Bootstrap');
+  logger.log('=====================================================');
+  logger.log('Job Service is running!');
+  logger.log(`API: http://localhost:${port}/${apiPrefix}`);
+  logger.log(`Swagger Docs: http://localhost:${port}/${apiPrefix}/docs`);
+  logger.log(`Environment: ${configService.get('NODE_ENV', 'development')}`);
+  logger.log('=====================================================');
 }
 
 bootstrap();

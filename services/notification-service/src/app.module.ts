@@ -2,8 +2,8 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { BullModule } from '@nestjs/bull';
-// import { APP_INTERCEPTOR } from '@nestjs/core';
-// import { LoggingModule, LoggingInterceptor } from '@jobpilot/logging';
+import { APP_INTERCEPTOR } from '@nestjs/core';
+import { LoggingModule, LoggingInterceptor } from '@jobpilot/logging';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { EmailModule } from './modules/email/email.module';
 import { PushModule } from './modules/push/push.module';
@@ -15,18 +15,18 @@ import { HealthModule } from './health/health.module';
       isGlobal: true,
       envFilePath: '.env',
     }),
-    // LoggingModule.forRootAsync({
-    //   isGlobal: true,
-    //   useFactory: (configService: ConfigService) => ({
-    //     serviceName: 'notification-service',
-    //     environment: configService.get<string>('NODE_ENV', 'development'),
-    //     version: configService.get<string>('SERVICE_VERSION', '1.0.0'),
-    //     appInsightsKey: configService.get<string>('APPLICATIONINSIGHTS_INSTRUMENTATION_KEY'),
-    //     enableConsole: true,
-    //     logLevel: configService.get<string>('LOG_LEVEL', 'info') as any,
-    //   }),
-    //   inject: [ConfigService],
-    // }),
+    LoggingModule.forRootAsync({
+      isGlobal: true,
+      useFactory: (configService: ConfigService) => ({
+        serviceName: 'notification-service',
+        environment: configService.get<string>('NODE_ENV', 'development'),
+        version: configService.get<string>('SERVICE_VERSION', '1.0.0'),
+        appInsightsKey: configService.get<string>('APPLICATIONINSIGHTS_INSTRUMENTATION_KEY'),
+        enableConsole: true,
+        logLevel: configService.get<string>('LOG_LEVEL', 'info') as any,
+      }),
+      inject: [ConfigService],
+    }),
     BullModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
@@ -74,10 +74,10 @@ import { HealthModule } from './health/health.module';
   ],
   controllers: [],
   providers: [
-    // {
-    //   provide: APP_INTERCEPTOR,
-    //   useClass: LoggingInterceptor,
-    // },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: LoggingInterceptor,
+    },
   ],
 })
 export class AppModule {}

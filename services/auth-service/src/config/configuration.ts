@@ -92,8 +92,13 @@ export default () => ({
 
   // Security
   security: {
-    bcryptRounds: parseInt(process.env.BCRYPT_ROUNDS || '10', 10),
+    bcryptRounds: parseInt(process.env.BCRYPT_ROUNDS || '12', 10),
     maxLoginAttempts: parseInt(process.env.MAX_LOGIN_ATTEMPTS || '5', 10),
     lockoutDuration: parseInt(process.env.LOCKOUT_DURATION || '900', 10), // 15 minutes
+    csrfEnabled: process.env.CSRF_ENABLED === 'true' || true,
+    csrfSecret: process.env.CSRF_SECRET || 'your-csrf-secret-change-in-production',
+    helmetEnabled: process.env.HELMET_ENABLED !== 'false',
+    hstsEnabled: process.env.HSTS_ENABLED !== 'false',
+    hstsMaxAge: parseInt(process.env.HSTS_MAX_AGE || '31536000', 10),
   },
 });

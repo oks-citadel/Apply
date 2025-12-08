@@ -5,7 +5,7 @@ import { BullModule } from '@nestjs/bull';
 import { ScheduleModule } from '@nestjs/schedule';
 import { HttpModule } from '@nestjs/axios';
 import { APP_INTERCEPTOR } from '@nestjs/core';
-// import { LoggingModule, LoggingInterceptor } from '@jobpilot/logging';
+import { LoggingModule, LoggingInterceptor } from '@jobpilot/logging';
 
 // Configuration
 import { databaseConfig } from './config/database.config';
@@ -32,18 +32,18 @@ import { SeederModule } from './seeds/seeder.module';
     }),
 
     // Logging module
-    // LoggingModule.forRootAsync({
-    //   isGlobal: true,
-    //   useFactory: (configService: ConfigService) => ({
-    //     serviceName: 'job-service',
-    //     environment: configService.get<string>('NODE_ENV', 'development'),
-    //     version: configService.get<string>('SERVICE_VERSION', '1.0.0'),
-    //     appInsightsKey: configService.get<string>('APPLICATIONINSIGHTS_INSTRUMENTATION_KEY'),
-    //     enableConsole: true,
-    //     logLevel: configService.get<string>('LOG_LEVEL', 'info') as any,
-    //   }),
-    //   inject: [ConfigService],
-    // }),
+    LoggingModule.forRootAsync({
+      isGlobal: true,
+      useFactory: (configService: ConfigService) => ({
+        serviceName: 'job-service',
+        environment: configService.get<string>('NODE_ENV', 'development'),
+        version: configService.get<string>('SERVICE_VERSION', '1.0.0'),
+        appInsightsKey: configService.get<string>('APPLICATIONINSIGHTS_INSTRUMENTATION_KEY'),
+        enableConsole: true,
+        logLevel: configService.get<string>('LOG_LEVEL', 'info') as any,
+      }),
+      inject: [ConfigService],
+    }),
 
     // TypeORM
     TypeOrmModule.forRootAsync({
@@ -122,10 +122,10 @@ import { SeederModule } from './seeds/seeder.module';
   ],
   controllers: [],
   providers: [
-    // {
-    //   provide: APP_INTERCEPTOR,
-    //   useClass: LoggingInterceptor,
-    // },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: LoggingInterceptor,
+    },
   ],
 })
 export class AppModule {}

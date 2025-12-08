@@ -1,35 +1,37 @@
 import { NestFactory } from '@nestjs/core';
+import { Logger } from '@nestjs/common';
 import { AppModule } from '../app.module';
 import { SeederService } from './seeder.service';
 
 async function bootstrap() {
   const app = await NestFactory.createApplicationContext(AppModule);
   const seeder = app.get(SeederService);
+  const logger = new Logger('Seeder');
 
   const command = process.argv[2];
 
   try {
     switch (command) {
       case 'seed':
-        console.log('Seeding database...');
+        logger.log('Seeding database...');
         await seeder.seedJobs();
-        console.log('Seeding completed!');
+        logger.log('Seeding completed!');
         break;
       case 'clear':
-        console.log('Clearing database...');
+        logger.log('Clearing database...');
         await seeder.clearJobs();
-        console.log('Database cleared!');
+        logger.log('Database cleared!');
         break;
       case 'reseed':
-        console.log('Reseeding database...');
+        logger.log('Reseeding database...');
         await seeder.reseedJobs();
-        console.log('Reseeding completed!');
+        logger.log('Reseeding completed!');
         break;
       default:
-        console.log('Usage: npm run seed [seed|clear|reseed]');
+        logger.log('Usage: npm run seed [seed|clear|reseed]');
     }
   } catch (error) {
-    console.error('Error:', error);
+    logger.error('Seeder error', error);
     process.exit(1);
   } finally {
     await app.close();

@@ -1,8 +1,9 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { BullModule } from '@nestjs/bull';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { EmailQueueProcessor } from './processors/email-queue.processor';
 import { NotificationQueueProcessor } from './processors/notification-queue.processor';
+import { PushModule } from '../push/push.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { NotificationQueueProcessor } from './processors/notification-queue.proc
         name: 'notifications',
       },
     ),
+    forwardRef(() => PushModule),
   ],
   providers: [EmailQueueProcessor, NotificationQueueProcessor],
   exports: [BullModule],

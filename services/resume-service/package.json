@@ -28,6 +28,9 @@
     "schema:drop": "npm run typeorm -- schema:drop -d src/config/database.config.ts"
   },
   "dependencies": {
+    "@jobpilot/telemetry": "workspace:*",
+    "@jobpilot/logging": "workspace:*",
+    "@jobpilot/security": "workspace:*",
     "@nestjs/common": "^10.3.0",
     "@nestjs/core": "^10.3.0",
     "@nestjs/platform-express": "^10.3.0",

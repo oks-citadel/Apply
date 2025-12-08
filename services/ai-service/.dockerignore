@@ -1,0 +1,107 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+*.cover
+.hypothesis/
+.tox/
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Testing
+tests/
+test/
+*.test.py
+pytest.ini
+.pytest_cache/
+
+# Documentation
+docs/
+*.md
+README*
+LICENSE
+CHANGELOG*
+*.rst
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+azure-pipelines.yml
+
+# Docker
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# Logs
+*.log
+logs/
+
+# Environment files
+.env*
+!.env.example
+
+# Cache and temporary files
+*.cache
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+*.tmp
+*.temp
+
+# Models and data (these should be downloaded at runtime or mounted)
+models/
+*.pkl
+*.h5
+*.pb
+*.onnx
+*.pt
+*.pth
+
+# Jupyter notebooks
+*.ipynb
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# Development scripts
+scripts/dev/
+scripts/test/

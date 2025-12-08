@@ -7,6 +7,7 @@ import { firstValueFrom } from 'rxjs';
 import { Job } from './entities/job.entity';
 import { SavedJob } from './entities/saved-job.entity';
 import { SearchService } from '../search/search.service';
+import { ReportsService } from '../reports/reports.service';
 import { SearchJobsDto, PaginatedJobsResponseDto, JobResponseDto } from './dto/search-jobs.dto';
 import { SaveJobDto, UpdateSavedJobDto } from './dto/save-job.dto';
 
@@ -21,6 +22,7 @@ export class JobsService {
     @InjectRepository(SavedJob)
     private readonly savedJobRepository: Repository<SavedJob>,
     private readonly searchService: SearchService,
+    private readonly reportsService: ReportsService,
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
   ) {
@@ -609,21 +611,27 @@ export class JobsService {
         throw new NotFoundException('Job not found');
       }
 
-      // Log the report (in production, this would go to a reports table)
-      this.logger.warn(
-        `Job ${jobId} reported by user ${userId}. Reason: ${reportJobDto.reason}. Details: ${reportJobDto.details}`,
+      // Map the old DTO format to the new CreateReportDto format
+      const createReportDto = {
+        reportType: reportJobDto.reason, // Maps 'reason' field to 'reportType'
+        reason: reportJobDto.reason, // Keep reason for backward compatibility
+        description: reportJobDto.details, // Maps 'details' to 'description'
+      };
+
+      // Store report in database using ReportsService
+      const report = await this.reportsService.createReport(
+        jobId,
+        userId,
+        createReportDto,
       );
 
-      // TODO: Store in database reports table
-      // await this.reportRepository.save({
-      //   job_id: jobId,
-      //   user_id: userId,
-      //   reason: reportJobDto.reason,
-      //   details: reportJobDto.details,
-      // });
+      this.logger.log(
+        `Job ${jobId} reported by user ${userId}. Report ID: ${report.id}, Type: ${reportJobDto.reason}`,
+      );
 
       return {
         message: 'Job reported successfully. Our team will review it shortly.',
+        reportId: report.id,
       };
     } catch (error) {
       if (error instanceof NotFoundException) {
@@ -632,5 +640,26 @@ export class JobsService {
       this.logger.error(`Error reporting job: ${error.message}`, error.stack);
       throw new BadRequestException('Failed to report job');
     }
+  }
+
+  /**
+   * Get reports for a specific job
+   */
+  async getJobReports(jobId: string, page: number = 1, limit: number = 20): Promise<any> {
+    return this.reportsService.getReportsByJobId(jobId, page, limit);
+  }
+
+  /**
+   * Check if user has already reported a job
+   */
+  async hasUserReportedJob(userId: string, jobId: string): Promise<boolean> {
+    return this.reportsService.hasUserReportedJob(userId, jobId);
+  }
+
+  /**
+   * Get report count for a job
+   */
+  async getJobReportCount(jobId: string): Promise<number> {
+    return this.reportsService.getJobReportCount(jobId);
   }
 }

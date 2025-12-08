@@ -3,8 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { BullModule } from '@nestjs/bull';
 import { APP_INTERCEPTOR } from '@nestjs/core';
-// TODO: Re-enable workspace package
-// import { LoggingModule, LoggingInterceptor } from '@jobpilot/logging';
+import { LoggingModule, LoggingInterceptor } from '@jobpilot/logging';
 import { ApplicationsModule } from './modules/applications/applications.module';
 // EngineModule does not exist - commenting out
 // import { EngineModule } from './modules/engine/engine.module';
@@ -22,20 +21,19 @@ import { HealthController } from './health.controller';
       envFilePath: '.env',
     }),
 
-    // TODO: Re-enable workspace package
     // Logging module
-    // LoggingModule.forRootAsync({
-    //   isGlobal: true,
-    //   useFactory: (configService: ConfigService) => ({
-    //     serviceName: 'auto-apply-service',
-    //     environment: configService.get<string>('NODE_ENV', 'development'),
-    //     version: configService.get<string>('SERVICE_VERSION', '1.0.0'),
-    //     appInsightsKey: configService.get<string>('APPLICATIONINSIGHTS_INSTRUMENTATION_KEY'),
-    //     enableConsole: true,
-    //     logLevel: configService.get<string>('LOG_LEVEL', 'info') as any,
-    //   }),
-    //   inject: [ConfigService],
-    // }),
+    LoggingModule.forRootAsync({
+      isGlobal: true,
+      useFactory: (configService: ConfigService) => ({
+        serviceName: 'auto-apply-service',
+        environment: configService.get<string>('NODE_ENV', 'development'),
+        version: configService.get<string>('SERVICE_VERSION', '1.0.0'),
+        appInsightsKey: configService.get<string>('APPLICATIONINSIGHTS_INSTRUMENTATION_KEY'),
+        enableConsole: true,
+        logLevel: configService.get<string>('LOG_LEVEL', 'info') as any,
+      }),
+      inject: [ConfigService],
+    }),
 
     // Database
     TypeOrmModule.forRootAsync({
@@ -91,11 +89,10 @@ import { HealthController } from './health.controller';
   ],
   controllers: [HealthController],
   providers: [
-    // TODO: Re-enable workspace package
-    // {
-    //   provide: APP_INTERCEPTOR,
-    //   useClass: LoggingInterceptor,
-    // },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: LoggingInterceptor,
+    },
   ],
 })
 export class AppModule {}

@@ -1,7 +1,7 @@
 import { Logger } from '@nestjs/common';
 
 // Initialize telemetry BEFORE importing other modules for proper auto-instrumentation
-import { initTelemetry } from './stub-telemetry';
+import { initTelemetry } from '@jobpilot/telemetry';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');

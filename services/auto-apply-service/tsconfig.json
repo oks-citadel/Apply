@@ -20,7 +20,10 @@
     "paths": {
       "@/*": ["src/*"],
       "@modules/*": ["src/modules/*"],
-      "@config/*": ["src/config/*"]
+      "@config/*": ["src/config/*"],
+      "@jobpilot/telemetry": ["../../packages/telemetry/src/index.ts"],
+      "@jobpilot/logging": ["../../packages/logging/src/index.ts"],
+      "@jobpilot/security": ["../../packages/security/src/index.ts"]
     }
   },
   "include": ["src/**/*"],

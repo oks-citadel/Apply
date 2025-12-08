@@ -1,17 +1,20 @@
 #!/usr/bin/env ts-node
 import { DataSource } from 'typeorm';
+import { Logger } from '@nestjs/common';
 import { config } from 'dotenv';
 import * as path from 'path';
 
 // Load environment variables
 config();
 
+const logger = new Logger('Migrations');
+
 async function runMigrations() {
   const isProd = process.env.NODE_ENV === 'production';
 
-  console.log('Starting migration process...');
-  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`Database: ${process.env.DB_DATABASE || 'resume_service'}`);
+  logger.log('Starting migration process...');
+  logger.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  logger.log(`Database: ${process.env.DB_DATABASE || 'resume_service'}`);
 
   const dataSource = new DataSource({
     type: 'postgres',
@@ -33,50 +36,50 @@ async function runMigrations() {
   });
 
   try {
-    console.log('Connecting to database...');
+    logger.log('Connecting to database...');
     await dataSource.initialize();
-    console.log('Database connection established');
+    logger.log('Database connection established');
 
     // Check pending migrations
     const pendingMigrations = await dataSource.showMigrations();
 
     if (pendingMigrations) {
-      console.log('\nPending migrations found. Running migrations...');
+      logger.log('Pending migrations found. Running migrations...');
       const migrations = await dataSource.runMigrations({
         transaction: 'all', // Run all migrations in a single transaction
       });
 
       if (migrations.length === 0) {
-        console.log('No migrations were executed (all up to date)');
+        logger.log('No migrations were executed (all up to date)');
       } else {
-        console.log(`\nSuccessfully executed ${migrations.length} migration(s):`);
+        logger.log(`Successfully executed ${migrations.length} migration(s):`);
         migrations.forEach((migration) => {
-          console.log(`  - ${migration.name}`);
+          logger.log(`  - ${migration.name}`);
         });
       }
     } else {
-      console.log('\nNo pending migrations. Database is up to date.');
+      logger.log('No pending migrations. Database is up to date.');
     }
 
     // Display current migration status
-    console.log('\nMigration History:');
+    logger.log('Migration History:');
     const executedMigrations = await dataSource.query(
       `SELECT * FROM migrations ORDER BY timestamp DESC LIMIT 10`
     );
 
     if (executedMigrations.length > 0) {
       executedMigrations.forEach((migration: any) => {
-        console.log(`  ✓ ${migration.name} (${new Date(migration.timestamp).toISOString()})`);
+        logger.log(`  ✓ ${migration.name} (${new Date(migration.timestamp).toISOString()})`);
       });
     } else {
-      console.log('  No migrations executed yet');
+      logger.log('  No migrations executed yet');
     }
 
     await dataSource.destroy();
-    console.log('\nMigration process completed successfully!');
+    logger.log('Migration process completed successfully!');
     process.exit(0);
   } catch (error) {
-    console.error('\nMigration failed:', error);
+    logger.error('Migration failed', error);
 
     if (dataSource.isInitialized) {
       await dataSource.destroy();
@@ -88,7 +91,7 @@ async function runMigrations() {
 
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (error) => {
-  console.error('Unhandled promise rejection:', error);
+  logger.error('Unhandled promise rejection', error);
   process.exit(1);
 });
 

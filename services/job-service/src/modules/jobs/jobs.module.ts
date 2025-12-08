@@ -6,12 +6,14 @@ import { JobsService } from './jobs.service';
 import { Job } from './entities/job.entity';
 import { SavedJob } from './entities/saved-job.entity';
 import { SearchModule } from '../search/search.module';
+import { ReportsModule } from '../reports/reports.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Job, SavedJob]),
     HttpModule,
     SearchModule,
+    ReportsModule,
   ],
   controllers: [JobsController],
   providers: [JobsService],

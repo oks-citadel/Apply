@@ -12,7 +12,7 @@ async function bootstrap() {
 
   // Import NestJS modules AFTER telemetry initialization
   const { NestFactory } = await import('@nestjs/core');
-  const { ValidationPipe } = await import('@nestjs/common');
+  const { ValidationPipe, Logger } = await import('@nestjs/common');
   const { SwaggerModule, DocumentBuilder } = await import('@nestjs/swagger');
   const { AppModule } = await import('./app.module');
 
@@ -46,7 +46,9 @@ async function bootstrap() {
 
   const port = process.env.PORT || 8007;
   await app.listen(port);
-  console.log(`Notification Service is running on: http://localhost:${port}`);
-  console.log(`Swagger documentation available at: http://localhost:${port}/api/docs`);
+
+  const logger = new Logger('Bootstrap');
+  logger.log(`Notification Service is running on: http://localhost:${port}`);
+  logger.log(`Swagger documentation available at: http://localhost:${port}/api/docs`);
 }
 bootstrap();
