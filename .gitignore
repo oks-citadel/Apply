@@ -4,7 +4,6 @@ node_modules/
 .pnp.js
 
 # Lock files (pnpm only)
-package-lock.json
 yarn.lock
 
 # Testing
