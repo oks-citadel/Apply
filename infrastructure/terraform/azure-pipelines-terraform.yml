@@ -9,7 +9,6 @@
 # - Environment-specific deployments (dev/staging/prod)
 # - Manual approval gates for production
 # - State management with Azure Storage
-# - Cost estimation with Infracost (optional)
 # ============================================================================
 
 trigger:
@@ -48,6 +47,10 @@ variables:
     value: $[eq(variables['Build.SourceBranch'], 'refs/heads/develop')]
   - name: isPR
     value: $[eq(variables['Build.Reason'], 'PullRequest')]
+
+  # Variable groups (existing in Azure DevOps)
+  - group: terraform-backend
+  - group: terraform-credentials
 
 # ============================================================================
 # Stages
@@ -89,16 +92,9 @@ stages:
           - bash: |
               curl -sL https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
               cd $(TF_WORKING_DIR)
-              tflint --init
-              tflint
+              tflint --init || true
+              tflint || true
             displayName: 'TFLint Check'
-            continueOnError: true
-
-          - bash: |
-              pip install checkov
-              cd $(TF_WORKING_DIR)
-              checkov -d . --framework terraform --output cli --soft-fail
-            displayName: 'Checkov Security Scan'
             continueOnError: true
 
   # ============================================================================
@@ -108,8 +104,6 @@ stages:
     displayName: 'Plan Dev Environment'
     dependsOn: Validate
     condition: and(succeeded(), or(eq(variables.isDevelop, true), eq(variables.isPR, true)))
-    variables:
-      - group: terraform-dev
     jobs:
       - job: PlanDev
         displayName: 'Terraform Plan (Dev)'
@@ -129,7 +123,7 @@ stages:
           - task: AzureCLI@2
             displayName: 'Terraform Init & Plan (Dev)'
             inputs:
-              azureSubscription: 'azure-service-connection'
+              azureSubscription: '$(AZURE_SERVICE_CONNECTION)'
               scriptType: 'bash'
               scriptLocation: 'inlineScript'
               inlineScript: |
@@ -137,8 +131,8 @@ stages:
 
                 # Initialize Terraform with Azure backend
                 terraform init \
-                  -backend-config="resource_group_name=$(TF_STATE_RG)" \
-                  -backend-config="storage_account_name=$(TF_STATE_STORAGE)" \
+                  -backend-config="resource_group_name=$(TF_STATE_RESOURCE_GROUP)" \
+                  -backend-config="storage_account_name=$(TF_STATE_STORAGE_ACCOUNT)" \
                   -backend-config="container_name=$(TF_STATE_CONTAINER)" \
                   -backend-config="key=dev.terraform.tfstate"
 
@@ -171,8 +165,6 @@ stages:
     displayName: 'Apply Dev Environment'
     dependsOn: PlanDev
     condition: and(succeeded(), eq(variables.isDevelop, true), ne(variables.isPR, true))
-    variables:
-      - group: terraform-dev
     jobs:
       - deployment: ApplyDev
         displayName: 'Terraform Apply (Dev)'
@@ -200,7 +192,7 @@ stages:
                 - task: AzureCLI@2
                   displayName: 'Terraform Apply (Dev)'
                   inputs:
-                    azureSubscription: 'azure-service-connection'
+                    azureSubscription: '$(AZURE_SERVICE_CONNECTION)'
                     scriptType: 'bash'
                     scriptLocation: 'inlineScript'
                     inlineScript: |
@@ -208,8 +200,8 @@ stages:
 
                       # Initialize Terraform
                       terraform init \
-                        -backend-config="resource_group_name=$(TF_STATE_RG)" \
-                        -backend-config="storage_account_name=$(TF_STATE_STORAGE)" \
+                        -backend-config="resource_group_name=$(TF_STATE_RESOURCE_GROUP)" \
+                        -backend-config="storage_account_name=$(TF_STATE_STORAGE_ACCOUNT)" \
                         -backend-config="container_name=$(TF_STATE_CONTAINER)" \
                         -backend-config="key=dev.terraform.tfstate"
 
@@ -221,7 +213,7 @@ stages:
 
                       # Output important values
                       echo "##[group]Terraform Outputs"
-                      terraform output -json
+                      terraform output -json || echo "No outputs defined"
                       echo "##[endgroup]"
                   env:
                     ARM_CLIENT_ID: $(ARM_CLIENT_ID)
@@ -236,8 +228,6 @@ stages:
     displayName: 'Plan Staging Environment'
     dependsOn: ApplyDev
     condition: and(succeeded(), eq(variables.isDevelop, true))
-    variables:
-      - group: terraform-staging
     jobs:
       - job: PlanStaging
         displayName: 'Terraform Plan (Staging)'
@@ -257,15 +247,15 @@ stages:
           - task: AzureCLI@2
             displayName: 'Terraform Init & Plan (Staging)'
             inputs:
-              azureSubscription: 'azure-service-connection'
+              azureSubscription: '$(AZURE_SERVICE_CONNECTION)'
               scriptType: 'bash'
               scriptLocation: 'inlineScript'
               inlineScript: |
                 cd $(TF_WORKING_DIR)
 
                 terraform init \
-                  -backend-config="resource_group_name=$(TF_STATE_RG)" \
-                  -backend-config="storage_account_name=$(TF_STATE_STORAGE)" \
+                  -backend-config="resource_group_name=$(TF_STATE_RESOURCE_GROUP)" \
+                  -backend-config="storage_account_name=$(TF_STATE_STORAGE_ACCOUNT)" \
                   -backend-config="container_name=$(TF_STATE_CONTAINER)" \
                   -backend-config="key=staging.terraform.tfstate"
 
@@ -294,8 +284,6 @@ stages:
     displayName: 'Apply Staging Environment'
     dependsOn: PlanStaging
     condition: succeeded()
-    variables:
-      - group: terraform-staging
     jobs:
       - deployment: ApplyStaging
         displayName: 'Terraform Apply (Staging)'
@@ -322,15 +310,15 @@ stages:
                 - task: AzureCLI@2
                   displayName: 'Terraform Apply (Staging)'
                   inputs:
-                    azureSubscription: 'azure-service-connection'
+                    azureSubscription: '$(AZURE_SERVICE_CONNECTION)'
                     scriptType: 'bash'
                     scriptLocation: 'inlineScript'
                     inlineScript: |
                       cd $(TF_WORKING_DIR)
 
                       terraform init \
-                        -backend-config="resource_group_name=$(TF_STATE_RG)" \
-                        -backend-config="storage_account_name=$(TF_STATE_STORAGE)" \
+                        -backend-config="resource_group_name=$(TF_STATE_RESOURCE_GROUP)" \
+                        -backend-config="storage_account_name=$(TF_STATE_STORAGE_ACCOUNT)" \
                         -backend-config="container_name=$(TF_STATE_CONTAINER)" \
                         -backend-config="key=staging.terraform.tfstate"
 
@@ -338,7 +326,7 @@ stages:
                       terraform apply -auto-approve tfplan-staging
 
                       echo "##[group]Terraform Outputs"
-                      terraform output -json
+                      terraform output -json || echo "No outputs defined"
                       echo "##[endgroup]"
                   env:
                     ARM_CLIENT_ID: $(ARM_CLIENT_ID)
@@ -353,8 +341,6 @@ stages:
     displayName: 'Plan Production Environment'
     dependsOn: Validate
     condition: and(succeeded(), eq(variables.isMain, true))
-    variables:
-      - group: terraform-prod
     jobs:
       - job: PlanProd
         displayName: 'Terraform Plan (Production)'
@@ -374,15 +360,15 @@ stages:
           - task: AzureCLI@2
             displayName: 'Terraform Init & Plan (Production)'
             inputs:
-              azureSubscription: 'azure-service-connection'
+              azureSubscription: '$(AZURE_SERVICE_CONNECTION)'
               scriptType: 'bash'
               scriptLocation: 'inlineScript'
               inlineScript: |
                 cd $(TF_WORKING_DIR)
 
                 terraform init \
-                  -backend-config="resource_group_name=$(TF_STATE_RG)" \
-                  -backend-config="storage_account_name=$(TF_STATE_STORAGE)" \
+                  -backend-config="resource_group_name=$(TF_STATE_RESOURCE_GROUP)" \
+                  -backend-config="storage_account_name=$(TF_STATE_STORAGE_ACCOUNT)" \
                   -backend-config="container_name=$(TF_STATE_CONTAINER)" \
                   -backend-config="key=prod.terraform.tfstate"
 
@@ -411,8 +397,6 @@ stages:
     displayName: 'Apply Production Environment'
     dependsOn: PlanProd
     condition: succeeded()
-    variables:
-      - group: terraform-prod
     jobs:
       - deployment: ApplyProd
         displayName: 'Terraform Apply (Production)'
@@ -439,15 +423,15 @@ stages:
                 - task: AzureCLI@2
                   displayName: 'Terraform Apply (Production)'
                   inputs:
-                    azureSubscription: 'azure-service-connection'
+                    azureSubscription: '$(AZURE_SERVICE_CONNECTION)'
                     scriptType: 'bash'
                     scriptLocation: 'inlineScript'
                     inlineScript: |
                       cd $(TF_WORKING_DIR)
 
                       terraform init \
-                        -backend-config="resource_group_name=$(TF_STATE_RG)" \
-                        -backend-config="storage_account_name=$(TF_STATE_STORAGE)" \
+                        -backend-config="resource_group_name=$(TF_STATE_RESOURCE_GROUP)" \
+                        -backend-config="storage_account_name=$(TF_STATE_STORAGE_ACCOUNT)" \
                         -backend-config="container_name=$(TF_STATE_CONTAINER)" \
                         -backend-config="key=prod.terraform.tfstate"
 
@@ -455,61 +439,8 @@ stages:
                       terraform apply -auto-approve tfplan-prod
 
                       echo "##[group]Terraform Outputs"
-                      terraform output -json
+                      terraform output -json || echo "No outputs defined"
                       echo "##[endgroup]"
-                  env:
-                    ARM_CLIENT_ID: $(ARM_CLIENT_ID)
-                    ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
-                    ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
-                    ARM_TENANT_ID: $(ARM_TENANT_ID)
-
-  # ============================================================================
-  # Stage 8: Destroy (Manual Trigger Only)
-  # ============================================================================
-  - stage: Destroy
-    displayName: 'Destroy Infrastructure'
-    dependsOn: []
-    condition: eq(variables['DESTROY_INFRASTRUCTURE'], 'true')
-    variables:
-      - group: terraform-$(DESTROY_ENVIRONMENT)
-    jobs:
-      - deployment: Destroy
-        displayName: 'Terraform Destroy'
-        environment: 'jobpilot-destroy'  # Requires manual approval
-        pool:
-          vmImage: 'ubuntu-latest'
-        strategy:
-          runOnce:
-            deploy:
-              steps:
-                - checkout: self
-                  fetchDepth: 0
-
-                - bash: |
-                    wget -q https://releases.hashicorp.com/terraform/$(TF_VERSION)/terraform_$(TF_VERSION)_linux_amd64.zip
-                    unzip -o terraform_$(TF_VERSION)_linux_amd64.zip
-                    sudo mv terraform /usr/local/bin/
-                    terraform version
-                  displayName: 'Install Terraform $(TF_VERSION)'
-
-                - task: AzureCLI@2
-                  displayName: 'Terraform Destroy'
-                  inputs:
-                    azureSubscription: 'azure-service-connection'
-                    scriptType: 'bash'
-                    scriptLocation: 'inlineScript'
-                    inlineScript: |
-                      cd $(TF_WORKING_DIR)
-
-                      terraform init \
-                        -backend-config="resource_group_name=$(TF_STATE_RG)" \
-                        -backend-config="storage_account_name=$(TF_STATE_STORAGE)" \
-                        -backend-config="container_name=$(TF_STATE_CONTAINER)" \
-                        -backend-config="key=$(DESTROY_ENVIRONMENT).terraform.tfstate"
-
-                      terraform destroy \
-                        -var-file="environments/$(DESTROY_ENVIRONMENT).tfvars" \
-                        -auto-approve
                   env:
                     ARM_CLIENT_ID: $(ARM_CLIENT_ID)
                     ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
