@@ -1,5 +1,7 @@
 'use client';
 
+import { memo } from 'react';
+import dynamic from 'next/dynamic';
 import { FileText, Briefcase, Send, TrendingUp, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -7,6 +9,12 @@ import Link from 'next/link';
 import { useDashboardStats } from '@/hooks/useUser';
 import { useApplications } from '@/hooks/useApplications';
 import { useJobs } from '@/hooks/useJobs';
+
+// Lazy load chart component if used later
+// const DynamicChart = dynamic(() => import('@/components/charts/Chart'), {
+//   loading: () => <Loader2 className="w-6 h-6 animate-spin" />,
+//   ssr: false,
+// });
 
 export default function DashboardPage() {
   const { data: stats, isLoading: statsLoading } = useDashboardStats();
@@ -178,7 +186,7 @@ export default function DashboardPage() {
   );
 }
 
-function StatCard({
+const StatCard = memo(function StatCard({
   title,
   value,
   icon,
@@ -206,9 +214,9 @@ function StatCard({
       </CardContent>
     </Card>
   );
-}
+});
 
-function ActivityItem({
+const ActivityItem = memo(function ActivityItem({
   title,
   company,
   status,
@@ -241,9 +249,9 @@ function ActivityItem({
       </div>
     </div>
   );
-}
+});
 
-function JobItem({
+const JobItem = memo(function JobItem({
   title,
   company,
   location,
@@ -266,7 +274,7 @@ function JobItem({
       </div>
     </div>
   );
-}
+});
 
 function formatDate(dateString: string): string {
   if (!dateString) return 'Unknown';

@@ -10,8 +10,11 @@
     "type-check": "tsc --noEmit",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage",
-    "test:ci": "jest --ci --coverage --maxWorkers=2"
+    "test:coverage": "jest --coverage --collectCoverageFrom='src/**/*.{ts,tsx}' --coveragePathIgnorePatterns='/node_modules/' --coveragePathIgnorePatterns='/__tests__/' --coveragePathIgnorePatterns='/test/' --coveragePathIgnorePatterns='.test.ts' --coveragePathIgnorePatterns='.test.tsx'",
+    "test:ci": "jest --ci --coverage --maxWorkers=2",
+    "test:hooks": "jest src/hooks/__tests__",
+    "test:components": "jest src/components",
+    "test:integration": "jest src/app"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.6.0",

@@ -12,6 +12,7 @@ import { EducationForm } from '@/components/forms/EducationForm';
 import { SkillsForm } from '@/components/forms/SkillsForm';
 import type { Experience, Education, Skill, PersonalInfo } from '@/types/resume';
 import { useToast } from '@/hooks/useToast';
+import { logger } from '@/lib/logger';
 
 export default function ResumeDetailPage({ params }: { params: { id: string } }) {
   const { data: resume, isLoading: isLoadingResume, error } = useResume(params.id);
@@ -57,7 +58,7 @@ export default function ResumeDetailPage({ params }: { params: { id: string } })
         },
       });
     } catch (error) {
-      console.error('Failed to save basic info:', error);
+      logger.error('Failed to save basic info', error as Error, { resumeId: params.id });
     }
   };
 
@@ -71,7 +72,7 @@ export default function ResumeDetailPage({ params }: { params: { id: string } })
         },
       });
     } catch (error) {
-      console.error('Failed to save experiences:', error);
+      logger.error('Failed to save experiences', error as Error, { resumeId: params.id });
     }
   };
 
@@ -85,7 +86,7 @@ export default function ResumeDetailPage({ params }: { params: { id: string } })
         },
       });
     } catch (error) {
-      console.error('Failed to save education:', error);
+      logger.error('Failed to save education', error as Error, { resumeId: params.id });
     }
   };
 
@@ -99,7 +100,7 @@ export default function ResumeDetailPage({ params }: { params: { id: string } })
         },
       });
     } catch (error) {
-      console.error('Failed to save skills:', error);
+      logger.error('Failed to save skills', error as Error, { resumeId: params.id });
     }
   };
 
