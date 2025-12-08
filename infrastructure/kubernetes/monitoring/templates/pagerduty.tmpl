@@ -1,0 +1,38 @@
+{{ define "pagerduty.jobpilot.description" }}
+[{{ .Status | toUpper }}] {{ .GroupLabels.alertname }}: {{ .CommonAnnotations.summary }}
+{{ end }}
+
+{{ define "pagerduty.jobpilot.details" }}
+{
+  "status": "{{ .Status }}",
+  "alertname": "{{ .GroupLabels.alertname }}",
+  "severity": "{{ .CommonLabels.severity }}",
+  "service": "{{ .CommonLabels.service | default "unknown" }}",
+  "namespace": "{{ .CommonLabels.namespace }}",
+  "category": "{{ .CommonLabels.category }}",
+  "team": "{{ .CommonLabels.team }}",
+  "summary": "{{ .CommonAnnotations.summary }}",
+  "description": "{{ .CommonAnnotations.description }}",
+  "runbook_url": "{{ .CommonAnnotations.runbook_url }}",
+  "dashboard_url": "{{ .CommonAnnotations.dashboard_url }}",
+  "firing_count": {{ .Alerts.Firing | len }},
+  "resolved_count": {{ .Alerts.Resolved | len }},
+  "alerts": [
+    {{ range $i, $alert := .Alerts }}
+    {{ if $i }},{{ end }}
+    {
+      "instance": "{{ $alert.Labels.instance | default $alert.Labels.pod }}",
+      "status": "{{ $alert.Status }}",
+      "starts_at": "{{ $alert.StartsAt }}",
+      "ends_at": "{{ $alert.EndsAt }}",
+      "labels": {
+        {{ range $j, $label := $alert.Labels.SortedPairs }}
+        {{ if $j }},{{ end }}
+        "{{ $label.Name }}": "{{ $label.Value }}"
+        {{ end }}
+      }
+    }
+    {{ end }}
+  ]
+}
+{{ end }}

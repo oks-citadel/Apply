@@ -1,0 +1,216 @@
+{{ define "email.jobpilot.subject" }}
+[{{ .Status | toUpper }}] {{ .GroupLabels.alertname }} - JobPilot Platform
+{{ end }}
+
+{{ define "email.jobpilot.html" }}
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+    .email-container {
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      overflow: hidden;
+    }
+    .header {
+      padding: 30px;
+      color: white;
+      {{ if eq .Status "firing" }}
+        {{ if eq .CommonLabels.severity "critical" }}
+          background: linear-gradient(135deg, #d32f2f 0%, #c62828 100%);
+        {{ else if eq .CommonLabels.severity "warning" }}
+          background: linear-gradient(135deg, #f57c00 0%, #ef6c00 100%);
+        {{ else }}
+          background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+        {{ end }}
+      {{ else }}
+        background: linear-gradient(135deg, #388e3c 0%, #2e7d32 100%);
+      {{ end }}
+    }
+    .header h1 {
+      margin: 0 0 10px 0;
+      font-size: 28px;
+      font-weight: 600;
+    }
+    .header p {
+      margin: 5px 0;
+      font-size: 16px;
+      opacity: 0.95;
+    }
+    .content {
+      padding: 30px;
+    }
+    .alert-item {
+      background-color: #f9f9f9;
+      border-left: 4px solid;
+      {{ if eq .CommonLabels.severity "critical" }}
+        border-left-color: #d32f2f;
+      {{ else if eq .CommonLabels.severity "warning" }}
+        border-left-color: #f57c00;
+      {{ else }}
+        border-left-color: #1976d2;
+      {{ end }}
+      padding: 20px;
+      margin: 20px 0;
+      border-radius: 4px;
+    }
+    .alert-item h3 {
+      margin: 0 0 15px 0;
+      color: #333;
+      font-size: 18px;
+    }
+    .alert-item p {
+      margin: 8px 0;
+      color: #666;
+    }
+    .alert-item strong {
+      color: #333;
+      font-weight: 600;
+    }
+    .labels {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 15px 0;
+    }
+    .label {
+      display: inline-block;
+      padding: 6px 12px;
+      background-color: #e0e0e0;
+      border-radius: 4px;
+      font-size: 13px;
+      color: #555;
+    }
+    .label strong {
+      color: #333;
+      margin-right: 4px;
+    }
+    .button {
+      display: inline-block;
+      padding: 12px 24px;
+      margin: 8px 8px 8px 0;
+      background-color: #1976d2;
+      color: white !important;
+      text-decoration: none;
+      border-radius: 4px;
+      font-weight: 500;
+      transition: background-color 0.2s;
+    }
+    .button:hover {
+      background-color: #1565c0;
+    }
+    .footer {
+      padding: 20px 30px;
+      background-color: #f5f5f5;
+      border-top: 1px solid #e0e0e0;
+      font-size: 14px;
+      color: #666;
+    }
+    .status-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      {{ if eq .Status "firing" }}
+        background-color: #ffebee;
+        color: #c62828;
+      {{ else }}
+        background-color: #e8f5e9;
+        color: #2e7d32;
+      {{ end }}
+    }
+  </style>
+</head>
+<body>
+  <div class="email-container">
+    <div class="header">
+      <h1>{{ if eq .Status "firing" }}🚨 Alert Firing{{ else }}✅ Alert Resolved{{ end }}</h1>
+      <p><strong>{{ .GroupLabels.alertname }}</strong></p>
+      <p>{{ .CommonAnnotations.summary }}</p>
+    </div>
+
+    <div class="content">
+      <p>
+        <span class="status-badge">{{ .Status }}</span>
+        <strong style="margin-left: 10px;">Severity:</strong> {{ .CommonLabels.severity | toUpper }}
+      </p>
+
+      <p><strong>Description:</strong> {{ .CommonAnnotations.description }}</p>
+
+      {{ if .CommonLabels.service }}
+      <p><strong>Service:</strong> {{ .CommonLabels.service }}</p>
+      {{ end }}
+
+      {{ if .CommonLabels.namespace }}
+      <p><strong>Namespace:</strong> {{ .CommonLabels.namespace }}</p>
+      {{ end }}
+
+      {{ if .CommonLabels.team }}
+      <p><strong>Team:</strong> {{ .CommonLabels.team }}</p>
+      {{ end }}
+
+      <p><strong>Firing Alerts:</strong> {{ .Alerts.Firing | len }}</p>
+      {{ if gt (.Alerts.Resolved | len) 0 }}
+      <p><strong>Resolved Alerts:</strong> {{ .Alerts.Resolved | len }}</p>
+      {{ end }}
+
+      <h3 style="margin-top: 30px; margin-bottom: 15px;">Affected Instances</h3>
+
+      {{ range .Alerts }}
+      <div class="alert-item">
+        <h3>{{ .Labels.instance | default .Labels.pod | default "Unknown Instance" }}</h3>
+        {{ if .Annotations.description }}
+        <p>{{ .Annotations.description }}</p>
+        {{ end }}
+
+        <div class="labels">
+          {{ range .Labels.SortedPairs }}
+          {{ if and (ne .Name "alertname") (ne .Name "severity") }}
+          <span class="label"><strong>{{ .Name }}:</strong> {{ .Value }}</span>
+          {{ end }}
+          {{ end }}
+        </div>
+
+        {{ if .StartsAt }}
+        <p style="font-size: 13px; color: #999; margin-top: 10px;">
+          Started: {{ .StartsAt.Format "2006-01-02 15:04:05 MST" }}
+        </p>
+        {{ end }}
+      </div>
+      {{ end }}
+
+      <div style="margin-top: 30px;">
+        {{ if .CommonAnnotations.runbook_url }}
+        <a href="{{ .CommonAnnotations.runbook_url }}" class="button">📖 View Runbook</a>
+        {{ end }}
+
+        {{ if .CommonAnnotations.dashboard_url }}
+        <a href="{{ .CommonAnnotations.dashboard_url }}" class="button">📊 View Dashboard</a>
+        {{ end }}
+
+        <a href="https://alertmanager.jobpilot.com" class="button">🔇 Silence Alert</a>
+      </div>
+    </div>
+
+    <div class="footer">
+      <p><strong>JobPilot Platform Monitoring</strong></p>
+      <p>This is an automated alert from the JobPilot monitoring system.</p>
+      <p>For support, contact: <a href="mailto:ops-team@jobpilot.com">ops-team@jobpilot.com</a></p>
+    </div>
+  </div>
+</body>
+</html>
+{{ end }}

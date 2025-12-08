@@ -1,0 +1,22 @@
+{{ define "slack.jobpilot.title" }}
+[{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}] {{ .GroupLabels.alertname }}
+{{ end }}
+
+{{ define "slack.jobpilot.text" }}
+{{ range .Alerts }}
+{{ if .Annotations.summary }}*Summary:* {{ .Annotations.summary }}{{ end }}
+{{ if .Annotations.description }}*Description:* {{ .Annotations.description }}{{ end }}
+*Severity:* {{ .Labels.severity | toUpper }}
+{{ if .Labels.service }}*Service:* {{ .Labels.service }}{{ end }}
+{{ if .Labels.namespace }}*Namespace:* {{ .Labels.namespace }}{{ end }}
+{{ if .Annotations.runbook_url }}*Runbook:* <{{ .Annotations.runbook_url }}|View Runbook>{{ end }}
+{{ if .Annotations.dashboard_url }}*Dashboard:* <{{ .Annotations.dashboard_url }}|View Dashboard>{{ end }}
+---
+{{ end }}
+{{ end }}
+
+{{ define "slack.jobpilot.color" }}
+{{ if eq .Status "firing" }}
+{{ if eq .CommonLabels.severity "critical" }}danger{{ else if eq .CommonLabels.severity "warning" }}warning{{ else }}#439FE0{{ end }}
+{{ else }}good{{ end }}
+{{ end }}
