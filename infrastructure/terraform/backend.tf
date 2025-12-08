@@ -35,21 +35,15 @@
 #
 # ============================================================================
 
-# Uncomment this block after creating the storage account
-# terraform {
-#   backend "azurerm" {
-#     resource_group_name  = "tfstate-rg"
-#     storage_account_name = "jobpilottfstate"  # Must be globally unique
-#     container_name       = "tfstate"
-#     key                  = "jobpilot-dev.tfstate"  # Change based on environment
-#
-#     # Optional: Enable state locking and consistency checking
-#     use_azuread_auth     = true
-#
-#     # Optional: Encryption settings
-#     # encryption_key       = "<key>"  # Customer-managed key for encryption
-#   }
-# }
+# Backend configuration for Azure Storage
+terraform {
+  backend "azurerm" {
+    resource_group_name  = "applyforus-tfstate-rg"
+    storage_account_name = "applyforustfstate"
+    container_name       = "tfstate"
+    key                  = "applyforus-dev.tfstate"
+  }
+}
 
 # ============================================================================
 # Alternative: Backend Configuration via CLI

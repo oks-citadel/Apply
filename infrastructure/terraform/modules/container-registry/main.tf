@@ -70,13 +70,8 @@ resource "azurerm_container_registry" "acr" {
     }
   }
 
-  # Quarantine policy (Premium only)
-  dynamic "quarantine_policy" {
-    for_each = var.environment == "prod" ? [1] : []
-    content {
-      enabled = true
-    }
-  }
+  # Note: quarantine_policy block removed as it's deprecated in azurerm 3.x+
+  # Use Azure Policy for content trust and quarantine requirements instead
 
   # Geo-replication for Premium SKU
   dynamic "georeplications" {

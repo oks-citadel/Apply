@@ -87,11 +87,7 @@ module "networking" {
   environment         = var.environment
   tags                = local.common_tags
 
-  vnet_name          = local.vnet_name
-  vnet_address_space = var.vnet_address_space
-  subnets            = local.subnets
-
-  enable_application_gateway = var.enable_application_gateway
+  enable_aks = var.enable_aks
 }
 
 # ============================================================================
@@ -106,12 +102,6 @@ module "managed_identity" {
   project_name        = var.project_name
   environment         = var.environment
   tags                = local.common_tags
-
-  cicd_identity_name     = local.cicd_identity_name
-  workload_identity_name = local.workload_identity_name
-  aks_identity_name      = local.aks_identity_name
-
-  enable_aks = var.enable_aks
 }
 
 # ============================================================================
@@ -127,11 +117,11 @@ module "container_registry" {
   environment         = var.environment
   tags                = local.common_tags
 
-  acr_name                               = local.acr_name
-  enable_defender                        = var.enable_defender
-  cicd_managed_identity_principal_id     = module.managed_identity.cicd_principal_id
-  aks_managed_identity_principal_id      = var.enable_aks ? module.managed_identity.aks_kubelet_principal_id : null
-  workload_managed_identity_principal_id = module.managed_identity.workload_principal_id
+  unique_suffix                  = local.unique_suffix
+  enable_defender                = var.enable_defender
+  cicd_identity_principal_id     = module.managed_identity.cicd_identity_principal_id
+  aks_identity_principal_id      = var.enable_aks ? module.managed_identity.aks_kubelet_identity_principal_id : module.managed_identity.workload_identity_principal_id
+  workload_identity_principal_id = module.managed_identity.workload_identity_principal_id
 
   depends_on = [module.managed_identity]
 }
@@ -149,15 +139,10 @@ module "key_vault" {
   environment         = var.environment
   tags                = local.common_tags
 
-  key_vault_name          = local.key_vault_name
+  unique_suffix           = local.unique_suffix
   enable_diagnostics      = var.enable_diagnostics
   enable_private_endpoint = var.enable_private_endpoints
   allowed_ip_addresses    = var.allowed_ip_addresses
-  tenant_id               = data.azurerm_client_config.current.tenant_id
-
-  # Grant access to managed identities
-  workload_identity_principal_id = module.managed_identity.workload_principal_id
-  cicd_identity_principal_id     = module.managed_identity.cicd_principal_id
 
   depends_on = [module.managed_identity]
 }
@@ -175,8 +160,6 @@ module "app_insights" {
   environment         = var.environment
   tags                = local.common_tags
 
-  app_insights_name   = local.app_insights_name
-  log_analytics_name  = local.log_analytics_name
   sampling_percentage = var.app_insights_sampling_percentage
 }
 
@@ -193,15 +176,15 @@ module "sql_database" {
   environment         = var.environment
   tags                = local.common_tags
 
-  sql_server_name         = local.sql_server_name
-  sql_database_name       = local.sql_database_name
+  unique_suffix           = local.unique_suffix
   sql_admin_username      = var.sql_admin_username
   sql_admin_password      = var.sql_admin_password
-  database_sku            = local.config.sql_database_sku
+  azuread_admin_login     = "citadelcloudmanagement@gmail.com"
+  azuread_admin_object_id = data.azurerm_client_config.current.object_id
+  database_sku            = "${local.config.sql_database_sku.tier}_${local.config.sql_database_sku.name}"
   enable_defender         = var.enable_defender
   subnet_id               = module.networking.database_subnet_id
   enable_private_endpoint = var.enable_private_endpoints
-  allowed_ip_addresses    = var.allowed_ip_addresses
 
   depends_on = [module.networking]
 }
@@ -219,8 +202,8 @@ module "redis_cache" {
   environment         = var.environment
   tags                = local.common_tags
 
-  redis_cache_name        = local.redis_cache_name
-  cache_sku               = local.config.redis_cache_sku
+  unique_suffix           = local.unique_suffix
+  cache_sku               = "${local.config.redis_cache_sku.name}_${local.config.redis_cache_sku.family}${local.config.redis_cache_sku.capacity}"
   subnet_id               = module.networking.cache_subnet_id
   enable_private_endpoint = var.enable_private_endpoints
 
@@ -257,11 +240,10 @@ module "app_service_plan" {
   environment         = var.environment
   tags                = local.common_tags
 
-  app_service_plan_name = local.app_service_plan_name
-  plan_sku              = local.config.app_service_plan_sku
-  enable_auto_scaling   = local.enable_auto_scaling
-  min_replicas          = local.min_replicas
-  max_replicas          = local.max_replicas
+  plan_sku           = local.config.app_service_plan_sku.name
+  enable_autoscaling = local.enable_auto_scaling
+  min_capacity       = local.min_replicas
+  max_capacity       = local.max_replicas
 }
 
 # ============================================================================
@@ -277,19 +259,14 @@ module "app_services" {
   environment         = var.environment
   tags                = local.common_tags
 
-  app_service_plan_id = module.app_service_plan.app_service_plan_id
-  web_app_name        = local.web_app_name
-  auth_service_name   = local.auth_service_name
-  ai_service_name     = local.ai_service_name
+  app_service_plan_id = module.app_service_plan.plan_id
 
-  container_registry_name          = module.container_registry.container_registry_name
-  container_registry_url           = module.container_registry.container_registry_login_server
-  key_vault_name                   = module.key_vault.key_vault_name
-  app_insights_instrumentation_key = module.app_insights.instrumentation_key
-  app_insights_connection_string   = module.app_insights.connection_string
-  subnet_id                        = module.networking.app_service_subnet_id
-
-  workload_identity_client_id = module.managed_identity.workload_client_id
+  container_registry_name        = module.container_registry.registry_name
+  container_registry_url         = module.container_registry.registry_login_server
+  key_vault_name                 = module.key_vault.vault_name
+  app_insights_key               = module.app_insights.instrumentation_key
+  app_insights_connection_string = module.app_insights.connection_string
+  subnet_id                      = module.networking.app_service_subnet_id
 
   depends_on = [
     module.app_service_plan,
@@ -314,12 +291,12 @@ module "private_endpoints" {
   environment         = var.environment
   tags                = local.common_tags
 
-  vnet_id                     = module.networking.vnet_id
-  private_endpoints_subnet_id = module.networking.private_endpoints_subnet_id
+  vnet_id   = module.networking.vnet_id
+  subnet_id = module.networking.private_endpoints_subnet_id
 
-  key_vault_id   = module.key_vault.key_vault_id
-  sql_server_id  = module.sql_database.sql_server_id
-  redis_cache_id = module.redis_cache.redis_cache_id
+  key_vault_id   = module.key_vault.vault_id
+  sql_server_id  = module.sql_database.server_id
+  redis_cache_id = module.redis_cache.cache_id
 
   depends_on = [
     module.key_vault,
@@ -345,7 +322,7 @@ module "aks" {
 
   kubernetes_version         = var.aks_kubernetes_version
   subnet_id                  = module.networking.aks_subnet_id
-  log_analytics_workspace_id = module.app_insights.log_analytics_workspace_id
+  log_analytics_workspace_id = module.app_insights.workspace_id
 
   # Kubelet identity from managed-identity module
   kubelet_identity_id = module.managed_identity.aks_kubelet_identity_id
@@ -378,14 +355,14 @@ module "application_gateway" {
   environment         = var.environment
   tags                = local.common_tags
 
-  app_gateway_name      = local.app_gateway_name
-  vnet_name             = module.networking.vnet_name
-  app_gateway_subnet_id = module.networking.app_gateway_subnet_id
+  # Note: Application Gateway requires a dedicated subnet that should be added to networking module
+  # For now, use the private_endpoints subnet (should be changed when app_gateway_subnet is available)
+  subnet_id = module.networking.private_endpoints_subnet_id
 
-  backend_app_services = {
-    web_app_fqdn      = replace(replace(module.app_services.web_app_url, "https://", ""), "http://", "")
-    auth_service_fqdn = replace(replace(module.app_services.auth_service_url, "https://", ""), "http://", "")
-    ai_service_fqdn   = replace(replace(module.app_services.ai_service_url, "https://", ""), "http://", "")
+  backend_fqdns = {
+    web_app      = [replace(replace(module.app_services.web_app_url, "https://", ""), "http://", "")]
+    auth_service = [replace(replace(module.app_services.auth_service_url, "https://", ""), "http://", "")]
+    ai_service   = [replace(replace(module.app_services.ai_service_url, "https://", ""), "http://", "")]
   }
 
   enable_waf = true
@@ -410,17 +387,16 @@ module "front_door" {
   environment         = var.environment
   tags                = local.common_tags
 
-  front_door_name = local.front_door_name
-
-  backend_app_services = {
-    web_app_fqdn      = replace(replace(module.app_services.web_app_url, "https://", ""), "http://", "")
-    auth_service_fqdn = replace(replace(module.app_services.auth_service_url, "https://", ""), "http://", "")
-    ai_service_fqdn   = replace(replace(module.app_services.ai_service_url, "https://", ""), "http://", "")
-  }
-
   enable_waf     = true
   waf_mode       = var.waf_mode
   enable_caching = true
+
+  # Backend origins are configured through variables
+  backend_fqdns = {
+    web_app      = [replace(replace(module.app_services.web_app_url, "https://", ""), "http://", "")]
+    auth_service = [replace(replace(module.app_services.auth_service_url, "https://", ""), "http://", "")]
+    ai_service   = [replace(replace(module.app_services.ai_service_url, "https://", ""), "http://", "")]
+  }
 
   depends_on = [module.app_services]
 }
@@ -432,15 +408,13 @@ module "front_door" {
 module "key_vault_secrets" {
   source = "./modules/key-vault-secrets"
 
-  key_vault_id = module.key_vault.key_vault_id
+  key_vault_id = module.key_vault.vault_id
 
-  secrets = {
-    sql-connection-string           = module.sql_database.connection_string
-    redis-connection-string         = module.redis_cache.connection_string
-    servicebus-connection-string    = module.service_bus.connection_string
-    appinsights-instrumentation-key = module.app_insights.instrumentation_key
-    appinsights-connection-string   = module.app_insights.connection_string
-  }
+  sql_connection_string           = module.sql_database.connection_string
+  redis_connection_string         = module.redis_cache.primary_connection_string
+  servicebus_connection_string    = module.service_bus.connection_string
+  app_insights_key                = module.app_insights.instrumentation_key
+  app_insights_connection_string  = module.app_insights.connection_string
 
   depends_on = [
     module.sql_database,
@@ -465,10 +439,10 @@ module "monitoring" {
   tags                = local.common_tags
 
   app_insights_id            = module.app_insights.app_insights_id
-  log_analytics_workspace_id = module.app_insights.log_analytics_workspace_id
+  log_analytics_workspace_id = module.app_insights.workspace_id
 
-  sql_server_id  = module.sql_database.sql_server_id
-  redis_cache_id = module.redis_cache.redis_cache_id
+  sql_server_id  = module.sql_database.server_id
+  redis_cache_id = module.redis_cache.cache_id
 
   web_app_ids = module.app_services.app_service_ids
   web_app_urls = {
@@ -476,6 +450,9 @@ module "monitoring" {
     auth_service_url = module.app_services.auth_service_url
     ai_service_url   = module.app_services.ai_service_url
   }
+
+  # Alert notification recipients
+  alert_email_addresses = ["citadelcloudmanagement@gmail.com"]
 
   depends_on = [
     module.app_insights,
@@ -499,11 +476,11 @@ module "dashboards" {
   tags                = local.common_tags
 
   app_insights_id            = module.app_insights.app_insights_id
-  log_analytics_workspace_id = module.app_insights.log_analytics_workspace_id
+  log_analytics_workspace_id = module.app_insights.workspace_id
 
   web_app_ids    = module.app_services.app_service_ids
-  sql_server_id  = module.sql_database.sql_server_id
-  redis_cache_id = module.redis_cache.redis_cache_id
+  sql_server_id  = module.sql_database.server_id
+  redis_cache_id = module.redis_cache.cache_id
 
   application_gateway_id = var.enable_application_gateway ? module.application_gateway[0].application_gateway_id : null
   front_door_id          = var.enable_front_door ? module.front_door[0].front_door_id : null

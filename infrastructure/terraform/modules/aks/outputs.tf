@@ -58,9 +58,9 @@ output "cluster_identity" {
   }
 }
 
-output "system_node_pool_id" {
-  description = "System node pool ID"
-  value       = azurerm_kubernetes_cluster.main.default_node_pool[0].id
+output "system_node_pool_name" {
+  description = "System node pool name"
+  value       = azurerm_kubernetes_cluster.main.default_node_pool[0].name
 }
 
 output "user_node_pool_id" {
