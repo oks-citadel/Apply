@@ -80,7 +80,7 @@ stages:
       - job: Setup
         displayName: 'Setup Dependencies'
         pool:
-          vmImage: 'ubuntu-latest'
+          name: 'Default'
         steps:
           - checkout: self
             fetchDepth: 0
@@ -130,7 +130,7 @@ stages:
         displayName: 'Lint Code'
         dependsOn: Setup
         pool:
-          vmImage: 'ubuntu-latest'
+          name: 'Default'
         steps:
           - download: current
             artifact: source-code
@@ -168,7 +168,7 @@ stages:
         displayName: 'TypeScript Type Check'
         dependsOn: Setup
         pool:
-          vmImage: 'ubuntu-latest'
+          name: 'Default'
         steps:
           - download: current
             artifact: source-code
@@ -209,7 +209,7 @@ stages:
       - job: UnitTests
         displayName: 'Unit Tests - Node.js Services'
         pool:
-          vmImage: 'ubuntu-latest'
+          name: 'Default'
         services:
           postgres:
             image: postgres:15-alpine
@@ -272,7 +272,7 @@ stages:
       - job: PythonTests
         displayName: 'Unit Tests - Python AI Service'
         pool:
-          vmImage: 'ubuntu-latest'
+          name: 'Default'
         steps:
           - checkout: self
 
@@ -310,7 +310,7 @@ stages:
       - job: IntegrationTests
         displayName: 'Integration Tests'
         pool:
-          vmImage: 'ubuntu-latest'
+          name: 'Default'
         services:
           postgres:
             image: postgres:15-alpine
@@ -381,7 +381,7 @@ stages:
       - job: E2ETests
         displayName: 'E2E Tests'
         pool:
-          vmImage: 'ubuntu-latest'
+          name: 'Default'
         steps:
           - checkout: self
 
@@ -442,7 +442,7 @@ stages:
       - job: BuildWebApp
         displayName: 'Build Web App'
         pool:
-          vmImage: 'ubuntu-latest'
+          name: 'Default'
         steps:
           - checkout: self
 
@@ -468,7 +468,7 @@ stages:
       - job: BuildAuthService
         displayName: 'Build Auth Service'
         pool:
-          vmImage: 'ubuntu-latest'
+          name: 'Default'
         steps:
           - checkout: self
 
@@ -493,7 +493,7 @@ stages:
       - job: BuildUserService
         displayName: 'Build User Service'
         pool:
-          vmImage: 'ubuntu-latest'
+          name: 'Default'
         steps:
           - checkout: self
 
@@ -518,7 +518,7 @@ stages:
       - job: BuildJobService
         displayName: 'Build Job Service'
         pool:
-          vmImage: 'ubuntu-latest'
+          name: 'Default'
         steps:
           - checkout: self
 
@@ -543,7 +543,7 @@ stages:
       - job: BuildResumeService
         displayName: 'Build Resume Service'
         pool:
-          vmImage: 'ubuntu-latest'
+          name: 'Default'
         steps:
           - checkout: self
 
@@ -568,7 +568,7 @@ stages:
       - job: BuildNotificationService
         displayName: 'Build Notification Service'
         pool:
-          vmImage: 'ubuntu-latest'
+          name: 'Default'
         steps:
           - checkout: self
 
@@ -593,7 +593,7 @@ stages:
       - job: BuildAutoApplyService
         displayName: 'Build Auto-Apply Service'
         pool:
-          vmImage: 'ubuntu-latest'
+          name: 'Default'
         steps:
           - checkout: self
 
@@ -618,7 +618,7 @@ stages:
       - job: BuildAIService
         displayName: 'Build AI Service'
         pool:
-          vmImage: 'ubuntu-latest'
+          name: 'Default'
         steps:
           - checkout: self
 
@@ -643,7 +643,7 @@ stages:
       - job: BuildAnalyticsService
         displayName: 'Build Analytics Service'
         pool:
-          vmImage: 'ubuntu-latest'
+          name: 'Default'
         steps:
           - checkout: self
 
@@ -686,7 +686,7 @@ stages:
         - deployment: DeployDevEnvironment
           displayName: 'Deploy to Dev'
           pool:
-            vmImage: 'ubuntu-latest'
+            name: 'Default'
           environment: 'development'
           strategy:
             runOnce:
@@ -800,7 +800,7 @@ stages:
         - deployment: DeployStagingEnvironment
           displayName: 'Deploy to Staging'
           pool:
-            vmImage: 'ubuntu-latest'
+            name: 'Default'
           environment: 'staging'
           strategy:
             runOnce:
@@ -904,7 +904,7 @@ stages:
         - deployment: DeployProductionEnvironment
           displayName: 'Deploy to Production'
           pool:
-            vmImage: 'ubuntu-latest'
+            name: 'Default'
           environment: 'production'  # Configure manual approval in Azure DevOps Environments
           strategy:
             runOnce:
@@ -1064,7 +1064,7 @@ stages:
           displayName: 'Post-Deployment Monitoring'
           dependsOn: DeployProductionEnvironment
           pool:
-            vmImage: 'ubuntu-latest'
+            name: 'Default'
           steps:
             - script: |
                 echo "Monitoring production deployment for 5 minutes..."
