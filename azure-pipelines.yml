@@ -197,11 +197,11 @@ stages:
               POSTGRES_PASSWORD: postgres
               POSTGRES_DB: jobpilot_test
             ports:
-              5432:5432
+              - "5432:5432"
           redis:
             image: redis:7-alpine
             ports:
-              6379:6379
+              - "6379:6379"
         steps:
           - checkout: self
 
@@ -300,11 +300,11 @@ stages:
               POSTGRES_PASSWORD: postgres
               POSTGRES_DB: jobpilot_test
             ports:
-              5432:5432
+              - "5432:5432"
           redis:
             image: redis:7-alpine
             ports:
-              6379:6379
+              - "6379:6379"
           elasticsearch:
             image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
             env:
@@ -312,7 +312,7 @@ stages:
               xpack.security.enabled: "false"
               ES_JAVA_OPTS: "-Xms512m -Xmx512m"
             ports:
-              9200:9200
+              - "9200:9200"
         steps:
           - checkout: self
 
