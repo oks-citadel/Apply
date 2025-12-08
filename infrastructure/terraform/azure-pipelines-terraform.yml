@@ -168,7 +168,7 @@ stages:
     jobs:
       - deployment: ApplyDev
         displayName: 'Terraform Apply (Dev)'
-        environment: 'jobpilot-dev'
+        environment: 'dev'
         pool:
           vmImage: 'ubuntu-latest'
         strategy:
@@ -287,7 +287,7 @@ stages:
     jobs:
       - deployment: ApplyStaging
         displayName: 'Terraform Apply (Staging)'
-        environment: 'jobpilot-staging'
+        environment: 'staging'
         pool:
           vmImage: 'ubuntu-latest'
         strategy:
@@ -400,7 +400,7 @@ stages:
     jobs:
       - deployment: ApplyProd
         displayName: 'Terraform Apply (Production)'
-        environment: 'jobpilot-prod'  # Requires manual approval
+        environment: 'prod'  # Requires manual approval
         pool:
           vmImage: 'ubuntu-latest'
         strategy:
