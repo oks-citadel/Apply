@@ -343,11 +343,14 @@ module "aks" {
   environment         = var.environment
   tags                = local.common_tags
 
-  aks_cluster_name            = local.aks_cluster_name
-  kubernetes_version          = var.aks_kubernetes_version
-  subnet_id                   = module.networking.aks_subnet_id
-  log_analytics_workspace_id  = module.app_insights.log_analytics_workspace_id
-  kubelet_managed_identity_id = module.managed_identity.aks_kubelet_identity_id
+  kubernetes_version         = var.aks_kubernetes_version
+  subnet_id                  = module.networking.aks_subnet_id
+  log_analytics_workspace_id = module.app_insights.log_analytics_workspace_id
+
+  # Kubelet identity from managed-identity module
+  kubelet_identity_id = module.managed_identity.aks_kubelet_identity_id
+  kubelet_client_id   = module.managed_identity.aks_kubelet_identity_client_id
+  kubelet_object_id   = module.managed_identity.aks_kubelet_identity_principal_id
 
   enable_azure_policy    = true
   enable_monitoring      = true
