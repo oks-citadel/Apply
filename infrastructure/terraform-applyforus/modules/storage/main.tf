@@ -117,7 +117,7 @@ resource "azurerm_storage_management_policy" "main" {
       }
 
       snapshot {
-        tier_to_cool_after_days_since_creation_greater_than = 30
+        tier_to_cold_after_days_since_creation_greater_than = 30
         delete_after_days_since_creation_greater_than = 90
       }
     }

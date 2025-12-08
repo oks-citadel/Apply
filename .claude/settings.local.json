@@ -132,7 +132,20 @@
       "Bash(\"https://dev.azure.com/citadelcloudmanagement/ApplyPlatform/_apis/build/builds/93/timeline?api-version=6.0\")",
       "Bash(\"https://dev.azure.com/citadelcloudmanagement/ApplyPlatform/_apis/build/builds/95?api-version=6.0\")",
       "Bash(npx tsc:*)",
-      "Bash(npm ls:*)"
+      "Bash(npm ls:*)",
+      "Bash(gh pr create:*)",
+      "Bash(az repos pr create:*)",
+      "Bash(az account:*)",
+      "Bash(az network dns zone list:*)",
+      "Bash(az group:*)",
+      "Bash(terraform workspace:*)",
+      "Bash(az storage account show:*)",
+      "Bash(terraform version:*)",
+      "Bash(az:*)",
+      "Bash(git restore:*)",
+      "Bash(terraform init:*)",
+      "Bash(terraform validate:*)",
+      "Bash(terraform plan:*)"
     ],
     "deny": [],
     "ask": []

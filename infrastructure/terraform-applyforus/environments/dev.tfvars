@@ -50,7 +50,7 @@ app_gateway_max_capacity        = 2
 dns_zone_name = "dev.applyforus.com"
 
 # Monitoring Configuration
-log_analytics_retention_days = 7
+log_analytics_retention_days = 30
 
 # Storage Configuration
 storage_account_tier            = "Standard"

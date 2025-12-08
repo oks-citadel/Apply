@@ -78,6 +78,7 @@ module "monitoring" {
   environment         = var.environment
   location            = var.location
   resource_group_name = module.resource_group.resource_group_name
+  resource_group_id   = module.resource_group.resource_group_id
   resource_prefix     = local.resource_prefix
   retention_days      = var.log_analytics_retention_days
   tags                = local.common_tags
