@@ -90,23 +90,16 @@ stages:
             inputs:
               versionSpec: $(NODE_VERSION)
 
-          - script: |
-              corepack enable
-              corepack prepare pnpm@$(PNPM_VERSION) --activate
-              pnpm --version
-            displayName: 'Install pnpm $(PNPM_VERSION)'
-
           - task: Cache@2
-            displayName: 'Cache pnpm store'
+            displayName: 'Cache npm packages'
             inputs:
-              key: 'pnpm | "$(Agent.OS)" | pnpm-lock.yaml'
+              key: 'npm | "$(Agent.OS)" | package-lock.json'
               restoreKeys: |
-                pnpm | "$(Agent.OS)"
-              path: $(Pipeline.Workspace)/.pnpm-store
+                npm | "$(Agent.OS)"
+              path: $(Pipeline.Workspace)/.npm
 
           - script: |
-              pnpm config set store-dir $(Pipeline.Workspace)/.pnpm-store
-              pnpm install --frozen-lockfile
+              npm ci
             displayName: 'Install dependencies'
 
           - publish: $(System.DefaultWorkingDirectory)
@@ -129,25 +122,21 @@ stages:
 
           - script: |
               cp -r $(Pipeline.Workspace)/source-code/. $(System.DefaultWorkingDirectory)
-              corepack enable
-              corepack prepare pnpm@$(PNPM_VERSION) --activate
             displayName: 'Setup environment'
 
           - task: Cache@2
             inputs:
-              key: 'pnpm | "$(Agent.OS)" | pnpm-lock.yaml'
-              restoreKeys: pnpm | "$(Agent.OS)"
-              path: $(Pipeline.Workspace)/.pnpm-store
+              key: 'npm | "$(Agent.OS)" | package-lock.json'
+              restoreKeys: npm | "$(Agent.OS)"
+              path: $(Pipeline.Workspace)/.npm
 
-          - script: |
-              pnpm config set store-dir $(Pipeline.Workspace)/.pnpm-store
-              pnpm install --frozen-lockfile
+          - script: npm ci
             displayName: 'Install dependencies'
 
-          - script: pnpm run lint
+          - script: npm run lint
             displayName: 'Run ESLint on all services'
 
-          - script: pnpm run format:check
+          - script: npm run format:check
             displayName: 'Check Prettier formatting'
 
       # TypeScript Type Checking
@@ -166,22 +155,18 @@ stages:
 
           - script: |
               cp -r $(Pipeline.Workspace)/source-code/. $(System.DefaultWorkingDirectory)
-              corepack enable
-              corepack prepare pnpm@$(PNPM_VERSION) --activate
             displayName: 'Setup environment'
 
           - task: Cache@2
             inputs:
-              key: 'pnpm | "$(Agent.OS)" | pnpm-lock.yaml'
-              restoreKeys: pnpm | "$(Agent.OS)"
-              path: $(Pipeline.Workspace)/.pnpm-store
+              key: 'npm | "$(Agent.OS)" | package-lock.json'
+              restoreKeys: npm | "$(Agent.OS)"
+              path: $(Pipeline.Workspace)/.npm
 
-          - script: |
-              pnpm config set store-dir $(Pipeline.Workspace)/.pnpm-store
-              pnpm install --frozen-lockfile
+          - script: npm ci
             displayName: 'Install dependencies'
 
-          - script: pnpm run type-check
+          - script: npm run type-check
             displayName: 'Run TypeScript type check'
 
   # ============================================================================
@@ -216,23 +201,16 @@ stages:
             inputs:
               versionSpec: $(NODE_VERSION)
 
-          - script: |
-              corepack enable
-              corepack prepare pnpm@$(PNPM_VERSION) --activate
-            displayName: 'Install pnpm'
-
           - task: Cache@2
             inputs:
-              key: 'pnpm | "$(Agent.OS)" | pnpm-lock.yaml'
-              restoreKeys: pnpm | "$(Agent.OS)"
-              path: $(Pipeline.Workspace)/.pnpm-store
+              key: 'npm | "$(Agent.OS)" | package-lock.json'
+              restoreKeys: npm | "$(Agent.OS)"
+              path: $(Pipeline.Workspace)/.npm
 
-          - script: |
-              pnpm config set store-dir $(Pipeline.Workspace)/.pnpm-store
-              pnpm install --frozen-lockfile
+          - script: npm ci
             displayName: 'Install dependencies'
 
-          - script: pnpm run test
+          - script: npm run test
             displayName: 'Run unit tests'
             env:
               DATABASE_URL: postgresql://postgres:postgres@localhost:5432/jobpilot_test
@@ -327,23 +305,16 @@ stages:
             inputs:
               versionSpec: $(NODE_VERSION)
 
-          - script: |
-              corepack enable
-              corepack prepare pnpm@$(PNPM_VERSION) --activate
-            displayName: 'Install pnpm'
-
           - task: Cache@2
             inputs:
-              key: 'pnpm | "$(Agent.OS)" | pnpm-lock.yaml'
-              restoreKeys: pnpm | "$(Agent.OS)"
-              path: $(Pipeline.Workspace)/.pnpm-store
+              key: 'npm | "$(Agent.OS)" | package-lock.json'
+              restoreKeys: npm | "$(Agent.OS)"
+              path: $(Pipeline.Workspace)/.npm
 
-          - script: |
-              pnpm config set store-dir $(Pipeline.Workspace)/.pnpm-store
-              pnpm install --frozen-lockfile
+          - script: npm ci
             displayName: 'Install dependencies'
 
-          - script: pnpm run test:integration
+          - script: npm run test:integration
             displayName: 'Run integration tests'
             continueOnError: true
             env:
@@ -379,20 +350,13 @@ stages:
             inputs:
               versionSpec: $(NODE_VERSION)
 
-          - script: |
-              corepack enable
-              corepack prepare pnpm@$(PNPM_VERSION) --activate
-            displayName: 'Install pnpm'
-
           - task: Cache@2
             inputs:
-              key: 'pnpm | "$(Agent.OS)" | pnpm-lock.yaml'
-              restoreKeys: pnpm | "$(Agent.OS)"
-              path: $(Pipeline.Workspace)/.pnpm-store
+              key: 'npm | "$(Agent.OS)" | package-lock.json'
+              restoreKeys: npm | "$(Agent.OS)"
+              path: $(Pipeline.Workspace)/.npm
 
-          - script: |
-              pnpm config set store-dir $(Pipeline.Workspace)/.pnpm-store
-              pnpm install --frozen-lockfile
+          - script: npm ci
             displayName: 'Install dependencies'
 
           - script: |
@@ -400,7 +364,7 @@ stages:
               npx playwright install --with-deps
             displayName: 'Install Playwright browsers'
 
-          - script: pnpm run test:e2e
+          - script: npm run test:e2e
             displayName: 'Run E2E tests'
             continueOnError: true
             env:
