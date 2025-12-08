@@ -1,0 +1,953 @@
+{
+  "info": {
+    "name": "JobPilot AI Platform API",
+    "description": "Complete API collection for JobPilot AI Platform microservices",
+    "version": "1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{AUTH_TOKEN}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "BASE_URL",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "AUTH_SERVICE_URL",
+      "value": "http://localhost:3001",
+      "type": "string"
+    },
+    {
+      "key": "USER_SERVICE_URL",
+      "value": "http://localhost:3002",
+      "type": "string"
+    },
+    {
+      "key": "JOB_SERVICE_URL",
+      "value": "http://localhost:3003",
+      "type": "string"
+    },
+    {
+      "key": "RESUME_SERVICE_URL",
+      "value": "http://localhost:3004",
+      "type": "string"
+    },
+    {
+      "key": "NOTIFICATION_SERVICE_URL",
+      "value": "http://localhost:3005",
+      "type": "string"
+    },
+    {
+      "key": "AUTO_APPLY_SERVICE_URL",
+      "value": "http://localhost:3006",
+      "type": "string"
+    },
+    {
+      "key": "ANALYTICS_SERVICE_URL",
+      "value": "http://localhost:3007",
+      "type": "string"
+    },
+    {
+      "key": "AI_SERVICE_URL",
+      "value": "http://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "AUTH_TOKEN",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "REFRESH_TOKEN",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "USER_ID",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth Service",
+      "item": [
+        {
+          "name": "Register",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.environment.set('AUTH_TOKEN', response.accessToken);",
+                  "    pm.environment.set('REFRESH_TOKEN', response.refreshToken);",
+                  "    pm.environment.set('USER_ID', response.user.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"SecurePass123!\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"username\": \"johndoe\"\n}"
+            },
+            "url": {
+              "raw": "{{AUTH_SERVICE_URL}}/api/auth/register",
+              "host": ["{{AUTH_SERVICE_URL}}"],
+              "path": ["api", "auth", "register"]
+            },
+            "description": "Register a new user account"
+          },
+          "response": []
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.environment.set('AUTH_TOKEN', response.accessToken);",
+                  "    pm.environment.set('REFRESH_TOKEN', response.refreshToken);",
+                  "    pm.environment.set('USER_ID', response.user.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"SecurePass123!\"\n}"
+            },
+            "url": {
+              "raw": "{{AUTH_SERVICE_URL}}/api/auth/login",
+              "host": ["{{AUTH_SERVICE_URL}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Login with email and password"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Current User",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{AUTH_SERVICE_URL}}/api/auth/me",
+              "host": ["{{AUTH_SERVICE_URL}}"],
+              "path": ["api", "auth", "me"]
+            },
+            "description": "Get current authenticated user profile"
+          },
+          "response": []
+        },
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.environment.set('AUTH_TOKEN', response.accessToken);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{REFRESH_TOKEN}}\"\n}"
+            },
+            "url": {
+              "raw": "{{AUTH_SERVICE_URL}}/api/auth/refresh",
+              "host": ["{{AUTH_SERVICE_URL}}"],
+              "path": ["api", "auth", "refresh"]
+            },
+            "description": "Refresh access token using refresh token"
+          },
+          "response": []
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{AUTH_SERVICE_URL}}/api/auth/logout",
+              "host": ["{{AUTH_SERVICE_URL}}"],
+              "path": ["api", "auth", "logout"]
+            },
+            "description": "Logout current user"
+          },
+          "response": []
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{AUTH_SERVICE_URL}}/api/auth/forgot-password",
+              "host": ["{{AUTH_SERVICE_URL}}"],
+              "path": ["api", "auth", "forgot-password"]
+            },
+            "description": "Request password reset email"
+          },
+          "response": []
+        },
+        {
+          "name": "Setup MFA",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{AUTH_SERVICE_URL}}/api/auth/mfa/setup",
+              "host": ["{{AUTH_SERVICE_URL}}"],
+              "path": ["api", "auth", "mfa", "setup"]
+            },
+            "description": "Setup Multi-Factor Authentication"
+          },
+          "response": []
+        }
+      ],
+      "description": "Authentication and authorization endpoints"
+    },
+    {
+      "name": "Job Service",
+      "item": [
+        {
+          "name": "Search Jobs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{JOB_SERVICE_URL}}/api/jobs/search?keywords=software+engineer&location=remote&page=1&limit=20",
+              "host": ["{{JOB_SERVICE_URL}}"],
+              "path": ["api", "jobs", "search"],
+              "query": [
+                {
+                  "key": "keywords",
+                  "value": "software+engineer"
+                },
+                {
+                  "key": "location",
+                  "value": "remote"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            },
+            "description": "Search jobs with filters"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Job by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{JOB_SERVICE_URL}}/api/jobs/:id",
+              "host": ["{{JOB_SERVICE_URL}}"],
+              "path": ["api", "jobs", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              ]
+            },
+            "description": "Get job details by ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Recommended Jobs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{JOB_SERVICE_URL}}/api/jobs/recommended?page=1&limit=10",
+              "host": ["{{JOB_SERVICE_URL}}"],
+              "path": ["api", "jobs", "recommended"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Get personalized job recommendations"
+          },
+          "response": []
+        },
+        {
+          "name": "Save Job",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jobId\": \"550e8400-e29b-41d4-a716-446655440001\",\n  \"notes\": \"Great company culture\",\n  \"tags\": [\"remote\", \"high-priority\"]\n}"
+            },
+            "url": {
+              "raw": "{{JOB_SERVICE_URL}}/api/jobs/saved",
+              "host": ["{{JOB_SERVICE_URL}}"],
+              "path": ["api", "jobs", "saved"]
+            },
+            "description": "Save a job for later"
+          },
+          "response": []
+        },
+        {
+          "name": "Calculate Match Score",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jobId\": \"550e8400-e29b-41d4-a716-446655440001\",\n  \"resumeId\": \"550e8400-e29b-41d4-a716-446655440002\"\n}"
+            },
+            "url": {
+              "raw": "{{JOB_SERVICE_URL}}/api/jobs/match-score",
+              "host": ["{{JOB_SERVICE_URL}}"],
+              "path": ["api", "jobs", "match-score"]
+            },
+            "description": "Calculate match score between resume and job"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Interview Questions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{JOB_SERVICE_URL}}/api/jobs/:id/interview-questions",
+              "host": ["{{JOB_SERVICE_URL}}"],
+              "path": ["api", "jobs", ":id", "interview-questions"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "550e8400-e29b-41d4-a716-446655440001"
+                }
+              ]
+            },
+            "description": "Get AI-generated interview questions for a job"
+          },
+          "response": []
+        },
+        {
+          "name": "Predict Salary",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jobTitle\": \"Senior Software Engineer\",\n  \"location\": \"San Francisco, CA\",\n  \"yearsOfExperience\": 5,\n  \"skills\": [\"Python\", \"AWS\", \"React\"]\n}"
+            },
+            "url": {
+              "raw": "{{JOB_SERVICE_URL}}/api/jobs/salary-prediction",
+              "host": ["{{JOB_SERVICE_URL}}"],
+              "path": ["api", "jobs", "salary-prediction"]
+            },
+            "description": "Predict salary range for a position"
+          },
+          "response": []
+        }
+      ],
+      "description": "Job search and management endpoints"
+    },
+    {
+      "name": "Resume Service",
+      "item": [
+        {
+          "name": "Get All Resumes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{RESUME_SERVICE_URL}}/api/resumes?page=1&limit=10",
+              "host": ["{{RESUME_SERVICE_URL}}"],
+              "path": ["api", "resumes"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Get all resumes for current user"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Resume",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Software Engineer Resume\",\n  \"template\": \"modern\",\n  \"personalInfo\": {\n    \"firstName\": \"John\",\n    \"lastName\": \"Doe\",\n    \"email\": \"john@example.com\",\n    \"phone\": \"+1234567890\",\n    \"location\": \"San Francisco, CA\"\n  },\n  \"summary\": \"Experienced software engineer...\"\n}"
+            },
+            "url": {
+              "raw": "{{RESUME_SERVICE_URL}}/api/resumes",
+              "host": ["{{RESUME_SERVICE_URL}}"],
+              "path": ["api", "resumes"]
+            },
+            "description": "Create a new resume"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Resume by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{RESUME_SERVICE_URL}}/api/resumes/:id",
+              "host": ["{{RESUME_SERVICE_URL}}"],
+              "path": ["api", "resumes", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              ]
+            },
+            "description": "Get resume by ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Resume",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Updated Resume Title\",\n  \"summary\": \"Updated summary...\"\n}"
+            },
+            "url": {
+              "raw": "{{RESUME_SERVICE_URL}}/api/resumes/:id",
+              "host": ["{{RESUME_SERVICE_URL}}"],
+              "path": ["api", "resumes", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              ]
+            },
+            "description": "Update an existing resume"
+          },
+          "response": []
+        },
+        {
+          "name": "Export Resume PDF",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{RESUME_SERVICE_URL}}/api/resumes/:id/export/pdf",
+              "host": ["{{RESUME_SERVICE_URL}}"],
+              "path": ["api", "resumes", ":id", "export", "pdf"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              ]
+            },
+            "description": "Export resume as PDF"
+          },
+          "response": []
+        },
+        {
+          "name": "Calculate ATS Score",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{RESUME_SERVICE_URL}}/api/resumes/:id/ats-score",
+              "host": ["{{RESUME_SERVICE_URL}}"],
+              "path": ["api", "resumes", ":id", "ats-score"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              ]
+            },
+            "description": "Calculate ATS compatibility score"
+          },
+          "response": []
+        }
+      ],
+      "description": "Resume management endpoints"
+    },
+    {
+      "name": "Auto-Apply Service",
+      "item": [
+        {
+          "name": "Get All Applications",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{USER_ID}}"
+              }
+            ],
+            "url": {
+              "raw": "{{AUTO_APPLY_SERVICE_URL}}/api/applications?status=pending&page=1&limit=20",
+              "host": ["{{AUTO_APPLY_SERVICE_URL}}"],
+              "path": ["api", "applications"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "pending"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            },
+            "description": "Get all applications with optional filters"
+          },
+          "response": []
+        },
+        {
+          "name": "Log Manual Application",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{USER_ID}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"job_id\": \"550e8400-e29b-41d4-a716-446655440001\",\n  \"resume_id\": \"550e8400-e29b-41d4-a716-446655440002\",\n  \"company_name\": \"Tech Corp Inc.\",\n  \"position_title\": \"Senior Software Engineer\",\n  \"application_url\": \"https://jobs.techcorp.com/apply/12345\",\n  \"notes\": \"Applied via company website\"\n}"
+            },
+            "url": {
+              "raw": "{{AUTO_APPLY_SERVICE_URL}}/api/applications/manual",
+              "host": ["{{AUTO_APPLY_SERVICE_URL}}"],
+              "path": ["api", "applications", "manual"]
+            },
+            "description": "Log a manual job application"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Application Status",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{USER_ID}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"interview_scheduled\",\n  \"notes\": \"Phone interview next Tuesday\"\n}"
+            },
+            "url": {
+              "raw": "{{AUTO_APPLY_SERVICE_URL}}/api/applications/:id/status",
+              "host": ["{{AUTO_APPLY_SERVICE_URL}}"],
+              "path": ["api", "applications", ":id", "status"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              ]
+            },
+            "description": "Update application status"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Application Analytics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{USER_ID}}"
+              }
+            ],
+            "url": {
+              "raw": "{{AUTO_APPLY_SERVICE_URL}}/api/applications/analytics",
+              "host": ["{{AUTO_APPLY_SERVICE_URL}}"],
+              "path": ["api", "applications", "analytics"]
+            },
+            "description": "Get application analytics and statistics"
+          },
+          "response": []
+        }
+      ],
+      "description": "Job application management endpoints"
+    },
+    {
+      "name": "AI Service",
+      "item": [
+        {
+          "name": "Generate Cover Letter",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jobDescription\": \"We are seeking a Senior Software Engineer...\",\n  \"resumeText\": \"John Doe - Software Engineer...\",\n  \"companyName\": \"Tech Corp Inc.\",\n  \"jobTitle\": \"Senior Software Engineer\",\n  \"tone\": \"professional\"\n}"
+            },
+            "url": {
+              "raw": "{{AI_SERVICE_URL}}/ai/generate/cover-letter",
+              "host": ["{{AI_SERVICE_URL}}"],
+              "path": ["ai", "generate", "cover-letter"]
+            },
+            "description": "Generate AI-powered cover letter"
+          },
+          "response": []
+        },
+        {
+          "name": "Optimize Resume",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resumeText\": \"Current resume content...\",\n  \"jobDescription\": \"Job description...\",\n  \"targetKeywords\": [\"Python\", \"AWS\", \"Microservices\"]\n}"
+            },
+            "url": {
+              "raw": "{{AI_SERVICE_URL}}/ai/optimize/resume",
+              "host": ["{{AI_SERVICE_URL}}"],
+              "path": ["ai", "optimize", "resume"]
+            },
+            "description": "Optimize resume for ATS and specific job"
+          },
+          "response": []
+        },
+        {
+          "name": "Calculate Match Score",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resumeText\": \"Resume content...\",\n  \"jobDescription\": \"Job description...\",\n  \"jobTitle\": \"Senior Software Engineer\"\n}"
+            },
+            "url": {
+              "raw": "{{AI_SERVICE_URL}}/ai/match/score",
+              "host": ["{{AI_SERVICE_URL}}"],
+              "path": ["ai", "match", "score"]
+            },
+            "description": "Calculate match score between resume and job"
+          },
+          "response": []
+        },
+        {
+          "name": "Predict Salary",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jobTitle\": \"Senior Software Engineer\",\n  \"location\": \"San Francisco, CA\",\n  \"yearsOfExperience\": 5,\n  \"skills\": [\"Python\", \"React\", \"AWS\"],\n  \"education\": \"Bachelor's\"\n}"
+            },
+            "url": {
+              "raw": "{{AI_SERVICE_URL}}/ai/predict/salary",
+              "host": ["{{AI_SERVICE_URL}}"],
+              "path": ["ai", "predict", "salary"]
+            },
+            "description": "Predict salary range for a position"
+          },
+          "response": []
+        }
+      ],
+      "description": "AI-powered features and services"
+    },
+    {
+      "name": "Notification Service",
+      "item": [
+        {
+          "name": "Get User Notifications",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{NOTIFICATION_SERVICE_URL}}/api/notifications/user/:userId?limit=20",
+              "host": ["{{NOTIFICATION_SERVICE_URL}}"],
+              "path": ["api", "notifications", "user", ":userId"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ],
+              "variable": [
+                {
+                  "key": "userId",
+                  "value": "{{USER_ID}}"
+                }
+              ]
+            },
+            "description": "Get notifications for a user"
+          },
+          "response": []
+        },
+        {
+          "name": "Mark as Read",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{NOTIFICATION_SERVICE_URL}}/api/notifications/:id/read",
+              "host": ["{{NOTIFICATION_SERVICE_URL}}"],
+              "path": ["api", "notifications", ":id", "read"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "550e8400-e29b-41d4-a716-446655440000"
+                }
+              ]
+            },
+            "description": "Mark notification as read"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Notification Preferences",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{NOTIFICATION_SERVICE_URL}}/api/notifications/preferences/:userId",
+              "host": ["{{NOTIFICATION_SERVICE_URL}}"],
+              "path": ["api", "notifications", "preferences", ":userId"],
+              "variable": [
+                {
+                  "key": "userId",
+                  "value": "{{USER_ID}}"
+                }
+              ]
+            },
+            "description": "Get user notification preferences"
+          },
+          "response": []
+        }
+      ],
+      "description": "Notification management endpoints"
+    },
+    {
+      "name": "Analytics Service",
+      "item": [
+        {
+          "name": "Track Event",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{USER_ID}}\",\n  \"eventType\": \"job_view\",\n  \"category\": \"job_search\",\n  \"properties\": {\n    \"jobId\": \"550e8400-e29b-41d4-a716-446655440001\",\n    \"source\": \"search_results\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{ANALYTICS_SERVICE_URL}}/api/analytics/events",
+              "host": ["{{ANALYTICS_SERVICE_URL}}"],
+              "path": ["api", "analytics", "events"]
+            },
+            "description": "Track analytics event"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Dashboard Metrics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{ANALYTICS_SERVICE_URL}}/api/analytics/dashboard?userId={{USER_ID}}",
+              "host": ["{{ANALYTICS_SERVICE_URL}}"],
+              "path": ["api", "analytics", "dashboard"],
+              "query": [
+                {
+                  "key": "userId",
+                  "value": "{{USER_ID}}"
+                }
+              ]
+            },
+            "description": "Get dashboard analytics metrics"
+          },
+          "response": []
+        }
+      ],
+      "description": "Analytics and tracking endpoints"
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ]
+}
