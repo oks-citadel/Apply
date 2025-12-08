@@ -46,6 +46,12 @@
     // Path Aliases
     "baseUrl": ".",
     "paths": {
+      "@jobpilot/telemetry": ["./packages/telemetry/src/index.ts"],
+      "@jobpilot/telemetry/*": ["./packages/telemetry/src/*"],
+      "@jobpilot/logging": ["./packages/logging/src/index.ts"],
+      "@jobpilot/logging/*": ["./packages/logging/src/*"],
+      "@jobpilot/security": ["./packages/security/src/index.ts"],
+      "@jobpilot/security/*": ["./packages/security/src/*"],
       "@jobpilot/types": ["./packages/types/src/index.ts"],
       "@jobpilot/types/*": ["./packages/types/src/*"],
       "@jobpilot/ui": ["./packages/ui/src/index.ts"],
