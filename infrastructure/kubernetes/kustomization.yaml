@@ -26,6 +26,11 @@ resources:
   - services/orchestrator-service.yaml
   - services/web-app.yaml
 
+  # Monitoring Stack (optional - comment out if not needed)
+  # - monitoring/prometheus.yaml
+  # - monitoring/grafana.yaml
+  # - monitoring/alertmanager.yaml
+
 commonLabels:
   app.kubernetes.io/name: jobpilot
   app.kubernetes.io/part-of: jobpilot-platform

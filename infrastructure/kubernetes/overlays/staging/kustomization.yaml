@@ -1,0 +1,86 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: jobpilot-staging
+
+namePrefix: staging-
+
+bases:
+- ../../base
+- ../../services
+
+commonLabels:
+  environment: staging
+  app.kubernetes.io/environment: staging
+
+commonAnnotations:
+  environment: staging
+
+# Replica overrides for staging environment
+replicas:
+- name: auth-service
+  count: 2
+- name: user-service
+  count: 2
+- name: job-service
+  count: 2
+- name: ai-service
+  count: 1
+- name: resume-service
+  count: 1
+- name: analytics-service
+  count: 1
+- name: notification-service
+  count: 1
+- name: auto-apply-service
+  count: 1
+- name: orchestrator-service
+  count: 1
+- name: web-app
+  count: 2
+
+# Image tag overrides
+images:
+- name: jobpilotacr.azurecr.io/auth-service
+  newTag: staging
+- name: jobpilotacr.azurecr.io/user-service
+  newTag: staging
+- name: jobpilotacr.azurecr.io/job-service
+  newTag: staging
+- name: jobpilotacr.azurecr.io/ai-service
+  newTag: staging
+- name: jobpilotacr.azurecr.io/resume-service
+  newTag: staging
+- name: jobpilotacr.azurecr.io/analytics-service
+  newTag: staging
+- name: jobpilotacr.azurecr.io/notification-service
+  newTag: staging
+- name: jobpilotacr.azurecr.io/auto-apply-service
+  newTag: staging
+- name: jobpilotacr.azurecr.io/orchestrator-service
+  newTag: staging
+- name: jobpilotacr.azurecr.io/web-app
+  newTag: staging
+
+# ConfigMap overrides for staging environment
+configMapGenerator:
+- name: jobpilot-config
+  behavior: merge
+  literals:
+  - NODE_ENV=staging
+  - LOG_LEVEL=info
+  - CORS_ORIGIN=https://staging.jobpilot.com
+  - POSTGRES_HOST=jobpilot-postgres-staging.postgres.database.azure.com
+  - REDIS_HOST=jobpilot-redis-staging.redis.cache.windows.net
+
+# Resource adjustments for staging
+patches:
+- target:
+    kind: Deployment
+  patch: |-
+    - op: replace
+      path: /spec/template/spec/containers/0/resources/limits/cpu
+      value: 1000m
+    - op: replace
+      path: /spec/template/spec/containers/0/resources/limits/memory
+      value: 1Gi

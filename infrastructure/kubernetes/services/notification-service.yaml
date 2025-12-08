@@ -26,9 +26,9 @@ spec:
         app: notification-service
         tier: backend
         component: notifications
-    pod-security.kubernetes.io/enforce: restricted
-    pod-security.kubernetes.io/audit: restricted
-    pod-security.kubernetes.io/warn: restricted
+        pod-security.kubernetes.io/enforce: restricted
+        pod-security.kubernetes.io/audit: restricted
+        pod-security.kubernetes.io/warn: restricted
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/port: "3007"

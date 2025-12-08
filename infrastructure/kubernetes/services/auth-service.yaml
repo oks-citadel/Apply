@@ -26,9 +26,10 @@ spec:
         app: auth-service
         tier: backend
         component: authentication
-    pod-security.kubernetes.io/enforce: restricted
-    pod-security.kubernetes.io/audit: restricted
-    pod-security.kubernetes.io/warn: restricted
+        pod-security.kubernetes.io/enforce: restricted
+        pod-security.kubernetes.io/audit: restricted
+        pod-security.kubernetes.io/warn: restricted
+        azure.workload.identity/use: "true"
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/port: "3001"
@@ -37,8 +38,6 @@ spec:
         seccomp.security.alpha.kubernetes.io/pod: runtime/default
     spec:
       serviceAccountName: jobpilot-service-account
-      labels:
-        azure.workload.identity/use: "true"  # Enable Azure Workload Identity for this pod
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000

@@ -1,0 +1,239 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: alertmanager-config
+  namespace: jobpilot
+  labels:
+    app: alertmanager
+data:
+  alertmanager.yml: |
+    global:
+      resolve_timeout: 5m
+      smtp_from: 'alertmanager@jobpilot.com'
+      smtp_smarthost: 'smtp.sendgrid.net:587'
+      smtp_auth_username: 'apikey'
+      smtp_auth_password: '<SENDGRID_API_KEY>'
+      smtp_require_tls: true
+
+    # Templates for notifications
+    templates:
+    - '/etc/alertmanager/templates/*.tmpl'
+
+    # The root route with all parameters, which are inherited by the child routes
+    route:
+      receiver: 'default-receiver'
+      group_by: ['alertname', 'cluster', 'service']
+      group_wait: 10s
+      group_interval: 10s
+      repeat_interval: 12h
+      routes:
+      # Critical alerts go to PagerDuty and Email
+      - match:
+          severity: critical
+        receiver: critical-alerts
+        continue: true
+      # Warning alerts go to Slack
+      - match:
+          severity: warning
+        receiver: warning-alerts
+        continue: true
+
+    # Inhibition rules to prevent notification spam
+    inhibit_rules:
+    - source_match:
+        severity: 'critical'
+      target_match:
+        severity: 'warning'
+      equal: ['alertname', 'cluster', 'service']
+
+    receivers:
+    # Default receiver
+    - name: 'default-receiver'
+      email_configs:
+      - to: 'ops-team@jobpilot.com'
+        headers:
+          Subject: '[JobPilot] Alert: {{ .GroupLabels.alertname }}'
+        html: |
+          <!DOCTYPE html>
+          <html>
+          <body>
+            <h2>Alert: {{ .GroupLabels.alertname }}</h2>
+            <p><strong>Severity:</strong> {{ .CommonLabels.severity }}</p>
+            <p><strong>Summary:</strong> {{ .CommonAnnotations.summary }}</p>
+            <p><strong>Description:</strong> {{ .CommonAnnotations.description }}</p>
+            <h3>Details:</h3>
+            <ul>
+            {{ range .Alerts }}
+              <li>{{ .Labels.instance }}: {{ .Annotations.description }}</li>
+            {{ end }}
+            </ul>
+          </body>
+          </html>
+
+    # Critical alerts receiver
+    - name: 'critical-alerts'
+      email_configs:
+      - to: 'oncall@jobpilot.com'
+        headers:
+          Subject: '[CRITICAL] JobPilot Alert: {{ .GroupLabels.alertname }}'
+        send_resolved: true
+      # Uncomment and configure when PagerDuty is set up
+      # pagerduty_configs:
+      # - service_key: '<PAGERDUTY_SERVICE_KEY>'
+      #   description: '{{ .CommonAnnotations.summary }}'
+
+    # Warning alerts receiver
+    - name: 'warning-alerts'
+      # Uncomment and configure when Slack is set up
+      # slack_configs:
+      # - api_url: '<SLACK_WEBHOOK_URL>'
+      #   channel: '#alerts'
+      #   title: '[WARNING] {{ .GroupLabels.alertname }}'
+      #   text: '{{ .CommonAnnotations.description }}'
+      email_configs:
+      - to: 'ops-team@jobpilot.com'
+        headers:
+          Subject: '[WARNING] JobPilot Alert: {{ .GroupLabels.alertname }}'
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alertmanager
+  namespace: jobpilot
+  labels:
+    app: alertmanager
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: alertmanager
+  template:
+    metadata:
+      labels:
+        app: alertmanager
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        fsGroup: 65534
+      containers:
+      - name: alertmanager
+        image: prom/alertmanager:v0.26.0
+        args:
+        - '--config.file=/etc/alertmanager/alertmanager.yml'
+        - '--storage.path=/alertmanager'
+        - '--web.external-url=https://alertmanager.jobpilot.com'
+        ports:
+        - containerPort: 9093
+          name: http
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        volumeMounts:
+        - name: alertmanager-config
+          mountPath: /etc/alertmanager
+        - name: alertmanager-storage
+          mountPath: /alertmanager
+        livenessProbe:
+          httpGet:
+            path: /-/healthy
+            port: 9093
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+        readinessProbe:
+          httpGet:
+            path: /-/ready
+            port: 9093
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+      volumes:
+      - name: alertmanager-config
+        configMap:
+          name: alertmanager-config
+      - name: alertmanager-storage
+        persistentVolumeClaim:
+          claimName: alertmanager-storage
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: alertmanager
+  namespace: jobpilot
+  labels:
+    app: alertmanager
+spec:
+  type: ClusterIP
+  selector:
+    app: alertmanager
+  ports:
+  - port: 9093
+    targetPort: 9093
+    protocol: TCP
+    name: http
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: alertmanager-storage
+  namespace: jobpilot
+  labels:
+    app: alertmanager
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: managed-premium
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: alertmanager-ingress
+  namespace: jobpilot
+  labels:
+    app: alertmanager
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    # Add authentication
+    nginx.ingress.kubernetes.io/auth-type: basic
+    nginx.ingress.kubernetes.io/auth-secret: alertmanager-basic-auth
+    nginx.ingress.kubernetes.io/auth-realm: 'Authentication Required'
+spec:
+  tls:
+  - hosts:
+    - alertmanager.jobpilot.com
+    secretName: alertmanager-tls-cert
+  rules:
+  - host: alertmanager.jobpilot.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: alertmanager
+            port:
+              number: 9093
+---
+# Basic auth secret for Alertmanager access
+# Generate password with: htpasswd -nb admin <password> | base64
+apiVersion: v1
+kind: Secret
+metadata:
+  name: alertmanager-basic-auth
+  namespace: jobpilot
+  labels:
+    app: alertmanager
+type: Opaque
+stringData:
+  auth: |
+    admin:$apr1$xyz$hashedpassword

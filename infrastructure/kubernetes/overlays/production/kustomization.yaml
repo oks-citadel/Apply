@@ -1,0 +1,51 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: jobpilot
+
+bases:
+- ../../base
+- ../../services
+- ../../monitoring
+
+commonLabels:
+  environment: production
+  app.kubernetes.io/environment: production
+
+commonAnnotations:
+  environment: production
+
+# Production uses replicas defined in base manifests
+# No replica overrides needed
+
+# Image tag overrides for production
+images:
+- name: jobpilotacr.azurecr.io/auth-service
+  newTag: v1.0.0
+- name: jobpilotacr.azurecr.io/user-service
+  newTag: v1.0.0
+- name: jobpilotacr.azurecr.io/job-service
+  newTag: v1.0.0
+- name: jobpilotacr.azurecr.io/ai-service
+  newTag: v1.0.0
+- name: jobpilotacr.azurecr.io/resume-service
+  newTag: v1.0.0
+- name: jobpilotacr.azurecr.io/analytics-service
+  newTag: v1.0.0
+- name: jobpilotacr.azurecr.io/notification-service
+  newTag: v1.0.0
+- name: jobpilotacr.azurecr.io/auto-apply-service
+  newTag: v1.0.0
+- name: jobpilotacr.azurecr.io/orchestrator-service
+  newTag: v1.0.0
+- name: jobpilotacr.azurecr.io/web-app
+  newTag: v1.0.0
+
+# ConfigMap overrides for production environment
+configMapGenerator:
+- name: jobpilot-config
+  behavior: merge
+  literals:
+  - NODE_ENV=production
+  - LOG_LEVEL=info
+  - CORS_ORIGIN=https://jobpilot.com,https://www.jobpilot.com

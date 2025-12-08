@@ -1,0 +1,246 @@
+# ============================================================================
+# Terraform Variables - Example Configuration
+# ============================================================================
+# This file provides example values for all configurable variables.
+# Copy this file to terraform.tfvars and customize for your deployment.
+#
+# IMPORTANT: Never commit terraform.tfvars to source control!
+# Add it to .gitignore to prevent accidental credential exposure.
+#
+# Usage:
+#   cp terraform.tfvars.example terraform.tfvars
+#   # Edit terraform.tfvars with your values
+#   terraform plan -var-file="terraform.tfvars"
+#
+# OR use environment-specific variable files:
+#   terraform plan -var-file="environments/dev.tfvars"
+# ============================================================================
+
+# ============================================================================
+# Core Configuration
+# ============================================================================
+
+# Environment name: dev, staging, or prod
+environment = "dev"
+
+# Azure region where resources will be deployed
+# Valid options: eastus, eastus2, westus, westus2, centralus, etc.
+location = "eastus"
+
+# Project name prefix for resource naming (3-20 lowercase alphanumeric characters)
+project_name = "jobpilot"
+
+# ============================================================================
+# Database Configuration
+# ============================================================================
+# IMPORTANT: Store these credentials securely!
+# Recommended approaches:
+# 1. Use Azure Key Vault and reference secrets
+# 2. Use environment variables: TF_VAR_sql_admin_username, TF_VAR_sql_admin_password
+# 3. Use CI/CD pipeline secret variables
+# 4. NEVER commit these to source control
+
+# SQL Server administrator username (4-128 characters, must start with letter)
+sql_admin_username = "sqladmin"
+
+# SQL Server administrator password (minimum 12 characters)
+# Must contain: uppercase, lowercase, numbers, and special characters
+sql_admin_password = "ChangeMe123!@#SecurePassword"
+
+# ============================================================================
+# Resource Tagging
+# ============================================================================
+# Tags are applied to all resources for organization and cost tracking
+
+tags = {
+  Project     = "JobPilot"
+  ManagedBy   = "Terraform"
+  CostCenter  = "Engineering"
+  Owner       = "DevOps Team"
+  Department  = "Engineering"
+  Application = "Job Application Platform"
+}
+
+# ============================================================================
+# Security and Compliance
+# ============================================================================
+
+# Enable Azure Defender for enhanced security monitoring
+# Increases costs but provides advanced threat protection
+# Recommended: false for dev, true for prod
+enable_defender = false
+
+# Enable diagnostic logs for all resources
+# Sends logs to Log Analytics for monitoring and troubleshooting
+enable_diagnostics = true
+
+# Enable private endpoints for production security
+# Routes traffic through private network instead of public internet
+# Recommended: false for dev, true for staging/prod
+enable_private_endpoints = false
+
+# List of allowed IP addresses for Key Vault and SQL access (CIDR notation)
+# Add your office/VPN IP addresses for secure access
+# Example: ["203.0.113.0/32", "198.51.100.0/24"]
+allowed_ip_addresses = [
+  # "1.2.3.4/32",  # Office IP
+  # "5.6.7.8/32",  # VPN Gateway
+]
+
+# ============================================================================
+# Load Balancing and Web Application Firewall (WAF)
+# ============================================================================
+
+# Enable Application Gateway with WAF v2
+# Provides layer 7 load balancing and web application firewall
+# Cannot be used together with Front Door
+enable_application_gateway = false
+
+# Enable Azure Front Door with WAF
+# Global load balancing and CDN with web application firewall
+# Cannot be used together with Application Gateway
+enable_front_door = false
+
+# WAF mode: "Detection" or "Prevention"
+# Detection: Logs threats but allows traffic
+# Prevention: Blocks malicious traffic
+waf_mode = "Detection"
+
+# ============================================================================
+# Kubernetes (AKS) Configuration
+# ============================================================================
+
+# Enable Azure Kubernetes Service cluster
+# Provides container orchestration for microservices
+# Significantly increases costs
+# Recommended: false for dev, true for staging/prod
+enable_aks = false
+
+# Kubernetes version for AKS cluster (semantic versioning)
+# Check Azure for supported versions: az aks get-versions --location eastus
+aks_kubernetes_version = "1.28.3"
+
+# ============================================================================
+# Monitoring and Observability
+# ============================================================================
+
+# Application Insights sampling percentage (0-100)
+# Lower values reduce costs but may miss some telemetry
+# Recommended: 100 for dev, 50-100 for prod
+app_insights_sampling_percentage = 100
+
+# ============================================================================
+# Networking Configuration
+# ============================================================================
+
+# Virtual network address space (CIDR notation)
+# Must not overlap with other VNets or on-premises networks
+vnet_address_space = ["10.0.0.0/16"]
+
+# ============================================================================
+# Auto-scaling Configuration
+# ============================================================================
+# These settings override environment defaults from locals.tf
+
+# Enable auto-scaling for App Service Plan
+# null = use environment defaults
+# Recommended: false for dev, true for staging/prod
+enable_auto_scaling = null
+
+# Minimum number of replicas (1-100)
+# null = use environment defaults
+min_replicas = null
+
+# Maximum number of replicas (1-100)
+# null = use environment defaults
+max_replicas = null
+
+# ============================================================================
+# Example Configurations by Environment
+# ============================================================================
+#
+# Development (cost-optimized):
+# --------------------------------
+# environment = "dev"
+# enable_aks = false
+# enable_application_gateway = false
+# enable_private_endpoints = false
+# enable_defender = false
+# enable_auto_scaling = false
+# min_replicas = 1
+# max_replicas = 2
+# Expected cost: ~$150-200/month
+#
+# Staging (production-like):
+# --------------------------------
+# environment = "staging"
+# enable_aks = true
+# enable_application_gateway = true
+# enable_private_endpoints = true
+# enable_defender = false
+# enable_auto_scaling = true
+# min_replicas = 2
+# max_replicas = 5
+# Expected cost: ~$800-1200/month
+#
+# Production (high availability):
+# --------------------------------
+# environment = "prod"
+# enable_aks = true
+# enable_application_gateway = true
+# enable_private_endpoints = true
+# enable_defender = true
+# enable_auto_scaling = true
+# min_replicas = 3
+# max_replicas = 10
+# Expected cost: ~$2000-4000/month
+#
+# ============================================================================
+
+# ============================================================================
+# Quick Start Guide
+# ============================================================================
+#
+# 1. Copy this file:
+#    cp terraform.tfvars.example terraform.tfvars
+#
+# 2. Edit terraform.tfvars with your values:
+#    - Set sql_admin_username and sql_admin_password
+#    - Configure environment (dev/staging/prod)
+#    - Add allowed_ip_addresses for your network
+#    - Adjust feature flags based on requirements
+#
+# 3. Initialize Terraform backend:
+#    terraform init
+#
+# 4. Review the execution plan:
+#    terraform plan
+#
+# 5. Apply the configuration:
+#    terraform apply
+#
+# 6. View outputs:
+#    terraform output
+#
+# For environment-specific deployments:
+#    terraform plan -var-file="environments/dev.tfvars"
+#    terraform apply -var-file="environments/prod.tfvars"
+#
+# ============================================================================
+
+# ============================================================================
+# Security Best Practices
+# ============================================================================
+#
+# 1. Never commit terraform.tfvars to source control
+# 2. Use Azure Key Vault for sensitive values
+# 3. Enable Azure AD authentication for SQL Server
+# 4. Use managed identities instead of connection strings
+# 5. Enable private endpoints for production workloads
+# 6. Regularly rotate SQL admin passwords
+# 7. Use Azure Policy for compliance enforcement
+# 8. Enable diagnostic logging for all resources
+# 9. Implement network segmentation with NSGs
+# 10. Use Azure Defender for threat protection
+#
+# ============================================================================

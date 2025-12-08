@@ -1,0 +1,84 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: jobpilot-dev
+
+namePrefix: dev-
+
+bases:
+- ../../base
+- ../../services
+
+commonLabels:
+  environment: development
+  app.kubernetes.io/environment: dev
+
+commonAnnotations:
+  environment: development
+
+# Replica overrides for dev environment
+replicas:
+- name: auth-service
+  count: 1
+- name: user-service
+  count: 1
+- name: job-service
+  count: 1
+- name: ai-service
+  count: 1
+- name: resume-service
+  count: 1
+- name: analytics-service
+  count: 1
+- name: notification-service
+  count: 1
+- name: auto-apply-service
+  count: 1
+- name: orchestrator-service
+  count: 1
+- name: web-app
+  count: 1
+
+# Image tag overrides
+images:
+- name: jobpilotacr.azurecr.io/auth-service
+  newTag: dev
+- name: jobpilotacr.azurecr.io/user-service
+  newTag: dev
+- name: jobpilotacr.azurecr.io/job-service
+  newTag: dev
+- name: jobpilotacr.azurecr.io/ai-service
+  newTag: dev
+- name: jobpilotacr.azurecr.io/resume-service
+  newTag: dev
+- name: jobpilotacr.azurecr.io/analytics-service
+  newTag: dev
+- name: jobpilotacr.azurecr.io/notification-service
+  newTag: dev
+- name: jobpilotacr.azurecr.io/auto-apply-service
+  newTag: dev
+- name: jobpilotacr.azurecr.io/orchestrator-service
+  newTag: dev
+- name: jobpilotacr.azurecr.io/web-app
+  newTag: dev
+
+# ConfigMap overrides for dev environment
+configMapGenerator:
+- name: jobpilot-config
+  behavior: merge
+  literals:
+  - NODE_ENV=development
+  - LOG_LEVEL=debug
+  - CORS_ORIGIN=http://localhost:3000,http://localhost:3001
+
+# Resource adjustments for dev (reduced limits)
+patches:
+- target:
+    kind: Deployment
+  patch: |-
+    - op: replace
+      path: /spec/template/spec/containers/0/resources/limits/cpu
+      value: 500m
+    - op: replace
+      path: /spec/template/spec/containers/0/resources/limits/memory
+      value: 512Mi

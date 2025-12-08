@@ -1,0 +1,247 @@
+# ============================================================================
+# Terraform .gitignore
+# ============================================================================
+# This file specifies intentionally untracked files that Git should ignore.
+# IMPORTANT: Never commit sensitive data to version control!
+
+# ============================================================================
+# Terraform State Files
+# ============================================================================
+# Local state files contain sensitive information and should be stored remotely
+*.tfstate
+*.tfstate.*
+*.tfstate.backup
+
+# Crash log files
+crash.log
+crash.*.log
+
+# ============================================================================
+# Terraform Variable Files
+# ============================================================================
+# Variable files may contain sensitive data like passwords
+# Only commit .example files, never actual variable files with real values
+terraform.tfvars
+*.auto.tfvars
+*.auto.tfvars.json
+secrets.tfvars
+local.tfvars
+
+# Exception: Keep example files
+!terraform.tfvars.example
+!*.tfvars.example
+
+# ============================================================================
+# Terraform Plan Files
+# ============================================================================
+# Plan files can contain sensitive data and are environment-specific
+*.tfplan
+*.tfplan.*
+plan.out
+tfplan
+
+# ============================================================================
+# Terraform Module Cache
+# ============================================================================
+# Downloaded modules and plugins
+.terraform/
+.terraform.lock.hcl
+
+# Exception: Keep lock file for consistent provider versions (optional)
+# Uncomment the next line if you want to commit the lock file
+# !.terraform.lock.hcl
+
+# ============================================================================
+# Terraform Override Files
+# ============================================================================
+# Override files are used for local development and should not be shared
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# ============================================================================
+# Terraform CLI Configuration
+# ============================================================================
+# CLI configuration files
+.terraformrc
+terraform.rc
+
+# ============================================================================
+# Sensitive Files
+# ============================================================================
+# SSH keys
+*.pem
+*.key
+*.pub
+
+# SSL certificates
+*.pfx
+*.p12
+*.crt
+*.cer
+
+# Kubeconfig files
+kubeconfig
+*kubeconfig*
+*.kubeconfig
+
+# Service principal files
+*.json
+!*.tfvars.example
+!examples/**/*.json
+
+# Password files
+*password*
+*secret*
+*credentials*
+
+# ============================================================================
+# Logs and Debugging
+# ============================================================================
+# Debug logs
+*.log
+terraform-debug.log
+debug.log
+
+# Trace files
+*.trace
+
+# ============================================================================
+# Backup Files
+# ============================================================================
+# Text editor backups
+*~
+*.bak
+*.backup
+*.old
+*.orig
+*.swp
+*.swo
+*~
+
+# ============================================================================
+# OS-Specific Files
+# ============================================================================
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+.directory
+.Trash-*
+
+# ============================================================================
+# IDE and Editor Files
+# ============================================================================
+
+# Visual Studio Code
+.vscode/
+*.code-workspace
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+[._]*.s[a-v][a-z]
+[._]*.sw[a-p]
+[._]s[a-rt-v][a-z]
+[._]ss[a-gi-z]
+[._]sw[a-p]
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+
+# ============================================================================
+# Temporary Files
+# ============================================================================
+tmp/
+temp/
+*.tmp
+.temp/
+
+# ============================================================================
+# Documentation Build Artifacts
+# ============================================================================
+# Ignore generated documentation
+docs/_build/
+docs/.doctrees/
+
+# ============================================================================
+# Test and Coverage Files
+# ============================================================================
+.terraform.d/
+testing/
+test-results/
+coverage/
+
+# ============================================================================
+# Custom Ignores
+# ============================================================================
+# Add project-specific ignores below
+
+# Environment-specific sensitive data
+.env
+.env.local
+.env.*.local
+
+# Deployment records (optional: may want to keep these)
+DEPLOYMENT_RECORD*.md
+
+# Archive files
+*.zip
+*.tar.gz
+*.rar
+
+# ============================================================================
+# IMPORTANT REMINDERS
+# ============================================================================
+#
+# 1. NEVER commit:
+#    - terraform.tfvars (contains sensitive values)
+#    - *.tfstate files (contains infrastructure state and secrets)
+#    - Service principal credentials
+#    - SSL certificates and private keys
+#    - Database passwords
+#    - API keys and tokens
+#
+# 2. ALWAYS commit:
+#    - *.tf files (Terraform configuration)
+#    - terraform.tfvars.example (template for variables)
+#    - environments/*.tfvars (if using secure CI/CD variables)
+#    - .terraform.lock.hcl (for provider version locking)
+#    - Documentation and README files
+#
+# 3. For sensitive values, use:
+#    - Azure Key Vault
+#    - Environment variables (TF_VAR_*)
+#    - CI/CD secret variables
+#    - External secret management systems
+#
+# 4. Before committing, always review:
+#    git status
+#    git diff
+#
+# 5. Use pre-commit hooks to prevent sensitive data commits:
+#    https://github.com/antonbabenko/pre-commit-terraform
+#
+# ============================================================================

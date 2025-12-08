@@ -26,9 +26,9 @@ spec:
         app: auto-apply-service
         tier: backend
         component: auto-apply
-    pod-security.kubernetes.io/enforce: restricted
-    pod-security.kubernetes.io/audit: restricted
-    pod-security.kubernetes.io/warn: restricted
+        pod-security.kubernetes.io/enforce: restricted
+        pod-security.kubernetes.io/audit: restricted
+        pod-security.kubernetes.io/warn: restricted
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/port: "3008"
