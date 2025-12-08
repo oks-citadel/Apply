@@ -1,0 +1,29 @@
+# Production overlay for Kong API Gateway
+# This overlay customizes Kong for production environment with enhanced security and performance
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Reference to base Kong configuration
+resources:
+  - ../../
+  - ssl-certificates.yaml
+
+# Namespace suffix for production environment
+nameSuffix: -prod
+
+# Production-specific labels
+commonLabels:
+  environment: production
+
+# Patches for production environment
+patchesStrategicMerge:
+  - deployment-patch.yaml
+  - config-patch.yaml
+
+# Production-specific ConfigMap
+configMapGenerator:
+  - name: kong-env-config
+    literals:
+      - ENVIRONMENT=production
+      - LOG_LEVEL=warn

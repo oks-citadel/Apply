@@ -1,0 +1,30 @@
+# Kong API Gateway .gitignore
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*~
+
+# Test outputs
+test-results/
+*.log
+
+# Local environment files
+.env.local
+*.local
+
+# Exported configurations
+*-export.yml
+kong-export.yml
+
+# SSL certificates (should be managed via secrets)
+*.crt
+*.key
+*.pem
+*.p12
+*.pfx
+
+# Backup files
+backup/
+*.backup

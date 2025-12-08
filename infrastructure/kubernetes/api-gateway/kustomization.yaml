@@ -1,0 +1,73 @@
+# Kustomization file for Kong API Gateway
+# This file orchestrates the deployment of all Kong components
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Namespace where all resources will be deployed
+namespace: kong
+
+# List of resources to deploy
+resources:
+  # Namespace for Kong
+  - namespace.yaml
+
+  # ConfigMap with Kong declarative configuration
+  - kong-config.yaml
+
+  # Kong deployment
+  - kong-deployment.yaml
+
+  # Kong services (LoadBalancer and ClusterIP)
+  - kong-service.yaml
+
+# Common labels applied to all resources
+commonLabels:
+  app.kubernetes.io/name: kong
+  app.kubernetes.io/instance: kong-api-gateway
+  app.kubernetes.io/component: api-gateway
+  app.kubernetes.io/part-of: jobpilot-platform
+  app.kubernetes.io/managed-by: kustomize
+
+# Common annotations
+commonAnnotations:
+  description: "Kong API Gateway for JobPilot AI Platform"
+  version: "3.4"
+
+# Images to use (can be overridden per environment)
+images:
+  - name: kong
+    newTag: "3.4"
+
+# ConfigMap generator (optional - for generating ConfigMaps from files)
+# This is useful if you want to generate ConfigMaps from files
+# configMapGenerator:
+#   - name: kong-config
+#     files:
+#       - kong.yml
+
+# Replacements (for environment-specific overrides)
+# These can be used in overlays for different environments
+# replacements:
+#   - source:
+#       kind: ConfigMap
+#       name: kong-config
+#     targets:
+#       - select:
+#           kind: Deployment
+#           name: kong
+
+# Patches (for environment-specific modifications)
+# These can be applied in overlays
+# patchesStrategicMerge:
+#   - deployment-patch.yaml
+
+# Vars (for variable substitution)
+# vars:
+#   - name: KONG_VERSION
+#     objref:
+#       kind: Deployment
+#       name: kong
+#       apiVersion: apps/v1
+#     fieldref:
+#       fieldpath: spec.template.spec.containers[0].image

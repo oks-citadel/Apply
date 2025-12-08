@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kong
+  namespace: kong
+spec:
+  # Three replicas for production high availability
+  replicas: 3
+  template:
+    spec:
+      # Production affinity rules - spread across nodes and zones
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - kong
+              topologyKey: kubernetes.io/hostname
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: agentpool
+                    operator: In
+                    values:
+                      - production
+      containers:
+        - name: kong
+          env:
+            # Warning log level for production (reduce noise)
+            - name: KONG_LOG_LEVEL
+              value: warn
+
+            # Production-specific settings
+            - name: KONG_NGINX_WORKER_PROCESSES
+              value: "4"
+
+            # Enable SSL
+            - name: KONG_SSL_CERT
+              value: /etc/kong/ssl/tls.crt
+
+            - name: KONG_SSL_CERT_KEY
+              value: /etc/kong/ssl/tls.key
+
+          # Increased resources for production
+          resources:
+            requests:
+              cpu: 1000m
+              memory: 1Gi
+            limits:
+              cpu: 2000m
+              memory: 2Gi
+
+          # SSL certificate volume mount
+          volumeMounts:
+            - name: kong-config
+              mountPath: /etc/kong
+              readOnly: true
+            - name: kong-ssl
+              mountPath: /etc/kong/ssl
+              readOnly: true
+
+      volumes:
+        - name: kong-config
+          configMap:
+            name: kong-config
+            items:
+              - key: kong.yml
+                path: kong.yml
+        - name: kong-ssl
+          secret:
+            secretName: kong-ssl-cert

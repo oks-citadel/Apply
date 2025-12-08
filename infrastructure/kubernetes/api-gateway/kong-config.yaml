@@ -1,0 +1,520 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kong-config
+  namespace: kong
+  labels:
+    app: kong
+    component: api-gateway
+data:
+  kong.yml: |
+    # Kong Declarative Configuration for JobPilot AI Platform
+    # This file defines all services, routes, and plugins for the API Gateway
+
+    _format_version: "3.0"
+    _transform: true
+
+    # ============================================================================
+    # SERVICES - Backend microservices configuration
+    # ============================================================================
+
+    services:
+      # --------------------------------------------------------------------------
+      # Auth Service - Authentication and authorization
+      # --------------------------------------------------------------------------
+      - name: auth-service
+        url: http://auth-service.default.svc.cluster.local:3001
+        protocol: http
+        connect_timeout: 60000
+        write_timeout: 60000
+        read_timeout: 60000
+        retries: 3
+        tags:
+          - auth
+          - microservice
+
+        routes:
+          # Auth endpoints
+          - name: auth-routes
+            paths:
+              - /api/v1/auth
+            strip_path: false
+            preserve_host: false
+            protocols:
+              - http
+              - https
+            methods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - PATCH
+            tags:
+              - auth
+
+      # --------------------------------------------------------------------------
+      # User Service - User management and profiles
+      # --------------------------------------------------------------------------
+      - name: user-service
+        url: http://user-service.default.svc.cluster.local:3002
+        protocol: http
+        connect_timeout: 60000
+        write_timeout: 60000
+        read_timeout: 60000
+        retries: 3
+        tags:
+          - user
+          - microservice
+
+        routes:
+          # User endpoints
+          - name: users-routes
+            paths:
+              - /api/v1/users
+            strip_path: false
+            preserve_host: false
+            protocols:
+              - http
+              - https
+            methods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - PATCH
+            tags:
+              - user
+
+          # Profile endpoints
+          - name: profiles-routes
+            paths:
+              - /api/v1/profiles
+            strip_path: false
+            preserve_host: false
+            protocols:
+              - http
+              - https
+            methods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - PATCH
+            tags:
+              - profile
+
+      # --------------------------------------------------------------------------
+      # Resume Service - Resume management
+      # --------------------------------------------------------------------------
+      - name: resume-service
+        url: http://resume-service.default.svc.cluster.local:3003
+        protocol: http
+        connect_timeout: 60000
+        write_timeout: 60000
+        read_timeout: 60000
+        retries: 3
+        tags:
+          - resume
+          - microservice
+
+        routes:
+          # Resume endpoints
+          - name: resumes-routes
+            paths:
+              - /api/v1/resumes
+            strip_path: false
+            preserve_host: false
+            protocols:
+              - http
+              - https
+            methods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - PATCH
+            tags:
+              - resume
+
+      # --------------------------------------------------------------------------
+      # Job Service - Job postings and company management
+      # --------------------------------------------------------------------------
+      - name: job-service
+        url: http://job-service.default.svc.cluster.local:3004
+        protocol: http
+        connect_timeout: 60000
+        write_timeout: 60000
+        read_timeout: 60000
+        retries: 3
+        tags:
+          - job
+          - microservice
+
+        routes:
+          # Job endpoints
+          - name: jobs-routes
+            paths:
+              - /api/v1/jobs
+            strip_path: false
+            preserve_host: false
+            protocols:
+              - http
+              - https
+            methods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - PATCH
+            tags:
+              - job
+
+          # Company endpoints
+          - name: companies-routes
+            paths:
+              - /api/v1/companies
+            strip_path: false
+            preserve_host: false
+            protocols:
+              - http
+              - https
+            methods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - PATCH
+            tags:
+              - company
+
+      # --------------------------------------------------------------------------
+      # Auto Apply Service - Automated job applications
+      # --------------------------------------------------------------------------
+      - name: auto-apply-service
+        url: http://auto-apply-service.default.svc.cluster.local:3005
+        protocol: http
+        connect_timeout: 60000
+        write_timeout: 60000
+        read_timeout: 60000
+        retries: 3
+        tags:
+          - auto-apply
+          - microservice
+
+        routes:
+          # Application endpoints
+          - name: applications-routes
+            paths:
+              - /api/v1/applications
+            strip_path: false
+            preserve_host: false
+            protocols:
+              - http
+              - https
+            methods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - PATCH
+            tags:
+              - application
+
+          # Auto-apply endpoints
+          - name: auto-apply-routes
+            paths:
+              - /api/v1/auto-apply
+            strip_path: false
+            preserve_host: false
+            protocols:
+              - http
+              - https
+            methods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - PATCH
+            tags:
+              - auto-apply
+
+      # --------------------------------------------------------------------------
+      # Analytics Service - Analytics and reporting
+      # --------------------------------------------------------------------------
+      - name: analytics-service
+        url: http://analytics-service.default.svc.cluster.local:3006
+        protocol: http
+        connect_timeout: 60000
+        write_timeout: 60000
+        read_timeout: 60000
+        retries: 3
+        tags:
+          - analytics
+          - microservice
+
+        routes:
+          # Analytics endpoints
+          - name: analytics-routes
+            paths:
+              - /api/v1/analytics
+            strip_path: false
+            preserve_host: false
+            protocols:
+              - http
+              - https
+            methods:
+              - GET
+              - POST
+            tags:
+              - analytics
+
+      # --------------------------------------------------------------------------
+      # Notification Service - Email, SMS, and push notifications
+      # --------------------------------------------------------------------------
+      - name: notification-service
+        url: http://notification-service.default.svc.cluster.local:3007
+        protocol: http
+        connect_timeout: 60000
+        write_timeout: 60000
+        read_timeout: 60000
+        retries: 3
+        tags:
+          - notification
+          - microservice
+
+        routes:
+          # Notification endpoints
+          - name: notifications-routes
+            paths:
+              - /api/v1/notifications
+            strip_path: false
+            preserve_host: false
+            protocols:
+              - http
+              - https
+            methods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - PATCH
+            tags:
+              - notification
+
+      # --------------------------------------------------------------------------
+      # AI Service - AI/ML capabilities (Python-based)
+      # --------------------------------------------------------------------------
+      - name: ai-service
+        url: http://ai-service.default.svc.cluster.local:8000
+        protocol: http
+        connect_timeout: 120000  # Longer timeout for AI operations
+        write_timeout: 120000
+        read_timeout: 120000
+        retries: 2  # Fewer retries due to potentially expensive operations
+        tags:
+          - ai
+          - microservice
+
+        # AI-specific plugins
+        plugins:
+          # Stricter rate limiting for AI operations (50 req/min)
+          - name: rate-limiting
+            config:
+              minute: 50
+              hour: 2000
+              policy: local
+              limit_by: ip
+              hide_client_headers: false
+            tags:
+              - ai-rate-limit
+
+        routes:
+          # AI endpoints
+          - name: ai-routes
+            paths:
+              - /api/v1/ai
+            strip_path: false
+            preserve_host: false
+            protocols:
+              - http
+              - https
+            methods:
+              - GET
+              - POST
+            tags:
+              - ai
+
+      # --------------------------------------------------------------------------
+      # Orchestrator Service - Workflow orchestration
+      # --------------------------------------------------------------------------
+      - name: orchestrator-service
+        url: http://orchestrator-service.default.svc.cluster.local:3009
+        protocol: http
+        connect_timeout: 60000
+        write_timeout: 60000
+        read_timeout: 60000
+        retries: 3
+        tags:
+          - orchestrator
+          - microservice
+
+        routes:
+          # Orchestrator endpoints
+          - name: orchestrator-routes
+            paths:
+              - /api/v1/orchestrator
+            strip_path: false
+            preserve_host: false
+            protocols:
+              - http
+              - https
+            methods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - PATCH
+            tags:
+              - orchestrator
+
+    # ============================================================================
+    # GLOBAL PLUGINS - Applied to all services
+    # ============================================================================
+
+    plugins:
+      # --------------------------------------------------------------------------
+      # CORS - Cross-Origin Resource Sharing
+      # --------------------------------------------------------------------------
+      - name: cors
+        config:
+          # Allowed origins (update in production)
+          origins:
+            - "*"
+
+          # Allowed methods
+          methods:
+            - GET
+            - POST
+            - PUT
+            - DELETE
+            - PATCH
+            - OPTIONS
+
+          # Allowed headers
+          headers:
+            - Accept
+            - Accept-Version
+            - Content-Length
+            - Content-MD5
+            - Content-Type
+            - Date
+            - Authorization
+            - X-Auth-Token
+
+          # Exposed headers
+          exposed_headers:
+            - X-Auth-Token
+            - X-RateLimit-Limit
+            - X-RateLimit-Remaining
+            - X-RateLimit-Reset
+
+          # Credentials support
+          credentials: true
+
+          # Max age for preflight requests
+          max_age: 3600
+
+        tags:
+          - security
+          - cors
+
+      # --------------------------------------------------------------------------
+      # Prometheus - Metrics collection
+      # --------------------------------------------------------------------------
+      - name: prometheus
+        config:
+          # Metrics endpoint - accessible at http://kong:8001/metrics
+          per_consumer: true
+          status_code_metrics: true
+          latency_metrics: true
+          bandwidth_metrics: true
+          upstream_health_metrics: true
+
+        tags:
+          - monitoring
+          - metrics
+
+      # --------------------------------------------------------------------------
+      # Request/Response Logging
+      # --------------------------------------------------------------------------
+      - name: file-log
+        config:
+          # Log to stdout (captured by container runtime)
+          path: /dev/stdout
+
+          # Custom log format (JSON)
+          custom_fields_by_lua:
+            request_id: return kong.request.get_header("X-Request-ID")
+
+        tags:
+          - logging
+
+      # --------------------------------------------------------------------------
+      # Correlation ID - Request tracking
+      # --------------------------------------------------------------------------
+      - name: correlation-id
+        config:
+          header_name: X-Request-ID
+          generator: uuid
+          echo_downstream: true
+
+        tags:
+          - observability
+
+      # --------------------------------------------------------------------------
+      # Default Rate Limiting - 100 requests per minute
+      # --------------------------------------------------------------------------
+      - name: rate-limiting
+        config:
+          # Rate limit configuration
+          minute: 100
+          hour: 5000
+
+          # Policy: local (in-memory), redis, or cluster
+          policy: local
+
+          # Limit by: consumer, credential, ip, service, or header
+          limit_by: ip
+
+          # Hide client headers
+          hide_client_headers: false
+
+        tags:
+          - rate-limiting
+          - protection
+
+    # ============================================================================
+    # CONSUMER-SPECIFIC CONFIGURATIONS
+    # ============================================================================
+
+    consumers:
+      # --------------------------------------------------------------------------
+      # Anonymous Consumer - For public endpoints
+      # --------------------------------------------------------------------------
+      - username: anonymous
+        custom_id: anonymous-user
+        tags:
+          - public
+          - anonymous
+
+    # ============================================================================
+    # SERVICE-SPECIFIC PLUGIN OVERRIDES
+    # ============================================================================
+
+    # Note: These are applied directly to services above, but can also be
+    # defined here for clarity. The configuration above uses inline plugin
+    # definitions for better organization.
+
+    # AI Service Rate Limiting Override (50 req/min due to expensive operations)
+    # This would be applied by adding a plugin to the ai-service specifically:
+    # - Applied via separate plugin definition targeting the ai-service

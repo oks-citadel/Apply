@@ -1,0 +1,35 @@
+# Production configuration patch for Kong
+# This patch updates CORS and security settings for production
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kong-config
+  namespace: kong
+data:
+  # Production Kong configuration with restricted CORS
+  kong-prod.yml: |
+    # Note: This is a partial configuration that would override specific sections
+    # In practice, you would maintain a separate complete config for production
+    # or use strategic merge patches to update specific plugin configurations
+
+    # Production CORS Configuration
+    # Update the global CORS plugin to restrict origins
+
+    # Example production CORS settings (to be merged):
+    # plugins:
+    #   - name: cors
+    #     config:
+    #       origins:
+    #         - https://app.jobpilot.com
+    #         - https://www.jobpilot.com
+    #         - https://admin.jobpilot.com
+    #       methods:
+    #         - GET
+    #         - POST
+    #         - PUT
+    #         - DELETE
+    #         - PATCH
+    #         - OPTIONS
+    #       credentials: true
+    #       max_age: 3600

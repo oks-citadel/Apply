@@ -1,0 +1,81 @@
+# SSL Certificate Secret for Production Kong
+# This is a placeholder - actual certificates should be managed via cert-manager or Azure Key Vault
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: kong-ssl-cert
+  namespace: kong
+type: kubernetes.io/tls
+data:
+  # Base64 encoded certificate and key
+  # Replace these with actual production certificates
+  #
+  # To create from files:
+  # kubectl create secret tls kong-ssl-cert \
+  #   --cert=path/to/tls.crt \
+  #   --key=path/to/tls.key \
+  #   -n kong
+  #
+  # Or use cert-manager to automatically provision:
+  # apiVersion: cert-manager.io/v1
+  # kind: Certificate
+  # metadata:
+  #   name: kong-ssl-cert
+  #   namespace: kong
+  # spec:
+  #   secretName: kong-ssl-cert
+  #   issuerRef:
+  #     name: letsencrypt-prod
+  #     kind: ClusterIssuer
+  #   dnsNames:
+  #     - api.jobpilot.com
+  #     - "*.jobpilot.com"
+
+  tls.crt: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCi0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0=
+  tls.key: LS0tLS1CRUdJTiBQUklWQVRFIEtFWS0tLS0tCi0tLS0tRU5EIFBSSVZBVEUgS0VZLS0tLS0=
+
+---
+# Cert-Manager Certificate (Recommended for Production)
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: kong-tls-certificate
+  namespace: kong
+spec:
+  # Secret name where certificate will be stored
+  secretName: kong-ssl-cert
+
+  # Certificate duration
+  duration: 2160h # 90 days
+  renewBefore: 360h # 15 days
+
+  # Certificate subject
+  subject:
+    organizations:
+      - JobPilot
+
+  # Common name
+  commonName: api.jobpilot.com
+
+  # DNS names
+  dnsNames:
+    - api.jobpilot.com
+    - "*.api.jobpilot.com"
+
+  # Issuer reference (ClusterIssuer for Let's Encrypt)
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+    group: cert-manager.io
+
+  # Private key configuration
+  privateKey:
+    algorithm: RSA
+    encoding: PKCS1
+    size: 2048
+
+  # Usages
+  usages:
+    - server auth
+    - client auth

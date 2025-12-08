@@ -1,0 +1,27 @@
+# Staging overlay for Kong API Gateway
+# This overlay customizes Kong for staging environment
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Reference to base Kong configuration
+resources:
+  - ../../
+
+# Namespace suffix for staging environment
+nameSuffix: -staging
+
+# Staging-specific labels
+commonLabels:
+  environment: staging
+
+# Patches for staging environment
+patchesStrategicMerge:
+  - deployment-patch.yaml
+
+# Staging-specific ConfigMap
+configMapGenerator:
+  - name: kong-env-config
+    literals:
+      - ENVIRONMENT=staging
+      - LOG_LEVEL=info

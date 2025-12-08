@@ -1,0 +1,27 @@
+# Development overlay for Kong API Gateway
+# This overlay customizes Kong for development environment
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Reference to base Kong configuration
+resources:
+  - ../../
+
+# Namespace suffix for dev environment
+nameSuffix: -dev
+
+# Development-specific labels
+commonLabels:
+  environment: development
+
+# Patches for development environment
+patchesStrategicMerge:
+  - deployment-patch.yaml
+
+# Development-specific ConfigMap
+configMapGenerator:
+  - name: kong-env-config
+    literals:
+      - ENVIRONMENT=development
+      - LOG_LEVEL=debug

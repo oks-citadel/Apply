@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kong
+  namespace: kong
+spec:
+  # Two replicas for staging
+  replicas: 2
+  template:
+    spec:
+      containers:
+        - name: kong
+          env:
+            # Info log level for staging
+            - name: KONG_LOG_LEVEL
+              value: info
+          # Standard resources for staging
+          resources:
+            requests:
+              cpu: 500m
+              memory: 512Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi

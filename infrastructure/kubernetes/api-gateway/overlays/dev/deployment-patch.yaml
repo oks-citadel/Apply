@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kong
+  namespace: kong
+spec:
+  # Single replica for dev
+  replicas: 1
+  template:
+    spec:
+      containers:
+        - name: kong
+          env:
+            # Override log level for development
+            - name: KONG_LOG_LEVEL
+              value: debug
+          # Reduced resources for dev
+          resources:
+            requests:
+              cpu: 250m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
