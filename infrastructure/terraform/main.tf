@@ -240,10 +240,8 @@ module "service_bus" {
   environment         = var.environment
   tags                = local.common_tags
 
-  service_bus_name = local.service_bus_name
-  sku              = local.config.service_bus_sku
-  queues           = local.service_bus_queues
-  topics           = local.service_bus_topics
+  unique_suffix = local.unique_suffix
+  sku           = local.config.service_bus_sku
 }
 
 # ============================================================================
