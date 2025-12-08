@@ -56,17 +56,36 @@ jobs:
             type=ref,event=branch
             type=ref,event=pr
 
+      - name: Determine service path
+        id: service-path
+        run: |
+          # Check if service exists in apps or services directory
+          if [ -d "apps/${{ inputs.service-name }}" ]; then
+            echo "context=apps/${{ inputs.service-name }}" >> $GITHUB_OUTPUT
+            echo "dockerfile=apps/${{ inputs.service-name }}/Dockerfile" >> $GITHUB_OUTPUT
+          elif [ -d "services/${{ inputs.service-name }}" ]; then
+            echo "context=services/${{ inputs.service-name }}" >> $GITHUB_OUTPUT
+            echo "dockerfile=services/${{ inputs.service-name }}/Dockerfile" >> $GITHUB_OUTPUT
+          else
+            echo "Error: Service ${{ inputs.service-name }} not found"
+            exit 1
+          fi
+
       - name: Build Docker image (no push for scanning)
         uses: docker/build-push-action@v5
         with:
-          context: ./apps/${{ inputs.service-name }}
-          file: ./apps/${{ inputs.service-name }}/Dockerfile
+          context: ${{ steps.service-path.outputs.context }}
+          file: ${{ steps.service-path.outputs.dockerfile }}
           push: false
           load: true
           tags: ${{ env.REGISTRY }}/${{ inputs.service-name }}:scan
           cache-from: type=gha
           cache-to: type=gha,mode=max
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+            VCS_REF=${{ github.sha }}
+            VERSION=${{ inputs.version }}
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
@@ -107,8 +126,8 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
-          context: ./apps/${{ inputs.service-name }}
-          file: ./apps/${{ inputs.service-name }}/Dockerfile
+          context: ${{ steps.service-path.outputs.context }}
+          file: ${{ steps.service-path.outputs.dockerfile }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -116,6 +135,10 @@ jobs:
           cache-to: type=gha,mode=max
           sbom: true
           provenance: true
+          build-args: |
+            BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+            VCS_REF=${{ github.sha }}
+            VERSION=${{ inputs.version }}
 
       - name: Generate SBOM with Syft
         uses: anchore/sbom-action@v0

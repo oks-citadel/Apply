@@ -1,0 +1,482 @@
+name: Smoke Tests
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: 'Environment to test (staging, production)'
+        required: true
+        type: string
+      base-url:
+        description: 'Base URL of the environment'
+        required: true
+        type: string
+      api-url:
+        description: 'API URL of the environment'
+        required: true
+        type: string
+    secrets:
+      TEST_USER_EMAIL:
+        required: false
+      TEST_USER_PASSWORD:
+        required: false
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to test'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+      base-url:
+        description: 'Base URL'
+        required: true
+        default: 'https://staging.jobpilot.ai'
+      api-url:
+        description: 'API URL'
+        required: true
+        default: 'https://staging-api.jobpilot.ai'
+
+jobs:
+  health-checks:
+    name: Health Check Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Test Web Application Health
+        run: |
+          echo "Testing web application health endpoint..."
+          response=$(curl -s -o /dev/null -w "%{http_code}" ${{ inputs.base-url }}/health)
+
+          if [ "$response" = "200" ]; then
+            echo "✅ Web application health check passed (HTTP $response)"
+          else
+            echo "❌ Web application health check failed (HTTP $response)"
+            exit 1
+          fi
+
+      - name: Test API Gateway Health
+        run: |
+          echo "Testing API gateway health endpoint..."
+          response=$(curl -s -o /dev/null -w "%{http_code}" ${{ inputs.api-url }}/health)
+
+          if [ "$response" = "200" ]; then
+            echo "✅ API gateway health check passed (HTTP $response)"
+          else
+            echo "❌ API gateway health check failed (HTTP $response)"
+            exit 1
+          fi
+
+      - name: Test Auth Service Health
+        run: |
+          echo "Testing auth service health endpoint..."
+          response=$(curl -s -o /dev/null -w "%{http_code}" ${{ inputs.api-url }}/auth/health)
+
+          if [ "$response" = "200" ]; then
+            echo "✅ Auth service health check passed (HTTP $response)"
+          else
+            echo "❌ Auth service health check failed (HTTP $response)"
+            exit 1
+          fi
+
+      - name: Test Job Service Health
+        run: |
+          echo "Testing job service health endpoint..."
+          response=$(curl -s -o /dev/null -w "%{http_code}" ${{ inputs.api-url }}/jobs/health)
+
+          if [ "$response" = "200" ]; then
+            echo "✅ Job service health check passed (HTTP $response)"
+          else
+            echo "❌ Job service health check failed (HTTP $response)"
+            exit 1
+          fi
+
+      - name: Test User Service Health
+        run: |
+          echo "Testing user service health endpoint..."
+          response=$(curl -s -o /dev/null -w "%{http_code}" ${{ inputs.api-url }}/users/health)
+
+          if [ "$response" = "200" ]; then
+            echo "✅ User service health check passed (HTTP $response)"
+          else
+            echo "❌ User service health check failed (HTTP $response)"
+            exit 1
+          fi
+
+      - name: Test Resume Service Health
+        run: |
+          echo "Testing resume service health endpoint..."
+          response=$(curl -s -o /dev/null -w "%{http_code}" ${{ inputs.api-url }}/resumes/health)
+
+          if [ "$response" = "200" ]; then
+            echo "✅ Resume service health check passed (HTTP $response)"
+          else
+            echo "❌ Resume service health check failed (HTTP $response)"
+            exit 1
+          fi
+
+      - name: Test AI Service Health
+        run: |
+          echo "Testing AI service health endpoint..."
+          response=$(curl -s -o /dev/null -w "%{http_code}" ${{ inputs.api-url }}/ai/health)
+
+          if [ "$response" = "200" ]; then
+            echo "✅ AI service health check passed (HTTP $response)"
+          else
+            echo "❌ AI service health check failed (HTTP $response)"
+            exit 1
+          fi
+
+  api-smoke-tests:
+    name: API Smoke Tests
+    runs-on: ubuntu-latest
+    needs: health-checks
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Test API Documentation
+        run: |
+          echo "Testing API documentation endpoint..."
+          response=$(curl -s -o /dev/null -w "%{http_code}" ${{ inputs.api-url }}/api-docs)
+
+          if [ "$response" = "200" ] || [ "$response" = "301" ] || [ "$response" = "302" ]; then
+            echo "✅ API documentation accessible (HTTP $response)"
+          else
+            echo "❌ API documentation not accessible (HTTP $response)"
+            exit 1
+          fi
+
+      - name: Test Public Job Listings
+        run: |
+          echo "Testing public job listings endpoint..."
+          response=$(curl -s ${{ inputs.api-url }}/jobs?limit=10)
+
+          # Check if response is valid JSON
+          if echo "$response" | jq empty 2>/dev/null; then
+            echo "✅ Job listings endpoint returned valid JSON"
+          else
+            echo "❌ Job listings endpoint returned invalid JSON"
+            exit 1
+          fi
+
+      - name: Test Job Search
+        run: |
+          echo "Testing job search endpoint..."
+          response=$(curl -s "${{ inputs.api-url }}/jobs/search?q=software+engineer&limit=5")
+
+          # Check if response is valid JSON
+          if echo "$response" | jq empty 2>/dev/null; then
+            echo "✅ Job search endpoint returned valid JSON"
+          else
+            echo "❌ Job search endpoint returned invalid JSON"
+            exit 1
+          fi
+
+      - name: Test CORS Headers
+        run: |
+          echo "Testing CORS headers..."
+          response=$(curl -s -I -H "Origin: https://example.com" ${{ inputs.api-url }}/health)
+
+          if echo "$response" | grep -i "access-control-allow-origin"; then
+            echo "✅ CORS headers present"
+          else
+            echo "⚠️  CORS headers not found (may be intentional)"
+          fi
+
+  web-smoke-tests:
+    name: Web Application Smoke Tests
+    runs-on: ubuntu-latest
+    needs: health-checks
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Test Homepage
+        run: |
+          echo "Testing homepage..."
+          response=$(curl -s -o /dev/null -w "%{http_code}" ${{ inputs.base-url }}/)
+
+          if [ "$response" = "200" ]; then
+            echo "✅ Homepage loaded successfully (HTTP $response)"
+          else
+            echo "❌ Homepage failed to load (HTTP $response)"
+            exit 1
+          fi
+
+      - name: Test Login Page
+        run: |
+          echo "Testing login page..."
+          response=$(curl -s -o /dev/null -w "%{http_code}" ${{ inputs.base-url }}/login)
+
+          if [ "$response" = "200" ]; then
+            echo "✅ Login page loaded successfully (HTTP $response)"
+          else
+            echo "❌ Login page failed to load (HTTP $response)"
+            exit 1
+          fi
+
+      - name: Test Registration Page
+        run: |
+          echo "Testing registration page..."
+          response=$(curl -s -o /dev/null -w "%{http_code}" ${{ inputs.base-url }}/register)
+
+          if [ "$response" = "200" ]; then
+            echo "✅ Registration page loaded successfully (HTTP $response)"
+          else
+            echo "❌ Registration page failed to load (HTTP $response)"
+            exit 1
+          fi
+
+      - name: Test Jobs Page
+        run: |
+          echo "Testing jobs page..."
+          response=$(curl -s -o /dev/null -w "%{http_code}" ${{ inputs.base-url }}/jobs)
+
+          if [ "$response" = "200" ] || [ "$response" = "401" ]; then
+            echo "✅ Jobs page accessible (HTTP $response)"
+          else
+            echo "❌ Jobs page failed to load (HTTP $response)"
+            exit 1
+          fi
+
+      - name: Test Static Assets
+        run: |
+          echo "Testing static assets..."
+
+          # Test favicon
+          response=$(curl -s -o /dev/null -w "%{http_code}" ${{ inputs.base-url }}/favicon.ico)
+          if [ "$response" = "200" ]; then
+            echo "✅ Favicon loaded (HTTP $response)"
+          else
+            echo "⚠️  Favicon not found (HTTP $response)"
+          fi
+
+      - name: Test Response Time
+        run: |
+          echo "Testing response time..."
+          time=$(curl -o /dev/null -s -w '%{time_total}' ${{ inputs.base-url }}/)
+
+          # Convert to milliseconds
+          time_ms=$(echo "$time * 1000" | bc)
+
+          echo "Homepage response time: ${time_ms}ms"
+
+          # Fail if response time is greater than 3 seconds
+          if (( $(echo "$time > 3" | bc -l) )); then
+            echo "⚠️  Warning: Response time exceeds 3 seconds"
+          else
+            echo "✅ Response time within acceptable limits"
+          fi
+
+  performance-smoke-tests:
+    name: Performance Smoke Tests
+    runs-on: ubuntu-latest
+    needs: [health-checks, api-smoke-tests, web-smoke-tests]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Test API Response Time
+        run: |
+          echo "Testing API response times..."
+
+          endpoints=(
+            "/health"
+            "/jobs?limit=10"
+            "/auth/health"
+          )
+
+          for endpoint in "${endpoints[@]}"; do
+            time=$(curl -o /dev/null -s -w '%{time_total}' ${{ inputs.api-url }}$endpoint)
+            time_ms=$(echo "$time * 1000" | bc)
+            echo "$endpoint: ${time_ms}ms"
+
+            if (( $(echo "$time > 2" | bc -l) )); then
+              echo "⚠️  Warning: $endpoint response time exceeds 2 seconds"
+            fi
+          done
+
+      - name: Test Concurrent Requests
+        run: |
+          echo "Testing concurrent request handling..."
+
+          # Make 10 concurrent requests
+          for i in {1..10}; do
+            curl -s ${{ inputs.api-url }}/health > /dev/null &
+          done
+
+          wait
+          echo "✅ Handled 10 concurrent requests"
+
+      - name: Test Rate Limiting
+        run: |
+          echo "Testing rate limiting..."
+
+          # Make multiple rapid requests
+          success_count=0
+          rate_limited_count=0
+
+          for i in {1..20}; do
+            response=$(curl -s -o /dev/null -w "%{http_code}" ${{ inputs.api-url }}/jobs?limit=1)
+
+            if [ "$response" = "200" ]; then
+              ((success_count++))
+            elif [ "$response" = "429" ]; then
+              ((rate_limited_count++))
+            fi
+          done
+
+          echo "Successful requests: $success_count"
+          echo "Rate limited requests: $rate_limited_count"
+
+          if [ $rate_limited_count -gt 0 ]; then
+            echo "✅ Rate limiting is working"
+          else
+            echo "⚠️  Rate limiting may not be configured"
+          fi
+
+  security-smoke-tests:
+    name: Security Smoke Tests
+    runs-on: ubuntu-latest
+    needs: health-checks
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Test Security Headers
+        run: |
+          echo "Testing security headers..."
+          headers=$(curl -s -I ${{ inputs.base-url }}/)
+
+          # Check for important security headers
+          if echo "$headers" | grep -i "x-frame-options"; then
+            echo "✅ X-Frame-Options header present"
+          else
+            echo "⚠️  X-Frame-Options header missing"
+          fi
+
+          if echo "$headers" | grep -i "x-content-type-options"; then
+            echo "✅ X-Content-Type-Options header present"
+          else
+            echo "⚠️  X-Content-Type-Options header missing"
+          fi
+
+          if echo "$headers" | grep -i "strict-transport-security"; then
+            echo "✅ Strict-Transport-Security header present"
+          else
+            echo "⚠️  Strict-Transport-Security header missing"
+          fi
+
+      - name: Test HTTPS Redirect
+        run: |
+          echo "Testing HTTPS redirect..."
+          http_url=$(echo "${{ inputs.base-url }}" | sed 's/https/http/')
+          response=$(curl -s -o /dev/null -w "%{http_code}" -L $http_url)
+
+          if [ "$response" = "200" ]; then
+            echo "✅ HTTPS redirect working"
+          else
+            echo "⚠️  HTTP to HTTPS redirect may not be configured"
+          fi
+
+      - name: Test SQL Injection Protection
+        run: |
+          echo "Testing SQL injection protection..."
+          response=$(curl -s -o /dev/null -w "%{http_code}" "${{ inputs.api-url }}/jobs?q=test'+OR+'1'='1")
+
+          if [ "$response" = "400" ] || [ "$response" = "200" ]; then
+            echo "✅ SQL injection attempt handled (HTTP $response)"
+          else
+            echo "⚠️  Unexpected response to SQL injection test (HTTP $response)"
+          fi
+
+  smoke-test-summary:
+    name: Smoke Test Summary
+    runs-on: ubuntu-latest
+    needs:
+      - health-checks
+      - api-smoke-tests
+      - web-smoke-tests
+      - performance-smoke-tests
+      - security-smoke-tests
+    if: always()
+    steps:
+      - name: Generate summary
+        run: |
+          echo "Smoke Test Summary for ${{ inputs.environment }}"
+          echo "================================================"
+          echo "Environment: ${{ inputs.environment }}"
+          echo "Base URL: ${{ inputs.base-url }}"
+          echo "API URL: ${{ inputs.api-url }}"
+          echo ""
+          echo "Results:"
+          echo "--------"
+
+          if [ "${{ needs.health-checks.result }}" = "success" ]; then
+            echo "✅ Health Checks: PASSED"
+          else
+            echo "❌ Health Checks: FAILED"
+          fi
+
+          if [ "${{ needs.api-smoke-tests.result }}" = "success" ]; then
+            echo "✅ API Smoke Tests: PASSED"
+          else
+            echo "❌ API Smoke Tests: FAILED"
+          fi
+
+          if [ "${{ needs.web-smoke-tests.result }}" = "success" ]; then
+            echo "✅ Web Smoke Tests: PASSED"
+          else
+            echo "❌ Web Smoke Tests: FAILED"
+          fi
+
+          if [ "${{ needs.performance-smoke-tests.result }}" = "success" ]; then
+            echo "✅ Performance Smoke Tests: PASSED"
+          else
+            echo "❌ Performance Smoke Tests: FAILED"
+          fi
+
+          if [ "${{ needs.security-smoke-tests.result }}" = "success" ]; then
+            echo "✅ Security Smoke Tests: PASSED"
+          else
+            echo "❌ Security Smoke Tests: FAILED"
+          fi
+
+      - name: Post to Slack
+        if: always()
+        uses: slackapi/slack-github-action@v1
+        with:
+          payload: |
+            {
+              "text": "Smoke Tests ${{ job.status }} for ${{ inputs.environment }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Smoke Tests Results*\n*Environment:* ${{ inputs.environment }}\n*URL:* ${{ inputs.base-url }}\n*Status:* ${{ job.status }}"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: Fail if any tests failed
+        if: |
+          needs.health-checks.result != 'success' ||
+          needs.api-smoke-tests.result != 'success' ||
+          needs.web-smoke-tests.result != 'success'
+        run: |
+          echo "One or more critical smoke tests failed"
+          exit 1

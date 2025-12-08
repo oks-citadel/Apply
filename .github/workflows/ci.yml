@@ -5,6 +5,7 @@ on:
     branches: [main, develop]
   pull_request:
     branches: [main, develop]
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -12,6 +13,8 @@ concurrency:
 
 env:
   NODE_VERSION: '20'
+  PYTHON_VERSION: '3.11'
+  COVERAGE_THRESHOLD: 80
 
 jobs:
   lint-and-typecheck:
@@ -20,6 +23,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -30,11 +35,24 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Run Prettier check
+        run: npm run format:check
+        continue-on-error: false
+
       - name: Run ESLint
         run: npm run lint --workspaces --if-present
 
       - name: Run TypeScript type check
         run: npm run type-check --workspaces --if-present
+
+      - name: Upload lint results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lint-results
+          path: |
+            **/eslint-report.json
+          retention-days: 30
 
   test-web:
     name: Test Web App
@@ -53,18 +71,37 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run unit tests
-        run: npm test --workspace=apps/web
+      - name: Run unit tests with coverage
+        run: npm run test:ci --workspace=apps/web
         env:
           CI: true
+          COVERAGE_THRESHOLD: ${{ env.COVERAGE_THRESHOLD }}
 
-      - name: Upload coverage report
+      - name: Check coverage threshold
+        run: |
+          coverage=$(jq '.total.lines.pct' apps/web/coverage/coverage-summary.json)
+          echo "Current coverage: $coverage%"
+          if (( $(echo "$coverage < ${{ env.COVERAGE_THRESHOLD }}" | bc -l) )); then
+            echo "Coverage $coverage% is below threshold ${{ env.COVERAGE_THRESHOLD }}%"
+            exit 1
+          fi
+
+      - name: Upload coverage report to Codecov
         uses: codecov/codecov-action@v4
         if: always()
         with:
           files: apps/web/coverage/lcov.info
           flags: web
           name: web-coverage
+          fail_ci_if_error: true
+
+      - name: Upload coverage artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-coverage-report
+          path: apps/web/coverage/
+          retention-days: 30
 
   test-services:
     name: Test ${{ matrix.service }}
@@ -148,18 +185,39 @@ jobs:
         if: matrix.service == 'ai-service'
         run: |
           cd services/ai-service
-          pytest --cov=src --cov-report=xml
+          pytest --cov=src --cov-report=xml --cov-report=html --cov-report=term-missing --cov-fail-under=${{ env.COVERAGE_THRESHOLD }}
         env:
           DATABASE_URL: postgresql://test:test@localhost:5432/test
           REDIS_URL: redis://localhost:6379
 
-      - name: Upload coverage report
+      - name: Check Node.js coverage threshold
+        if: matrix.service != 'ai-service'
+        run: |
+          if [ -f services/${{ matrix.service }}/coverage/coverage-summary.json ]; then
+            coverage=$(jq '.total.lines.pct' services/${{ matrix.service }}/coverage/coverage-summary.json)
+            echo "Current coverage for ${{ matrix.service }}: $coverage%"
+            if (( $(echo "$coverage < ${{ env.COVERAGE_THRESHOLD }}" | bc -l) )); then
+              echo "Coverage $coverage% is below threshold ${{ env.COVERAGE_THRESHOLD }}%"
+              exit 1
+            fi
+          fi
+
+      - name: Upload coverage report to Codecov
         uses: codecov/codecov-action@v4
         if: always()
         with:
-          files: services/${{ matrix.service }}/coverage/lcov.info
+          files: services/${{ matrix.service }}/coverage/lcov.info,services/${{ matrix.service }}/coverage.xml
           flags: ${{ matrix.service }}
           name: ${{ matrix.service }}-coverage
+          fail_ci_if_error: true
+
+      - name: Upload coverage artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.service }}-coverage-report
+          path: services/${{ matrix.service }}/coverage/
+          retention-days: 30
 
   build-web:
     name: Build Web App
@@ -237,14 +295,22 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       security-events: write
+      contents: read
+      actions: read
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
       - name: Run CodeQL analysis
         uses: github/codeql-action/init@v3
         with:
-          languages: javascript, typescript
+          languages: javascript, typescript, python
 
       - name: Autobuild
         uses: github/codeql-action/autobuild@v3
@@ -252,9 +318,32 @@ jobs:
       - name: Perform CodeQL analysis
         uses: github/codeql-action/analyze@v3
 
+      - name: Install dependencies
+        run: npm ci
+
       - name: Run npm audit
-        run: npm audit --audit-level=high
+        run: |
+          npm audit --audit-level=moderate --production || true
+          npm audit --json > npm-audit-report.json || true
         continue-on-error: true
+
+      - name: Run Snyk security scan
+        uses: snyk/actions/node@master
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --all-projects --severity-threshold=high
+
+      - name: Upload security scan results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-scan-results
+          path: |
+            npm-audit-report.json
+            snyk-report.json
+          retention-days: 30
 
   deploy-preview:
     name: Deploy Preview

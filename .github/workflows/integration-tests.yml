@@ -1,0 +1,483 @@
+name: Integration Tests
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+  schedule:
+    # Run integration tests daily at 3 AM UTC
+    - cron: '0 3 * * *'
+
+concurrency:
+  group: integration-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '20'
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  setup-test-environment:
+    name: Setup Test Environment
+    runs-on: ubuntu-latest
+    outputs:
+      db-url: ${{ steps.setup.outputs.db-url }}
+      redis-url: ${{ steps.setup.outputs.redis-url }}
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: jobpilot_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Setup environment variables
+        id: setup
+        run: |
+          echo "db-url=postgresql://test:test@localhost:5432/jobpilot_test" >> $GITHUB_OUTPUT
+          echo "redis-url=redis://localhost:6379" >> $GITHUB_OUTPUT
+
+  integration-test-auth-flow:
+    name: Auth Service Integration Tests
+    runs-on: ubuntu-latest
+    needs: setup-test-environment
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: jobpilot_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run auth service integration tests
+        run: npm run test:e2e --workspace=services/auth-service
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/jobpilot_test
+          REDIS_URL: redis://localhost:6379
+          NODE_ENV: test
+          JWT_SECRET: test-secret-key-for-integration-tests
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: auth-integration-test-results
+          path: services/auth-service/test-results/
+          retention-days: 30
+
+  integration-test-job-application-flow:
+    name: Job Application Flow Integration Tests
+    runs-on: ubuntu-latest
+    needs: setup-test-environment
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: jobpilot_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup test database
+        run: |
+          npm run db:migrate --workspace=services/job-service
+          npm run db:migrate --workspace=services/user-service
+          npm run db:migrate --workspace=services/auto-apply-service
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/jobpilot_test
+
+      - name: Seed test data
+        run: |
+          npm run db:seed --workspace=services/job-service
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/jobpilot_test
+
+      - name: Run job application flow tests
+        run: |
+          # Test job search and application flow
+          npm run test:e2e --workspace=services/job-service
+          npm run test:e2e --workspace=services/auto-apply-service
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/jobpilot_test
+          REDIS_URL: redis://localhost:6379
+          NODE_ENV: test
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: job-application-integration-test-results
+          path: |
+            services/job-service/test-results/
+            services/auto-apply-service/test-results/
+          retention-days: 30
+
+  integration-test-ai-services:
+    name: AI Services Integration Tests
+    runs-on: ubuntu-latest
+    needs: setup-test-environment
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: jobpilot_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          cd services/ai-service
+          pip install -r requirements.txt
+          pip install pytest pytest-asyncio httpx
+
+      - name: Run AI service integration tests
+        run: |
+          cd services/ai-service
+          pytest tests/integration/ -v --tb=short
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/jobpilot_test
+          REDIS_URL: redis://localhost:6379
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY_TEST || 'sk-test-key' }}
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-integration-test-results
+          path: services/ai-service/test-results/
+          retention-days: 30
+
+  integration-test-notification-flow:
+    name: Notification Flow Integration Tests
+    runs-on: ubuntu-latest
+    needs: setup-test-environment
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: jobpilot_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run notification service integration tests
+        run: npm run test:e2e --workspace=services/notification-service
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/jobpilot_test
+          REDIS_URL: redis://localhost:6379
+          NODE_ENV: test
+          EMAIL_FROM: test@jobpilot.ai
+          SENDGRID_API_KEY: SG.test-key
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: notification-integration-test-results
+          path: services/notification-service/test-results/
+          retention-days: 30
+
+  integration-test-end-to-end:
+    name: End-to-End Integration Tests
+    runs-on: ubuntu-latest
+    needs:
+      - integration-test-auth-flow
+      - integration-test-job-application-flow
+      - integration-test-ai-services
+      - integration-test-notification-flow
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: jobpilot_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup all databases
+        run: |
+          for service in auth-service user-service job-service resume-service notification-service auto-apply-service; do
+            if [ -d "services/$service" ]; then
+              echo "Running migrations for $service..."
+              npm run db:migrate --workspace=services/$service || true
+            fi
+          done
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/jobpilot_test
+
+      - name: Start all services in background
+        run: |
+          for service in auth-service user-service job-service resume-service notification-service auto-apply-service; do
+            if [ -d "services/$service" ]; then
+              echo "Starting $service..."
+              npm run start:dev --workspace=services/$service &
+              sleep 5
+            fi
+          done
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/jobpilot_test
+          REDIS_URL: redis://localhost:6379
+          NODE_ENV: test
+          PORT: ${{ matrix.port || 3000 }}
+
+      - name: Wait for services to be ready
+        run: |
+          echo "Waiting for services to start..."
+          sleep 30
+
+      - name: Run end-to-end integration tests
+        run: |
+          # Run comprehensive E2E tests that span multiple services
+          npm run test:integration
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/jobpilot_test
+          REDIS_URL: redis://localhost:6379
+          NODE_ENV: test
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-integration-test-results
+          path: test-results/
+          retention-days: 30
+
+      - name: Upload logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: service-logs
+          path: |
+            services/*/logs/
+            *.log
+          retention-days: 7
+
+  integration-test-summary:
+    name: Integration Test Summary
+    runs-on: ubuntu-latest
+    needs:
+      - integration-test-auth-flow
+      - integration-test-job-application-flow
+      - integration-test-ai-services
+      - integration-test-notification-flow
+      - integration-test-end-to-end
+    if: always()
+    steps:
+      - name: Check test results
+        run: |
+          echo "Integration Test Summary"
+          echo "========================"
+
+          if [ "${{ needs.integration-test-auth-flow.result }}" != "success" ]; then
+            echo "❌ Auth Flow Tests: FAILED"
+          else
+            echo "✅ Auth Flow Tests: PASSED"
+          fi
+
+          if [ "${{ needs.integration-test-job-application-flow.result }}" != "success" ]; then
+            echo "❌ Job Application Flow Tests: FAILED"
+          else
+            echo "✅ Job Application Flow Tests: PASSED"
+          fi
+
+          if [ "${{ needs.integration-test-ai-services.result }}" != "success" ]; then
+            echo "❌ AI Services Tests: FAILED"
+          else
+            echo "✅ AI Services Tests: PASSED"
+          fi
+
+          if [ "${{ needs.integration-test-notification-flow.result }}" != "success" ]; then
+            echo "❌ Notification Flow Tests: FAILED"
+          else
+            echo "✅ Notification Flow Tests: PASSED"
+          fi
+
+          if [ "${{ needs.integration-test-end-to-end.result }}" != "success" ]; then
+            echo "❌ End-to-End Tests: FAILED"
+          else
+            echo "✅ End-to-End Tests: PASSED"
+          fi
+
+      - name: Post to Slack
+        if: always()
+        uses: slackapi/slack-github-action@v1
+        with:
+          payload: |
+            {
+              "text": "Integration Tests ${{ job.status }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Integration Tests Results*\n*Branch:* ${{ github.ref_name }}\n*Status:* ${{ job.status }}"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

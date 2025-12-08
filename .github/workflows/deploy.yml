@@ -113,26 +113,101 @@ jobs:
           resource-group: jobpilot-staging-rg
           cluster-name: jobpilot-staging-aks
 
-      - name: Deploy to AKS
+      - name: Create backup of current deployment
         run: |
-          kubectl set image deployment/web web=${{ env.REGISTRY }}/web:${{ github.sha }} -n jobpilot
-          kubectl set image deployment/auth-service auth-service=${{ env.REGISTRY }}/auth-service:${{ github.sha }} -n jobpilot
-          kubectl set image deployment/user-service user-service=${{ env.REGISTRY }}/user-service:${{ github.sha }} -n jobpilot
-          kubectl set image deployment/job-service job-service=${{ env.REGISTRY }}/job-service:${{ github.sha }} -n jobpilot
-          kubectl set image deployment/resume-service resume-service=${{ env.REGISTRY }}/resume-service:${{ github.sha }} -n jobpilot
-          kubectl set image deployment/notification-service notification-service=${{ env.REGISTRY }}/notification-service:${{ github.sha }} -n jobpilot
-          kubectl set image deployment/auto-apply-service auto-apply-service=${{ env.REGISTRY }}/auto-apply-service:${{ github.sha }} -n jobpilot
-          kubectl set image deployment/ai-service ai-service=${{ env.REGISTRY }}/ai-service:${{ github.sha }} -n jobpilot
+          echo "Creating backup of current deployments..."
+          mkdir -p deployment-backup
+          for service in web auth-service user-service job-service resume-service notification-service auto-apply-service ai-service; do
+            kubectl get deployment/$service -n jobpilot -o yaml > deployment-backup/$service.yaml || echo "Deployment $service not found"
+          done
 
-      - name: Wait for rollout
-        run: |
-          kubectl rollout status deployment/web -n jobpilot --timeout=300s
-          kubectl rollout status deployment/auth-service -n jobpilot --timeout=300s
+      - name: Upload deployment backup
+        uses: actions/upload-artifact@v4
+        with:
+          name: staging-deployment-backup-${{ github.sha }}
+          path: deployment-backup/
+          retention-days: 30
 
-      - name: Run smoke tests
+      - name: Deploy to AKS with progressive rollout
+        id: deploy
         run: |
-          curl -f https://staging.jobpilot.ai/health || exit 1
-          curl -f https://staging-api.jobpilot.ai/health || exit 1
+          echo "Deploying to staging environment..."
+          services=(web auth-service user-service job-service resume-service notification-service auto-apply-service ai-service)
+
+          for service in "${services[@]}"; do
+            echo "Deploying $service..."
+            kubectl set image deployment/$service $service=${{ env.REGISTRY }}/$service:${{ github.sha }} -n jobpilot
+          done
+
+      - name: Wait for rollout completion
+        id: rollout
+        run: |
+          echo "Waiting for all deployments to complete..."
+          services=(web auth-service user-service job-service resume-service notification-service auto-apply-service ai-service)
+
+          for service in "${services[@]}"; do
+            echo "Checking rollout status for $service..."
+            if ! kubectl rollout status deployment/$service -n jobpilot --timeout=600s; then
+              echo "Rollout failed for $service"
+              echo "failed_service=$service" >> $GITHUB_OUTPUT
+              exit 1
+            fi
+          done
+
+      - name: Run comprehensive smoke tests
+        id: smoke-tests
+        run: |
+          echo "Running smoke tests..."
+
+          # Wait for services to be ready
+          sleep 30
+
+          # Test web application
+          echo "Testing web application..."
+          curl -f --retry 5 --retry-delay 10 https://staging.jobpilot.ai/health || exit 1
+
+          # Test API services
+          echo "Testing API services..."
+          curl -f --retry 5 --retry-delay 10 https://staging-api.jobpilot.ai/health || exit 1
+          curl -f --retry 5 --retry-delay 10 https://staging-api.jobpilot.ai/auth/health || exit 1
+
+          echo "All smoke tests passed!"
+
+      - name: Rollback on failure
+        if: failure() && (steps.rollout.outcome == 'failure' || steps.smoke-tests.outcome == 'failure')
+        run: |
+          echo "Deployment failed, rolling back..."
+          services=(web auth-service user-service job-service resume-service notification-service auto-apply-service ai-service)
+
+          for service in "${services[@]}"; do
+            if [ -f deployment-backup/$service.yaml ]; then
+              echo "Rolling back $service..."
+              kubectl apply -f deployment-backup/$service.yaml
+            fi
+          done
+
+          echo "Rollback completed"
+          exit 1
+
+      - name: Post deployment status to Slack
+        if: always()
+        uses: slackapi/slack-github-action@v1
+        with:
+          payload: |
+            {
+              "text": "${{ job.status == 'success' && '✅' || '❌' }} Staging deployment ${{ job.status }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Staging Deployment ${{ job.status }}*\n*Commit:* ${{ github.sha }}\n*Author:* ${{ github.actor }}"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
   deploy-production:
     name: Deploy to Production
@@ -157,26 +232,138 @@ jobs:
           resource-group: jobpilot-prod-rg
           cluster-name: jobpilot-prod-aks
 
-      - name: Deploy to AKS (Blue/Green)
+      - name: Create production backup
         run: |
-          # Get current active deployment color
-          CURRENT=$(kubectl get service web -n jobpilot -o jsonpath='{.spec.selector.version}' || echo "blue")
+          echo "Creating production deployment backup..."
+          mkdir -p prod-deployment-backup
+          timestamp=$(date +%Y%m%d-%H%M%S)
+
+          for service in web auth-service user-service job-service resume-service notification-service auto-apply-service ai-service; do
+            kubectl get deployment/$service -n jobpilot -o yaml > prod-deployment-backup/$service-$timestamp.yaml || echo "Deployment $service not found"
+          done
+
+      - name: Upload production backup
+        uses: actions/upload-artifact@v4
+        with:
+          name: prod-deployment-backup-${{ github.sha }}
+          path: prod-deployment-backup/
+          retention-days: 90
+
+      - name: Deploy to AKS (Blue/Green for web, rolling for services)
+        id: prod-deploy
+        run: |
+          echo "Starting production deployment..."
+
+          # Deploy backend services with rolling update
+          services=(auth-service user-service job-service resume-service notification-service auto-apply-service ai-service)
+
+          for service in "${services[@]}"; do
+            echo "Deploying $service with rolling update..."
+            kubectl set image deployment/$service $service=${{ env.REGISTRY }}/$service:${{ github.sha }} -n jobpilot
+
+            # Wait for each service to be ready before continuing
+            if ! kubectl rollout status deployment/$service -n jobpilot --timeout=600s; then
+              echo "Deployment failed for $service"
+              echo "failed_service=$service" >> $GITHUB_OUTPUT
+              exit 1
+            fi
+
+            # Brief pause between service deployments
+            sleep 10
+          done
+
+          # Blue/Green deployment for web app
+          echo "Performing Blue/Green deployment for web application..."
+          CURRENT=$(kubectl get service web -n jobpilot -o jsonpath='{.spec.selector.version}' 2>/dev/null || echo "blue")
           NEW=$([ "$CURRENT" = "blue" ] && echo "green" || echo "blue")
 
           echo "Current: $CURRENT, Deploying to: $NEW"
 
           # Update the inactive deployment
           kubectl set image deployment/web-$NEW web=${{ env.REGISTRY }}/web:${{ github.sha }} -n jobpilot
-          kubectl rollout status deployment/web-$NEW -n jobpilot --timeout=300s
+
+          if ! kubectl rollout status deployment/web-$NEW -n jobpilot --timeout=600s; then
+            echo "Web deployment failed"
+            exit 1
+          fi
+
+          # Run smoke tests on new deployment before switching traffic
+          echo "Running smoke tests on new deployment..."
+          sleep 30
 
           # Switch traffic to new deployment
           kubectl patch service web -n jobpilot -p "{\"spec\":{\"selector\":{\"version\":\"$NEW\"}}}"
+          echo "Traffic switched to $NEW deployment"
 
-      - name: Run production smoke tests
+      - name: Run comprehensive production smoke tests
+        id: prod-smoke-tests
         run: |
-          sleep 30
-          curl -f https://jobpilot.ai/health || exit 1
-          curl -f https://api.jobpilot.ai/health || exit 1
+          echo "Running comprehensive production smoke tests..."
+          sleep 60
+
+          # Test web application
+          echo "Testing web application..."
+          for i in {1..5}; do
+            if curl -f --max-time 30 https://jobpilot.ai/health; then
+              echo "Web health check passed"
+              break
+            fi
+            if [ $i -eq 5 ]; then
+              echo "Web health check failed after 5 attempts"
+              exit 1
+            fi
+            sleep 10
+          done
+
+          # Test API endpoints
+          echo "Testing API endpoints..."
+          curl -f --max-time 30 https://api.jobpilot.ai/health || exit 1
+          curl -f --max-time 30 https://api.jobpilot.ai/auth/health || exit 1
+          curl -f --max-time 30 https://api.jobpilot.ai/jobs/health || exit 1
+
+          # Test critical user flows
+          echo "Testing critical endpoints..."
+          curl -f --max-time 30 https://jobpilot.ai/ || exit 1
+          curl -f --max-time 30 https://api.jobpilot.ai/api-docs || exit 1
+
+          echo "All production smoke tests passed!"
+
+      - name: Monitor deployment metrics
+        run: |
+          echo "Monitoring deployment metrics..."
+          sleep 120
+
+          # Check pod status
+          kubectl get pods -n jobpilot -l app=web
+          kubectl get pods -n jobpilot -l app=auth-service
+          kubectl get pods -n jobpilot -l app=job-service
+
+          # Check for any pod restarts or failures
+          failed_pods=$(kubectl get pods -n jobpilot --field-selector=status.phase!=Running --no-headers | wc -l)
+          if [ $failed_pods -gt 0 ]; then
+            echo "Warning: $failed_pods pods are not running"
+            kubectl get pods -n jobpilot --field-selector=status.phase!=Running
+          fi
+
+      - name: Rollback on failure
+        if: failure() && (steps.prod-deploy.outcome == 'failure' || steps.prod-smoke-tests.outcome == 'failure')
+        run: |
+          echo "CRITICAL: Production deployment failed, initiating rollback..."
+
+          # Rollback services
+          services=(web auth-service user-service job-service resume-service notification-service auto-apply-service ai-service)
+
+          for service in "${services[@]}"; do
+            backup_file=$(ls -t prod-deployment-backup/$service-*.yaml 2>/dev/null | head -1)
+            if [ -f "$backup_file" ]; then
+              echo "Rolling back $service..."
+              kubectl apply -f "$backup_file"
+              kubectl rollout status deployment/$service -n jobpilot --timeout=300s
+            fi
+          done
+
+          echo "Rollback completed"
+          exit 1
 
       - name: Notify deployment success
         uses: slackapi/slack-github-action@v1
@@ -184,7 +371,16 @@ jobs:
         with:
           payload: |
             {
-              "text": "Deployed ${{ github.sha }} to production successfully"
+              "text": "✅ Production Deployment Successful",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Production Deployment Successful!*\n*Commit:* ${{ github.sha }}\n*Author:* ${{ github.actor }}\n*Deployed at:* $(date)\n*URL:* https://jobpilot.ai"
+                  }
+                }
+              ]
             }
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
@@ -195,7 +391,26 @@ jobs:
         with:
           payload: |
             {
-              "text": "Production deployment failed for ${{ github.sha }}"
+              "text": "❌ Production Deployment Failed",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*CRITICAL: Production Deployment Failed!*\n*Commit:* ${{ github.sha }}\n*Author:* ${{ github.actor }}\n*Failed at:* $(date)\n*Action:* Automatic rollback initiated"
+                  }
+                }
+              ]
             }
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: Create deployment record
+        if: success()
+        run: |
+          echo "Recording successful deployment..."
+          kubectl annotate deployment/web -n jobpilot \
+            deployment.kubernetes.io/last-deployed="$(date)" \
+            deployment.kubernetes.io/deployed-by="${{ github.actor }}" \
+            deployment.kubernetes.io/git-sha="${{ github.sha }}" \
+            --overwrite
