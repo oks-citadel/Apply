@@ -65,7 +65,7 @@ stages:
       - job: Validate
         displayName: 'Terraform Validate'
         pool:
-          vmImage: 'ubuntu-latest'
+          name: 'Default'  # Self-hosted agent pool
         steps:
           - checkout: self
             fetchDepth: 0
@@ -108,7 +108,7 @@ stages:
       - job: PlanDev
         displayName: 'Terraform Plan (Dev)'
         pool:
-          vmImage: 'ubuntu-latest'
+          name: 'Default'  # Self-hosted agent pool
         steps:
           - checkout: self
             fetchDepth: 0
@@ -170,7 +170,7 @@ stages:
         displayName: 'Terraform Apply (Dev)'
         environment: 'dev'
         pool:
-          vmImage: 'ubuntu-latest'
+          name: 'Default'  # Self-hosted agent pool
         strategy:
           runOnce:
             deploy:
@@ -232,7 +232,7 @@ stages:
       - job: PlanStaging
         displayName: 'Terraform Plan (Staging)'
         pool:
-          vmImage: 'ubuntu-latest'
+          name: 'Default'  # Self-hosted agent pool
         steps:
           - checkout: self
             fetchDepth: 0
@@ -289,7 +289,7 @@ stages:
         displayName: 'Terraform Apply (Staging)'
         environment: 'staging'
         pool:
-          vmImage: 'ubuntu-latest'
+          name: 'Default'  # Self-hosted agent pool
         strategy:
           runOnce:
             deploy:
@@ -345,7 +345,7 @@ stages:
       - job: PlanProd
         displayName: 'Terraform Plan (Production)'
         pool:
-          vmImage: 'ubuntu-latest'
+          name: 'Default'  # Self-hosted agent pool
         steps:
           - checkout: self
             fetchDepth: 0
@@ -402,7 +402,7 @@ stages:
         displayName: 'Terraform Apply (Production)'
         environment: 'prod'  # Requires manual approval
         pool:
-          vmImage: 'ubuntu-latest'
+          name: 'Default'  # Self-hosted agent pool
         strategy:
           runOnce:
             deploy:
