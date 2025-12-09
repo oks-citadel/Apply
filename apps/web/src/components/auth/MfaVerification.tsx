@@ -28,8 +28,9 @@ export function MfaVerification({
     setVerifyError(null);
     try {
       await onVerify(completedCode);
-    } catch (err: any) {
-      setVerifyError(err.message || 'Verification failed. Please try again.');
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Verification failed. Please try again.';
+      setVerifyError(errorMessage);
       setCode('');
     }
   };

@@ -31,6 +31,128 @@ export enum RoleName {
 }
 
 /**
+ * Base permission sets for reuse (avoids self-reference issues)
+ */
+const JOB_SEEKER_PERMISSIONS: Permission[] = [
+  // Profile management
+  Permission.PROFILE_READ,
+  Permission.PROFILE_WRITE,
+
+  // Resume management
+  Permission.RESUME_CREATE,
+  Permission.RESUME_READ,
+  Permission.RESUME_UPDATE,
+  Permission.RESUME_DELETE,
+  Permission.RESUME_EXPORT,
+  Permission.RESUME_PARSE,
+
+  // Job search and application
+  Permission.JOB_READ,
+  Permission.JOB_SEARCH,
+  Permission.JOB_APPLY,
+
+  // Application tracking
+  Permission.APPLICATION_READ,
+  Permission.APPLICATION_CREATE,
+  Permission.APPLICATION_UPDATE,
+  Permission.APPLICATION_TRACK,
+
+  // Personal analytics
+  Permission.ANALYTICS_VIEW,
+  Permission.ANALYTICS_PERSONAL,
+
+  // Documents
+  Permission.DOCUMENT_UPLOAD,
+  Permission.DOCUMENT_READ,
+  Permission.DOCUMENT_DELETE,
+
+  // Communication
+  Permission.MESSAGE_SEND,
+  Permission.MESSAGE_READ,
+  Permission.MESSAGE_DELETE,
+
+  // Interviews
+  Permission.INTERVIEW_VIEW,
+];
+
+const EMPLOYER_PERMISSIONS: Permission[] = [
+  // Profile management
+  Permission.PROFILE_READ,
+  Permission.PROFILE_WRITE,
+
+  // Company management
+  Permission.COMPANY_READ,
+  Permission.COMPANY_UPDATE,
+
+  // Job management
+  Permission.JOB_READ,
+  Permission.JOB_CREATE,
+  Permission.JOB_UPDATE,
+  Permission.JOB_DELETE,
+  Permission.JOB_PUBLISH,
+  Permission.JOB_ARCHIVE,
+
+  // Application review
+  Permission.APPLICATION_READ,
+  Permission.APPLICATION_UPDATE,
+  Permission.APPLICATION_REVIEW,
+
+  // Resume viewing
+  Permission.RESUME_READ,
+
+  // Interview management
+  Permission.INTERVIEW_SCHEDULE,
+  Permission.INTERVIEW_CONDUCT,
+  Permission.INTERVIEW_VIEW,
+  Permission.INTERVIEW_FEEDBACK,
+
+  // Communication
+  Permission.MESSAGE_SEND,
+  Permission.MESSAGE_READ,
+  Permission.MESSAGE_DELETE,
+  Permission.NOTIFICATION_SEND,
+
+  // Documents
+  Permission.DOCUMENT_UPLOAD,
+  Permission.DOCUMENT_READ,
+  Permission.DOCUMENT_DELETE,
+  Permission.DOCUMENT_SHARE,
+
+  // Analytics
+  Permission.ANALYTICS_VIEW,
+  Permission.ANALYTICS_EXPORT,
+  Permission.ANALYTICS_PERSONAL,
+
+  // Billing
+  Permission.BILLING_VIEW,
+];
+
+const HIRING_MANAGER_PERMISSIONS: Permission[] = [
+  ...EMPLOYER_PERMISSIONS,
+  // Company management
+  Permission.COMPANY_MANAGE_USERS,
+  // Advanced application features
+  Permission.APPLICATION_BULK,
+  // Team analytics
+  Permission.ANALYTICS_TEAM,
+  // Billing management
+  Permission.BILLING_MANAGE,
+  Permission.BILLING_HISTORY,
+  // Notification management
+  Permission.NOTIFICATION_MANAGE,
+];
+
+const RECRUITER_PERMISSIONS: Permission[] = [
+  ...HIRING_MANAGER_PERMISSIONS,
+  // Extended user access
+  Permission.USER_READ,
+  // Company creation
+  Permission.COMPANY_CREATE,
+  // Advanced search and bulk operations
+  Permission.APPLICATION_BULK,
+];
+
+/**
  * Built-in role definitions
  */
 export const BUILT_IN_ROLES: Record<RoleName, Role> = {
@@ -38,47 +160,7 @@ export const BUILT_IN_ROLES: Record<RoleName, Role> = {
     name: RoleName.JOB_SEEKER,
     description: 'Basic job seeker with standard features',
     isSystem: true,
-    permissions: [
-      // Profile management
-      Permission.PROFILE_READ,
-      Permission.PROFILE_WRITE,
-
-      // Resume management
-      Permission.RESUME_CREATE,
-      Permission.RESUME_READ,
-      Permission.RESUME_UPDATE,
-      Permission.RESUME_DELETE,
-      Permission.RESUME_EXPORT,
-      Permission.RESUME_PARSE,
-
-      // Job search and application
-      Permission.JOB_READ,
-      Permission.JOB_SEARCH,
-      Permission.JOB_APPLY,
-
-      // Application tracking
-      Permission.APPLICATION_READ,
-      Permission.APPLICATION_CREATE,
-      Permission.APPLICATION_UPDATE,
-      Permission.APPLICATION_TRACK,
-
-      // Personal analytics
-      Permission.ANALYTICS_VIEW,
-      Permission.ANALYTICS_PERSONAL,
-
-      // Documents
-      Permission.DOCUMENT_UPLOAD,
-      Permission.DOCUMENT_READ,
-      Permission.DOCUMENT_DELETE,
-
-      // Communication
-      Permission.MESSAGE_SEND,
-      Permission.MESSAGE_READ,
-      Permission.MESSAGE_DELETE,
-
-      // Interviews
-      Permission.INTERVIEW_VIEW,
-    ],
+    permissions: JOB_SEEKER_PERMISSIONS,
   },
 
   [RoleName.PREMIUM_SEEKER]: {
@@ -87,23 +169,17 @@ export const BUILT_IN_ROLES: Record<RoleName, Role> = {
     isSystem: true,
     inheritsFrom: [RoleName.JOB_SEEKER],
     permissions: [
-      // All job_seeker permissions plus:
-      ...BUILT_IN_ROLES[RoleName.JOB_SEEKER].permissions,
-
+      ...JOB_SEEKER_PERMISSIONS,
       // Resume optimization
       Permission.RESUME_OPTIMIZE,
-
       // Auto-apply feature
       Permission.AUTO_APPLY_ENABLE,
       Permission.AUTO_APPLY_CONFIGURE,
       Permission.AUTO_APPLY_MONITOR,
-
       // Bulk operations
       Permission.APPLICATION_BULK,
-
       // Advanced analytics
       Permission.ANALYTICS_EXPORT,
-
       // Document sharing
       Permission.DOCUMENT_SHARE,
     ],
@@ -113,57 +189,7 @@ export const BUILT_IN_ROLES: Record<RoleName, Role> = {
     name: RoleName.EMPLOYER,
     description: 'Employer/recruiter with job posting and application review capabilities',
     isSystem: true,
-    permissions: [
-      // Profile management
-      Permission.PROFILE_READ,
-      Permission.PROFILE_WRITE,
-
-      // Company management
-      Permission.COMPANY_READ,
-      Permission.COMPANY_UPDATE,
-
-      // Job management
-      Permission.JOB_READ,
-      Permission.JOB_CREATE,
-      Permission.JOB_UPDATE,
-      Permission.JOB_DELETE,
-      Permission.JOB_PUBLISH,
-      Permission.JOB_ARCHIVE,
-
-      // Application review
-      Permission.APPLICATION_READ,
-      Permission.APPLICATION_UPDATE,
-      Permission.APPLICATION_REVIEW,
-
-      // Resume viewing
-      Permission.RESUME_READ,
-
-      // Interview management
-      Permission.INTERVIEW_SCHEDULE,
-      Permission.INTERVIEW_CONDUCT,
-      Permission.INTERVIEW_VIEW,
-      Permission.INTERVIEW_FEEDBACK,
-
-      // Communication
-      Permission.MESSAGE_SEND,
-      Permission.MESSAGE_READ,
-      Permission.MESSAGE_DELETE,
-      Permission.NOTIFICATION_SEND,
-
-      // Documents
-      Permission.DOCUMENT_UPLOAD,
-      Permission.DOCUMENT_READ,
-      Permission.DOCUMENT_DELETE,
-      Permission.DOCUMENT_SHARE,
-
-      // Analytics
-      Permission.ANALYTICS_VIEW,
-      Permission.ANALYTICS_EXPORT,
-      Permission.ANALYTICS_PERSONAL,
-
-      // Billing
-      Permission.BILLING_VIEW,
-    ],
+    permissions: EMPLOYER_PERMISSIONS,
   },
 
   [RoleName.HIRING_MANAGER]: {
@@ -171,26 +197,7 @@ export const BUILT_IN_ROLES: Record<RoleName, Role> = {
     description: 'Hiring manager with extended employer permissions and team analytics',
     isSystem: true,
     inheritsFrom: [RoleName.EMPLOYER],
-    permissions: [
-      // All employer permissions plus:
-      ...BUILT_IN_ROLES[RoleName.EMPLOYER].permissions,
-
-      // Company management
-      Permission.COMPANY_MANAGE_USERS,
-
-      // Advanced application features
-      Permission.APPLICATION_BULK,
-
-      // Team analytics
-      Permission.ANALYTICS_TEAM,
-
-      // Billing management
-      Permission.BILLING_MANAGE,
-      Permission.BILLING_HISTORY,
-
-      // Notification management
-      Permission.NOTIFICATION_MANAGE,
-    ],
+    permissions: HIRING_MANAGER_PERMISSIONS,
   },
 
   [RoleName.RECRUITER]: {
@@ -198,19 +205,7 @@ export const BUILT_IN_ROLES: Record<RoleName, Role> = {
     description: 'Professional recruiter with advanced candidate management',
     isSystem: true,
     inheritsFrom: [RoleName.HIRING_MANAGER],
-    permissions: [
-      // All hiring manager permissions plus:
-      ...BUILT_IN_ROLES[RoleName.HIRING_MANAGER].permissions,
-
-      // Extended user access
-      Permission.USER_READ,
-
-      // Company creation
-      Permission.COMPANY_CREATE,
-
-      // Advanced search and bulk operations
-      Permission.APPLICATION_BULK,
-    ],
+    permissions: RECRUITER_PERMISSIONS,
   },
 
   [RoleName.ADMIN]: {

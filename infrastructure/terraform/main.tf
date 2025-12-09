@@ -28,7 +28,8 @@
 provider "azurerm" {
   features {
     resource_group {
-      prevent_deletion_if_contains_resources = false
+      # SECURITY FIX: Prevent accidental deletion of resource groups with resources
+      prevent_deletion_if_contains_resources = true
     }
 
     key_vault {
@@ -42,7 +43,8 @@ provider "azurerm" {
 
     virtual_machine {
       delete_os_disk_on_deletion     = true
-      graceful_shutdown              = false
+      # SECURITY FIX: Enable graceful shutdown to prevent data loss
+      graceful_shutdown              = true
       skip_shutdown_and_force_delete = false
     }
   }

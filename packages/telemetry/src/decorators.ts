@@ -225,7 +225,7 @@ export function TraceHttp(
       });
     }
 
-    return Trace(options)(target, propertyKey, descriptor);
+    return Trace(options)(target, propertyKey, descriptor) as PropertyDescriptor;
   };
 }
 
@@ -344,9 +344,11 @@ export function TraceClass(options: Omit<TraceOptions, 'name'> = {}): ClassDecor
         const tracedDescriptor = Trace({
           ...options,
           name: `${className}.${methodName}`,
-        })(target.prototype, methodName, descriptor);
+        })(target.prototype, methodName, descriptor) as PropertyDescriptor | undefined;
 
-        Object.defineProperty(target.prototype, methodName, tracedDescriptor);
+        if (tracedDescriptor) {
+          Object.defineProperty(target.prototype, methodName, tracedDescriptor);
+        }
       }
     });
 

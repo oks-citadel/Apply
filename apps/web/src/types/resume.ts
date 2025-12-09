@@ -1,3 +1,5 @@
+import type { TemplateCustomization } from './template';
+
 export interface Resume {
   id: string;
   userId: string;
@@ -12,6 +14,7 @@ export interface Resume {
   projects?: Project[];
   isDefault: boolean;
   template: string;
+  customization?: TemplateCustomization;
   createdAt: string;
   updatedAt: string;
   applications?: number;
@@ -102,6 +105,7 @@ export interface UpdateResumeData extends Partial<CreateResumeData> {
   languages?: Language[];
   projects?: Project[];
   isDefault?: boolean;
+  customization?: TemplateCustomization;
 }
 
 export interface ResumeExportFormat {

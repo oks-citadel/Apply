@@ -69,8 +69,9 @@ export function RegisterForm() {
         acceptTerms: data.acceptTerms,
       });
       router.push('/dashboard');
-    } catch (error: any) {
-      setServerError(error.message || 'Registration failed. Please try again.');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Registration failed. Please try again.';
+      setServerError(errorMessage);
     }
   };
 

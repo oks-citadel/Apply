@@ -15,6 +15,7 @@ export interface UserProfile {
   mfaEnabled: boolean;
   preferences: UserPreferences;
   subscription?: Subscription;
+  completeness_score?: number;
   createdAt: string;
   updatedAt: string;
 }

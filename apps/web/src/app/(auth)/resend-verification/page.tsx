@@ -41,8 +41,9 @@ export default function ResendVerificationPage() {
         type: 'success',
         text: response.data.message || 'Verification email has been sent! Please check your inbox.',
       });
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.message || 'Failed to send verification email. Please try again later.';
+    } catch (error) {
+      const axiosError = error as { response?: { data?: { message?: string } } };
+      const errorMessage = axiosError.response?.data?.message || 'Failed to send verification email. Please try again later.';
       setMessage({
         type: 'error',
         text: errorMessage,

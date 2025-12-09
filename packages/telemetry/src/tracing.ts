@@ -3,7 +3,7 @@
  */
 
 import { trace, context, SpanStatusCode, SpanKind, Span, Context } from '@opentelemetry/api';
-import type { Attributes } from '@opentelemetry/api';
+import type { Attributes, AttributeValue, SpanContext, Link } from '@opentelemetry/api';
 
 /**
  * Options for creating a span
@@ -27,7 +27,7 @@ export interface SpanOptions {
   /**
    * Links to other spans
    */
-  links?: Array<{ context: Context; attributes?: Attributes }>;
+  links?: Link[];
 }
 
 /**
@@ -202,10 +202,10 @@ export function createChildSpan(name: string, attributes?: Attributes): Span {
  * });
  * ```
  */
-export function addBusinessContext(context: Record<string, string | number | boolean>): void {
+export function addBusinessContext(contextAttrs: Attributes): void {
   const span = trace.getActiveSpan();
   if (span) {
-    span.setAttributes(context);
+    span.setAttributes(contextAttrs);
   }
 }
 
@@ -217,19 +217,22 @@ export function addBusinessContext(context: Record<string, string | number | boo
  * @param role - User role (optional)
  */
 export function addUserContext(userId: string, email?: string, role?: string): void {
-  const attributes: Attributes = {
+  const attrs: Record<string, string> = {
     'user.id': userId,
   };
 
   if (email) {
-    attributes['user.email'] = email;
+    attrs['user.email'] = email;
   }
 
   if (role) {
-    attributes['user.role'] = role;
+    attrs['user.role'] = role;
   }
 
-  addBusinessContext(attributes);
+  const span = trace.getActiveSpan();
+  if (span) {
+    span.setAttributes(attrs);
+  }
 }
 
 /**
@@ -239,15 +242,18 @@ export function addUserContext(userId: string, email?: string, role?: string): v
  * @param organizationId - Organization ID (optional)
  */
 export function addTenantContext(tenantId: string, organizationId?: string): void {
-  const attributes: Attributes = {
+  const attrs: Record<string, string> = {
     'tenant.id': tenantId,
   };
 
   if (organizationId) {
-    attributes['organization.id'] = organizationId;
+    attrs['organization.id'] = organizationId;
   }
 
-  addBusinessContext(attributes);
+  const span = trace.getActiveSpan();
+  if (span) {
+    span.setAttributes(attrs);
+  }
 }
 
 /**

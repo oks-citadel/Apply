@@ -13,7 +13,8 @@ import {
 } from '../types';
 
 // Base API URL - Update this to your actual API URL
-const API_BASE_URL = process.env.API_URL || 'http://localhost:3000/api';
+// @ts-ignore - process.env is available in React Native via babel transform
+const API_BASE_URL = (typeof process !== 'undefined' && process.env?.API_URL) || 'http://localhost:3000/api';
 
 // Create axios instance
 const apiClient: AxiosInstance = axios.create({

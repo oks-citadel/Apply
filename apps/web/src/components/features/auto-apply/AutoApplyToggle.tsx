@@ -18,7 +18,7 @@ export function AutoApplyToggle({ className }: AutoApplyToggleProps) {
 
   const handleToggle = async (checked: boolean) => {
     if (checked) {
-      await startAutoApply.mutateAsync();
+      await startAutoApply.mutateAsync(undefined);
     } else {
       await stopAutoApply.mutateAsync();
     }

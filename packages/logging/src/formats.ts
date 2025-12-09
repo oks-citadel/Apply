@@ -38,11 +38,11 @@ export function createStructuredFormat(
 
         let log = `${timestamp} [${level}] [${serviceName}]`;
 
-        if (correlationId) {
+        if (correlationId && typeof correlationId === 'string') {
           log += ` [CID: ${correlationId.substring(0, 8)}]`;
         }
 
-        if (operationId) {
+        if (operationId && typeof operationId === 'string') {
           log += ` [OID: ${operationId.substring(0, 8)}]`;
         }
 

@@ -103,7 +103,7 @@ export default function ResumeBuilderPage() {
   const isLastStep = currentStepIndex === WIZARD_STEPS.length - 1;
 
   // Update resume data
-  const updateResumeData = useCallback((field: keyof ResumeBuilderState, value: any) => {
+  const updateResumeData = useCallback((field: string, value: any) => {
     setResumeData(prev => ({ ...prev, [field]: value }));
   }, []);
 
@@ -240,10 +240,11 @@ export default function ResumeBuilderPage() {
           variant: 'success',
         });
       }
-    } catch (error: any) {
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'An error occurred.';
       toast({
         title: 'Failed to generate suggestions',
-        description: error.message || 'An error occurred.',
+        description: errorMessage,
         variant: 'error',
       });
     } finally {
@@ -300,10 +301,11 @@ export default function ResumeBuilderPage() {
         reason: sug.reason,
         impact: sug.impact,
       })));
-    } catch (error: any) {
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'An error occurred.';
       toast({
         title: 'Optimization failed',
-        description: error.message || 'An error occurred.',
+        description: errorMessage,
         variant: 'error',
       });
     } finally {
@@ -333,10 +335,11 @@ export default function ResumeBuilderPage() {
         description: `Your resume scored ${score.percentage}%`,
         variant: 'success',
       });
-    } catch (error: any) {
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'An error occurred.';
       toast({
         title: 'Scoring failed',
-        description: error.message || 'An error occurred.',
+        description: errorMessage,
         variant: 'error',
       });
     } finally {

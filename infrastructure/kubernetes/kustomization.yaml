@@ -39,24 +39,26 @@ commonAnnotations:
   managed-by: kustomize
   version: "1.0.0"
 
+# SECURITY FIX: Pin all image tags to specific versions instead of 'latest'
+# This ensures reproducible deployments and prevents unexpected changes
 images:
   - name: jobpilotacr.azurecr.io/auth-service
-    newTag: latest
+    newTag: v1.0.0
   - name: jobpilotacr.azurecr.io/user-service
-    newTag: latest
+    newTag: v1.0.0
   - name: jobpilotacr.azurecr.io/job-service
-    newTag: latest
+    newTag: v1.0.0
   - name: jobpilotacr.azurecr.io/ai-service
-    newTag: latest
+    newTag: v1.0.0
   - name: jobpilotacr.azurecr.io/resume-service
-    newTag: latest
+    newTag: v1.0.0
   - name: jobpilotacr.azurecr.io/analytics-service
-    newTag: latest
+    newTag: v1.0.0
   - name: jobpilotacr.azurecr.io/notification-service
-    newTag: latest
+    newTag: v1.0.0
   - name: jobpilotacr.azurecr.io/auto-apply-service
-    newTag: latest
+    newTag: v1.0.0
   - name: jobpilotacr.azurecr.io/orchestrator-service
-    newTag: latest
+    newTag: v1.0.0
   - name: jobpilotacr.azurecr.io/web-app
-    newTag: latest
+    newTag: v1.0.0

@@ -1,7 +1,11 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import type { User, LoginCredentials, RegisterData, AuthResponse, MfaRequiredResponse } from '@/types/auth';
+
+interface ApiErrorResponse {
+  message?: string;
+}
 
 interface AuthStore {
   user: User | null;
@@ -22,6 +26,8 @@ interface AuthStore {
   clearError: () => void;
   updateUser: (user: Partial<User>) => void;
   resetMfaState: () => void;
+  setUser: (user: User) => void;
+  setTokens: (accessToken: string, refreshToken: string) => void;
 }
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
@@ -76,8 +82,9 @@ export const useAuthStore = create<AuthStore>()(
           axios.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
 
           return { requiresMfa: false };
-        } catch (error: any) {
-          const errorMessage = error.response?.data?.message || 'Login failed. Please try again.';
+        } catch (error) {
+          const axiosError = error as AxiosError<ApiErrorResponse>;
+          const errorMessage = axiosError.response?.data?.message || 'Login failed. Please try again.';
           set({
             error: errorMessage,
             isLoading: false,
@@ -112,8 +119,9 @@ export const useAuthStore = create<AuthStore>()(
 
           // Set axios default authorization header
           axios.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
-        } catch (error: any) {
-          const errorMessage = error.response?.data?.message || 'Invalid verification code. Please try again.';
+        } catch (error) {
+          const axiosError = error as AxiosError<ApiErrorResponse>;
+          const errorMessage = axiosError.response?.data?.message || 'Invalid verification code. Please try again.';
           set({
             error: errorMessage,
             isLoading: false,
@@ -147,8 +155,9 @@ export const useAuthStore = create<AuthStore>()(
 
           // Set axios default authorization header
           axios.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
-        } catch (error: any) {
-          const errorMessage = error.response?.data?.message || 'Registration failed. Please try again.';
+        } catch (error) {
+          const axiosError = error as AxiosError<ApiErrorResponse>;
+          const errorMessage = axiosError.response?.data?.message || 'Registration failed. Please try again.';
           set({
             error: errorMessage,
             isLoading: false,
@@ -240,6 +249,15 @@ export const useAuthStore = create<AuthStore>()(
 
       resetMfaState: () => {
         set({ mfaRequired: false, mfaTempToken: null, error: null });
+      },
+
+      setUser: (user: User) => {
+        set({ user, isAuthenticated: true });
+      },
+
+      setTokens: (accessToken: string, refreshToken: string) => {
+        set({ accessToken, refreshToken });
+        axios.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
       },
     }),
     {

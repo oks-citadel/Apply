@@ -10,9 +10,10 @@ import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentation
 import { AzureMonitorTraceExporter } from '@azure/monitor-opentelemetry-exporter';
 import { Resource } from '@opentelemetry/resources';
 import { SEMRESATTRS_SERVICE_NAME, SEMRESATTRS_SERVICE_VERSION, SEMRESATTRS_DEPLOYMENT_ENVIRONMENT } from '@opentelemetry/semantic-conventions';
-import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-base';
+import { BatchSpanProcessor, SpanProcessor, SpanExporter } from '@opentelemetry/sdk-trace-base';
 import { trace, context, propagation, SpanStatusCode } from '@opentelemetry/api';
 import { W3CTraceContextPropagator } from '@opentelemetry/core';
+import type { IncomingMessage } from 'http';
 
 /**
  * Configuration options for telemetry initialization
@@ -88,14 +89,15 @@ export async function initTelemetry(config: TelemetryConfig): Promise<void> {
     });
 
     // Configure span exporters
-    const spanProcessors: BatchSpanProcessor[] = [];
+    const spanProcessors: SpanProcessor[] = [];
 
     // Add Azure Monitor exporter if connection string is provided
     if (azureMonitorConnectionString) {
       const azureExporter = new AzureMonitorTraceExporter({
         connectionString: azureMonitorConnectionString,
       });
-      spanProcessors.push(new BatchSpanProcessor(azureExporter));
+      // Use type assertion to handle version mismatches between OpenTelemetry packages
+      spanProcessors.push(new BatchSpanProcessor(azureExporter as unknown as SpanExporter));
       console.log('[Telemetry] Azure Monitor exporter configured');
     } else {
       console.warn('[Telemetry] Azure Monitor connection string not provided, skipping Azure exporter');
@@ -107,7 +109,7 @@ export async function initTelemetry(config: TelemetryConfig): Promise<void> {
     // Initialize Node SDK with auto-instrumentation
     sdk = new NodeSDK({
       resource,
-      spanProcessors,
+      spanProcessors: spanProcessors as any,
       instrumentations: [
         getNodeAutoInstrumentations({
           // Disable instrumentations that might cause issues or are not needed
@@ -123,9 +125,12 @@ export async function initTelemetry(config: TelemetryConfig): Promise<void> {
               return url.includes('/health') || url.includes('/metrics');
             },
             requestHook: (span, request) => {
-              // Add custom attributes to HTTP spans
-              span.setAttribute('http.user_agent', request.headers['user-agent'] || 'unknown');
-              span.setAttribute('http.request_id', request.headers['x-request-id'] || '');
+              // Add custom attributes to HTTP spans - only for IncomingMessage (server requests)
+              const incomingRequest = request as IncomingMessage;
+              if (incomingRequest.headers) {
+                span.setAttribute('http.user_agent', incomingRequest.headers['user-agent'] || 'unknown');
+                span.setAttribute('http.request_id', incomingRequest.headers['x-request-id'] || '');
+              }
             },
           },
           // Enable Express instrumentation for NestJS apps

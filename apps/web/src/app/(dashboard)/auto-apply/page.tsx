@@ -46,7 +46,7 @@ export default function AutoApplyPage() {
     if (isRunning) {
       await stopAutoApply.mutateAsync();
     } else {
-      await startAutoApply.mutateAsync();
+      await startAutoApply.mutateAsync(undefined);
     }
   };
 

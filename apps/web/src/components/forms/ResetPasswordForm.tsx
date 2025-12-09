@@ -109,9 +109,10 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
       setTimeout(() => {
         router.push('/login');
       }, 2000);
-    } catch (error: any) {
+    } catch (error) {
+      const axiosError = error as { response?: { data?: { message?: string } } };
       const errorMessage =
-        error.response?.data?.message ||
+        axiosError.response?.data?.message ||
         'Failed to reset password. The reset link may be invalid or expired.';
       setServerError(errorMessage);
     } finally {

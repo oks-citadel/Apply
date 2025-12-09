@@ -94,7 +94,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
 
   const updateField = (field: string, value: string) => {
     setFormData({ ...formData, [field]: value });
-    setErrors({ ...errors, [field]: undefined });
+    if (errors[field]) { const newErrors = { ...errors }; delete newErrors[field]; setErrors(newErrors); }
   };
 
   return (

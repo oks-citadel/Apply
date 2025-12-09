@@ -99,9 +99,10 @@ export function ProfileForm() {
 
       // Clear success message after 3 seconds
       setTimeout(() => setSuccessMessage(null), 3000);
-    } catch (error: any) {
+    } catch (error) {
+      const axiosError = error as { response?: { data?: { message?: string } } };
       const errorMessage =
-        error.response?.data?.message || 'Failed to update profile. Please try again.';
+        axiosError.response?.data?.message || 'Failed to update profile. Please try again.';
       setServerError(errorMessage);
     } finally {
       setIsLoading(false);

@@ -20,15 +20,15 @@ data:
   REDIS_PORT: "6380"
   REDIS_TLS: "true"
 
-  # Service URLs (Internal)
-  AUTH_SERVICE_URL: "http://auth-service.jobpilot.svc.cluster.local:3001"
-  USER_SERVICE_URL: "http://user-service.jobpilot.svc.cluster.local:3002"
-  JOB_SERVICE_URL: "http://job-service.jobpilot.svc.cluster.local:3003"
-  AI_SERVICE_URL: "http://ai-service.jobpilot.svc.cluster.local:3004"
-  RESUME_SERVICE_URL: "http://resume-service.jobpilot.svc.cluster.local:3005"
-  ANALYTICS_SERVICE_URL: "http://analytics-service.jobpilot.svc.cluster.local:3006"
-  NOTIFICATION_SERVICE_URL: "http://notification-service.jobpilot.svc.cluster.local:3007"
-  AUTO_APPLY_SERVICE_URL: "http://auto-apply-service.jobpilot.svc.cluster.local:3008"
+  # Service URLs (Internal) - ports match K8s deployment containerPorts
+  AUTH_SERVICE_URL: "http://auth-service.jobpilot.svc.cluster.local:4000"
+  USER_SERVICE_URL: "http://user-service.jobpilot.svc.cluster.local:4004"
+  JOB_SERVICE_URL: "http://job-service.jobpilot.svc.cluster.local:4002"
+  AI_SERVICE_URL: "http://ai-service.jobpilot.svc.cluster.local:5000"
+  RESUME_SERVICE_URL: "http://resume-service.jobpilot.svc.cluster.local:4001"
+  ANALYTICS_SERVICE_URL: "http://analytics-service.jobpilot.svc.cluster.local:3007"
+  NOTIFICATION_SERVICE_URL: "http://notification-service.jobpilot.svc.cluster.local:4005"
+  AUTO_APPLY_SERVICE_URL: "http://auto-apply-service.jobpilot.svc.cluster.local:4003"
 
   # Azure Configuration
   AZURE_STORAGE_ACCOUNT_NAME: "jobpilotstorage"

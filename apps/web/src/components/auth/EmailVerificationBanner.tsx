@@ -46,8 +46,9 @@ export function EmailVerificationBanner() {
       setTimeout(() => {
         setMessage(null);
       }, 5000);
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.message || 'Failed to send verification email. Please try again.';
+    } catch (error) {
+      const axiosError = error as { response?: { data?: { message?: string } } };
+      const errorMessage = axiosError.response?.data?.message || 'Failed to send verification email. Please try again.';
       setMessage({
         type: 'error',
         text: errorMessage,

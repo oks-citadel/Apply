@@ -38,7 +38,7 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
       </Button>
 
       <Modal
-        isOpen={isOpen}
+        open={isOpen}
         onClose={() => setIsOpen(false)}
         title="Change Template"
         size="xl"

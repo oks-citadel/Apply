@@ -74,7 +74,7 @@ resource "azurerm_subnet" "private_endpoints" {
     "10.2.4.0/24"
   ]
 
-  private_endpoint_network_policies_enabled = false
+  private_endpoint_network_policies = "Disabled"
 }
 
 resource "azurerm_subnet" "aks" {

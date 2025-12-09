@@ -49,9 +49,10 @@ export function ForgotPasswordForm() {
         'Password reset instructions have been sent to your email address. Please check your inbox.'
       );
       reset();
-    } catch (error: any) {
+    } catch (error) {
+      const axiosError = error as { response?: { data?: { message?: string } } };
       const errorMessage =
-        error.response?.data?.message ||
+        axiosError.response?.data?.message ||
         'Failed to send password reset email. Please try again.';
       setServerError(errorMessage);
     } finally {

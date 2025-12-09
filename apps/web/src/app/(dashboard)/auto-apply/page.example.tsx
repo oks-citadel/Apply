@@ -7,7 +7,7 @@
 
 import { FeatureFlag, RequireAllFlags } from '@/components/features/FeatureFlag';
 import { useFeatureFlag, FEATURE_FLAGS } from '@/hooks/useFeatureFlags';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/Alert';
 import { InfoIcon } from 'lucide-react';
 
 export default function AutoApplyPage() {

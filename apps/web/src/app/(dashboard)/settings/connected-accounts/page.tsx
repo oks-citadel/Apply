@@ -108,11 +108,12 @@ export default function ConnectedAccountsPage() {
 
       // Refresh the page to update the connection status
       window.location.reload();
-    } catch (error: any) {
+    } catch (error) {
       console.error('Disconnect error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to disconnect account. Please try again.';
       toast({
         title: 'Disconnection Failed',
-        description: error.message || 'Failed to disconnect account. Please try again.',
+        description: errorMessage,
         variant: 'error',
       });
     } finally {

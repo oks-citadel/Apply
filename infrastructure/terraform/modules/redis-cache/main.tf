@@ -31,7 +31,7 @@ resource "azurerm_redis_cache" "main" {
   capacity            = local.parsed_sku.capacity
   family              = local.parsed_sku.family
   sku_name            = local.sku_tier
-  enable_non_ssl_port = false
+  non_ssl_port_enabled = false
   minimum_tls_version = "1.2"
 
   # Premium features
@@ -43,7 +43,7 @@ resource "azurerm_redis_cache" "main" {
 
   redis_configuration {
     # Authentication
-    enable_authentication = true
+    authentication_enabled = true
 
     # Memory management
     maxmemory_reserved = var.maxmemory_reserved

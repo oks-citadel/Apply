@@ -248,7 +248,7 @@ export class Logger {
         data,
         duration,
         success,
-        resultCode,
+        resultCode: resultCode ?? (success ? 200 : 500),
         properties: enrichedProperties,
       });
     }

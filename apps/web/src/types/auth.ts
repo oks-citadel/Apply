@@ -9,6 +9,7 @@ export interface User {
   mfaEnabled?: boolean;
   isEmailVerified?: boolean;
   status?: 'ACTIVE' | 'PENDING_VERIFICATION' | 'SUSPENDED' | 'INACTIVE';
+  authProvider?: 'local' | 'google' | 'linkedin' | 'github';
   createdAt: string;
   updatedAt: string;
 }

@@ -1,14 +1,20 @@
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 
+export interface SelectOption {
+  value: string;
+  label: string;
+}
+
 export interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
   error?: string;
   label?: string;
   helperText?: string;
+  options?: SelectOption[];
 }
 
 const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
-  ({ className, error, label, helperText, id, children, ...props }, ref) => {
+  ({ className, error, label, helperText, id, children, options, ...props }, ref) => {
     const selectId = id || label?.toLowerCase().replace(/\s+/g, '-');
 
     return (
@@ -35,7 +41,13 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
           }
           {...props}
         >
-          {children}
+          {options
+            ? options.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))
+            : children}
         </select>
         {error && (
           <p

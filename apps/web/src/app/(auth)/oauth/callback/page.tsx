@@ -1,12 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/stores/authStore';
 import { OAuthErrorHandler, clearOAuthSession } from '@/lib/oauth-utils';
 import { Loader2, AlertCircle, CheckCircle } from 'lucide-react';
 
-export default function OAuthCallbackPage() {
+function OAuthCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { setUser, setTokens } = useAuthStore();
@@ -14,6 +14,10 @@ export default function OAuthCallbackPage() {
   const [message, setMessage] = useState<string>('Processing authentication...');
 
   useEffect(() => {
+    let successTimeout: NodeJS.Timeout | null = null;
+    let errorTimeout: NodeJS.Timeout | null = null;
+    let isMounted = true;
+
     const handleCallback = async () => {
       const provider = sessionStorage.getItem('oauth_provider') || undefined;
 
@@ -51,6 +55,7 @@ export default function OAuthCallbackPage() {
         }
 
         const userData = await response.json();
+        if (!isMounted) return;
         setUser(userData);
 
         setStatus('success');
@@ -62,11 +67,14 @@ export default function OAuthCallbackPage() {
         // Clear OAuth session data
         clearOAuthSession();
 
-        // Redirect after a short delay
-        setTimeout(() => {
-          router.push(redirectTo);
+        // Redirect after a short delay (with cleanup)
+        successTimeout = setTimeout(() => {
+          if (isMounted) {
+            router.push(redirectTo);
+          }
         }, 1500);
-      } catch (error: any) {
+      } catch (error) {
+        if (!isMounted) return;
         console.error('OAuth callback error:', error);
         setStatus('error');
 
@@ -76,14 +84,23 @@ export default function OAuthCallbackPage() {
         // Clear OAuth session data
         clearOAuthSession();
 
-        // Redirect to login after a delay
-        setTimeout(() => {
-          router.push('/login');
+        // Redirect to login after a delay (with cleanup)
+        errorTimeout = setTimeout(() => {
+          if (isMounted) {
+            router.push('/login');
+          }
         }, 4000);
       }
     };
 
     handleCallback();
+
+    // Cleanup function to prevent memory leaks
+    return () => {
+      isMounted = false;
+      if (successTimeout) clearTimeout(successTimeout);
+      if (errorTimeout) clearTimeout(errorTimeout);
+    };
   }, [searchParams, router, setUser, setTokens]);
 
   return (
@@ -125,5 +142,29 @@ export default function OAuthCallbackPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+function LoadingFallback() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
+      <div className="max-w-md w-full space-y-8">
+        <div className="text-center space-y-4">
+          <Loader2 className="w-16 h-16 mx-auto text-primary-600 animate-spin" />
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+            Loading...
+          </h2>
+          <p className="text-gray-600 dark:text-gray-400">Processing authentication...</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function OAuthCallbackPage() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <OAuthCallbackContent />
+    </Suspense>
   );
 }

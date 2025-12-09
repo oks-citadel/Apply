@@ -60,8 +60,9 @@ export function LoginForm() {
         // Regular login success
         router.push('/dashboard');
       }
-    } catch (error: any) {
-      setServerError(error.message || 'Login failed. Please try again.');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Login failed. Please try again.';
+      setServerError(errorMessage);
     }
   };
 
@@ -72,7 +73,7 @@ export function LoginForm() {
     try {
       await verifyMfaLogin(mfaTempToken, code);
       router.push('/dashboard');
-    } catch (error: any) {
+    } catch (error) {
       throw error;
     }
   };

@@ -157,7 +157,16 @@
       "Bash(MSYS_NO_PATHCONV=1 terraform import:*)",
       "Bash(terraform state push:*)",
       "Bash(terraform force-unlock:*)",
-      "Bash(terraform output:*)"
+      "Bash(terraform output:*)",
+      "WebFetch(domain:aka.ms)",
+      "WebFetch(domain:forms.office.com)",
+      "WebSearch",
+      "WebFetch(domain:api.github.com)",
+      "Bash(for buildId in 181 182 200 201 204 205 206 212)",
+      "Bash(do)",
+      "Bash(AZURE_DEVOPS_EXT_PAT=\"AYhpMYbwfVyMuLVU54Xx4H7lRi6a3ZvPTf7z8yT6k6v5yXoeX9nlJQQJ99BLACAAAAAAAAAAAAASAZDO3hzv\" az pipelines agent list --pool-id 1 --org https://dev.azure.com/citadelcloudmanagement)",
+      "Bash(AZURE_DEVOPS_EXT_PAT=\"AYhpMYbwfVyMuLVU54Xx4H7lRi6a3ZvPTf7z8yT6k6v5yXoeX9nlJQQJ99BLACAAAAAAAAAAAAASAZDO3hzv\" az pipelines agent list --pool-id 1 --org https://dev.azure.com/citadelcloudmanagement --query \"[].{name:name,status:status}\" -o table)",
+      "Bash(git check-ignore:*)"
     ],
     "deny": [],
     "ask": []

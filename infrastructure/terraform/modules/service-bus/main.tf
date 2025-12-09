@@ -37,9 +37,9 @@ resource "azurerm_servicebus_queue" "job_applications" {
   default_message_ttl                = "P14D"  # 14 days
   lock_duration                      = "PT5M"  # 5 minutes (max allowed)
   max_delivery_count                 = 10
-  enable_batched_operations          = true
-  # Note: enable_express cannot be used with requires_duplicate_detection
-  enable_partitioning                = var.sku == "Standard" ? true : false
+  batched_operations_enabled          = true
+  # Note: express_enabled cannot be used with requires_duplicate_detection
+  partitioning_enabled                = var.sku == "Standard" ? true : false
 
   # Dead letter queue
   dead_lettering_on_message_expiration = true
@@ -55,9 +55,9 @@ resource "azurerm_servicebus_queue" "resume_processing" {
   default_message_ttl                = "P7D"   # 7 days
   lock_duration                      = "PT5M"  # 5 minutes (max allowed)
   max_delivery_count                 = 5
-  enable_batched_operations          = true
-  # Note: enable_express cannot be used with requires_duplicate_detection
-  enable_partitioning                = var.sku == "Standard" ? true : false
+  batched_operations_enabled          = true
+  # Note: express_enabled cannot be used with requires_duplicate_detection
+  partitioning_enabled                = var.sku == "Standard" ? true : false
 
   # Dead letter queue
   dead_lettering_on_message_expiration = true
@@ -73,9 +73,9 @@ resource "azurerm_servicebus_queue" "notifications" {
   default_message_ttl                = "P1D"   # 1 day
   lock_duration                      = "PT1M"  # 1 minute
   max_delivery_count                 = 10
-  enable_batched_operations          = true
-  # Note: enable_express cannot be used with requires_duplicate_detection
-  enable_partitioning                = var.sku == "Standard" ? true : false
+  batched_operations_enabled          = true
+  # Note: express_enabled cannot be used with requires_duplicate_detection
+  partitioning_enabled                = var.sku == "Standard" ? true : false
 
   # Dead letter queue
   dead_lettering_on_message_expiration = true
@@ -91,9 +91,9 @@ resource "azurerm_servicebus_queue" "analytics_events" {
   default_message_ttl                = "P30D"  # 30 days
   lock_duration                      = "PT5M"  # 5 minutes
   max_delivery_count                 = 10
-  enable_batched_operations          = true
-  # Note: enable_express cannot be used with requires_duplicate_detection
-  enable_partitioning                = var.sku == "Standard" ? true : false
+  batched_operations_enabled          = true
+  # Note: express_enabled cannot be used with requires_duplicate_detection
+  partitioning_enabled                = var.sku == "Standard" ? true : false
 
   # Dead letter queue
   dead_lettering_on_message_expiration = true
@@ -107,9 +107,9 @@ resource "azurerm_servicebus_topic" "application_events" {
   # Topic settings
   max_size_in_megabytes              = var.sku == "Premium" ? 81920 : 5120
   default_message_ttl                = "P14D"  # 14 days
-  enable_batched_operations          = true
-  # Note: enable_express cannot be used with requires_duplicate_detection
-  enable_partitioning                = var.sku == "Standard" ? true : false
+  batched_operations_enabled          = true
+  # Note: express_enabled cannot be used with requires_duplicate_detection
+  partitioning_enabled                = var.sku == "Standard" ? true : false
   support_ordering                   = true
 }
 
@@ -122,7 +122,7 @@ resource "azurerm_servicebus_subscription" "application_created" {
   default_message_ttl = "P14D"
 
   dead_lettering_on_message_expiration = true
-  enable_batched_operations            = true
+  batched_operations_enabled            = true
 }
 
 # Subscription: Application Updated Events
@@ -134,7 +134,7 @@ resource "azurerm_servicebus_subscription" "application_updated" {
   default_message_ttl = "P14D"
 
   dead_lettering_on_message_expiration = true
-  enable_batched_operations            = true
+  batched_operations_enabled            = true
 }
 
 # Subscription: Application Completed Events
@@ -146,7 +146,7 @@ resource "azurerm_servicebus_subscription" "application_completed" {
   default_message_ttl = "P14D"
 
   dead_lettering_on_message_expiration = true
-  enable_batched_operations            = true
+  batched_operations_enabled            = true
 }
 
 # Subscription: Analytics Aggregation
@@ -158,7 +158,7 @@ resource "azurerm_servicebus_subscription" "analytics_aggregation" {
   default_message_ttl = "P30D"
 
   dead_lettering_on_message_expiration = true
-  enable_batched_operations            = true
+  batched_operations_enabled            = true
 }
 
 # Note: RootManageSharedAccessKey is automatically created by Azure

@@ -70,8 +70,8 @@ export const Input: React.FC<InputProps> = ({
         <TextInput
           style={[
             styles.input,
-            leftIcon && styles.inputWithLeftIcon,
-            rightIcon && styles.inputWithRightIcon,
+            leftIcon ? styles.inputWithLeftIcon : undefined,
+            rightIcon ? styles.inputWithRightIcon : undefined,
           ]}
           placeholderTextColor={theme.colors.gray[400]}
           onFocus={() => setIsFocused(true)}

@@ -25,8 +25,49 @@ import { MatchScoreDto, MatchScoreResponseDto } from './dto/match-score.dto';
 import { InterviewQuestionsResponseDto } from './dto/interview-questions.dto';
 import { SalaryPredictionDto, SalaryPredictionResponseDto } from './dto/salary-prediction.dto';
 import { ReportJobDto, ReportJobResponseDto } from './dto/report-job.dto';
+import { Injectable, CanActivate, ExecutionContext, UnauthorizedException } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 
-const AuthGuard = () => (target: any, propertyKey?: string, descriptor?: PropertyDescriptor) => descriptor;
+/**
+ * JWT Authentication Guard - Validates Bearer tokens on protected endpoints
+ * SECURITY FIX: Replaced mock AuthGuard that provided NO protection
+ */
+@Injectable()
+class JwtAuthGuard implements CanActivate {
+  constructor(
+    private jwtService: JwtService,
+    private configService: ConfigService,
+  ) {}
+
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    const request = context.switchToHttp().getRequest();
+    const token = this.extractTokenFromHeader(request);
+
+    if (!token) {
+      throw new UnauthorizedException('Missing authentication token');
+    }
+
+    try {
+      const payload = await this.jwtService.verifyAsync(token, {
+        secret: this.configService.get<string>('JWT_SECRET'),
+      });
+      request['user'] = payload;
+    } catch {
+      throw new UnauthorizedException('Invalid or expired token');
+    }
+
+    return true;
+  }
+
+  private extractTokenFromHeader(request: any): string | undefined {
+    const [type, token] = request.headers.authorization?.split(' ') ?? [];
+    return type === 'Bearer' ? token : undefined;
+  }
+}
+
+// Factory function for @UseGuards decorator compatibility
+const AuthGuard = () => JwtAuthGuard;
 
 @ApiTags('Jobs')
 @Controller('jobs')
