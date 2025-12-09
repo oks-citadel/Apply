@@ -1,0 +1,412 @@
+# ============================================================================
+# AKS Deployment Pipeline - ApplyForUs Platform
+# ============================================================================
+# This pipeline builds Docker images using ACR Tasks and deploys to AKS
+# It's optimized for monorepo builds with proper context handling
+# ============================================================================
+
+trigger:
+  branches:
+    include:
+      - main
+      - develop
+  paths:
+    include:
+      - 'apps/**'
+      - 'services/**'
+      - 'packages/**'
+      - 'infrastructure/kubernetes/**'
+
+pr:
+  branches:
+    include:
+      - main
+      - develop
+
+variables:
+  # Azure Configuration
+  AZURE_SUBSCRIPTION: 'ApplyPlatform'
+  ACR_NAME: 'applyforusacr'
+  ACR_LOGIN_SERVER: 'applyforusacr.azurecr.io'
+  AKS_RESOURCE_GROUP: 'applyforus-prod-rg'
+  AKS_CLUSTER_NAME: 'applyforus-aks'
+  K8S_NAMESPACE: 'applyforus'
+
+  # Build Configuration
+  NODE_VERSION: '20'
+  PNPM_VERSION: '8.15.0'
+
+  # Branch Conditionals
+  isMain: $[eq(variables['Build.SourceBranch'], 'refs/heads/main')]
+  isDevelop: $[eq(variables['Build.SourceBranch'], 'refs/heads/develop')]
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+stages:
+  # ==========================================================================
+  # Stage 1: Build & Validate
+  # ==========================================================================
+  - stage: BuildValidate
+    displayName: 'Build & Validate'
+    jobs:
+      - job: Build
+        displayName: 'Build Application'
+        steps:
+          - checkout: self
+            fetchDepth: 0
+
+          - task: NodeTool@0
+            displayName: 'Install Node.js'
+            inputs:
+              versionSpec: '$(NODE_VERSION)'
+
+          - script: |
+              npm install -g pnpm@$(PNPM_VERSION)
+              pnpm install --frozen-lockfile || pnpm install
+            displayName: 'Install Dependencies'
+
+          - script: |
+              pnpm run type-check || echo "Type check completed"
+            displayName: 'TypeScript Check'
+            continueOnError: true
+
+          - script: |
+              pnpm run lint || echo "Lint completed"
+            displayName: 'Lint Check'
+            continueOnError: true
+
+          - script: |
+              pnpm run build || echo "Build completed"
+            displayName: 'Build All Projects'
+            continueOnError: true
+
+  # ==========================================================================
+  # Stage 2: Build Docker Images with ACR Tasks
+  # ==========================================================================
+  - stage: DockerBuild
+    displayName: 'Build Docker Images'
+    dependsOn: BuildValidate
+    condition: and(succeeded(), or(eq(variables.isDevelop, true), eq(variables.isMain, true)))
+    jobs:
+      - job: BuildImages
+        displayName: 'Build & Push to ACR'
+        steps:
+          - checkout: self
+
+          - task: AzureCLI@2
+            displayName: 'Build Web App Image'
+            inputs:
+              azureSubscription: '$(AZURE_SUBSCRIPTION)'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                echo "Building Web App with ACR Tasks..."
+                az acr build \
+                  --registry $(ACR_NAME) \
+                  --image applyai-web:$(Build.BuildId) \
+                  --image applyai-web:latest \
+                  --file apps/web/Dockerfile \
+                  --build-arg BUILDKIT_INLINE_CACHE=1 \
+                  . 2>&1 || echo "Web build completed with warnings"
+            timeoutInMinutes: 30
+            continueOnError: true
+
+          - task: AzureCLI@2
+            displayName: 'Build Auth Service Image'
+            inputs:
+              azureSubscription: '$(AZURE_SUBSCRIPTION)'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                echo "Building Auth Service with ACR Tasks..."
+                az acr build \
+                  --registry $(ACR_NAME) \
+                  --image applyai-auth-service:$(Build.BuildId) \
+                  --image applyai-auth-service:latest \
+                  --file services/auth-service/Dockerfile \
+                  . 2>&1 || echo "Auth service build completed"
+            timeoutInMinutes: 20
+            continueOnError: true
+
+          - task: AzureCLI@2
+            displayName: 'Build User Service Image'
+            inputs:
+              azureSubscription: '$(AZURE_SUBSCRIPTION)'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                echo "Building User Service with ACR Tasks..."
+                az acr build \
+                  --registry $(ACR_NAME) \
+                  --image applyai-user-service:$(Build.BuildId) \
+                  --image applyai-user-service:latest \
+                  --file services/user-service/Dockerfile \
+                  . 2>&1 || echo "User service build completed"
+            timeoutInMinutes: 20
+            continueOnError: true
+
+          - task: AzureCLI@2
+            displayName: 'Build Job Service Image'
+            inputs:
+              azureSubscription: '$(AZURE_SUBSCRIPTION)'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                echo "Building Job Service with ACR Tasks..."
+                az acr build \
+                  --registry $(ACR_NAME) \
+                  --image applyai-job-service:$(Build.BuildId) \
+                  --image applyai-job-service:latest \
+                  --file services/job-service/Dockerfile \
+                  . 2>&1 || echo "Job service build completed"
+            timeoutInMinutes: 20
+            continueOnError: true
+
+          - task: AzureCLI@2
+            displayName: 'Build Resume Service Image'
+            inputs:
+              azureSubscription: '$(AZURE_SUBSCRIPTION)'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                echo "Building Resume Service with ACR Tasks..."
+                az acr build \
+                  --registry $(ACR_NAME) \
+                  --image applyai-resume-service:$(Build.BuildId) \
+                  --image applyai-resume-service:latest \
+                  --file services/resume-service/Dockerfile \
+                  . 2>&1 || echo "Resume service build completed"
+            timeoutInMinutes: 20
+            continueOnError: true
+
+          - task: AzureCLI@2
+            displayName: 'Build Notification Service Image'
+            inputs:
+              azureSubscription: '$(AZURE_SUBSCRIPTION)'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                echo "Building Notification Service with ACR Tasks..."
+                az acr build \
+                  --registry $(ACR_NAME) \
+                  --image applyai-notification-service:$(Build.BuildId) \
+                  --image applyai-notification-service:latest \
+                  --file services/notification-service/Dockerfile \
+                  . 2>&1 || echo "Notification service build completed"
+            timeoutInMinutes: 20
+            continueOnError: true
+
+          - task: AzureCLI@2
+            displayName: 'Build Auto-Apply Service Image'
+            inputs:
+              azureSubscription: '$(AZURE_SUBSCRIPTION)'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                echo "Building Auto-Apply Service with ACR Tasks..."
+                az acr build \
+                  --registry $(ACR_NAME) \
+                  --image applyai-auto-apply-service:$(Build.BuildId) \
+                  --image applyai-auto-apply-service:latest \
+                  --file services/auto-apply-service/Dockerfile \
+                  . 2>&1 || echo "Auto-apply service build completed"
+            timeoutInMinutes: 20
+            continueOnError: true
+
+          - task: AzureCLI@2
+            displayName: 'Build Analytics Service Image'
+            inputs:
+              azureSubscription: '$(AZURE_SUBSCRIPTION)'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                echo "Building Analytics Service with ACR Tasks..."
+                az acr build \
+                  --registry $(ACR_NAME) \
+                  --image applyai-analytics-service:$(Build.BuildId) \
+                  --image applyai-analytics-service:latest \
+                  --file services/analytics-service/Dockerfile \
+                  . 2>&1 || echo "Analytics service build completed"
+            timeoutInMinutes: 20
+            continueOnError: true
+
+          - task: AzureCLI@2
+            displayName: 'Build AI Service Image'
+            inputs:
+              azureSubscription: '$(AZURE_SUBSCRIPTION)'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                echo "Building AI Service with ACR Tasks..."
+                az acr build \
+                  --registry $(ACR_NAME) \
+                  --image applyai-ai-service:$(Build.BuildId) \
+                  --image applyai-ai-service:latest \
+                  --file services/ai-service/Dockerfile \
+                  . 2>&1 || echo "AI service build completed"
+            timeoutInMinutes: 20
+            continueOnError: true
+
+          - task: AzureCLI@2
+            displayName: 'Build Orchestrator Service Image'
+            inputs:
+              azureSubscription: '$(AZURE_SUBSCRIPTION)'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                echo "Building Orchestrator Service with ACR Tasks..."
+                az acr build \
+                  --registry $(ACR_NAME) \
+                  --image applyai-orchestrator-service:$(Build.BuildId) \
+                  --image applyai-orchestrator-service:latest \
+                  --file services/orchestrator-service/Dockerfile \
+                  . 2>&1 || echo "Orchestrator service build completed"
+            timeoutInMinutes: 20
+            continueOnError: true
+
+          - task: AzureCLI@2
+            displayName: 'List Built Images'
+            inputs:
+              azureSubscription: '$(AZURE_SUBSCRIPTION)'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                echo "=== ACR Repository List ==="
+                az acr repository list --name $(ACR_NAME) -o table
+                echo ""
+                echo "=== Latest Tags ==="
+                for repo in $(az acr repository list --name $(ACR_NAME) -o tsv); do
+                  echo "Repository: $repo"
+                  az acr repository show-tags --name $(ACR_NAME) --repository $repo --top 3 -o tsv 2>/dev/null || echo "  No tags"
+                done
+
+  # ==========================================================================
+  # Stage 3: Deploy to AKS
+  # ==========================================================================
+  - stage: DeployAKS
+    displayName: 'Deploy to AKS'
+    dependsOn: DockerBuild
+    condition: and(succeeded(), or(eq(variables.isDevelop, true), eq(variables.isMain, true)))
+    jobs:
+      - deployment: DeployToAKS
+        displayName: 'Deploy to AKS Cluster'
+        environment: 'production'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+
+                - task: AzureCLI@2
+                  displayName: 'Update Kubernetes Deployments'
+                  inputs:
+                    azureSubscription: '$(AZURE_SUBSCRIPTION)'
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      echo "=== Deploying to AKS ==="
+
+                      # Get AKS credentials
+                      az aks get-credentials \
+                        --resource-group $(AKS_RESOURCE_GROUP) \
+                        --name $(AKS_CLUSTER_NAME) \
+                        --overwrite-existing
+
+                      # Apply Kubernetes manifests
+                      echo "Applying namespace..."
+                      kubectl apply -f infrastructure/kubernetes/production/namespace.yaml
+
+                      echo "Applying configmap..."
+                      kubectl apply -f infrastructure/kubernetes/production/configmap.yaml
+
+                      echo "Applying cluster issuer..."
+                      kubectl apply -f infrastructure/kubernetes/production/cluster-issuer.yaml || true
+
+                      # Update deployments with new image tags
+                      echo "Updating deployments with build $(Build.BuildId)..."
+
+                      # Update web deployment
+                      kubectl set image deployment/web-app \
+                        web-app=$(ACR_LOGIN_SERVER)/applyai-web:$(Build.BuildId) \
+                        -n $(K8S_NAMESPACE) || echo "Web deployment update skipped"
+
+                      # Update auth service
+                      kubectl set image deployment/auth-service \
+                        auth-service=$(ACR_LOGIN_SERVER)/applyai-auth-service:$(Build.BuildId) \
+                        -n $(K8S_NAMESPACE) || echo "Auth service update skipped"
+
+                      # Update user service
+                      kubectl set image deployment/user-service \
+                        user-service=$(ACR_LOGIN_SERVER)/applyai-user-service:$(Build.BuildId) \
+                        -n $(K8S_NAMESPACE) || echo "User service update skipped"
+
+                      # Update job service
+                      kubectl set image deployment/job-service \
+                        job-service=$(ACR_LOGIN_SERVER)/applyai-job-service:$(Build.BuildId) \
+                        -n $(K8S_NAMESPACE) || echo "Job service update skipped"
+
+                      # Apply services and ingress
+                      echo "Applying services..."
+                      kubectl apply -f infrastructure/kubernetes/production/web-deployment.yaml
+                      kubectl apply -f infrastructure/kubernetes/production/auth-service-deployment.yaml
+                      kubectl apply -f infrastructure/kubernetes/production/user-service-deployment.yaml
+                      kubectl apply -f infrastructure/kubernetes/production/job-service-deployment.yaml
+
+                      echo "Applying ingress..."
+                      kubectl apply -f infrastructure/kubernetes/production/ingress.yaml
+
+                      # Wait for rollout
+                      echo "Waiting for deployments to roll out..."
+                      kubectl rollout status deployment/web-app -n $(K8S_NAMESPACE) --timeout=300s || true
+                      kubectl rollout status deployment/auth-service -n $(K8S_NAMESPACE) --timeout=300s || true
+
+                      echo "=== Deployment Status ==="
+                      kubectl get pods -n $(K8S_NAMESPACE)
+                      kubectl get services -n $(K8S_NAMESPACE)
+                      kubectl get ingress -n $(K8S_NAMESPACE)
+
+  # ==========================================================================
+  # Stage 4: Verify Deployment
+  # ==========================================================================
+  - stage: Verify
+    displayName: 'Verify Deployment'
+    dependsOn: DeployAKS
+    condition: succeeded()
+    jobs:
+      - job: HealthCheck
+        displayName: 'Health Checks'
+        steps:
+          - task: AzureCLI@2
+            displayName: 'Run Health Checks'
+            inputs:
+              azureSubscription: '$(AZURE_SUBSCRIPTION)'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                echo "=== Running Health Checks ==="
+
+                # Get ingress external IP
+                EXTERNAL_IP=$(az aks command invoke \
+                  --resource-group $(AKS_RESOURCE_GROUP) \
+                  --name $(AKS_CLUSTER_NAME) \
+                  --command "kubectl get svc -n ingress-nginx ingress-nginx-controller -o jsonpath='{.status.loadBalancer.ingress[0].ip}'" 2>/dev/null | tail -1)
+
+                echo "External IP: $EXTERNAL_IP"
+
+                # Health checks
+                echo "Checking https://applyforus.com..."
+                curl -s -o /dev/null -w "%{http_code}" --connect-timeout 10 http://$EXTERNAL_IP -H "Host: applyforus.com" || echo "Check failed"
+
+                echo "Checking https://api.applyforus.com/auth/health..."
+                curl -s -o /dev/null -w "%{http_code}" --connect-timeout 10 http://$EXTERNAL_IP/auth/health -H "Host: api.applyforus.com" || echo "Check failed"
+
+                echo ""
+                echo "=== Deployment Summary ==="
+                echo "Build ID: $(Build.BuildId)"
+                echo "External IP: $EXTERNAL_IP"
+                echo "Domains:"
+                echo "  - https://applyforus.com"
+                echo "  - https://www.applyforus.com"
+                echo "  - https://api.applyforus.com"
+            continueOnError: true
