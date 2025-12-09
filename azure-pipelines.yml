@@ -313,7 +313,7 @@ stages:
                 - task: AzureCLI@2
                   displayName: 'Deploy Web App'
                   inputs:
-                    azureSubscription: 'ApplyforUs-Azure-ServiceConnection'
+                    azureSubscription: 'ApplyPlatform'
                     scriptType: 'bash'
                     scriptLocation: 'inlineScript'
                     inlineScript: |
