@@ -11,6 +11,7 @@ import { BrowserModule } from './modules/browser/browser.module';
 import { AdaptersModule } from './modules/adapters/adapters.module';
 import { FormMappingModule } from './modules/form-mapping/form-mapping.module';
 import { QueueModule } from './modules/queue/queue.module';
+import { AnswerLibraryModule } from './modules/answer-library/answer-library.module';
 import { HealthModule } from './health/health.module';
 import { HealthController } from './health.controller';
 
@@ -87,6 +88,7 @@ import { HealthController } from './health.controller';
     AdaptersModule,
     FormMappingModule,
     QueueModule,
+    AnswerLibraryModule,
     HealthModule,
   ],
   controllers: [HealthController],
