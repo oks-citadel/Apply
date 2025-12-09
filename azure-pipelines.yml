@@ -55,8 +55,8 @@ variables:
 
   # Azure Configuration
   AZURE_SUBSCRIPTION: 'ApplyPlatform'
-  TF_STATE_RESOURCE_GROUP: 'applyforus-tfstate-rg'
-  TF_STATE_STORAGE_ACCOUNT: 'applyforustfstate'
+  TF_STATE_RESOURCE_GROUP: 'applyforus-prod-rg'
+  TF_STATE_STORAGE_ACCOUNT: 'applyforustfstateprod'
   TF_STATE_CONTAINER: 'tfstate'
 
   # Branch Conditionals
