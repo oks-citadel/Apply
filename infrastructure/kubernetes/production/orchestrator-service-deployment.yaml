@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: orchestrator-service
+  namespace: applyforus
+  labels:
+    app: orchestrator-service
+    tier: backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: orchestrator-service
+  template:
+    metadata:
+      labels:
+        app: orchestrator-service
+        tier: backend
+    spec:
+      containers:
+        - name: orchestrator-service
+          image: applyforusacr.azurecr.io/applyai-orchestrator-service:latest
+          ports:
+            - containerPort: 3009
+          env:
+            - name: NODE_ENV
+              value: "production"
+            - name: PORT
+              value: "3009"
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "200m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3009
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3009
+            initialDelaySeconds: 30
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: orchestrator-service
+  namespace: applyforus
+  labels:
+    app: orchestrator-service
+spec:
+  type: ClusterIP
+  ports:
+    - port: 3009
+      targetPort: 3009
+      protocol: TCP
+  selector:
+    app: orchestrator-service

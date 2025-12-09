@@ -60,6 +60,48 @@ spec:
                 name: job-service
                 port:
                   number: 4002
+          - path: /resumes
+            pathType: Prefix
+            backend:
+              service:
+                name: resume-service
+                port:
+                  number: 4001
+          - path: /notifications
+            pathType: Prefix
+            backend:
+              service:
+                name: notification-service
+                port:
+                  number: 4005
+          - path: /analytics
+            pathType: Prefix
+            backend:
+              service:
+                name: analytics-service
+                port:
+                  number: 3007
+          - path: /ai
+            pathType: Prefix
+            backend:
+              service:
+                name: ai-service
+                port:
+                  number: 5000
+          - path: /auto-apply
+            pathType: Prefix
+            backend:
+              service:
+                name: auto-apply-service
+                port:
+                  number: 4003
+          - path: /orchestrator
+            pathType: Prefix
+            backend:
+              service:
+                name: orchestrator-service
+                port:
+                  number: 3009
           - path: /
             pathType: Prefix
             backend:
