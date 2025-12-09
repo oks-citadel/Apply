@@ -3,7 +3,7 @@ apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: auth-service-pdb
-  namespace: jobpilot
+  namespace: applyforus
   labels:
     app: auth-service
 spec:
@@ -17,7 +17,7 @@ apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: user-service-pdb
-  namespace: jobpilot
+  namespace: applyforus
   labels:
     app: user-service
 spec:
@@ -31,7 +31,7 @@ apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: job-service-pdb
-  namespace: jobpilot
+  namespace: applyforus
   labels:
     app: job-service
 spec:
@@ -45,7 +45,7 @@ apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: ai-service-pdb
-  namespace: jobpilot
+  namespace: applyforus
   labels:
     app: ai-service
 spec:
@@ -59,7 +59,7 @@ apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: resume-service-pdb
-  namespace: jobpilot
+  namespace: applyforus
   labels:
     app: resume-service
 spec:
@@ -73,7 +73,7 @@ apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: analytics-service-pdb
-  namespace: jobpilot
+  namespace: applyforus
   labels:
     app: analytics-service
 spec:
@@ -87,7 +87,7 @@ apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: notification-service-pdb
-  namespace: jobpilot
+  namespace: applyforus
   labels:
     app: notification-service
 spec:
@@ -101,7 +101,7 @@ apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: auto-apply-service-pdb
-  namespace: jobpilot
+  namespace: applyforus
   labels:
     app: auto-apply-service
 spec:
@@ -115,7 +115,7 @@ apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: web-app-pdb
-  namespace: jobpilot
+  namespace: applyforus
   labels:
     app: web-app
 spec:

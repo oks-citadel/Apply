@@ -5,8 +5,7 @@ import { BullModule } from '@nestjs/bull';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { LoggingModule, LoggingInterceptor } from '@jobpilot/logging';
 import { ApplicationsModule } from './modules/applications/applications.module';
-// EngineModule does not exist - commenting out
-// import { EngineModule } from './modules/engine/engine.module';
+import { EngineModule } from './modules/engine/engine.module';
 import { BrowserModule } from './modules/browser/browser.module';
 import { AdaptersModule } from './modules/adapters/adapters.module';
 import { FormMappingModule } from './modules/form-mapping/form-mapping.module';
@@ -85,7 +84,7 @@ import { HealthController } from './health.controller';
 
     // Feature Modules
     ApplicationsModule,
-    // EngineModule, // Does not exist - commented out
+    EngineModule,
     BrowserModule,
     AdaptersModule,
     FormMappingModule,

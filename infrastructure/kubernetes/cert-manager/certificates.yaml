@@ -28,9 +28,9 @@ apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: applyforus-tls-cert
-  namespace: jobpilot
+  namespace: applyforus
   labels:
-    app: jobpilot-platform
+    app: applyforus-platform
     environment: production
     certificate-type: production
 spec:
@@ -76,7 +76,7 @@ spec:
   # Secret template (optional metadata for the secret)
   secretTemplate:
     labels:
-      app: jobpilot-platform
+      app: applyforus-platform
       certificate: production
     annotations:
       managed-by: cert-manager
@@ -91,9 +91,9 @@ apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: staging-tls-cert
-  namespace: jobpilot
+  namespace: applyforus
   labels:
-    app: jobpilot-platform
+    app: applyforus-platform
     environment: staging
     certificate-type: staging
 spec:
@@ -136,7 +136,7 @@ spec:
   # Secret template
   secretTemplate:
     labels:
-      app: jobpilot-platform
+      app: applyforus-platform
       certificate: staging
     annotations:
       managed-by: cert-manager
@@ -186,7 +186,7 @@ spec:
 #
 #   secretTemplate:
 #     labels:
-#       app: jobpilot-platform
+#       app: applyforus-platform
 #       certificate: wildcard
 #     annotations:
 #       managed-by: cert-manager

@@ -9,8 +9,8 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: jobpilot-ingress
-  namespace: jobpilot
+  name: applyforus-ingress
+  namespace: applyforus
   annotations:
     # Use staging Let's Encrypt for non-production
     cert-manager.io/cluster-issuer: "letsencrypt-staging"

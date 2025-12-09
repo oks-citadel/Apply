@@ -2,9 +2,9 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: default-deny-all
-  namespace: jobpilot
+  namespace: applyforus
   labels:
-    app: jobpilot-platform
+    app: applyforus-platform
 spec:
   podSelector: {}
   policyTypes:
@@ -16,9 +16,9 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-dns
-  namespace: jobpilot
+  namespace: applyforus
   labels:
-    app: jobpilot-platform
+    app: applyforus-platform
 spec:
   podSelector: {}
   policyTypes:
@@ -37,7 +37,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: web-app-policy
-  namespace: jobpilot
+  namespace: applyforus
   labels:
     app: web-app
 spec:
@@ -91,7 +91,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: auth-service-policy
-  namespace: jobpilot
+  namespace: applyforus
   labels:
     app: auth-service
 spec:
@@ -156,7 +156,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: user-service-policy
-  namespace: jobpilot
+  namespace: applyforus
   labels:
     app: user-service
 spec:
@@ -213,7 +213,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: job-service-policy
-  namespace: jobpilot
+  namespace: applyforus
   labels:
     app: job-service
 spec:
@@ -278,7 +278,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: ai-service-policy
-  namespace: jobpilot
+  namespace: applyforus
   labels:
     app: ai-service
 spec:
@@ -335,7 +335,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: resume-service-policy
-  namespace: jobpilot
+  namespace: applyforus
   labels:
     app: resume-service
 spec:
@@ -392,7 +392,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: analytics-service-policy
-  namespace: jobpilot
+  namespace: applyforus
   labels:
     app: analytics-service
 spec:
@@ -443,7 +443,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: notification-service-policy
-  namespace: jobpilot
+  namespace: applyforus
   labels:
     app: notification-service
 spec:
@@ -504,7 +504,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: auto-apply-service-policy
-  namespace: jobpilot
+  namespace: applyforus
   labels:
     app: auto-apply-service
 spec:

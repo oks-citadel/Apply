@@ -1,10 +1,10 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: jobpilot-ingress
-  namespace: jobpilot
+  name: applyforus-ingress
+  namespace: applyforus
   labels:
-    app: jobpilot-platform
+    app: applyforus-platform
   annotations:
     # NGINX Ingress Controller
     kubernetes.io/ingress.class: "nginx"

@@ -65,5 +65,13 @@ web-build/
 # Testing
 coverage/
 
+# EAS Credentials - NEVER COMMIT THESE
+android/google-services.json
+ios/GoogleService-Info.plist
+android/service-account-key.json
+*.mobileprovision
+*.p12
+*.cer
+
 # Misc
 *.log

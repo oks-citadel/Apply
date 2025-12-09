@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: auto-apply-service
-  namespace: jobpilot
+  namespace: applyforus
   labels:
     app: auto-apply-service
     tier: backend
@@ -36,7 +36,7 @@ spec:
         # Pod Security Standards - Restricted profile
         seccomp.security.alpha.kubernetes.io/pod: runtime/default
     spec:
-      serviceAccountName: jobpilot-service-account
+      serviceAccountName: applyforus-service-account
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
@@ -58,9 +58,9 @@ spec:
           value: "auto-apply-service"
         envFrom:
         - configMapRef:
-            name: jobpilot-config
+            name: applyforus-config
         - secretRef:
-            name: jobpilot-secrets
+            name: applyforus-secrets
         resources:
           requests:
             cpu: 250m
@@ -123,7 +123,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: auto-apply-service
-  namespace: jobpilot
+  namespace: applyforus
   labels:
     app: auto-apply-service
     tier: backend
@@ -142,7 +142,7 @@ apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
   name: auto-apply-service-hpa
-  namespace: jobpilot
+  namespace: applyforus
   labels:
     app: auto-apply-service
 spec:

@@ -1,8 +1,8 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: jobpilot
+  name: applyforus
   labels:
-    name: jobpilot
+    name: applyforus
     environment: production
-    app: jobpilot-platform
+    app: applyforus-platform

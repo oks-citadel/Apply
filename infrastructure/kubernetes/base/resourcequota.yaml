@@ -1,10 +1,10 @@
 apiVersion: v1
 kind: ResourceQuota
 metadata:
-  name: jobpilot-quota
-  namespace: jobpilot
+  name: applyforus-quota
+  namespace: applyforus
   labels:
-    app: jobpilot-platform
+    app: applyforus-platform
 spec:
   hard:
     # Compute Resources
@@ -29,10 +29,10 @@ spec:
 apiVersion: v1
 kind: LimitRange
 metadata:
-  name: jobpilot-limitrange
-  namespace: jobpilot
+  name: applyforus-limitrange
+  namespace: applyforus
   labels:
-    app: jobpilot-platform
+    app: applyforus-platform
 spec:
   limits:
   # Container limits

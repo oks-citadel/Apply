@@ -14,14 +14,21 @@
       "backgroundColor": "#ffffff"
     },
     "assetBundlePatterns": ["**/*"],
+    "scheme": "applyforus",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.jobpilot.app",
       "buildNumber": "1.0.0",
       "infoPlist": {
         "NSCameraUsageDescription": "JobPilot needs access to your camera to upload profile pictures and resume documents.",
-        "NSPhotoLibraryUsageDescription": "JobPilot needs access to your photo library to upload profile pictures and resume documents."
-      }
+        "NSPhotoLibraryUsageDescription": "JobPilot needs access to your photo library to upload profile pictures and resume documents.",
+        "NSUserNotificationsUsageDescription": "JobPilot sends you notifications about job application updates and new opportunities.",
+        "UIBackgroundModes": ["fetch", "remote-notification"]
+      },
+      "associatedDomains": [
+        "applinks:jobpilot.app",
+        "applinks:*.jobpilot.app"
+      ]
     },
     "android": {
       "adaptiveIcon": {
@@ -33,8 +40,31 @@
       "permissions": [
         "CAMERA",
         "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE"
-      ]
+        "WRITE_EXTERNAL_STORAGE",
+        "POST_NOTIFICATIONS",
+        "RECEIVE_BOOT_COMPLETED",
+        "VIBRATE"
+      ],
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "jobpilot.app",
+              "pathPrefix": "/"
+            },
+            {
+              "scheme": "https",
+              "host": "*.jobpilot.app",
+              "pathPrefix": "/"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ],
+      "googleServicesFile": "./android/google-services.json"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -52,7 +82,35 @@
             "deploymentTarget": "13.4"
           }
         }
-      ]
-    ]
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#4F46E5",
+          "sounds": ["./assets/notification-sound.wav"],
+          "mode": "production"
+        }
+      ],
+      "expo-router",
+      "expo-font",
+      "expo-splash-screen"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "YOUR_EAS_PROJECT_ID"
+      },
+      "apiUrl": {
+        "development": "http://localhost:3000/api",
+        "preview": "https://preview-api.jobpilot.app/api",
+        "production": "https://api.jobpilot.app/api"
+      }
+    },
+    "updates": {
+      "url": "https://u.expo.dev/YOUR_EAS_PROJECT_ID"
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    }
   }
 }

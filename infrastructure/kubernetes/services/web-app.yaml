@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: web-app
-  namespace: jobpilot
+  namespace: applyforus
   labels:
     app: web-app
     tier: frontend
@@ -36,7 +36,7 @@ spec:
         # Pod Security Standards - Restricted profile
         seccomp.security.alpha.kubernetes.io/pod: runtime/default
     spec:
-      serviceAccountName: jobpilot-service-account
+      serviceAccountName: applyforus-service-account
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
@@ -60,9 +60,9 @@ spec:
           value: "https://api.applyforus.com"
         envFrom:
         - configMapRef:
-            name: jobpilot-config
+            name: applyforus-config
         - secretRef:
-            name: jobpilot-secrets
+            name: applyforus-secrets
         resources:
           requests:
             cpu: 250m
@@ -125,7 +125,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: web-app
-  namespace: jobpilot
+  namespace: applyforus
   labels:
     app: web-app
     tier: frontend
@@ -144,7 +144,7 @@ apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
   name: web-app-hpa
-  namespace: jobpilot
+  namespace: applyforus
   labels:
     app: web-app
 spec:
