@@ -44,9 +44,9 @@ variables:
   isMain: $[eq(variables['Build.SourceBranch'], 'refs/heads/main')]
   isDevelop: $[eq(variables['Build.SourceBranch'], 'refs/heads/develop')]
 
-# Use Microsoft-hosted Ubuntu agents
+# Use self-hosted agent pool
 pool:
-  vmImage: 'ubuntu-latest'
+  name: 'Default'
 
 stages:
   # ============================================================================
