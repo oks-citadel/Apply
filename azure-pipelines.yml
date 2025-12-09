@@ -466,7 +466,7 @@ stages:
             displayName: 'Login to Docker Hub'
             inputs:
               command: login
-              containerRegistry: 'ApplyforUs-ACR'
+              containerRegistry: 'DockerHub-ServiceConnection'
 
           - task: Docker@2
             displayName: 'Build and Push Web App'
@@ -492,7 +492,7 @@ stages:
             displayName: 'Login to Docker Hub'
             inputs:
               command: login
-              containerRegistry: 'ApplyforUs-ACR'
+              containerRegistry: 'DockerHub-ServiceConnection'
 
           - task: Docker@2
             displayName: 'Build and Push Auth Service'
@@ -517,7 +517,7 @@ stages:
             displayName: 'Login to Docker Hub'
             inputs:
               command: login
-              containerRegistry: 'ApplyforUs-ACR'
+              containerRegistry: 'DockerHub-ServiceConnection'
 
           - task: Docker@2
             displayName: 'Build and Push User Service'
@@ -542,7 +542,7 @@ stages:
             displayName: 'Login to Docker Hub'
             inputs:
               command: login
-              containerRegistry: 'ApplyforUs-ACR'
+              containerRegistry: 'DockerHub-ServiceConnection'
 
           - task: Docker@2
             displayName: 'Build and Push Job Service'
@@ -567,7 +567,7 @@ stages:
             displayName: 'Login to Docker Hub'
             inputs:
               command: login
-              containerRegistry: 'ApplyforUs-ACR'
+              containerRegistry: 'DockerHub-ServiceConnection'
 
           - task: Docker@2
             displayName: 'Build and Push Resume Service'
@@ -592,7 +592,7 @@ stages:
             displayName: 'Login to Docker Hub'
             inputs:
               command: login
-              containerRegistry: 'ApplyforUs-ACR'
+              containerRegistry: 'DockerHub-ServiceConnection'
 
           - task: Docker@2
             displayName: 'Build and Push Notification Service'
@@ -617,7 +617,7 @@ stages:
             displayName: 'Login to Docker Hub'
             inputs:
               command: login
-              containerRegistry: 'ApplyforUs-ACR'
+              containerRegistry: 'DockerHub-ServiceConnection'
 
           - task: Docker@2
             displayName: 'Build and Push Auto-Apply Service'
@@ -642,7 +642,7 @@ stages:
             displayName: 'Login to Docker Hub'
             inputs:
               command: login
-              containerRegistry: 'ApplyforUs-ACR'
+              containerRegistry: 'DockerHub-ServiceConnection'
 
           - task: Docker@2
             displayName: 'Build and Push AI Service'
@@ -667,7 +667,7 @@ stages:
             displayName: 'Login to Docker Hub'
             inputs:
               command: login
-              containerRegistry: 'ApplyforUs-ACR'
+              containerRegistry: 'DockerHub-ServiceConnection'
 
           - task: Docker@2
             displayName: 'Build and Push Analytics Service'
