@@ -323,43 +323,72 @@ stages:
                       echo "Applying cluster issuer..."
                       kubectl apply -f infrastructure/kubernetes/production/cluster-issuer.yaml || true
 
-                      # Update deployments with new image tags
-                      echo "Updating deployments with build $(Build.BuildId)..."
-
-                      # Update web deployment
-                      kubectl set image deployment/web-app \
-                        web-app=$(ACR_LOGIN_SERVER)/applyai-web:$(Build.BuildId) \
-                        -n $(K8S_NAMESPACE) || echo "Web deployment update skipped"
-
-                      # Update auth service
-                      kubectl set image deployment/auth-service \
-                        auth-service=$(ACR_LOGIN_SERVER)/applyai-auth-service:$(Build.BuildId) \
-                        -n $(K8S_NAMESPACE) || echo "Auth service update skipped"
-
-                      # Update user service
-                      kubectl set image deployment/user-service \
-                        user-service=$(ACR_LOGIN_SERVER)/applyai-user-service:$(Build.BuildId) \
-                        -n $(K8S_NAMESPACE) || echo "User service update skipped"
-
-                      # Update job service
-                      kubectl set image deployment/job-service \
-                        job-service=$(ACR_LOGIN_SERVER)/applyai-job-service:$(Build.BuildId) \
-                        -n $(K8S_NAMESPACE) || echo "Job service update skipped"
-
-                      # Apply services and ingress
-                      echo "Applying services..."
+                      # Apply all service deployments
+                      echo "Applying all service deployments..."
                       kubectl apply -f infrastructure/kubernetes/production/web-deployment.yaml
                       kubectl apply -f infrastructure/kubernetes/production/auth-service-deployment.yaml
                       kubectl apply -f infrastructure/kubernetes/production/user-service-deployment.yaml
                       kubectl apply -f infrastructure/kubernetes/production/job-service-deployment.yaml
+                      kubectl apply -f infrastructure/kubernetes/production/resume-service-deployment.yaml
+                      kubectl apply -f infrastructure/kubernetes/production/notification-service-deployment.yaml
+                      kubectl apply -f infrastructure/kubernetes/production/analytics-service-deployment.yaml
+                      kubectl apply -f infrastructure/kubernetes/production/ai-service-deployment.yaml
+                      kubectl apply -f infrastructure/kubernetes/production/auto-apply-service-deployment.yaml
+                      kubectl apply -f infrastructure/kubernetes/production/orchestrator-service-deployment.yaml
+
+                      # Update deployments with new image tags
+                      echo "Updating deployments with build $(Build.BuildId)..."
+
+                      # Update all services with build ID
+                      kubectl set image deployment/web-app \
+                        web-app=$(ACR_LOGIN_SERVER)/applyai-web:$(Build.BuildId) \
+                        -n $(K8S_NAMESPACE) || echo "Web deployment update skipped"
+
+                      kubectl set image deployment/auth-service \
+                        auth-service=$(ACR_LOGIN_SERVER)/applyai-auth-service:$(Build.BuildId) \
+                        -n $(K8S_NAMESPACE) || echo "Auth service update skipped"
+
+                      kubectl set image deployment/user-service \
+                        user-service=$(ACR_LOGIN_SERVER)/applyai-user-service:$(Build.BuildId) \
+                        -n $(K8S_NAMESPACE) || echo "User service update skipped"
+
+                      kubectl set image deployment/job-service \
+                        job-service=$(ACR_LOGIN_SERVER)/applyai-job-service:$(Build.BuildId) \
+                        -n $(K8S_NAMESPACE) || echo "Job service update skipped"
+
+                      kubectl set image deployment/resume-service \
+                        resume-service=$(ACR_LOGIN_SERVER)/applyai-resume-service:$(Build.BuildId) \
+                        -n $(K8S_NAMESPACE) || echo "Resume service update skipped"
+
+                      kubectl set image deployment/notification-service \
+                        notification-service=$(ACR_LOGIN_SERVER)/applyai-notification-service:$(Build.BuildId) \
+                        -n $(K8S_NAMESPACE) || echo "Notification service update skipped"
+
+                      kubectl set image deployment/analytics-service \
+                        analytics-service=$(ACR_LOGIN_SERVER)/applyai-analytics-service:$(Build.BuildId) \
+                        -n $(K8S_NAMESPACE) || echo "Analytics service update skipped"
+
+                      kubectl set image deployment/ai-service \
+                        ai-service=$(ACR_LOGIN_SERVER)/applyai-ai-service:$(Build.BuildId) \
+                        -n $(K8S_NAMESPACE) || echo "AI service update skipped"
+
+                      kubectl set image deployment/auto-apply-service \
+                        auto-apply-service=$(ACR_LOGIN_SERVER)/applyai-auto-apply-service:$(Build.BuildId) \
+                        -n $(K8S_NAMESPACE) || echo "Auto-apply service update skipped"
+
+                      kubectl set image deployment/orchestrator-service \
+                        orchestrator-service=$(ACR_LOGIN_SERVER)/applyai-orchestrator-service:$(Build.BuildId) \
+                        -n $(K8S_NAMESPACE) || echo "Orchestrator service update skipped"
 
                       echo "Applying ingress..."
                       kubectl apply -f infrastructure/kubernetes/production/ingress.yaml
 
-                      # Wait for rollout
-                      echo "Waiting for deployments to roll out..."
+                      # Wait for critical deployments to roll out
+                      echo "Waiting for critical deployments to roll out..."
                       kubectl rollout status deployment/web-app -n $(K8S_NAMESPACE) --timeout=300s || true
                       kubectl rollout status deployment/auth-service -n $(K8S_NAMESPACE) --timeout=300s || true
+                      kubectl rollout status deployment/user-service -n $(K8S_NAMESPACE) --timeout=300s || true
+                      kubectl rollout status deployment/job-service -n $(K8S_NAMESPACE) --timeout=300s || true
 
                       echo "=== Deployment Status ==="
                       kubectl get pods -n $(K8S_NAMESPACE)
