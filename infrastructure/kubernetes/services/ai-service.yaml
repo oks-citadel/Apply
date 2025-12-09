@@ -45,7 +45,7 @@ spec:
           type: RuntimeDefault
       containers:
       - name: ai-service
-        image: jobpilotacr.azurecr.io/ai-service:${VERSION:-v1.0.0}
+        image: ${ACR_LOGIN_SERVER}/ai-service:${VERSION:-v1.0.0}
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 5000

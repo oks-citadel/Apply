@@ -57,9 +57,9 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) 
   };
 
   const handleViewApplication = (applicationId: string) => {
-    // Navigate to application details
+    // TODO: Navigate to application details screen when implemented
     // This would require adding the detail screen to the navigation
-    console.log('View application:', applicationId);
+    // navigation.navigate('ApplicationDetails', { applicationId });
   };
 
   if (statsLoading || applicationsLoading) {

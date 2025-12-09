@@ -87,8 +87,8 @@ export const ApplicationsScreen: React.FC<ApplicationsScreenProps> = ({
   };
 
   const handleApplicationPress = (application: Application) => {
-    // Navigate to application details
-    console.log('View application:', application.id);
+    // TODO: Navigate to application details screen when implemented
+    // navigation.navigate('ApplicationDetails', { applicationId: application.id });
   };
 
   const handleWithdraw = (application: Application) => {

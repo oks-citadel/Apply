@@ -35,7 +35,7 @@ pr:
 # ============================================================================
 variables:
   - name: TF_VERSION
-    value: '1.7.5'
+    value: '1.9.0'
   - name: TF_WORKING_DIR
     value: 'infrastructure/terraform'
   - name: ARM_USE_AZUREAD

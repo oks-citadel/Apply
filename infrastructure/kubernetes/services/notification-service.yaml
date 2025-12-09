@@ -45,7 +45,7 @@ spec:
           type: RuntimeDefault
       containers:
       - name: notification-service
-        image: jobpilotacr.azurecr.io/notification-service:${VERSION:-v1.0.0}
+        image: ${ACR_LOGIN_SERVER}/notification-service:${VERSION:-v1.0.0}
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 4005

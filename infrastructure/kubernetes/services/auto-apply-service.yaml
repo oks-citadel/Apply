@@ -45,7 +45,7 @@ spec:
           type: RuntimeDefault
       containers:
       - name: auto-apply-service
-        image: jobpilotacr.azurecr.io/auto-apply-service:${VERSION:-v1.0.0}
+        image: ${ACR_LOGIN_SERVER}/auto-apply-service:${VERSION:-v1.0.0}
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 4003

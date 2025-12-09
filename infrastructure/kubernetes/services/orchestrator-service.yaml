@@ -38,13 +38,13 @@ spec:
       serviceAccountName: jobpilot-service-account
       securityContext:
         runAsNonRoot: true
-        runAsUser: 1001
-        fsGroup: 1001
+        runAsUser: 1000
+        fsGroup: 1000
         seccompProfile:
           type: RuntimeDefault
       containers:
       - name: orchestrator-service
-        image: jobpilotacr.azurecr.io/orchestrator-service:${VERSION:-v1.0.0}
+        image: ${ACR_LOGIN_SERVER}/orchestrator-service:${VERSION:-v1.0.0}
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 3009
@@ -119,7 +119,7 @@ spec:
           allowPrivilegeEscalation: false
           readOnlyRootFilesystem: true
           runAsNonRoot: true
-          runAsUser: 1001
+          runAsUser: 1000
           capabilities:
             drop:
             - ALL

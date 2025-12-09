@@ -45,7 +45,7 @@ spec:
           type: RuntimeDefault
       containers:
       - name: job-service
-        image: jobpilotacr.azurecr.io/job-service:${VERSION:-v1.0.0}
+        image: ${ACR_LOGIN_SERVER}/job-service:${VERSION:-v1.0.0}
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 4002

@@ -65,8 +65,8 @@ export const JobListScreen: React.FC<JobListScreenProps> = ({ navigation }) => {
   };
 
   const handleJobPress = (job: Job) => {
-    // Navigate to job details
-    console.log('View job:', job.id);
+    // TODO: Navigate to job details screen when implemented
+    // navigation.navigate('JobDetails', { jobId: job.id });
   };
 
   const formatSalary = (salary?: { min: number; max: number; currency: string }) => {

@@ -198,6 +198,22 @@ stages:
           - script: pnpm run type-check
             displayName: 'Run TypeScript type check'
 
+      # Security Scanning
+      - job: SecurityScan
+        displayName: 'Security Scan'
+        dependsOn: Setup
+        pool:
+          name: 'Default'
+        steps:
+          - checkout: self
+            fetchDepth: 0
+
+          - template: .azure/pipelines/templates/security-scan.yml
+            parameters:
+              scanType: 'all'
+              failOnCriticalSeverity: true
+              failOnHighSeverity: false
+
   # ============================================================================
   # Stage 2: Unit Tests
   # ============================================================================
@@ -450,7 +466,7 @@ stages:
             displayName: 'Login to Docker Hub'
             inputs:
               command: login
-              containerRegistry: 'DockerHub-ServiceConnection'
+              containerRegistry: 'ApplyforUs-ACR'
 
           - task: Docker@2
             displayName: 'Build and Push Web App'
@@ -476,7 +492,7 @@ stages:
             displayName: 'Login to Docker Hub'
             inputs:
               command: login
-              containerRegistry: 'DockerHub-ServiceConnection'
+              containerRegistry: 'ApplyforUs-ACR'
 
           - task: Docker@2
             displayName: 'Build and Push Auth Service'
@@ -501,7 +517,7 @@ stages:
             displayName: 'Login to Docker Hub'
             inputs:
               command: login
-              containerRegistry: 'DockerHub-ServiceConnection'
+              containerRegistry: 'ApplyforUs-ACR'
 
           - task: Docker@2
             displayName: 'Build and Push User Service'
@@ -526,7 +542,7 @@ stages:
             displayName: 'Login to Docker Hub'
             inputs:
               command: login
-              containerRegistry: 'DockerHub-ServiceConnection'
+              containerRegistry: 'ApplyforUs-ACR'
 
           - task: Docker@2
             displayName: 'Build and Push Job Service'
@@ -551,7 +567,7 @@ stages:
             displayName: 'Login to Docker Hub'
             inputs:
               command: login
-              containerRegistry: 'DockerHub-ServiceConnection'
+              containerRegistry: 'ApplyforUs-ACR'
 
           - task: Docker@2
             displayName: 'Build and Push Resume Service'
@@ -576,7 +592,7 @@ stages:
             displayName: 'Login to Docker Hub'
             inputs:
               command: login
-              containerRegistry: 'DockerHub-ServiceConnection'
+              containerRegistry: 'ApplyforUs-ACR'
 
           - task: Docker@2
             displayName: 'Build and Push Notification Service'
@@ -601,7 +617,7 @@ stages:
             displayName: 'Login to Docker Hub'
             inputs:
               command: login
-              containerRegistry: 'DockerHub-ServiceConnection'
+              containerRegistry: 'ApplyforUs-ACR'
 
           - task: Docker@2
             displayName: 'Build and Push Auto-Apply Service'
@@ -626,7 +642,7 @@ stages:
             displayName: 'Login to Docker Hub'
             inputs:
               command: login
-              containerRegistry: 'DockerHub-ServiceConnection'
+              containerRegistry: 'ApplyforUs-ACR'
 
           - task: Docker@2
             displayName: 'Build and Push AI Service'
@@ -651,7 +667,7 @@ stages:
             displayName: 'Login to Docker Hub'
             inputs:
               command: login
-              containerRegistry: 'DockerHub-ServiceConnection'
+              containerRegistry: 'ApplyforUs-ACR'
 
           - task: Docker@2
             displayName: 'Build and Push Analytics Service'

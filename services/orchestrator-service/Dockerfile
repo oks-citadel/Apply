@@ -11,12 +11,21 @@ WORKDIR /app
 # Install pnpm
 RUN corepack enable && corepack prepare pnpm@8.15.0 --activate
 
-# Copy package files
-COPY services/orchestrator-service/package.json ./
-RUN pnpm install
+# Copy workspace configuration files from root
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+
+# Copy packages directory for shared dependencies
+COPY packages ./packages
+
+# Copy service package.json
+COPY services/orchestrator-service/package.json ./services/orchestrator-service/
+
+# Install dependencies with frozen lockfile
+RUN pnpm install --frozen-lockfile
 
 # Copy source and build
-COPY services/orchestrator-service/ ./
+COPY services/orchestrator-service/ ./services/orchestrator-service/
+WORKDIR /app/services/orchestrator-service
 RUN pnpm run build
 
 # Production stage
@@ -32,9 +41,9 @@ RUN addgroup -g 1001 -S nodejs && \
 WORKDIR /app
 
 # Copy built application
-COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
-COPY --from=builder --chown=nodejs:nodejs /app/package.json ./
-COPY --from=builder --chown=nodejs:nodejs /app/node_modules ./node_modules
+COPY --from=builder --chown=nodejs:nodejs /app/services/orchestrator-service/dist ./dist
+COPY --from=builder --chown=nodejs:nodejs /app/services/orchestrator-service/package.json ./
+COPY --from=builder --chown=nodejs:nodejs /app/services/orchestrator-service/node_modules ./node_modules
 
 # Switch to non-root user
 USER nodejs

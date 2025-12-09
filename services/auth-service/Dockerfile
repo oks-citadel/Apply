@@ -6,14 +6,21 @@ WORKDIR /app
 # Install dependencies
 RUN corepack enable && corepack prepare pnpm@8.15.0 --activate
 
-# Copy package files
-COPY services/auth-service/package.json ./
+# Copy workspace configuration files from root
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 
-# Install dependencies
-RUN pnpm install
+# Copy packages directory for shared dependencies
+COPY packages ./packages
+
+# Copy service package.json
+COPY services/auth-service/package.json ./services/auth-service/
+
+# Install dependencies with frozen lockfile
+RUN pnpm install --frozen-lockfile
 
 # Copy source and build
-COPY services/auth-service/ ./
+COPY services/auth-service/ ./services/auth-service/
+WORKDIR /app/services/auth-service
 RUN pnpm run build
 
 # Production stage
@@ -29,9 +36,9 @@ RUN addgroup -g 1001 -S nodejs && \
 WORKDIR /app
 
 # Copy built files
-COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
-COPY --from=builder --chown=nodejs:nodejs /app/package.json ./
-COPY --from=builder --chown=nodejs:nodejs /app/node_modules ./node_modules
+COPY --from=builder --chown=nodejs:nodejs /app/services/auth-service/dist ./dist
+COPY --from=builder --chown=nodejs:nodejs /app/services/auth-service/package.json ./
+COPY --from=builder --chown=nodejs:nodejs /app/services/auth-service/node_modules ./node_modules
 
 USER nodejs
 

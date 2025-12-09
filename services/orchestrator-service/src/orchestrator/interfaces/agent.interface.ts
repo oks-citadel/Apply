@@ -26,6 +26,9 @@ export enum AgentType {
   EMOTIONAL_INTELLIGENCE = 'emotional_intelligence',
   SKILL_GAP = 'skill_gap',
   MULTI_LANGUAGE = 'multi_language',
+  AUTO_APPLY = 'auto_apply',
+  RESUME_PARSER = 'resume_parser',
+  UNKNOWN = 'unknown',
 }
 
 export enum AgentStatus {

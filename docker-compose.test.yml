@@ -67,8 +67,8 @@ services:
   # Auth Service (Test)
   auth-service-test:
     build:
-      context: ./services/auth-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: services/auth-service/Dockerfile
     container_name: jobpilot-auth-service-test
     restart: unless-stopped
     ports:
@@ -102,8 +102,8 @@ services:
   # User Service (Test)
   user-service-test:
     build:
-      context: ./services/user-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: services/user-service/Dockerfile
     container_name: jobpilot-user-service-test
     restart: unless-stopped
     ports:
@@ -133,8 +133,8 @@ services:
   # Job Service (Test)
   job-service-test:
     build:
-      context: ./services/job-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: services/job-service/Dockerfile
     container_name: jobpilot-job-service-test
     restart: unless-stopped
     ports:
@@ -168,8 +168,8 @@ services:
   # Resume Service (Test)
   resume-service-test:
     build:
-      context: ./services/resume-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: services/resume-service/Dockerfile
     container_name: jobpilot-resume-service-test
     restart: unless-stopped
     ports:
@@ -196,8 +196,8 @@ services:
   # AI Service (Test)
   ai-service-test:
     build:
-      context: ./services/ai-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: services/ai-service/Dockerfile
     container_name: jobpilot-ai-service-test
     restart: unless-stopped
     ports:
@@ -222,8 +222,8 @@ services:
   # Notification Service (Test)
   notification-service-test:
     build:
-      context: ./services/notification-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: services/notification-service/Dockerfile
     container_name: jobpilot-notification-service-test
     restart: unless-stopped
     ports:
@@ -256,8 +256,8 @@ services:
   # Auto-Apply Service (Test)
   auto-apply-service-test:
     build:
-      context: ./services/auto-apply-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: services/auto-apply-service/Dockerfile
     container_name: jobpilot-auto-apply-service-test
     restart: unless-stopped
     ports:
