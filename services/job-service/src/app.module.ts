@@ -18,7 +18,7 @@ import { CompaniesModule } from './modules/companies/companies.module';
 import { AlertsModule } from './modules/alerts/alerts.module';
 import { SearchModule } from './modules/search/search.module';
 import { ReportsModule } from './modules/reports/reports.module';
-// import { AggregatorModule } from './modules/aggregator/aggregator.module';
+import { AggregatorModule } from './modules/aggregator/aggregator.module';
 import { HealthModule } from './health/health.module';
 import { SeederModule } from './seeds/seeder.module';
 
@@ -118,7 +118,7 @@ import { SeederModule } from './seeds/seeder.module';
     SearchModule,
     ReportsModule,
     SeederModule,
-    // AggregatorModule,
+    AggregatorModule,
   ],
   controllers: [],
   providers: [

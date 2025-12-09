@@ -5,6 +5,8 @@ import { LeverAdapter } from './lever.adapter';
 import { IcimsAdapter } from './icims.adapter';
 import { TaleoAdapter } from './taleo.adapter';
 import { SmartRecruitersAdapter } from './smartrecruiters.adapter';
+import { LinkedInAdapter } from './linkedin.adapter';
+import { IndeedAdapter } from './indeed.adapter';
 import { BrowserModule } from '../browser/browser.module';
 import { FormMappingModule } from '../form-mapping/form-mapping.module';
 
@@ -17,6 +19,8 @@ import { FormMappingModule } from '../form-mapping/form-mapping.module';
     IcimsAdapter,
     TaleoAdapter,
     SmartRecruitersAdapter,
+    LinkedInAdapter,
+    IndeedAdapter,
   ],
   exports: [
     WorkdayAdapter,
@@ -25,6 +29,8 @@ import { FormMappingModule } from '../form-mapping/form-mapping.module';
     IcimsAdapter,
     TaleoAdapter,
     SmartRecruitersAdapter,
+    LinkedInAdapter,
+    IndeedAdapter,
   ],
 })
 export class AdaptersModule {}

@@ -12,6 +12,8 @@ import { AdaptersModule } from './modules/adapters/adapters.module';
 import { FormMappingModule } from './modules/form-mapping/form-mapping.module';
 import { QueueModule } from './modules/queue/queue.module';
 import { AnswerLibraryModule } from './modules/answer-library/answer-library.module';
+import { CaptchaModule } from './modules/captcha/captcha.module';
+import { RateLimiterModule } from './modules/rate-limiter/rate-limiter.module';
 import { HealthModule } from './health/health.module';
 import { HealthController } from './health.controller';
 
@@ -89,6 +91,8 @@ import { HealthController } from './health.controller';
     FormMappingModule,
     QueueModule,
     AnswerLibraryModule,
+    CaptchaModule,
+    RateLimiterModule,
     HealthModule,
   ],
   controllers: [HealthController],
