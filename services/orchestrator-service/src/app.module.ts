@@ -3,6 +3,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { BullModule } from '@nestjs/bull';
 import { HttpModule } from '@nestjs/axios';
 import { TerminusModule } from '@nestjs/terminus';
+import { APP_INTERCEPTOR } from '@nestjs/core';
+import { LoggingModule, LoggingInterceptor } from '@jobpilot/logging';
 import { OrchestratorModule } from './orchestrator/orchestrator.module';
 import { ComplianceModule } from './agents/compliance/compliance.module';
 import { HealthModule } from './health/health.module';
@@ -13,6 +15,20 @@ import { HealthModule } from './health/health.module';
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: ['.env.local', '.env'],
+    }),
+
+    // Logging module
+    LoggingModule.forRootAsync({
+      isGlobal: true,
+      useFactory: (configService: ConfigService) => ({
+        serviceName: 'orchestrator-service',
+        environment: configService.get<string>('NODE_ENV', 'development'),
+        version: configService.get<string>('SERVICE_VERSION', '1.0.0'),
+        appInsightsKey: configService.get<string>('APPLICATIONINSIGHTS_INSTRUMENTATION_KEY'),
+        enableConsole: true,
+        logLevel: configService.get<string>('LOG_LEVEL', 'info') as any,
+      }),
+      inject: [ConfigService],
     }),
 
     // Bull Queue for task management
@@ -54,6 +70,12 @@ import { HealthModule } from './health/health.module';
     OrchestratorModule,
     ComplianceModule,
     HealthModule,
+  ],
+  providers: [
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: LoggingInterceptor,
+    },
   ],
 })
 export class AppModule {}
