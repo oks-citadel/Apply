@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: applyforus-config
+  namespace: applyforus
+data:
+  NODE_ENV: "production"
+  API_BASE_URL: "https://api.applyforus.com"
+  WEB_BASE_URL: "https://applyforus.com"
+  LOG_LEVEL: "info"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: applyforus-secrets
+  namespace: applyforus
+type: Opaque
+stringData:
+  DATABASE_URL: "postgresql://applyforus:your-password@postgres.applyforus.svc.cluster.local:5432/applyforus"
+  REDIS_URL: "redis://redis.applyforus.svc.cluster.local:6379"
+  JWT_SECRET: "your-jwt-secret-change-in-production"
+  SESSION_SECRET: "your-session-secret-change-in-production"
