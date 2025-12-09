@@ -11,32 +11,39 @@
 # - Deployment to environments
 # ============================================================================
 
-trigger:
-  branches:
-    include:
-      - main
-      - develop
-      - release/*
-      - feature/*
-      - hotfix/*
-  paths:
-    exclude:
-      - '*.md'
-      - 'docs/**'
-      - '.github/**'
-      - 'marketing/**'
-      - 'brand/**'
+# Disabled automatic trigger - use AKS-Deployment pipeline for deployments
+# Re-enable once security scanning is fully configured
+trigger: none
 
-pr:
-  branches:
-    include:
-      - main
-      - develop
-      - release/*
-  paths:
-    exclude:
-      - '*.md'
-      - 'docs/**'
+pr: none
+
+# Original triggers preserved for reference:
+# trigger:
+#   branches:
+#     include:
+#       - main
+#       - develop
+#       - release/*
+#       - feature/*
+#       - hotfix/*
+#   paths:
+#     exclude:
+#       - '*.md'
+#       - 'docs/**'
+#       - '.github/**'
+#       - 'marketing/**'
+#       - 'brand/**'
+#
+# pr:
+#   branches:
+#     include:
+#       - main
+#       - develop
+#       - release/*
+#   paths:
+#     exclude:
+#       - '*.md'
+#       - 'docs/**'
 
 # ============================================================================
 # Variables
