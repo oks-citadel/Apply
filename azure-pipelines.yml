@@ -388,14 +388,15 @@ stages:
               testRunTitle: 'Integration Tests'
 
   # ============================================================================
-  # Stage 4: E2E Tests
+  # Stage 4: E2E Tests (Playwright UI + API E2E)
   # ============================================================================
   - stage: E2ETests
     displayName: 'Run E2E Tests'
     dependsOn: IntegrationTests
     jobs:
-      - job: E2ETests
-        displayName: 'E2E Tests'
+      # Playwright UI E2E Tests
+      - job: PlaywrightE2E
+        displayName: 'Playwright UI E2E Tests'
         pool:
           vmImage: 'ubuntu-latest'
         steps:
@@ -425,19 +426,19 @@ stages:
             displayName: 'Install Playwright browsers'
 
           - script: pnpm run test:e2e
-            displayName: 'Run E2E tests'
+            displayName: 'Run Playwright E2E tests'
             continueOnError: true
             env:
               CI: true
 
           - task: PublishTestResults@2
-            displayName: 'Publish E2E test results'
+            displayName: 'Publish Playwright test results'
             condition: succeededOrFailed()
             inputs:
               testResultsFormat: 'JUnit'
               testResultsFiles: '**/e2e-junit.xml'
               mergeTestResults: true
-              testRunTitle: 'E2E Tests'
+              testRunTitle: 'Playwright E2E Tests'
 
           - task: PublishPipelineArtifact@1
             displayName: 'Publish Playwright report'
@@ -446,6 +447,71 @@ stages:
               targetPath: apps/web/playwright-report
               artifact: playwright-report
               publishLocation: pipeline
+
+      # API E2E Tests (Jest)
+      - job: ApiE2ETests
+        displayName: 'API E2E Tests'
+        pool:
+          vmImage: 'ubuntu-latest'
+        services:
+          postgres:
+            image: postgres:15-alpine
+            env:
+              POSTGRES_USER: postgres
+              POSTGRES_PASSWORD: postgres
+              POSTGRES_DB: jobpilot_test
+            ports:
+              - "5432:5432"
+          redis:
+            image: redis:7-alpine
+            ports:
+              - "6379:6379"
+        steps:
+          - checkout: self
+
+          - task: NodeTool@0
+            inputs:
+              versionSpec: $(NODE_VERSION)
+
+          - script: npm install -g pnpm@$(PNPM_VERSION)
+            displayName: 'Install pnpm'
+
+          - task: Cache@2
+            inputs:
+              key: 'pnpm | "$(Agent.OS)" | pnpm-lock.yaml'
+              restoreKeys: pnpm | "$(Agent.OS)"
+              path: $(Pipeline.Workspace)/.pnpm-store
+
+          - script: |
+              pnpm config set store-dir $(Pipeline.Workspace)/.pnpm-store
+              pnpm install --frozen-lockfile
+            displayName: 'Install dependencies'
+
+          - script: pnpm run test:e2e:api:health
+            displayName: 'Run API Health E2E tests'
+            continueOnError: true
+            env:
+              AUTH_SERVICE_URL: http://localhost:3001
+              USER_SERVICE_URL: http://localhost:8002
+              JOB_SERVICE_URL: http://localhost:8004
+              RESUME_SERVICE_URL: http://localhost:8003
+              AUTO_APPLY_SERVICE_URL: http://localhost:8005
+              ANALYTICS_SERVICE_URL: http://localhost:8006
+              NOTIFICATION_SERVICE_URL: http://localhost:8007
+              AI_SERVICE_URL: http://localhost:8000
+              DATABASE_URL: postgresql://postgres:postgres@localhost:5432/jobpilot_test
+              REDIS_URL: redis://localhost:6379
+              NODE_ENV: test
+              CI: true
+
+          - task: PublishTestResults@2
+            displayName: 'Publish API E2E test results'
+            condition: succeededOrFailed()
+            inputs:
+              testResultsFormat: 'JUnit'
+              testResultsFiles: '**/api-e2e-junit.xml'
+              mergeTestResults: true
+              testRunTitle: 'API E2E Tests'
 
   # ============================================================================
   # Stage 5: Build Docker Images

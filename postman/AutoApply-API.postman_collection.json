@@ -1,0 +1,1415 @@
+{
+  "info": {
+    "_postman_id": "auto-apply-platform-api",
+    "name": "ApplyforUs Platform API",
+    "description": "Complete API collection for the ApplyforUs job application automation platform.\n\n## Getting Started\n1. Import the environment file for your target environment\n2. Run the \"Auth > Login\" request to get an access token\n3. The token will be automatically saved to the environment\n4. All subsequent requests will use the saved token\n\n## Authentication\nMost endpoints require JWT Bearer authentication. The collection automatically handles token management.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "{{authServiceUrl}}",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Check if token is expired and refresh if needed",
+          "const tokenExpiry = pm.environment.get('tokenExpiry');",
+          "if (tokenExpiry && Date.now() > parseInt(tokenExpiry)) {",
+          "    console.log('Token expired, please login again');",
+          "}"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "description": "Authentication and authorization endpoints",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"{{testPassword}}\",\n  \"firstName\": \"Test\",\n  \"lastName\": \"User\"\n}"
+            },
+            "url": {
+              "raw": "{{authServiceUrl}}/auth/register",
+              "host": ["{{authServiceUrl}}"],
+              "path": ["auth", "register"]
+            },
+            "description": "Register a new user account"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Registration successful', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.environment.set('accessToken', response.accessToken);",
+                  "    pm.environment.set('refreshToken', response.refreshToken);",
+                  "    pm.environment.set('userId', response.user.id);",
+                  "    pm.environment.set('tokenExpiry', Date.now() + (response.expiresIn * 1000));",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"{{testPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{authServiceUrl}}/auth/login",
+              "host": ["{{authServiceUrl}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Login to get access token"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Login successful', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.environment.set('accessToken', response.accessToken);",
+                  "    pm.environment.set('refreshToken', response.refreshToken);",
+                  "    pm.environment.set('userId', response.user.id);",
+                  "    pm.environment.set('tokenExpiry', Date.now() + (response.expiresIn * 1000));",
+                  "    console.log('Token saved to environment');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{authServiceUrl}}/auth/logout",
+              "host": ["{{authServiceUrl}}"],
+              "path": ["auth", "logout"]
+            },
+            "description": "Logout and invalidate tokens"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Logout successful', function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});",
+                  "",
+                  "pm.environment.unset('accessToken');",
+                  "pm.environment.unset('refreshToken');",
+                  "pm.environment.unset('tokenExpiry');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{authServiceUrl}}/auth/refresh",
+              "host": ["{{authServiceUrl}}"],
+              "path": ["auth", "refresh"]
+            },
+            "description": "Refresh access token using refresh token"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Token refreshed', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.environment.set('accessToken', response.accessToken);",
+                  "    pm.environment.set('tokenExpiry', Date.now() + (response.expiresIn * 1000));",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Current User",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{authServiceUrl}}/auth/me",
+              "host": ["{{authServiceUrl}}"],
+              "path": ["auth", "me"]
+            },
+            "description": "Get current authenticated user info"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Get user successful', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has user data', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('id');",
+                  "    pm.expect(response).to.have.property('email');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{testEmail}}\"\n}"
+            },
+            "url": {
+              "raw": "{{authServiceUrl}}/auth/forgot-password",
+              "host": ["{{authServiceUrl}}"],
+              "path": ["auth", "forgot-password"]
+            },
+            "description": "Request password reset email"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Profile",
+      "description": "User profile management",
+      "item": [
+        {
+          "name": "Get Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{userServiceUrl}}/profile",
+              "host": ["{{userServiceUrl}}"],
+              "path": ["profile"]
+            },
+            "description": "Get current user's profile"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Get profile successful', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"headline\": \"Software Engineer | Full Stack Developer\",\n  \"summary\": \"Experienced software engineer with expertise in cloud technologies.\",\n  \"location\": \"San Francisco, CA\",\n  \"linkedinUrl\": \"https://linkedin.com/in/example\"\n}"
+            },
+            "url": {
+              "raw": "{{userServiceUrl}}/profile",
+              "host": ["{{userServiceUrl}}"],
+              "path": ["profile"]
+            },
+            "description": "Update user profile"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Profile Completion",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{userServiceUrl}}/profile/completion",
+              "host": ["{{userServiceUrl}}"],
+              "path": ["profile", "completion"]
+            },
+            "description": "Get profile completion percentage"
+          },
+          "response": []
+        },
+        {
+          "name": "Upload Avatar",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": ""
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{userServiceUrl}}/profile/avatar",
+              "host": ["{{userServiceUrl}}"],
+              "path": ["profile", "avatar"]
+            },
+            "description": "Upload profile avatar image"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Jobs",
+      "description": "Job listings and search",
+      "item": [
+        {
+          "name": "List Jobs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{jobServiceUrl}}/jobs?page=1&limit=20",
+              "host": ["{{jobServiceUrl}}"],
+              "path": ["jobs"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            },
+            "description": "List all jobs with pagination"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('List jobs successful', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has data array', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('data');",
+                  "    pm.expect(response.data).to.be.an('array');",
+                  "    if (response.data.length > 0) {",
+                  "        pm.environment.set('testJobId', response.data[0].id);",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Search Jobs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{jobServiceUrl}}/jobs/search?q=software engineer&location=remote&type=full-time&page=1&limit=20",
+              "host": ["{{jobServiceUrl}}"],
+              "path": ["jobs", "search"],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "software engineer"
+                },
+                {
+                  "key": "location",
+                  "value": "remote"
+                },
+                {
+                  "key": "type",
+                  "value": "full-time"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            },
+            "description": "Search jobs with filters"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Job by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{jobServiceUrl}}/jobs/{{testJobId}}",
+              "host": ["{{jobServiceUrl}}"],
+              "path": ["jobs", "{{testJobId}}"]
+            },
+            "description": "Get job details by ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Saved Jobs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{jobServiceUrl}}/jobs/saved",
+              "host": ["{{jobServiceUrl}}"],
+              "path": ["jobs", "saved"]
+            },
+            "description": "Get user's saved jobs"
+          },
+          "response": []
+        },
+        {
+          "name": "Save Job",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{jobServiceUrl}}/jobs/saved/{{testJobId}}",
+              "host": ["{{jobServiceUrl}}"],
+              "path": ["jobs", "saved", "{{testJobId}}"]
+            },
+            "description": "Save a job to favorites"
+          },
+          "response": []
+        },
+        {
+          "name": "Unsave Job",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{jobServiceUrl}}/jobs/saved/{{testJobId}}",
+              "host": ["{{jobServiceUrl}}"],
+              "path": ["jobs", "saved", "{{testJobId}}"]
+            },
+            "description": "Remove job from saved list"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Job Alerts",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{jobServiceUrl}}/jobs/alerts",
+              "host": ["{{jobServiceUrl}}"],
+              "path": ["jobs", "alerts"]
+            },
+            "description": "Get user's job alerts"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Job Alert",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Software Engineer Alert\",\n  \"keywords\": [\"software engineer\", \"developer\"],\n  \"location\": \"remote\",\n  \"frequency\": \"daily\"\n}"
+            },
+            "url": {
+              "raw": "{{jobServiceUrl}}/jobs/alerts",
+              "host": ["{{jobServiceUrl}}"],
+              "path": ["jobs", "alerts"]
+            },
+            "description": "Create a new job alert"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Resumes",
+      "description": "Resume management",
+      "item": [
+        {
+          "name": "List Resumes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{resumeServiceUrl}}/resumes",
+              "host": ["{{resumeServiceUrl}}"],
+              "path": ["resumes"]
+            },
+            "description": "List user's resumes"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('List resumes successful', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const response = pm.response.json();",
+                  "if (Array.isArray(response) && response.length > 0) {",
+                  "    pm.environment.set('testResumeId', response[0].id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create Resume",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Main Resume\",\n  \"template\": \"professional\",\n  \"sections\": {\n    \"personalInfo\": {\n      \"firstName\": \"John\",\n      \"lastName\": \"Doe\",\n      \"email\": \"john.doe@example.com\",\n      \"phone\": \"+1-555-123-4567\"\n    },\n    \"experience\": [],\n    \"education\": [],\n    \"skills\": [\"JavaScript\", \"TypeScript\", \"React\", \"Node.js\"]\n  }\n}"
+            },
+            "url": {
+              "raw": "{{resumeServiceUrl}}/resumes",
+              "host": ["{{resumeServiceUrl}}"],
+              "path": ["resumes"]
+            },
+            "description": "Create a new resume"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Resume created', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.environment.set('testResumeId', response.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Resume by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{resumeServiceUrl}}/resumes/{{testResumeId}}",
+              "host": ["{{resumeServiceUrl}}"],
+              "path": ["resumes", "{{testResumeId}}"]
+            },
+            "description": "Get resume by ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Resume",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Resume\",\n  \"sections\": {\n    \"skills\": [\"JavaScript\", \"TypeScript\", \"React\", \"Node.js\", \"Python\"]\n  }\n}"
+            },
+            "url": {
+              "raw": "{{resumeServiceUrl}}/resumes/{{testResumeId}}",
+              "host": ["{{resumeServiceUrl}}"],
+              "path": ["resumes", "{{testResumeId}}"]
+            },
+            "description": "Update resume"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Resume",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{resumeServiceUrl}}/resumes/{{testResumeId}}",
+              "host": ["{{resumeServiceUrl}}"],
+              "path": ["resumes", "{{testResumeId}}"]
+            },
+            "description": "Delete resume"
+          },
+          "response": []
+        },
+        {
+          "name": "Upload Resume",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": ""
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{resumeServiceUrl}}/resumes/upload",
+              "host": ["{{resumeServiceUrl}}"],
+              "path": ["resumes", "upload"]
+            },
+            "description": "Upload resume file (PDF, DOCX)"
+          },
+          "response": []
+        },
+        {
+          "name": "Export Resume as PDF",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{resumeServiceUrl}}/resumes/{{testResumeId}}/export/pdf",
+              "host": ["{{resumeServiceUrl}}"],
+              "path": ["resumes", "{{testResumeId}}", "export", "pdf"]
+            },
+            "description": "Export resume as PDF"
+          },
+          "response": []
+        },
+        {
+          "name": "AI Enhance Resume",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{resumeServiceUrl}}/resumes/{{testResumeId}}/ai/enhance",
+              "host": ["{{resumeServiceUrl}}"],
+              "path": ["resumes", "{{testResumeId}}", "ai", "enhance"]
+            },
+            "description": "Enhance resume using AI"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Resume Templates",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{resumeServiceUrl}}/resumes/templates",
+              "host": ["{{resumeServiceUrl}}"],
+              "path": ["resumes", "templates"]
+            },
+            "description": "Get available resume templates"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Applications",
+      "description": "Job application management",
+      "item": [
+        {
+          "name": "List Applications",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{autoApplyServiceUrl}}/applications?page=1&limit=20",
+              "host": ["{{autoApplyServiceUrl}}"],
+              "path": ["applications"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            },
+            "description": "List user's job applications"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('List applications successful', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const response = pm.response.json();",
+                  "if (response.data && response.data.length > 0) {",
+                  "    pm.environment.set('testApplicationId', response.data[0].id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Submit Application",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jobId\": \"{{testJobId}}\",\n  \"resumeId\": \"{{testResumeId}}\",\n  \"coverLetterId\": null,\n  \"answers\": {}\n}"
+            },
+            "url": {
+              "raw": "{{autoApplyServiceUrl}}/applications",
+              "host": ["{{autoApplyServiceUrl}}"],
+              "path": ["applications"]
+            },
+            "description": "Submit a job application"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Application",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{autoApplyServiceUrl}}/applications/{{testApplicationId}}",
+              "host": ["{{autoApplyServiceUrl}}"],
+              "path": ["applications", "{{testApplicationId}}"]
+            },
+            "description": "Get application details"
+          },
+          "response": []
+        },
+        {
+          "name": "Withdraw Application",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{autoApplyServiceUrl}}/applications/{{testApplicationId}}",
+              "host": ["{{autoApplyServiceUrl}}"],
+              "path": ["applications", "{{testApplicationId}}"]
+            },
+            "description": "Withdraw application"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Application Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{autoApplyServiceUrl}}/applications/stats",
+              "host": ["{{autoApplyServiceUrl}}"],
+              "path": ["applications", "stats"]
+            },
+            "description": "Get application statistics"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Auto-Apply",
+      "description": "Automated job application features",
+      "item": [
+        {
+          "name": "Get Auto-Apply Settings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{autoApplyServiceUrl}}/auto-apply/settings",
+              "host": ["{{autoApplyServiceUrl}}"],
+              "path": ["auto-apply", "settings"]
+            },
+            "description": "Get auto-apply settings"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Auto-Apply Settings",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"enabled\": true,\n  \"maxApplicationsPerDay\": 10,\n  \"targetJobTitles\": [\"Software Engineer\", \"Full Stack Developer\"],\n  \"excludedCompanies\": [],\n  \"minSalary\": 80000,\n  \"preferredLocations\": [\"Remote\", \"San Francisco, CA\"]\n}"
+            },
+            "url": {
+              "raw": "{{autoApplyServiceUrl}}/auto-apply/settings",
+              "host": ["{{autoApplyServiceUrl}}"],
+              "path": ["auto-apply", "settings"]
+            },
+            "description": "Update auto-apply settings"
+          },
+          "response": []
+        },
+        {
+          "name": "Start Auto-Apply",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{autoApplyServiceUrl}}/auto-apply/start",
+              "host": ["{{autoApplyServiceUrl}}"],
+              "path": ["auto-apply", "start"]
+            },
+            "description": "Start auto-apply process"
+          },
+          "response": []
+        },
+        {
+          "name": "Stop Auto-Apply",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{autoApplyServiceUrl}}/auto-apply/stop",
+              "host": ["{{autoApplyServiceUrl}}"],
+              "path": ["auto-apply", "stop"]
+            },
+            "description": "Stop auto-apply process"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Auto-Apply Queue",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{autoApplyServiceUrl}}/auto-apply/queue",
+              "host": ["{{autoApplyServiceUrl}}"],
+              "path": ["auto-apply", "queue"]
+            },
+            "description": "Get queued jobs for auto-apply"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Auto-Apply History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{autoApplyServiceUrl}}/auto-apply/history",
+              "host": ["{{autoApplyServiceUrl}}"],
+              "path": ["auto-apply", "history"]
+            },
+            "description": "Get auto-apply history"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Notifications",
+      "description": "User notification management",
+      "item": [
+        {
+          "name": "List Notifications",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{notificationServiceUrl}}/notifications?page=1&limit=20",
+              "host": ["{{notificationServiceUrl}}"],
+              "path": ["notifications"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            },
+            "description": "List user's notifications"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Unread Count",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{notificationServiceUrl}}/notifications/unread/count",
+              "host": ["{{notificationServiceUrl}}"],
+              "path": ["notifications", "unread", "count"]
+            },
+            "description": "Get unread notification count"
+          },
+          "response": []
+        },
+        {
+          "name": "Mark as Read",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{notificationServiceUrl}}/notifications/{{notificationId}}/read",
+              "host": ["{{notificationServiceUrl}}"],
+              "path": ["notifications", "{{notificationId}}", "read"]
+            },
+            "description": "Mark notification as read"
+          },
+          "response": []
+        },
+        {
+          "name": "Mark All as Read",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{notificationServiceUrl}}/notifications/read-all",
+              "host": ["{{notificationServiceUrl}}"],
+              "path": ["notifications", "read-all"]
+            },
+            "description": "Mark all notifications as read"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Notification Preferences",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{notificationServiceUrl}}/notifications/preferences",
+              "host": ["{{notificationServiceUrl}}"],
+              "path": ["notifications", "preferences"]
+            },
+            "description": "Get notification preferences"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Notification Preferences",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"emailNotifications\": true,\n  \"pushNotifications\": true,\n  \"jobAlerts\": true,\n  \"applicationUpdates\": true\n}"
+            },
+            "url": {
+              "raw": "{{notificationServiceUrl}}/notifications/preferences",
+              "host": ["{{notificationServiceUrl}}"],
+              "path": ["notifications", "preferences"]
+            },
+            "description": "Update notification preferences"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Analytics",
+      "description": "Analytics and reporting",
+      "item": [
+        {
+          "name": "Get Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{analyticsServiceUrl}}/analytics/dashboard",
+              "host": ["{{analyticsServiceUrl}}"],
+              "path": ["analytics", "dashboard"]
+            },
+            "description": "Get dashboard analytics"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Application Analytics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{analyticsServiceUrl}}/analytics/applications?startDate=2024-01-01&endDate=2024-12-31",
+              "host": ["{{analyticsServiceUrl}}"],
+              "path": ["analytics", "applications"],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2024-01-01"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2024-12-31"
+                }
+              ]
+            },
+            "description": "Get application analytics"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Application Trends",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{analyticsServiceUrl}}/analytics/applications/trends",
+              "host": ["{{analyticsServiceUrl}}"],
+              "path": ["analytics", "applications", "trends"]
+            },
+            "description": "Get application trends"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Market Insights",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{analyticsServiceUrl}}/analytics/jobs/market",
+              "host": ["{{analyticsServiceUrl}}"],
+              "path": ["analytics", "jobs", "market"]
+            },
+            "description": "Get job market insights"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "AI",
+      "description": "AI-powered features",
+      "item": [
+        {
+          "name": "Analyze Resume",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resumeId\": \"{{testResumeId}}\",\n  \"targetJob\": \"Software Engineer\"\n}"
+            },
+            "url": {
+              "raw": "{{aiServiceUrl}}/api/v1/resume/analyze",
+              "host": ["{{aiServiceUrl}}"],
+              "path": ["api", "v1", "resume", "analyze"]
+            },
+            "description": "AI analyze resume"
+          },
+          "response": []
+        },
+        {
+          "name": "Match Jobs",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"limit\": 20,\n  \"useResumeSkills\": true\n}"
+            },
+            "url": {
+              "raw": "{{aiServiceUrl}}/api/v1/jobs/match",
+              "host": ["{{aiServiceUrl}}"],
+              "path": ["api", "v1", "jobs", "match"]
+            },
+            "description": "AI match jobs to profile"
+          },
+          "response": []
+        },
+        {
+          "name": "Generate Cover Letter",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jobId\": \"{{testJobId}}\",\n  \"resumeId\": \"{{testResumeId}}\",\n  \"tone\": \"professional\"\n}"
+            },
+            "url": {
+              "raw": "{{aiServiceUrl}}/api/v1/cover-letter/generate",
+              "host": ["{{aiServiceUrl}}"],
+              "path": ["api", "v1", "cover-letter", "generate"]
+            },
+            "description": "AI generate cover letter"
+          },
+          "response": []
+        },
+        {
+          "name": "Generate Interview Questions",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jobId\": \"{{testJobId}}\",\n  \"type\": \"behavioral\"\n}"
+            },
+            "url": {
+              "raw": "{{aiServiceUrl}}/api/v1/interview/questions",
+              "host": ["{{aiServiceUrl}}"],
+              "path": ["api", "v1", "interview", "questions"]
+            },
+            "description": "Generate interview questions"
+          },
+          "response": []
+        },
+        {
+          "name": "Extract Skills",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"5 years of experience with JavaScript, TypeScript, React, and Node.js. Proficient in AWS and Docker.\"\n}"
+            },
+            "url": {
+              "raw": "{{aiServiceUrl}}/api/v1/skills/extract",
+              "host": ["{{aiServiceUrl}}"],
+              "path": ["api", "v1", "skills", "extract"]
+            },
+            "description": "Extract skills from text"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Health",
+      "description": "Service health checks",
+      "item": [
+        {
+          "name": "Auth Service Health",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{authServiceUrl}}/health",
+              "host": ["{{authServiceUrl}}"],
+              "path": ["health"]
+            },
+            "description": "Auth service health check"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Service is healthy', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Status is healthy', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.status).to.equal('healthy');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "User Service Health",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{userServiceUrl}}/health",
+              "host": ["{{userServiceUrl}}"],
+              "path": ["health"]
+            },
+            "description": "User service health check"
+          },
+          "response": []
+        },
+        {
+          "name": "Job Service Health",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{jobServiceUrl}}/health",
+              "host": ["{{jobServiceUrl}}"],
+              "path": ["health"]
+            },
+            "description": "Job service health check"
+          },
+          "response": []
+        },
+        {
+          "name": "Resume Service Health",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{resumeServiceUrl}}/health",
+              "host": ["{{resumeServiceUrl}}"],
+              "path": ["health"]
+            },
+            "description": "Resume service health check"
+          },
+          "response": []
+        },
+        {
+          "name": "Auto-Apply Service Health",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{autoApplyServiceUrl}}/health",
+              "host": ["{{autoApplyServiceUrl}}"],
+              "path": ["health"]
+            },
+            "description": "Auto-Apply service health check"
+          },
+          "response": []
+        },
+        {
+          "name": "Notification Service Health",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{notificationServiceUrl}}/health",
+              "host": ["{{notificationServiceUrl}}"],
+              "path": ["health"]
+            },
+            "description": "Notification service health check"
+          },
+          "response": []
+        },
+        {
+          "name": "Analytics Service Health",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{analyticsServiceUrl}}/health",
+              "host": ["{{analyticsServiceUrl}}"],
+              "path": ["health"]
+            },
+            "description": "Analytics service health check"
+          },
+          "response": []
+        },
+        {
+          "name": "AI Service Health",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{aiServiceUrl}}/health",
+              "host": ["{{aiServiceUrl}}"],
+              "path": ["health"]
+            },
+            "description": "AI service health check"
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

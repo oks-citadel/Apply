@@ -1,0 +1,1693 @@
+openapi: 3.0.3
+info:
+  title: ApplyforUs Platform API
+  description: |
+    Comprehensive API documentation for the ApplyforUs job application automation platform.
+
+    ## Authentication
+    Most endpoints require JWT Bearer authentication. Obtain tokens via the `/auth/login` endpoint.
+
+    ## Rate Limiting
+    - Standard users: 100 requests/minute
+    - Premium users: 500 requests/minute
+    - Admin users: 1000 requests/minute
+  version: 1.0.0
+  contact:
+    name: ApplyforUs Support
+    email: support@applyforus.com
+  license:
+    name: Proprietary
+
+servers:
+  - url: http://localhost:3001
+    description: Auth Service (Development)
+  - url: http://localhost:8002
+    description: User Service (Development)
+  - url: http://localhost:8003
+    description: Resume Service (Development)
+  - url: http://localhost:8004
+    description: Job Service (Development)
+  - url: http://localhost:8005
+    description: Auto-Apply Service (Development)
+  - url: http://localhost:8006
+    description: Analytics Service (Development)
+  - url: http://localhost:8007
+    description: Notification Service (Development)
+  - url: http://localhost:8000
+    description: AI Service (Development)
+  - url: https://api.applyforus.com
+    description: Production
+
+tags:
+  - name: Auth
+    description: Authentication and authorization
+  - name: Users
+    description: User management
+  - name: Profile
+    description: User profile management
+  - name: Jobs
+    description: Job listings and search
+  - name: Resumes
+    description: Resume management
+  - name: Applications
+    description: Job applications
+  - name: AutoApply
+    description: Automated job applications
+  - name: Notifications
+    description: User notifications
+  - name: Analytics
+    description: Analytics and reporting
+  - name: AI
+    description: AI-powered features
+  - name: Health
+    description: Service health checks
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from /auth/login
+
+  schemas:
+    # Common Schemas
+    Error:
+      type: object
+      properties:
+        statusCode:
+          type: integer
+          example: 400
+        message:
+          type: string
+          example: Validation failed
+        error:
+          type: string
+          example: Bad Request
+        timestamp:
+          type: string
+          format: date-time
+
+    PaginatedResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items: {}
+        meta:
+          type: object
+          properties:
+            total:
+              type: integer
+            page:
+              type: integer
+            limit:
+              type: integer
+            totalPages:
+              type: integer
+
+    # Auth Schemas
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: user@example.com
+        password:
+          type: string
+          format: password
+          minLength: 8
+          example: "SecurePass123!"
+
+    LoginResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+          description: JWT access token
+        refreshToken:
+          type: string
+          description: JWT refresh token
+        expiresIn:
+          type: integer
+          description: Token expiration in seconds
+          example: 3600
+        user:
+          $ref: '#/components/schemas/User'
+
+    RegisterRequest:
+      type: object
+      required:
+        - email
+        - password
+        - firstName
+        - lastName
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+          minLength: 8
+        firstName:
+          type: string
+          minLength: 1
+          maxLength: 50
+        lastName:
+          type: string
+          minLength: 1
+          maxLength: 50
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        firstName:
+          type: string
+        lastName:
+          type: string
+        role:
+          type: string
+          enum: [user, premium, admin]
+        emailVerified:
+          type: boolean
+        mfaEnabled:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    # Profile Schemas
+    Profile:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        headline:
+          type: string
+          maxLength: 200
+        summary:
+          type: string
+          maxLength: 2000
+        location:
+          type: string
+        phoneNumber:
+          type: string
+        linkedinUrl:
+          type: string
+          format: uri
+        githubUrl:
+          type: string
+          format: uri
+        portfolioUrl:
+          type: string
+          format: uri
+        avatarUrl:
+          type: string
+          format: uri
+        completionPercentage:
+          type: integer
+          minimum: 0
+          maximum: 100
+
+    # Job Schemas
+    Job:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        company:
+          type: string
+        location:
+          type: string
+        type:
+          type: string
+          enum: [full-time, part-time, contract, internship, remote]
+        salary:
+          type: object
+          properties:
+            min:
+              type: number
+            max:
+              type: number
+            currency:
+              type: string
+              default: USD
+        description:
+          type: string
+        requirements:
+          type: array
+          items:
+            type: string
+        benefits:
+          type: array
+          items:
+            type: string
+        postedAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+        applicationUrl:
+          type: string
+          format: uri
+
+    JobSearchRequest:
+      type: object
+      properties:
+        query:
+          type: string
+          description: Search keywords
+        location:
+          type: string
+        type:
+          type: array
+          items:
+            type: string
+            enum: [full-time, part-time, contract, internship, remote]
+        salaryMin:
+          type: number
+        salaryMax:
+          type: number
+        experienceLevel:
+          type: string
+          enum: [entry, mid, senior, executive]
+        postedWithin:
+          type: string
+          enum: [24h, 7d, 30d]
+        page:
+          type: integer
+          default: 1
+        limit:
+          type: integer
+          default: 20
+          maximum: 100
+
+    # Resume Schemas
+    Resume:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        isDefault:
+          type: boolean
+        template:
+          type: string
+        sections:
+          type: object
+          properties:
+            personalInfo:
+              type: object
+            experience:
+              type: array
+              items:
+                $ref: '#/components/schemas/Experience'
+            education:
+              type: array
+              items:
+                $ref: '#/components/schemas/Education'
+            skills:
+              type: array
+              items:
+                type: string
+            certifications:
+              type: array
+              items:
+                $ref: '#/components/schemas/Certification'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Experience:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        company:
+          type: string
+        title:
+          type: string
+        location:
+          type: string
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        current:
+          type: boolean
+        description:
+          type: string
+        highlights:
+          type: array
+          items:
+            type: string
+
+    Education:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        institution:
+          type: string
+        degree:
+          type: string
+        field:
+          type: string
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        gpa:
+          type: number
+
+    Certification:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        issuer:
+          type: string
+        issueDate:
+          type: string
+          format: date
+        expirationDate:
+          type: string
+          format: date
+        credentialId:
+          type: string
+        credentialUrl:
+          type: string
+          format: uri
+
+    # Application Schemas
+    Application:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        jobId:
+          type: string
+          format: uuid
+        resumeId:
+          type: string
+          format: uuid
+        coverLetterId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [pending, submitted, viewed, interviewing, offered, rejected, withdrawn]
+        appliedAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        notes:
+          type: string
+
+    # Notification Schemas
+    Notification:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum: [application_update, job_alert, system, reminder]
+        title:
+          type: string
+        message:
+          type: string
+        read:
+          type: boolean
+        data:
+          type: object
+        createdAt:
+          type: string
+          format: date-time
+
+    # Health Schemas
+    HealthCheck:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy, unhealthy, degraded]
+        timestamp:
+          type: string
+          format: date-time
+        version:
+          type: string
+        uptime:
+          type: number
+        checks:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              status:
+                type: string
+              responseTime:
+                type: number
+
+  responses:
+    UnauthorizedError:
+      description: Access token is missing or invalid
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    ForbiddenError:
+      description: Insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    NotFoundError:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    ValidationError:
+      description: Validation failed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+paths:
+  # ==================== AUTH ENDPOINTS ====================
+  /auth/register:
+    post:
+      tags:
+        - Auth
+      summary: Register a new user
+      operationId: register
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '409':
+          description: Email already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/login:
+    post:
+      tags:
+        - Auth
+      summary: User login
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/logout:
+    post:
+      tags:
+        - Auth
+      summary: User logout
+      operationId: logout
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Logout successful
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /auth/refresh:
+    post:
+      tags:
+        - Auth
+      summary: Refresh access token
+      operationId: refreshToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - refreshToken
+              properties:
+                refreshToken:
+                  type: string
+      responses:
+        '200':
+          description: Token refreshed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accessToken:
+                    type: string
+                  expiresIn:
+                    type: integer
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /auth/me:
+    get:
+      tags:
+        - Auth
+      summary: Get current user
+      operationId: getCurrentUser
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Current user info
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /auth/forgot-password:
+    post:
+      tags:
+        - Auth
+      summary: Request password reset
+      operationId: forgotPassword
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+              properties:
+                email:
+                  type: string
+                  format: email
+      responses:
+        '200':
+          description: Reset email sent (always returns success for security)
+
+  /auth/reset-password:
+    post:
+      tags:
+        - Auth
+      summary: Reset password with token
+      operationId: resetPassword
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - token
+                - password
+              properties:
+                token:
+                  type: string
+                password:
+                  type: string
+                  format: password
+                  minLength: 8
+      responses:
+        '200':
+          description: Password reset successful
+        '400':
+          description: Invalid or expired token
+
+  /auth/mfa/enable:
+    post:
+      tags:
+        - Auth
+      summary: Enable MFA
+      operationId: enableMfa
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: MFA setup info
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  secret:
+                    type: string
+                  qrCode:
+                    type: string
+                    format: uri
+                  backupCodes:
+                    type: array
+                    items:
+                      type: string
+
+  # ==================== PROFILE ENDPOINTS ====================
+  /profile:
+    get:
+      tags:
+        - Profile
+      summary: Get user profile
+      operationId: getProfile
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Profile'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+    patch:
+      tags:
+        - Profile
+      summary: Update user profile
+      operationId: updateProfile
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Profile'
+      responses:
+        '200':
+          description: Profile updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Profile'
+
+  /profile/avatar:
+    post:
+      tags:
+        - Profile
+      summary: Upload avatar
+      operationId: uploadAvatar
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Avatar uploaded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  avatarUrl:
+                    type: string
+                    format: uri
+
+  # ==================== JOBS ENDPOINTS ====================
+  /jobs:
+    get:
+      tags:
+        - Jobs
+      summary: List jobs
+      operationId: listJobs
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [recent, relevance, salary]
+      responses:
+        '200':
+          description: List of jobs
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginatedResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Job'
+
+  /jobs/search:
+    get:
+      tags:
+        - Jobs
+      summary: Search jobs
+      operationId: searchJobs
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Search query
+        - name: location
+          in: query
+          schema:
+            type: string
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [full-time, part-time, contract, internship, remote]
+        - name: salaryMin
+          in: query
+          schema:
+            type: number
+        - name: salaryMax
+          in: query
+          schema:
+            type: number
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginatedResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Job'
+
+  /jobs/{id}:
+    get:
+      tags:
+        - Jobs
+      summary: Get job by ID
+      operationId: getJob
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Job details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /jobs/saved:
+    get:
+      tags:
+        - Jobs
+      summary: Get saved jobs
+      operationId: getSavedJobs
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Saved jobs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Job'
+
+  /jobs/saved/{jobId}:
+    post:
+      tags:
+        - Jobs
+      summary: Save a job
+      operationId: saveJob
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '201':
+          description: Job saved
+    delete:
+      tags:
+        - Jobs
+      summary: Unsave a job
+      operationId: unsaveJob
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Job unsaved
+
+  # ==================== RESUME ENDPOINTS ====================
+  /resumes:
+    get:
+      tags:
+        - Resumes
+      summary: List resumes
+      operationId: listResumes
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of resumes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Resume'
+    post:
+      tags:
+        - Resumes
+      summary: Create resume
+      operationId: createResume
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Resume'
+      responses:
+        '201':
+          description: Resume created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Resume'
+
+  /resumes/{id}:
+    get:
+      tags:
+        - Resumes
+      summary: Get resume by ID
+      operationId: getResume
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Resume details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Resume'
+    patch:
+      tags:
+        - Resumes
+      summary: Update resume
+      operationId: updateResume
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Resume'
+      responses:
+        '200':
+          description: Resume updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Resume'
+    delete:
+      tags:
+        - Resumes
+      summary: Delete resume
+      operationId: deleteResume
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Resume deleted
+
+  /resumes/upload:
+    post:
+      tags:
+        - Resumes
+      summary: Upload resume file
+      operationId: uploadResume
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: PDF, DOCX, or TXT file
+      responses:
+        '201':
+          description: Resume uploaded and parsed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Resume'
+
+  /resumes/{id}/export/pdf:
+    get:
+      tags:
+        - Resumes
+      summary: Export resume as PDF
+      operationId: exportResumePdf
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: PDF file
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+
+  /resumes/{id}/ai/enhance:
+    post:
+      tags:
+        - Resumes
+        - AI
+      summary: AI enhance resume
+      operationId: enhanceResume
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Enhanced resume
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Resume'
+
+  # ==================== APPLICATIONS ENDPOINTS ====================
+  /applications:
+    get:
+      tags:
+        - Applications
+      summary: List applications
+      operationId: listApplications
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, submitted, viewed, interviewing, offered, rejected, withdrawn]
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: List of applications
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginatedResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Application'
+    post:
+      tags:
+        - Applications
+      summary: Submit application
+      operationId: submitApplication
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - jobId
+                - resumeId
+              properties:
+                jobId:
+                  type: string
+                  format: uuid
+                resumeId:
+                  type: string
+                  format: uuid
+                coverLetterId:
+                  type: string
+                  format: uuid
+                answers:
+                  type: object
+                  description: Answers to application questions
+      responses:
+        '201':
+          description: Application submitted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Application'
+
+  /applications/{id}:
+    get:
+      tags:
+        - Applications
+      summary: Get application
+      operationId: getApplication
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Application details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Application'
+    delete:
+      tags:
+        - Applications
+      summary: Withdraw application
+      operationId: withdrawApplication
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Application withdrawn
+
+  # ==================== AUTO-APPLY ENDPOINTS ====================
+  /auto-apply/settings:
+    get:
+      tags:
+        - AutoApply
+      summary: Get auto-apply settings
+      operationId: getAutoApplySettings
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Auto-apply settings
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  enabled:
+                    type: boolean
+                  maxApplicationsPerDay:
+                    type: integer
+                  targetJobTitles:
+                    type: array
+                    items:
+                      type: string
+                  excludedCompanies:
+                    type: array
+                    items:
+                      type: string
+                  minSalary:
+                    type: number
+                  preferredLocations:
+                    type: array
+                    items:
+                      type: string
+    patch:
+      tags:
+        - AutoApply
+      summary: Update auto-apply settings
+      operationId: updateAutoApplySettings
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                enabled:
+                  type: boolean
+                maxApplicationsPerDay:
+                  type: integer
+                targetJobTitles:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: Settings updated
+
+  /auto-apply/start:
+    post:
+      tags:
+        - AutoApply
+      summary: Start auto-apply
+      operationId: startAutoApply
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Auto-apply started
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [started, already_running]
+                  queuedJobs:
+                    type: integer
+
+  /auto-apply/stop:
+    post:
+      tags:
+        - AutoApply
+      summary: Stop auto-apply
+      operationId: stopAutoApply
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Auto-apply stopped
+
+  # ==================== NOTIFICATIONS ENDPOINTS ====================
+  /notifications:
+    get:
+      tags:
+        - Notifications
+      summary: List notifications
+      operationId: listNotifications
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: unreadOnly
+          in: query
+          schema:
+            type: boolean
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: List of notifications
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginatedResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Notification'
+
+  /notifications/{id}/read:
+    patch:
+      tags:
+        - Notifications
+      summary: Mark notification as read
+      operationId: markNotificationRead
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Notification marked as read
+
+  /notifications/read-all:
+    post:
+      tags:
+        - Notifications
+      summary: Mark all notifications as read
+      operationId: markAllNotificationsRead
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: All notifications marked as read
+
+  /notifications/unread/count:
+    get:
+      tags:
+        - Notifications
+      summary: Get unread notification count
+      operationId: getUnreadCount
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Unread count
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+
+  # ==================== ANALYTICS ENDPOINTS ====================
+  /analytics/dashboard:
+    get:
+      tags:
+        - Analytics
+      summary: Get dashboard analytics
+      operationId: getDashboardAnalytics
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Dashboard data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalApplications:
+                    type: integer
+                  activeApplications:
+                    type: integer
+                  interviewRate:
+                    type: number
+                  responseRate:
+                    type: number
+                  weeklyActivity:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        date:
+                          type: string
+                          format: date
+                        applications:
+                          type: integer
+
+  /analytics/applications:
+    get:
+      tags:
+        - Analytics
+      summary: Get application analytics
+      operationId: getApplicationAnalytics
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Application analytics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  byStatus:
+                    type: object
+                  byCompany:
+                    type: array
+                  byJobType:
+                    type: object
+                  timeline:
+                    type: array
+
+  # ==================== AI ENDPOINTS ====================
+  /api/v1/resume/analyze:
+    post:
+      tags:
+        - AI
+      summary: Analyze resume
+      operationId: analyzeResume
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - resumeId
+              properties:
+                resumeId:
+                  type: string
+                  format: uuid
+                targetJob:
+                  type: string
+      responses:
+        '200':
+          description: Resume analysis
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  score:
+                    type: integer
+                    minimum: 0
+                    maximum: 100
+                  strengths:
+                    type: array
+                    items:
+                      type: string
+                  improvements:
+                    type: array
+                    items:
+                      type: string
+                  keywords:
+                    type: array
+                    items:
+                      type: string
+
+  /api/v1/jobs/match:
+    post:
+      tags:
+        - AI
+      summary: Match jobs to profile
+      operationId: matchJobs
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                limit:
+                  type: integer
+                  default: 20
+                useResumeSkills:
+                  type: boolean
+                  default: true
+      responses:
+        '200':
+          description: Matched jobs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    job:
+                      $ref: '#/components/schemas/Job'
+                    matchScore:
+                      type: integer
+                    matchReasons:
+                      type: array
+                      items:
+                        type: string
+
+  /api/v1/cover-letter/generate:
+    post:
+      tags:
+        - AI
+      summary: Generate cover letter
+      operationId: generateCoverLetter
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - jobId
+                - resumeId
+              properties:
+                jobId:
+                  type: string
+                  format: uuid
+                resumeId:
+                  type: string
+                  format: uuid
+                tone:
+                  type: string
+                  enum: [professional, friendly, confident]
+                  default: professional
+      responses:
+        '200':
+          description: Generated cover letter
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  coverLetter:
+                    type: string
+                  highlights:
+                    type: array
+                    items:
+                      type: string
+
+  # ==================== HEALTH ENDPOINTS ====================
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Health check
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthCheck'
+
+  /health/ready:
+    get:
+      tags:
+        - Health
+      summary: Readiness probe
+      operationId: readinessCheck
+      responses:
+        '200':
+          description: Service is ready
+        '503':
+          description: Service is not ready
+
+  /health/live:
+    get:
+      tags:
+        - Health
+      summary: Liveness probe
+      operationId: livenessCheck
+      responses:
+        '200':
+          description: Service is alive
+        '503':
+          description: Service is not alive
