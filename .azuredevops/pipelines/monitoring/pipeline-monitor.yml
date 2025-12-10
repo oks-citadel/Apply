@@ -37,10 +37,10 @@ schedules:
     always: true
 
 pool:
-  name: 'Default'
+  vmImage: 'ubuntu-latest'
 
 variables:
-  - group: applyplatform-common
+  - group: common-secrets
   - name: ACR_NAME
     value: 'applyforusacr'
   - name: AKS_CLUSTER_NAME
