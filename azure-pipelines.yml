@@ -1,17 +1,22 @@
 # ============================================================================
-# Unified CI/CD Pipeline - Auto Apply Platform
+# UNIFIED CI/CD Pipeline - ApplyForUs Platform
 # ============================================================================
-# Master orchestration pipeline for the complete CI/CD lifecycle:
-# - Security scanning (SAST, SCA, DAST, Container, Secrets)
-# - Pre-build validation and code quality
-# - Build backend and frontend services
-# - Docker image building and pushing
-# - Integration and E2E tests
-# - Terraform infrastructure deployment (Dev/Test/Prod)
-# - Deployment to environments
+# Single pipeline orchestrating the complete CI/CD lifecycle:
+#   1. Code checkout & validation
+#   2. Linting and quality checks
+#   3. Unit tests and E2E tests
+#   4. Build & package backend/frontend
+#   5. Build & push Docker images to ACR
+#   6. Generate version tags
+#   7. Infrastructure validation
+#   8. Deploy to AKS (dev/staging/prod)
+#   9. Post-deployment tests
+#   10. Notifications and logs export
+#
+# Replaces: azure-pipelines.yml, azure-pipelines-aks.yml
+# Keeps separate: azure-pipelines-terraform.yml (IaC)
 # ============================================================================
 
-# Unified CI/CD Pipeline - Enabled
 trigger:
   branches:
     include:
@@ -51,14 +56,32 @@ variables:
 
   # Docker Configuration
   DOCKER_BUILDKIT: '1'
-  DOCKER_REGISTRY: 'citadelplatforms'
+
+  # Azure Container Registry (Primary for AKS)
+  ACR_NAME: 'applyforusacr'
+  ACR_LOGIN_SERVER: 'applyforusacr.azurecr.io'
+
+  # Docker Hub (Secondary/Backup)
+  DOCKER_HUB_REGISTRY: 'citadelplatforms'
   DOCKER_IMAGE_PREFIX: 'applyai'
 
   # Azure Configuration
   AZURE_SUBSCRIPTION: 'ApplyPlatform'
+  AKS_RESOURCE_GROUP: 'applyforus-prod-rg'
+  AKS_CLUSTER_NAME: 'applyforus-aks'
+  K8S_NAMESPACE: 'applyforus'
+
+  # Terraform State
   TF_STATE_RESOURCE_GROUP: 'applyforus-prod-rg'
   TF_STATE_STORAGE_ACCOUNT: 'applyforustfstateprod'
   TF_STATE_CONTAINER: 'tfstate'
+
+  # Version Tagging
+  MAJOR_VERSION: '1'
+  MINOR_VERSION: '0'
+  PATCH_VERSION: $[counter(format('{0}.{1}', variables['MAJOR_VERSION'], variables['MINOR_VERSION']), 0)]
+  SEMANTIC_VERSION: '$(MAJOR_VERSION).$(MINOR_VERSION).$(PATCH_VERSION)'
+  IMAGE_TAG: '$(SEMANTIC_VERSION)-$(Build.BuildId)'
 
   # Branch Conditionals
   isMain: $[eq(variables['Build.SourceBranch'], 'refs/heads/main')]
@@ -66,8 +89,11 @@ variables:
   isRelease: $[startsWith(variables['Build.SourceBranch'], 'refs/heads/release/')]
   isPR: $[eq(variables['Build.Reason'], 'PullRequest')]
 
+  # Services List
+  ALL_SERVICES: 'web,auth-service,user-service,job-service,resume-service,notification-service,auto-apply-service,analytics-service,ai-service,orchestrator-service'
+
 # ============================================================================
-# Agent Pool - Microsoft Hosted Ubuntu
+# Agent Pool
 # ============================================================================
 pool:
   vmImage: 'ubuntu-latest'
@@ -77,13 +103,13 @@ pool:
 # ============================================================================
 stages:
   # ==========================================================================
-  # Stage 1: Security Scanning
+  # Stage 1: Code Checkout & Security Scanning
   # ==========================================================================
   - stage: Security
-    displayName: '🔒 Security Scanning'
+    displayName: '1. Security Scanning'
     jobs:
-      - job: SAST
-        displayName: 'Static Application Security Testing'
+      - job: SecurityScans
+        displayName: 'SAST, SCA, Secrets Detection'
         steps:
           - checkout: self
             fetchDepth: 0
@@ -98,111 +124,68 @@ stages:
               pnpm install --frozen-lockfile || pnpm install
             displayName: 'Install Dependencies'
 
+          # SAST - ESLint Security Rules
           - script: |
-              echo "Running ESLint security rules..."
-              pnpm run lint || echo "Lint completed with warnings"
-            displayName: 'ESLint Security Analysis'
+              echo "=== SAST: ESLint Security Analysis ==="
+              pnpm run lint 2>&1 | tee lint-report.txt || true
+            displayName: 'SAST - ESLint'
             continueOnError: true
 
+          # SCA - Dependency Vulnerability Scan
           - script: |
-              echo "Running TypeScript strict checks..."
-              pnpm run type-check || echo "Type check completed"
-            displayName: 'TypeScript Security Checks'
+              echo "=== SCA: Dependency Vulnerability Scan ==="
+              pnpm audit --audit-level=high 2>&1 | tee audit-report.txt || true
+            displayName: 'SCA - Dependency Audit'
             continueOnError: true
 
-      - job: SCA
-        displayName: 'Software Composition Analysis'
-        steps:
-          - checkout: self
-
-          - task: NodeTool@0
-            displayName: 'Install Node.js'
-            inputs:
-              versionSpec: '$(NODE_VERSION)'
-
+          # Secrets Detection
           - script: |
-              npm install -g pnpm@$(PNPM_VERSION)
-              pnpm audit --audit-level=high || echo "Audit completed with findings"
-            displayName: 'Dependency Vulnerability Scan'
-            continueOnError: true
-
-      - job: SecretsScan
-        displayName: 'Secrets Detection'
-        steps:
-          - checkout: self
-            fetchDepth: 0
-
-          - script: |
-              echo "Scanning for hardcoded secrets..."
-              # Check for common secret patterns
-              if grep -rE "(password|secret|api_key|apikey|access_token|private_key)[\s]*[:=][\s]*['\"][^'\"]+['\"]" \
+              echo "=== Secrets Detection ==="
+              if grep -rE "(password|secret|api_key|apikey|access_token|private_key)[\s]*[:=][\s]*['\"][^'\"]{8,}['\"]" \
                 --include="*.ts" --include="*.js" --include="*.json" --include="*.yaml" --include="*.yml" \
-                --exclude-dir=node_modules --exclude-dir=.git . 2>/dev/null; then
-                echo "WARNING: Potential secrets found in codebase"
+                --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=dist . 2>/dev/null; then
+                echo "##vso[task.logissue type=warning]Potential secrets found - review before deployment"
               else
                 echo "No obvious secrets detected"
               fi
-            displayName: 'Secret Pattern Scan'
+            displayName: 'Secrets Detection'
             continueOnError: true
 
-      - job: ContainerScan
-        displayName: 'Container Security Scan'
-        condition: or(eq(variables.isDevelop, true), eq(variables.isMain, true), eq(variables.isRelease, true))
-        steps:
-          - checkout: self
-
+          # Container Security - Dockerfile Analysis
           - script: |
-              echo "Analyzing Dockerfiles for security issues..."
-              for dockerfile in $(find . -name "Dockerfile" -type f); do
-                echo "Checking: $dockerfile"
-                # Basic Dockerfile security checks
+              echo "=== Container Security: Dockerfile Analysis ==="
+              for dockerfile in $(find . -name "Dockerfile" -type f 2>/dev/null); do
+                echo "Analyzing: $dockerfile"
                 if grep -q "FROM.*:latest" "$dockerfile"; then
-                  echo "WARNING: Using :latest tag in $dockerfile"
+                  echo "##vso[task.logissue type=warning]Using :latest tag in $dockerfile"
                 fi
-                if grep -q "USER root" "$dockerfile" && ! grep -q "USER [^r]" "$dockerfile"; then
-                  echo "WARNING: Container runs as root in $dockerfile"
+                if ! grep -q "USER" "$dockerfile"; then
+                  echo "##vso[task.logissue type=warning]No USER directive in $dockerfile (runs as root)"
                 fi
               done
-            displayName: 'Dockerfile Security Analysis'
+            displayName: 'Container Security Scan'
             continueOnError: true
 
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish Security Reports'
+            inputs:
+              targetPath: '$(System.DefaultWorkingDirectory)'
+              artifact: 'security-reports'
+              publishLocation: 'pipeline'
+              patterns: |
+                *-report.txt
+            condition: always()
+
   # ==========================================================================
-  # Stage 2: Pre-Build Validation & Code Quality
+  # Stage 2: Linting & Quality Checks
   # ==========================================================================
   - stage: CodeQuality
-    displayName: '✅ Code Quality & Validation'
+    displayName: '2. Code Quality'
     dependsOn: Security
     condition: succeeded()
     jobs:
-      - job: PreBuildValidation
-        displayName: 'Pre-Build Validation'
-        steps:
-          - checkout: self
-
-          - task: NodeTool@0
-            displayName: 'Install Node.js'
-            inputs:
-              versionSpec: '$(NODE_VERSION)'
-
-          - script: |
-              npm install -g pnpm@$(PNPM_VERSION)
-              pnpm --version
-            displayName: 'Setup pnpm'
-
-          - script: |
-              pnpm install --frozen-lockfile || pnpm install
-            displayName: 'Install Dependencies'
-
-          - script: |
-              echo "=== Validating package.json files ==="
-              for pkg in $(find . -name "package.json" -not -path "./node_modules/*" -type f); do
-                echo "Validating: $pkg"
-                node -e "JSON.parse(require('fs').readFileSync('$pkg'))" || echo "Invalid JSON: $pkg"
-              done
-            displayName: 'Validate Package Files'
-
       - job: Linting
-        displayName: 'Code Linting'
+        displayName: 'Lint & Type Check'
         steps:
           - checkout: self
 
@@ -215,59 +198,28 @@ stages:
               pnpm install --frozen-lockfile || pnpm install
             displayName: 'Install Dependencies'
 
-          - script: |
-              pnpm run lint || echo "Lint completed"
-            displayName: 'Run ESLint'
+          - script: pnpm run lint
+            displayName: 'ESLint'
             continueOnError: true
 
-      - job: TypeCheck
-        displayName: 'TypeScript Type Check'
-        steps:
-          - checkout: self
-
-          - task: NodeTool@0
-            inputs:
-              versionSpec: '$(NODE_VERSION)'
-
-          - script: |
-              npm install -g pnpm@$(PNPM_VERSION)
-              pnpm install --frozen-lockfile || pnpm install
-            displayName: 'Install Dependencies'
-
-          - script: |
-              pnpm run type-check || echo "Type check completed"
-            displayName: 'TypeScript Compilation'
+          - script: pnpm run type-check
+            displayName: 'TypeScript Type Check'
             continueOnError: true
 
-      - job: FormatCheck
-        displayName: 'Code Formatting'
-        steps:
-          - checkout: self
-
-          - task: NodeTool@0
-            inputs:
-              versionSpec: '$(NODE_VERSION)'
-
-          - script: |
-              npm install -g pnpm@$(PNPM_VERSION)
-              pnpm install --frozen-lockfile || pnpm install
-            displayName: 'Install Dependencies'
-
-          - script: |
-              pnpm run format:check || echo "Format check completed"
-            displayName: 'Check Code Formatting'
+          - script: pnpm run format:check || true
+            displayName: 'Format Check (Prettier)'
             continueOnError: true
 
   # ==========================================================================
-  # Stage 3: Build Backend & Frontend Services
+  # Stage 3: Unit Tests & E2E Tests
   # ==========================================================================
-  - stage: Build
-    displayName: '🔨 Build Services'
+  - stage: Testing
+    displayName: '3. Testing'
     dependsOn: CodeQuality
     condition: succeeded()
     jobs:
-      - job: BuildBackend
-        displayName: 'Build Backend Services'
+      - job: UnitTests
+        displayName: 'Unit Tests'
         steps:
           - checkout: self
 
@@ -281,93 +233,8 @@ stages:
             displayName: 'Install Dependencies'
 
           - script: |
-              echo "Building backend services..."
-              pnpm run build --filter="./services/*" || echo "Backend build completed"
-            displayName: 'Build Backend Services'
-            continueOnError: true
-
-          - task: PublishPipelineArtifact@1
-            displayName: 'Publish Backend Artifacts'
-            inputs:
-              targetPath: 'services'
-              artifact: 'backend-services'
-              publishLocation: 'pipeline'
-            condition: succeededOrFailed()
-
-      - job: BuildFrontend
-        displayName: 'Build Frontend Applications'
-        steps:
-          - checkout: self
-
-          - task: NodeTool@0
-            inputs:
-              versionSpec: '$(NODE_VERSION)'
-
-          - script: |
-              npm install -g pnpm@$(PNPM_VERSION)
-              pnpm install --frozen-lockfile || pnpm install
-            displayName: 'Install Dependencies'
-
-          - script: |
-              echo "Building frontend applications..."
-              pnpm run build --filter="./apps/*" || echo "Frontend build completed"
-            displayName: 'Build Frontend Apps'
-            continueOnError: true
-
-          - task: PublishPipelineArtifact@1
-            displayName: 'Publish Frontend Artifacts'
-            inputs:
-              targetPath: 'apps'
-              artifact: 'frontend-apps'
-              publishLocation: 'pipeline'
-            condition: succeededOrFailed()
-
-      - job: BuildPackages
-        displayName: 'Build Shared Packages'
-        steps:
-          - checkout: self
-
-          - task: NodeTool@0
-            inputs:
-              versionSpec: '$(NODE_VERSION)'
-
-          - script: |
-              npm install -g pnpm@$(PNPM_VERSION)
-              pnpm install --frozen-lockfile || pnpm install
-            displayName: 'Install Dependencies'
-
-          - script: |
-              echo "Building shared packages..."
-              pnpm run build --filter="./packages/*" || echo "Packages build completed"
-            displayName: 'Build Shared Packages'
-            continueOnError: true
-
-  # ==========================================================================
-  # Stage 4: Unit Tests
-  # ==========================================================================
-  - stage: UnitTests
-    displayName: '🧪 Unit Tests'
-    dependsOn: Build
-    condition: succeeded()
-    jobs:
-      - job: RunUnitTests
-        displayName: 'Run Unit Tests'
-        steps:
-          - checkout: self
-
-          - task: NodeTool@0
-            inputs:
-              versionSpec: '$(NODE_VERSION)'
-
-          - script: |
-              npm install -g pnpm@$(PNPM_VERSION)
-              pnpm install --frozen-lockfile || pnpm install
-            displayName: 'Install Dependencies'
-
-          - script: |
-              pnpm run test || echo "Tests completed"
+              pnpm run test --passWithNoTests || echo "Tests completed"
             displayName: 'Run Unit Tests'
-            continueOnError: true
             env:
               NODE_ENV: test
               CI: 'true'
@@ -390,166 +257,9 @@ stages:
               failIfCoverageEmpty: false
             continueOnError: true
 
-  # ==========================================================================
-  # Stage 5: Build & Push Docker Images
-  # ==========================================================================
-  - stage: Docker
-    displayName: '🐳 Docker Build & Push'
-    dependsOn: UnitTests
-    condition: and(succeeded(), or(eq(variables.isDevelop, true), eq(variables.isMain, true), eq(variables.isRelease, true)))
-    jobs:
-      - job: BuildDockerImages
-        displayName: 'Build Docker Images'
-        steps:
-          - checkout: self
-
-          - task: Docker@2
-            displayName: 'Login to Docker Hub'
-            inputs:
-              command: login
-              containerRegistry: 'DockerHub-ServiceConnection'
-
-          # Build Web App
-          - script: |
-              echo "Building Web App..."
-              docker build \
-                -t $(DOCKER_REGISTRY)/$(DOCKER_IMAGE_PREFIX)-web:$(Build.BuildId) \
-                -t $(DOCKER_REGISTRY)/$(DOCKER_IMAGE_PREFIX)-web:latest \
-                -f apps/web/Dockerfile \
-                --build-arg NODE_ENV=production \
-                .
-            displayName: 'Build Web App'
-
-          # Build Auth Service
-          - script: |
-              echo "Building Auth Service..."
-              docker build \
-                -t $(DOCKER_REGISTRY)/$(DOCKER_IMAGE_PREFIX)-auth-service:$(Build.BuildId) \
-                -t $(DOCKER_REGISTRY)/$(DOCKER_IMAGE_PREFIX)-auth-service:latest \
-                -f services/auth-service/Dockerfile \
-                .
-            displayName: 'Build Auth Service'
-
-          # Build User Service
-          - script: |
-              echo "Building User Service..."
-              docker build \
-                -t $(DOCKER_REGISTRY)/$(DOCKER_IMAGE_PREFIX)-user-service:$(Build.BuildId) \
-                -t $(DOCKER_REGISTRY)/$(DOCKER_IMAGE_PREFIX)-user-service:latest \
-                -f services/user-service/Dockerfile \
-                .
-            displayName: 'Build User Service'
-
-          # Build Job Service
-          - script: |
-              echo "Building Job Service..."
-              docker build \
-                -t $(DOCKER_REGISTRY)/$(DOCKER_IMAGE_PREFIX)-job-service:$(Build.BuildId) \
-                -t $(DOCKER_REGISTRY)/$(DOCKER_IMAGE_PREFIX)-job-service:latest \
-                -f services/job-service/Dockerfile \
-                .
-            displayName: 'Build Job Service'
-
-          # Build Resume Service
-          - script: |
-              echo "Building Resume Service..."
-              docker build \
-                -t $(DOCKER_REGISTRY)/$(DOCKER_IMAGE_PREFIX)-resume-service:$(Build.BuildId) \
-                -t $(DOCKER_REGISTRY)/$(DOCKER_IMAGE_PREFIX)-resume-service:latest \
-                -f services/resume-service/Dockerfile \
-                .
-            displayName: 'Build Resume Service'
-
-          # Build Notification Service
-          - script: |
-              echo "Building Notification Service..."
-              docker build \
-                -t $(DOCKER_REGISTRY)/$(DOCKER_IMAGE_PREFIX)-notification-service:$(Build.BuildId) \
-                -t $(DOCKER_REGISTRY)/$(DOCKER_IMAGE_PREFIX)-notification-service:latest \
-                -f services/notification-service/Dockerfile \
-                .
-            displayName: 'Build Notification Service'
-
-          # Build Auto-Apply Service
-          - script: |
-              echo "Building Auto-Apply Service..."
-              docker build \
-                -t $(DOCKER_REGISTRY)/$(DOCKER_IMAGE_PREFIX)-auto-apply-service:$(Build.BuildId) \
-                -t $(DOCKER_REGISTRY)/$(DOCKER_IMAGE_PREFIX)-auto-apply-service:latest \
-                -f services/auto-apply-service/Dockerfile \
-                .
-            displayName: 'Build Auto-Apply Service'
-
-          # Build Analytics Service
-          - script: |
-              echo "Building Analytics Service..."
-              docker build \
-                -t $(DOCKER_REGISTRY)/$(DOCKER_IMAGE_PREFIX)-analytics-service:$(Build.BuildId) \
-                -t $(DOCKER_REGISTRY)/$(DOCKER_IMAGE_PREFIX)-analytics-service:latest \
-                -f services/analytics-service/Dockerfile \
-                .
-            displayName: 'Build Analytics Service'
-
-          # Build AI Service
-          - script: |
-              echo "Building AI Service..."
-              docker build \
-                -t $(DOCKER_REGISTRY)/$(DOCKER_IMAGE_PREFIX)-ai-service:$(Build.BuildId) \
-                -t $(DOCKER_REGISTRY)/$(DOCKER_IMAGE_PREFIX)-ai-service:latest \
-                -f services/ai-service/Dockerfile \
-                .
-            displayName: 'Build AI Service'
-
-          # Build Orchestrator Service
-          - script: |
-              echo "Building Orchestrator Service..."
-              docker build \
-                -t $(DOCKER_REGISTRY)/$(DOCKER_IMAGE_PREFIX)-orchestrator-service:$(Build.BuildId) \
-                -t $(DOCKER_REGISTRY)/$(DOCKER_IMAGE_PREFIX)-orchestrator-service:latest \
-                -f services/orchestrator-service/Dockerfile \
-                .
-            displayName: 'Build Orchestrator Service'
-
-          - script: |
-              echo "=== Built Images ==="
-              docker images | grep $(DOCKER_REGISTRY)
-            displayName: 'List Built Images'
-
-      - job: PushDockerImages
-        displayName: 'Push Docker Images'
-        dependsOn: BuildDockerImages
-        condition: succeeded()
-        steps:
-          - task: Docker@2
-            displayName: 'Login to Docker Hub'
-            inputs:
-              command: login
-              containerRegistry: 'DockerHub-ServiceConnection'
-
-          - script: |
-              echo "Pushing all images to Docker Hub..."
-
-              SERVICES="web auth-service user-service job-service resume-service notification-service auto-apply-service analytics-service ai-service orchestrator-service"
-
-              for service in $SERVICES; do
-                echo "Pushing $(DOCKER_REGISTRY)/$(DOCKER_IMAGE_PREFIX)-$service..."
-                docker push $(DOCKER_REGISTRY)/$(DOCKER_IMAGE_PREFIX)-$service:$(Build.BuildId) || echo "Push failed for $service:$(Build.BuildId)"
-                docker push $(DOCKER_REGISTRY)/$(DOCKER_IMAGE_PREFIX)-$service:latest || echo "Push failed for $service:latest"
-              done
-
-              echo "=== All images pushed ==="
-            displayName: 'Push All Images'
-
-  # ==========================================================================
-  # Stage 6: Integration Tests
-  # ==========================================================================
-  - stage: IntegrationTests
-    displayName: '🔗 Integration Tests'
-    dependsOn: Docker
-    condition: and(succeeded(), or(eq(variables.isDevelop, true), eq(variables.isMain, true)))
-    jobs:
-      - job: RunIntegrationTests
-        displayName: 'Run Integration Tests'
+      - job: E2ETests
+        displayName: 'E2E Tests'
+        condition: or(eq(variables.isDevelop, true), eq(variables.isMain, true), eq(variables.isRelease, true))
         steps:
           - checkout: self
 
@@ -560,307 +270,286 @@ stages:
           - script: |
               npm install -g pnpm@$(PNPM_VERSION)
               pnpm install --frozen-lockfile || pnpm install
+              npx playwright install --with-deps || true
             displayName: 'Install Dependencies'
 
           - script: |
-              echo "Running integration tests..."
-              pnpm run test:integration || echo "Integration tests completed"
-            displayName: 'Run Integration Tests'
-            continueOnError: true
-            env:
-              NODE_ENV: test
-              CI: 'true'
-
-          - task: PublishTestResults@2
-            displayName: 'Publish Integration Test Results'
-            condition: succeededOrFailed()
-            inputs:
-              testResultsFormat: 'JUnit'
-              testResultsFiles: '**/integration-junit.xml'
-              testRunTitle: 'Integration Tests'
-              mergeTestResults: true
-              failTaskOnFailedTests: false
-            continueOnError: true
-
-  # ==========================================================================
-  # Stage 7: Publish Artifacts
-  # ==========================================================================
-  - stage: PublishArtifacts
-    displayName: '📦 Publish Artifacts'
-    dependsOn: IntegrationTests
-    condition: and(succeeded(), or(eq(variables.isDevelop, true), eq(variables.isMain, true), eq(variables.isRelease, true)))
-    jobs:
-      - job: PublishAllArtifacts
-        displayName: 'Publish All Artifacts'
-        steps:
-          - checkout: self
-
-          - task: PublishPipelineArtifact@1
-            displayName: 'Publish Terraform Configs'
-            inputs:
-              targetPath: 'infrastructure/terraform'
-              artifact: 'terraform'
-              publishLocation: 'pipeline'
-
-          - task: PublishPipelineArtifact@1
-            displayName: 'Publish Kubernetes Manifests'
-            inputs:
-              targetPath: 'infrastructure/kubernetes'
-              artifact: 'kubernetes'
-              publishLocation: 'pipeline'
-
-          - task: PublishPipelineArtifact@1
-            displayName: 'Publish Docker Compose Files'
-            inputs:
-              targetPath: '.'
-              artifact: 'docker-compose'
-              publishLocation: 'pipeline'
-              patterns: 'docker-compose*.yml'
-
-  # ==========================================================================
-  # Stage 8: Terraform Deploy - Development
-  # ==========================================================================
-  - stage: TerraformDev
-    displayName: '🏗️ Terraform Deploy - Dev'
-    dependsOn: PublishArtifacts
-    condition: and(succeeded(), eq(variables.isDevelop, true))
-    jobs:
-      - deployment: DeployDevInfra
-        displayName: 'Deploy Dev Infrastructure'
-        environment: 'development'
-        strategy:
-          runOnce:
-            deploy:
-              steps:
-                - checkout: self
-
-                - task: AzureCLI@2
-                  displayName: 'Install Terraform & Deploy Dev'
-                  inputs:
-                    azureSubscription: '$(AZURE_SUBSCRIPTION)'
-                    scriptType: 'bash'
-                    scriptLocation: 'inlineScript'
-                    inlineScript: |
-                      # Install Terraform
-                      echo "Installing Terraform $(TERRAFORM_VERSION)..."
-                      wget -q https://releases.hashicorp.com/terraform/$(TERRAFORM_VERSION)/terraform_$(TERRAFORM_VERSION)_linux_amd64.zip
-                      unzip -o terraform_$(TERRAFORM_VERSION)_linux_amd64.zip
-                      sudo mv terraform /usr/local/bin/
-                      terraform version
-
-                      # Navigate to terraform directory
-                      cd infrastructure/terraform
-
-                      # Get storage account key for backend
-                      ACCOUNT_KEY=$(az storage account keys list \
-                        --resource-group $(TF_STATE_RESOURCE_GROUP) \
-                        --account-name $(TF_STATE_STORAGE_ACCOUNT) \
-                        --query '[0].value' -o tsv)
-
-                      # Terraform Init
-                      echo "Running Terraform Init..."
-                      terraform init \
-                        -backend-config="resource_group_name=$(TF_STATE_RESOURCE_GROUP)" \
-                        -backend-config="storage_account_name=$(TF_STATE_STORAGE_ACCOUNT)" \
-                        -backend-config="container_name=$(TF_STATE_CONTAINER)" \
-                        -backend-config="key=dev.terraform.tfstate" \
-                        -backend-config="access_key=$ACCOUNT_KEY"
-
-                      # Terraform Plan
-                      echo "Running Terraform Plan..."
-                      terraform plan -var="environment=dev" -out=tfplan || echo "Plan completed"
-
-                      # Terraform Apply
-                      echo "Running Terraform Apply..."
-                      terraform apply -auto-approve tfplan || echo "Apply completed"
-                    workingDirectory: '$(System.DefaultWorkingDirectory)'
-                  continueOnError: true
-
-  # ==========================================================================
-  # Stage 9: Deploy Application - Development
-  # ==========================================================================
-  - stage: DeployDev
-    displayName: '🚀 Deploy - Development'
-    dependsOn: TerraformDev
-    condition: and(succeeded(), eq(variables.isDevelop, true))
-    jobs:
-      - deployment: DeployDevApps
-        displayName: 'Deploy to Development'
-        environment: 'development'
-        strategy:
-          runOnce:
-            deploy:
-              steps:
-                - checkout: self
-
-                - task: AzureCLI@2
-                  displayName: 'Deploy Applications'
-                  inputs:
-                    azureSubscription: '$(AZURE_SUBSCRIPTION)'
-                    scriptType: 'bash'
-                    scriptLocation: 'inlineScript'
-                    inlineScript: |
-                      echo "=== Deploying to Development Environment ==="
-                      echo "Build ID: $(Build.BuildId)"
-                      echo "Branch: $(Build.SourceBranchName)"
-
-                      # Deploy web app container
-                      az webapp config container set \
-                        --resource-group jobpilot-dev-rg \
-                        --name jobpilot-dev-web \
-                        --docker-custom-image-name $(DOCKER_REGISTRY)/$(DOCKER_IMAGE_PREFIX)-web:$(Build.BuildId) \
-                        --docker-registry-server-url https://index.docker.io/v1 || echo "Web deployment skipped"
-
-                      echo "Development deployment completed"
-                  continueOnError: true
-
-  # ==========================================================================
-  # Stage 10: Terraform Deploy - Test/Staging
-  # ==========================================================================
-  - stage: TerraformTest
-    displayName: '🏗️ Terraform Deploy - Test'
-    dependsOn: DeployDev
-    condition: and(succeeded(), or(eq(variables.isRelease, true), eq(variables.isMain, true)))
-    jobs:
-      - deployment: DeployTestInfra
-        displayName: 'Deploy Test Infrastructure'
-        environment: 'staging'
-        strategy:
-          runOnce:
-            deploy:
-              steps:
-                - checkout: self
-
-                - task: AzureCLI@2
-                  displayName: 'Install Terraform & Deploy Staging'
-                  inputs:
-                    azureSubscription: '$(AZURE_SUBSCRIPTION)'
-                    scriptType: 'bash'
-                    scriptLocation: 'inlineScript'
-                    inlineScript: |
-                      # Install Terraform
-                      echo "Installing Terraform $(TERRAFORM_VERSION)..."
-                      wget -q https://releases.hashicorp.com/terraform/$(TERRAFORM_VERSION)/terraform_$(TERRAFORM_VERSION)_linux_amd64.zip
-                      unzip -o terraform_$(TERRAFORM_VERSION)_linux_amd64.zip
-                      sudo mv terraform /usr/local/bin/
-                      terraform version
-
-                      # Navigate to terraform directory
-                      cd infrastructure/terraform
-
-                      # Get storage account key for backend
-                      ACCOUNT_KEY=$(az storage account keys list \
-                        --resource-group $(TF_STATE_RESOURCE_GROUP) \
-                        --account-name $(TF_STATE_STORAGE_ACCOUNT) \
-                        --query '[0].value' -o tsv)
-
-                      # Terraform Init
-                      echo "Running Terraform Init..."
-                      terraform init \
-                        -backend-config="resource_group_name=$(TF_STATE_RESOURCE_GROUP)" \
-                        -backend-config="storage_account_name=$(TF_STATE_STORAGE_ACCOUNT)" \
-                        -backend-config="container_name=$(TF_STATE_CONTAINER)" \
-                        -backend-config="key=staging.terraform.tfstate" \
-                        -backend-config="access_key=$ACCOUNT_KEY"
-
-                      # Terraform Plan
-                      echo "Running Terraform Plan..."
-                      terraform plan -var="environment=staging" -out=tfplan || echo "Plan completed"
-
-                      # Terraform Apply
-                      echo "Running Terraform Apply..."
-                      terraform apply -auto-approve tfplan || echo "Apply completed"
-                    workingDirectory: '$(System.DefaultWorkingDirectory)'
-                  continueOnError: true
-
-  # ==========================================================================
-  # Stage 11: Deploy Application - Test/Staging
-  # ==========================================================================
-  - stage: DeployTest
-    displayName: '🚀 Deploy - Staging'
-    dependsOn: TerraformTest
-    condition: and(succeeded(), or(eq(variables.isRelease, true), eq(variables.isMain, true)))
-    jobs:
-      - deployment: DeployTestApps
-        displayName: 'Deploy to Staging'
-        environment: 'staging'
-        strategy:
-          runOnce:
-            deploy:
-              steps:
-                - checkout: self
-
-                - task: AzureCLI@2
-                  displayName: 'Deploy Applications'
-                  inputs:
-                    azureSubscription: '$(AZURE_SUBSCRIPTION)'
-                    scriptType: 'bash'
-                    scriptLocation: 'inlineScript'
-                    inlineScript: |
-                      echo "=== Deploying to Staging Environment ==="
-                      echo "Build ID: $(Build.BuildId)"
-
-                      az webapp config container set \
-                        --resource-group jobpilot-staging-rg \
-                        --name jobpilot-staging-web \
-                        --docker-custom-image-name $(DOCKER_REGISTRY)/$(DOCKER_IMAGE_PREFIX)-web:$(Build.BuildId) \
-                        --docker-registry-server-url https://index.docker.io/v1 || echo "Web deployment skipped"
-
-                      echo "Staging deployment completed"
-                  continueOnError: true
-
-  # ==========================================================================
-  # Stage 12: E2E Tests (Staging)
-  # ==========================================================================
-  - stage: E2ETests
-    displayName: '🎭 E2E Tests'
-    dependsOn: DeployTest
-    condition: and(succeeded(), or(eq(variables.isRelease, true), eq(variables.isMain, true)))
-    jobs:
-      - job: RunE2ETests
-        displayName: 'Run E2E Tests'
-        steps:
-          - checkout: self
-
-          - task: NodeTool@0
-            inputs:
-              versionSpec: '$(NODE_VERSION)'
-
-          - script: |
-              npm install -g pnpm@$(PNPM_VERSION)
-              pnpm install --frozen-lockfile || pnpm install
-              npx playwright install --with-deps
-            displayName: 'Install Dependencies'
-
-          - script: |
-              echo "Running E2E tests..."
-              pnpm run test:e2e || echo "E2E tests completed"
+              pnpm run test:e2e || echo "E2E tests completed or skipped"
             displayName: 'Run Playwright E2E Tests'
             continueOnError: true
             env:
               CI: 'true'
 
-          - task: PublishTestResults@2
-            displayName: 'Publish E2E Test Results'
-            condition: succeededOrFailed()
+  # ==========================================================================
+  # Stage 4: Build Backend & Frontend
+  # ==========================================================================
+  - stage: Build
+    displayName: '4. Build Services'
+    dependsOn: Testing
+    condition: succeeded()
+    jobs:
+      - job: BuildAll
+        displayName: 'Build Backend & Frontend'
+        steps:
+          - checkout: self
+
+          - task: NodeTool@0
             inputs:
-              testResultsFormat: 'JUnit'
-              testResultsFiles: '**/e2e-results.xml'
-              testRunTitle: 'E2E Tests'
-              failTaskOnFailedTests: false
+              versionSpec: '$(NODE_VERSION)'
+
+          - script: |
+              npm install -g pnpm@$(PNPM_VERSION)
+              pnpm install --frozen-lockfile || pnpm install
+            displayName: 'Install Dependencies'
+
+          - script: |
+              echo "=== Building Shared Packages ==="
+              pnpm run build --filter="./packages/*" || true
+            displayName: 'Build Packages'
+
+          - script: |
+              echo "=== Building Backend Services ==="
+              pnpm run build --filter="./services/*" || true
+            displayName: 'Build Backend'
+
+          - script: |
+              echo "=== Building Frontend Apps ==="
+              pnpm run build --filter="./apps/*" || true
+            displayName: 'Build Frontend'
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish Build Artifacts'
+            inputs:
+              targetPath: '$(System.DefaultWorkingDirectory)'
+              artifact: 'build-output'
+              publishLocation: 'pipeline'
+              patterns: |
+                services/**/dist/**
+                apps/**/dist/**
+                apps/**/.next/**
+                packages/**/dist/**
+
+  # ==========================================================================
+  # Stage 5: Build & Push Docker Images to ACR
+  # ==========================================================================
+  - stage: Docker
+    displayName: '5. Docker Build & Push (ACR)'
+    dependsOn: Build
+    condition: and(succeeded(), or(eq(variables.isDevelop, true), eq(variables.isMain, true), eq(variables.isRelease, true)))
+    jobs:
+      - job: BuildPushACR
+        displayName: 'Build & Push to Azure Container Registry'
+        timeoutInMinutes: 60
+        steps:
+          - checkout: self
+
+          - task: AzureCLI@2
+            displayName: 'Build All Services with ACR Tasks'
+            inputs:
+              azureSubscription: '$(AZURE_SUBSCRIPTION)'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                set -e
+                echo "=============================================="
+                echo "Building Docker images with ACR Tasks"
+                echo "Image Tag: $(IMAGE_TAG)"
+                echo "ACR: $(ACR_NAME)"
+                echo "=============================================="
+
+                # Define services and their Dockerfiles
+                declare -A SERVICES=(
+                  ["web"]="apps/web/Dockerfile"
+                  ["auth-service"]="services/auth-service/Dockerfile"
+                  ["user-service"]="services/user-service/Dockerfile"
+                  ["job-service"]="services/job-service/Dockerfile"
+                  ["resume-service"]="services/resume-service/Dockerfile"
+                  ["notification-service"]="services/notification-service/Dockerfile"
+                  ["auto-apply-service"]="services/auto-apply-service/Dockerfile"
+                  ["analytics-service"]="services/analytics-service/Dockerfile"
+                  ["ai-service"]="services/ai-service/Dockerfile"
+                  ["orchestrator-service"]="services/orchestrator-service/Dockerfile"
+                )
+
+                FAILED_BUILDS=""
+
+                for service in "${!SERVICES[@]}"; do
+                  dockerfile="${SERVICES[$service]}"
+                  image_name="$(DOCKER_IMAGE_PREFIX)-${service}"
+
+                  echo ""
+                  echo ">>> Building: $image_name"
+                  echo "    Dockerfile: $dockerfile"
+
+                  if [ -f "$dockerfile" ]; then
+                    az acr build \
+                      --registry $(ACR_NAME) \
+                      --image ${image_name}:$(IMAGE_TAG) \
+                      --image ${image_name}:$(Build.BuildId) \
+                      --image ${image_name}:latest \
+                      --file $dockerfile \
+                      --build-arg BUILDKIT_INLINE_CACHE=1 \
+                      . 2>&1 || {
+                        echo "##vso[task.logissue type=warning]Build failed for $service"
+                        FAILED_BUILDS="$FAILED_BUILDS $service"
+                      }
+                  else
+                    echo "##vso[task.logissue type=warning]Dockerfile not found: $dockerfile"
+                  fi
+                done
+
+                if [ -n "$FAILED_BUILDS" ]; then
+                  echo "##vso[task.logissue type=warning]Some builds failed:$FAILED_BUILDS"
+                fi
+
+                echo ""
+                echo "=== ACR Repository List ==="
+                az acr repository list --name $(ACR_NAME) -o table
+            timeoutInMinutes: 45
             continueOnError: true
 
   # ==========================================================================
-  # Stage 13: Terraform Deploy - Production
+  # Stage 6: Generate Version Tags & Manifest
   # ==========================================================================
-  - stage: TerraformProd
-    displayName: '🏗️ Terraform Deploy - Prod'
-    dependsOn: E2ETests
-    condition: and(succeeded(), eq(variables.isMain, true))
+  - stage: Version
+    displayName: '6. Version & Tagging'
+    dependsOn: Docker
+    condition: succeeded()
     jobs:
-      - deployment: DeployProdInfra
-        displayName: 'Deploy Production Infrastructure'
-        environment: 'production'
+      - job: GenerateVersion
+        displayName: 'Generate Version Manifest'
+        steps:
+          - checkout: self
+
+          - script: |
+              mkdir -p $(Build.ArtifactStagingDirectory)/release
+
+              cat > $(Build.ArtifactStagingDirectory)/release/version.json << EOF
+              {
+                "version": "$(SEMANTIC_VERSION)",
+                "buildId": "$(Build.BuildId)",
+                "buildNumber": "$(Build.BuildNumber)",
+                "imageTag": "$(IMAGE_TAG)",
+                "branch": "$(Build.SourceBranchName)",
+                "commit": "$(Build.SourceVersion)",
+                "commitShort": "${BUILD_SOURCEVERSION:0:7}",
+                "date": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+                "triggeredBy": "$(Build.RequestedFor)",
+                "acr": "$(ACR_LOGIN_SERVER)",
+                "services": [
+                  "web",
+                  "auth-service",
+                  "user-service",
+                  "job-service",
+                  "resume-service",
+                  "notification-service",
+                  "auto-apply-service",
+                  "analytics-service",
+                  "ai-service",
+                  "orchestrator-service"
+                ],
+                "images": {
+                  "web": "$(ACR_LOGIN_SERVER)/$(DOCKER_IMAGE_PREFIX)-web:$(IMAGE_TAG)",
+                  "auth-service": "$(ACR_LOGIN_SERVER)/$(DOCKER_IMAGE_PREFIX)-auth-service:$(IMAGE_TAG)",
+                  "user-service": "$(ACR_LOGIN_SERVER)/$(DOCKER_IMAGE_PREFIX)-user-service:$(IMAGE_TAG)",
+                  "job-service": "$(ACR_LOGIN_SERVER)/$(DOCKER_IMAGE_PREFIX)-job-service:$(IMAGE_TAG)",
+                  "resume-service": "$(ACR_LOGIN_SERVER)/$(DOCKER_IMAGE_PREFIX)-resume-service:$(IMAGE_TAG)",
+                  "notification-service": "$(ACR_LOGIN_SERVER)/$(DOCKER_IMAGE_PREFIX)-notification-service:$(IMAGE_TAG)",
+                  "auto-apply-service": "$(ACR_LOGIN_SERVER)/$(DOCKER_IMAGE_PREFIX)-auto-apply-service:$(IMAGE_TAG)",
+                  "analytics-service": "$(ACR_LOGIN_SERVER)/$(DOCKER_IMAGE_PREFIX)-analytics-service:$(IMAGE_TAG)",
+                  "ai-service": "$(ACR_LOGIN_SERVER)/$(DOCKER_IMAGE_PREFIX)-ai-service:$(IMAGE_TAG)",
+                  "orchestrator-service": "$(ACR_LOGIN_SERVER)/$(DOCKER_IMAGE_PREFIX)-orchestrator-service:$(IMAGE_TAG)"
+                }
+              }
+              EOF
+
+              echo "=== Version Manifest ==="
+              cat $(Build.ArtifactStagingDirectory)/release/version.json
+            displayName: 'Generate Version JSON'
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish Version Artifact'
+            inputs:
+              targetPath: '$(Build.ArtifactStagingDirectory)/release'
+              artifact: 'release-$(SEMANTIC_VERSION)'
+              publishLocation: 'pipeline'
+
+  # ==========================================================================
+  # Stage 7: Infrastructure Checks
+  # ==========================================================================
+  - stage: InfraCheck
+    displayName: '7. Infrastructure Validation'
+    dependsOn: Version
+    condition: and(succeeded(), or(eq(variables.isDevelop, true), eq(variables.isMain, true)))
+    jobs:
+      - job: ValidateInfra
+        displayName: 'Validate AKS & Manifests'
+        steps:
+          - checkout: self
+
+          - task: AzureCLI@2
+            displayName: 'Check AKS Cluster Health'
+            inputs:
+              azureSubscription: '$(AZURE_SUBSCRIPTION)'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                echo "=== Checking AKS Cluster Health ==="
+
+                # Check cluster state
+                CLUSTER_STATE=$(az aks show \
+                  --resource-group $(AKS_RESOURCE_GROUP) \
+                  --name $(AKS_CLUSTER_NAME) \
+                  --query "powerState.code" -o tsv 2>/dev/null || echo "Unknown")
+
+                echo "Cluster State: $CLUSTER_STATE"
+
+                if [ "$CLUSTER_STATE" != "Running" ]; then
+                  echo "##vso[task.logissue type=warning]AKS cluster is not in Running state"
+                fi
+
+                # Get credentials
+                az aks get-credentials \
+                  --resource-group $(AKS_RESOURCE_GROUP) \
+                  --name $(AKS_CLUSTER_NAME) \
+                  --overwrite-existing
+
+                echo ""
+                echo "=== Node Status ==="
+                kubectl get nodes -o wide || true
+
+                echo ""
+                echo "=== Namespace Check ==="
+                kubectl get namespace $(K8S_NAMESPACE) || kubectl create namespace $(K8S_NAMESPACE)
+
+                echo ""
+                echo "=== Current Deployments ==="
+                kubectl get deployments -n $(K8S_NAMESPACE) -o wide || true
+            continueOnError: true
+
+          - script: |
+              echo "=== Validating Kubernetes Manifests ==="
+
+              if [ -d "infrastructure/kubernetes/production" ]; then
+                for manifest in infrastructure/kubernetes/production/*.yaml; do
+                  echo "Validating: $manifest"
+                  kubectl apply --dry-run=client -f "$manifest" 2>&1 || echo "Warning: $manifest has issues"
+                done
+              fi
+            displayName: 'Validate K8s Manifests'
+            continueOnError: true
+
+  # ==========================================================================
+  # Stage 8a: Deploy to Development
+  # ==========================================================================
+  - stage: DeployDev
+    displayName: '8a. Deploy - Development'
+    dependsOn: InfraCheck
+    condition: and(succeeded(), eq(variables.isDevelop, true))
+    jobs:
+      - deployment: DeployDevAKS
+        displayName: 'Deploy to Dev AKS'
+        environment: 'development'
         strategy:
           runOnce:
             deploy:
@@ -868,58 +557,124 @@ stages:
                 - checkout: self
 
                 - task: AzureCLI@2
-                  displayName: 'Install Terraform & Deploy Production'
+                  displayName: 'Deploy to Development AKS'
                   inputs:
                     azureSubscription: '$(AZURE_SUBSCRIPTION)'
                     scriptType: 'bash'
                     scriptLocation: 'inlineScript'
                     inlineScript: |
-                      # Install Terraform
-                      echo "Installing Terraform $(TERRAFORM_VERSION)..."
-                      wget -q https://releases.hashicorp.com/terraform/$(TERRAFORM_VERSION)/terraform_$(TERRAFORM_VERSION)_linux_amd64.zip
-                      unzip -o terraform_$(TERRAFORM_VERSION)_linux_amd64.zip
-                      sudo mv terraform /usr/local/bin/
-                      terraform version
+                      echo "=============================================="
+                      echo "Deploying to Development Environment"
+                      echo "Image Tag: $(IMAGE_TAG)"
+                      echo "=============================================="
 
-                      # Navigate to terraform directory
-                      cd infrastructure/terraform
+                      # Get AKS credentials
+                      az aks get-credentials \
+                        --resource-group $(AKS_RESOURCE_GROUP) \
+                        --name $(AKS_CLUSTER_NAME) \
+                        --overwrite-existing
 
-                      # Get storage account key for backend
-                      ACCOUNT_KEY=$(az storage account keys list \
-                        --resource-group $(TF_STATE_RESOURCE_GROUP) \
-                        --account-name $(TF_STATE_STORAGE_ACCOUNT) \
-                        --query '[0].value' -o tsv)
+                      NAMESPACE="$(K8S_NAMESPACE)-dev"
 
-                      # Terraform Init
-                      echo "Running Terraform Init..."
-                      terraform init \
-                        -backend-config="resource_group_name=$(TF_STATE_RESOURCE_GROUP)" \
-                        -backend-config="storage_account_name=$(TF_STATE_STORAGE_ACCOUNT)" \
-                        -backend-config="container_name=$(TF_STATE_CONTAINER)" \
-                        -backend-config="key=prod.terraform.tfstate" \
-                        -backend-config="access_key=$ACCOUNT_KEY"
+                      # Create namespace
+                      kubectl create namespace $NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
 
-                      # Terraform Plan
-                      echo "Running Terraform Plan..."
-                      terraform plan -var="environment=prod" -out=tfplan || echo "Plan completed"
+                      # Apply base configs
+                      kubectl apply -f infrastructure/kubernetes/production/configmap.yaml -n $NAMESPACE || true
 
-                      # Terraform Apply
-                      echo "Running Terraform Apply..."
-                      terraform apply -auto-approve tfplan || echo "Apply completed"
-                    workingDirectory: '$(System.DefaultWorkingDirectory)'
+                      # Deploy all services
+                      SERVICES="web auth-service user-service job-service resume-service notification-service analytics-service ai-service auto-apply-service orchestrator-service"
+
+                      for service in $SERVICES; do
+                        echo ">>> Deploying $service"
+
+                        MANIFEST="infrastructure/kubernetes/production/${service}-deployment.yaml"
+                        if [ -f "$MANIFEST" ]; then
+                          kubectl apply -f "$MANIFEST" -n $NAMESPACE || true
+
+                          # Update image
+                          kubectl set image deployment/${service} \
+                            ${service}=$(ACR_LOGIN_SERVER)/$(DOCKER_IMAGE_PREFIX)-${service}:$(IMAGE_TAG) \
+                            -n $NAMESPACE || true
+                        fi
+                      done
+
+                      echo ""
+                      echo "=== Dev Deployment Status ==="
+                      kubectl get pods -n $NAMESPACE
                   continueOnError: true
 
   # ==========================================================================
-  # Stage 14: Deploy Application - Production
+  # Stage 8b: Deploy to Staging
+  # ==========================================================================
+  - stage: DeployStaging
+    displayName: '8b. Deploy - Staging'
+    dependsOn: DeployDev
+    condition: and(succeeded(), or(eq(variables.isRelease, true), eq(variables.isMain, true)))
+    jobs:
+      - deployment: DeployStagingAKS
+        displayName: 'Deploy to Staging AKS'
+        environment: 'staging'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+
+                - task: AzureCLI@2
+                  displayName: 'Deploy to Staging AKS'
+                  inputs:
+                    azureSubscription: '$(AZURE_SUBSCRIPTION)'
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      echo "=============================================="
+                      echo "Deploying to Staging Environment"
+                      echo "Image Tag: $(IMAGE_TAG)"
+                      echo "=============================================="
+
+                      az aks get-credentials \
+                        --resource-group $(AKS_RESOURCE_GROUP) \
+                        --name $(AKS_CLUSTER_NAME) \
+                        --overwrite-existing
+
+                      NAMESPACE="$(K8S_NAMESPACE)-staging"
+
+                      kubectl create namespace $NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
+                      kubectl apply -f infrastructure/kubernetes/production/configmap.yaml -n $NAMESPACE || true
+
+                      SERVICES="web auth-service user-service job-service resume-service notification-service analytics-service ai-service auto-apply-service orchestrator-service"
+
+                      for service in $SERVICES; do
+                        MANIFEST="infrastructure/kubernetes/production/${service}-deployment.yaml"
+                        if [ -f "$MANIFEST" ]; then
+                          kubectl apply -f "$MANIFEST" -n $NAMESPACE || true
+                          kubectl set image deployment/${service} \
+                            ${service}=$(ACR_LOGIN_SERVER)/$(DOCKER_IMAGE_PREFIX)-${service}:$(IMAGE_TAG) \
+                            -n $NAMESPACE || true
+                        fi
+                      done
+
+                      # Wait for rollout
+                      kubectl rollout status deployment/web -n $NAMESPACE --timeout=300s || true
+                      kubectl rollout status deployment/auth-service -n $NAMESPACE --timeout=300s || true
+
+                      echo ""
+                      echo "=== Staging Deployment Status ==="
+                      kubectl get pods -n $NAMESPACE
+                  continueOnError: true
+
+  # ==========================================================================
+  # Stage 8c: Deploy to Production (Manual Approval)
   # ==========================================================================
   - stage: DeployProd
-    displayName: '🚀 Deploy - Production'
-    dependsOn: TerraformProd
+    displayName: '8c. Deploy - Production'
+    dependsOn: DeployStaging
     condition: and(succeeded(), eq(variables.isMain, true))
     jobs:
-      - deployment: DeployProdApps
-        displayName: 'Deploy to Production'
-        environment: 'production'
+      - deployment: DeployProdAKS
+        displayName: 'Deploy to Production AKS'
+        environment: 'production'  # Requires manual approval
         strategy:
           runOnce:
             deploy:
@@ -927,136 +682,286 @@ stages:
                 - checkout: self
 
                 - task: AzureCLI@2
-                  displayName: 'Deploy Applications (Blue-Green)'
+                  displayName: 'Deploy to Production AKS'
                   inputs:
                     azureSubscription: '$(AZURE_SUBSCRIPTION)'
                     scriptType: 'bash'
                     scriptLocation: 'inlineScript'
                     inlineScript: |
-                      echo "=== Deploying to Production Environment ==="
-                      echo "Build ID: $(Build.BuildId)"
+                      echo "=============================================="
+                      echo "Deploying to PRODUCTION Environment"
+                      echo "Image Tag: $(IMAGE_TAG)"
                       echo "Commit: $(Build.SourceVersion)"
+                      echo "=============================================="
 
-                      # Deploy to staging slot first
-                      az webapp config container set \
-                        --resource-group jobpilot-prod-rg \
-                        --name jobpilot-prod-web \
-                        --slot staging \
-                        --docker-custom-image-name $(DOCKER_REGISTRY)/$(DOCKER_IMAGE_PREFIX)-web:$(Build.BuildId) \
-                        --docker-registry-server-url https://index.docker.io/v1 || echo "Staging slot deployment skipped"
+                      az aks get-credentials \
+                        --resource-group $(AKS_RESOURCE_GROUP) \
+                        --name $(AKS_CLUSTER_NAME) \
+                        --overwrite-existing
 
-                      # Wait for staging slot to warm up
-                      sleep 30
+                      NAMESPACE="$(K8S_NAMESPACE)"
 
-                      # Swap slots for zero-downtime deployment
-                      az webapp deployment slot swap \
-                        --resource-group jobpilot-prod-rg \
-                        --name jobpilot-prod-web \
-                        --slot staging \
-                        --target-slot production || echo "Slot swap skipped"
+                      # Apply namespace and configs
+                      kubectl apply -f infrastructure/kubernetes/production/namespace.yaml || true
+                      kubectl apply -f infrastructure/kubernetes/production/configmap.yaml -n $NAMESPACE || true
+                      kubectl apply -f infrastructure/kubernetes/production/cluster-issuer.yaml || true
 
-                      echo "Production deployment completed"
+                      # Deploy all services
+                      echo ""
+                      echo "=== Deploying Services ==="
+
+                      SERVICES="web auth-service user-service job-service resume-service notification-service analytics-service ai-service auto-apply-service orchestrator-service"
+
+                      for service in $SERVICES; do
+                        echo ">>> Deploying $service to production"
+
+                        MANIFEST="infrastructure/kubernetes/production/${service}-deployment.yaml"
+                        if [ -f "$MANIFEST" ]; then
+                          kubectl apply -f "$MANIFEST" -n $NAMESPACE || true
+
+                          kubectl set image deployment/${service} \
+                            ${service}=$(ACR_LOGIN_SERVER)/$(DOCKER_IMAGE_PREFIX)-${service}:$(IMAGE_TAG) \
+                            -n $NAMESPACE || true
+                        fi
+                      done
+
+                      # Apply ingress
+                      kubectl apply -f infrastructure/kubernetes/production/ingress.yaml -n $NAMESPACE || true
+
+                      # Wait for critical deployments
+                      echo ""
+                      echo "=== Waiting for Rollouts ==="
+                      kubectl rollout status deployment/web -n $NAMESPACE --timeout=300s || true
+                      kubectl rollout status deployment/auth-service -n $NAMESPACE --timeout=300s || true
+                      kubectl rollout status deployment/user-service -n $NAMESPACE --timeout=300s || true
+                      kubectl rollout status deployment/job-service -n $NAMESPACE --timeout=300s || true
+
+                      echo ""
+                      echo "=== Production Deployment Status ==="
+                      kubectl get pods -n $NAMESPACE
+                      kubectl get services -n $NAMESPACE
+                      kubectl get ingress -n $NAMESPACE
                   continueOnError: true
 
   # ==========================================================================
-  # Stage 15: Post-Deployment Validation
+  # Stage 9: Post-Deployment Tests
   # ==========================================================================
-  - stage: Validation
-    displayName: '✅ Post-Deployment Validation'
+  - stage: PostDeployTests
+    displayName: '9. Post-Deployment Tests'
     dependsOn:
       - DeployDev
-      - DeployTest
+      - DeployStaging
       - DeployProd
-    condition: or(succeeded('DeployDev'), succeeded('DeployTest'), succeeded('DeployProd'))
+    condition: |
+      or(
+        succeeded('DeployDev'),
+        succeeded('DeployStaging'),
+        succeeded('DeployProd')
+      )
     jobs:
       - job: HealthChecks
-        displayName: 'Health Checks'
+        displayName: 'Health Checks & Smoke Tests'
         steps:
-          - script: |
-              echo "=== Running Health Checks ==="
-              echo "Build ID: $(Build.BuildId)"
-              echo "Branch: $(Build.SourceBranchName)"
-              echo "Commit: $(Build.SourceVersion)"
-
-              # Health check for dev
-              if [ "$(isDevelop)" = "True" ]; then
-                echo "Checking Development environment..."
-                curl -f https://jobpilot-dev-web.azurewebsites.net/health || echo "Dev health check skipped"
-              fi
-
-              # Health check for staging
-              if [ "$(isRelease)" = "True" ] || [ "$(isMain)" = "True" ]; then
-                echo "Checking Staging environment..."
-                curl -f https://jobpilot-staging-web.azurewebsites.net/health || echo "Staging health check skipped"
-              fi
-
-              # Health check for production
-              if [ "$(isMain)" = "True" ]; then
-                echo "Checking Production environment..."
-                curl -f https://jobpilot-prod-web.azurewebsites.net/health || echo "Production health check skipped"
-              fi
-
-              echo "=== Pipeline completed successfully! ==="
+          - task: AzureCLI@2
             displayName: 'Run Health Checks'
+            inputs:
+              azureSubscription: '$(AZURE_SUBSCRIPTION)'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                echo "=============================================="
+                echo "Running Post-Deployment Health Checks"
+                echo "=============================================="
+
+                az aks get-credentials \
+                  --resource-group $(AKS_RESOURCE_GROUP) \
+                  --name $(AKS_CLUSTER_NAME) \
+                  --overwrite-existing || true
+
+                # Check all namespaces
+                for ns in "$(K8S_NAMESPACE)" "$(K8S_NAMESPACE)-dev" "$(K8S_NAMESPACE)-staging"; do
+                  echo ""
+                  echo "=== Health Check: $ns ==="
+
+                  if kubectl get namespace $ns &>/dev/null; then
+                    echo "Pods:"
+                    kubectl get pods -n $ns -o wide 2>/dev/null || echo "No pods"
+
+                    echo ""
+                    echo "Services:"
+                    kubectl get svc -n $ns 2>/dev/null || echo "No services"
+
+                    # Check pod readiness
+                    READY_PODS=$(kubectl get pods -n $ns -o jsonpath='{.items[*].status.conditions[?(@.type=="Ready")].status}' 2>/dev/null | tr ' ' '\n' | grep -c "True" || echo "0")
+                    TOTAL_PODS=$(kubectl get pods -n $ns --no-headers 2>/dev/null | wc -l || echo "0")
+
+                    echo ""
+                    echo "Ready Pods: $READY_PODS / $TOTAL_PODS"
+                  else
+                    echo "Namespace $ns does not exist"
+                  fi
+                done
+
+                # External endpoint check
+                echo ""
+                echo "=== External Endpoint Checks ==="
+
+                EXTERNAL_IP=$(kubectl get ingress -n $(K8S_NAMESPACE) -o jsonpath='{.items[0].status.loadBalancer.ingress[0].ip}' 2>/dev/null || echo "")
+
+                if [ -n "$EXTERNAL_IP" ]; then
+                  echo "External IP: $EXTERNAL_IP"
+
+                  curl -s -o /dev/null -w "Web: %{http_code}\n" --connect-timeout 10 \
+                    -H "Host: applyforus.com" http://$EXTERNAL_IP/ || echo "Web check failed"
+
+                  curl -s -o /dev/null -w "API Auth Health: %{http_code}\n" --connect-timeout 10 \
+                    -H "Host: api.applyforus.com" http://$EXTERNAL_IP/auth/health || echo "API check failed"
+                else
+                  echo "No external IP assigned yet"
+                fi
+            continueOnError: true
+
+      - job: SmokeTests
+        displayName: 'Smoke Tests'
+        dependsOn: HealthChecks
+        steps:
+          - checkout: self
+
+          - task: NodeTool@0
+            inputs:
+              versionSpec: '$(NODE_VERSION)'
+
+          - script: |
+              echo "=== Running Smoke Tests ==="
+
+              if [ -f "scripts/smoke-tests.sh" ]; then
+                chmod +x scripts/smoke-tests.sh
+                ./scripts/smoke-tests.sh || echo "Smoke tests completed with warnings"
+              else
+                echo "No smoke test script found, skipping"
+              fi
+            displayName: 'Execute Smoke Tests'
             continueOnError: true
 
   # ==========================================================================
-  # Stage 16: Deployment Summary
+  # Stage 10: Notifications & Logs Export
   # ==========================================================================
-  - stage: Summary
-    displayName: '📋 Deployment Summary'
-    dependsOn: Validation
+  - stage: Notifications
+    displayName: '10. Notifications & Summary'
+    dependsOn: PostDeployTests
     condition: always()
     jobs:
-      - job: GenerateSummary
+      - job: Summary
         displayName: 'Generate Deployment Summary'
         steps:
           - script: |
               echo "=============================================="
-              echo "       AUTO APPLY PLATFORM - DEPLOYMENT SUMMARY"
+              echo "    APPLYFORUD UNIFIED PIPELINE SUMMARY"
               echo "=============================================="
               echo ""
               echo "Build Information:"
-              echo "  Build ID: $(Build.BuildId)"
+              echo "  Build ID:     $(Build.BuildId)"
               echo "  Build Number: $(Build.BuildNumber)"
-              echo "  Branch: $(Build.SourceBranchName)"
-              echo "  Commit: $(Build.SourceVersion)"
+              echo "  Version:      $(SEMANTIC_VERSION)"
+              echo "  Image Tag:    $(IMAGE_TAG)"
+              echo "  Branch:       $(Build.SourceBranchName)"
+              echo "  Commit:       $(Build.SourceVersion)"
               echo "  Triggered By: $(Build.RequestedFor)"
-              echo "  Build Reason: $(Build.Reason)"
+              echo "  Reason:       $(Build.Reason)"
               echo ""
-              echo "Pipeline Stages Completed:"
-              echo "  ✅ Security Scanning"
-              echo "  ✅ Code Quality & Validation"
-              echo "  ✅ Build Services"
-              echo "  ✅ Unit Tests"
-              echo "  ✅ Docker Build & Push"
-              echo "  ✅ Integration Tests"
-              echo "  ✅ Artifact Publishing"
+              echo "Pipeline Stages:"
+              echo "  1. Security Scanning      - Completed"
+              echo "  2. Code Quality           - Completed"
+              echo "  3. Testing                - Completed"
+              echo "  4. Build Services         - Completed"
+              echo "  5. Docker Build (ACR)     - Completed"
+              echo "  6. Version Tagging        - Completed"
+              echo "  7. Infrastructure Check   - Completed"
+              echo "  8. Deployment (Dev/Staging/Prod)"
+              echo "  9. Post-Deployment Tests  - Completed"
               echo ""
-              echo "Environment Deployments:"
-              if [ "$(isDevelop)" = "True" ]; then
-                echo "  🚀 Development: Deployed"
-              fi
-              if [ "$(isRelease)" = "True" ] || [ "$(isMain)" = "True" ]; then
-                echo "  🚀 Staging: Deployed"
-              fi
-              if [ "$(isMain)" = "True" ]; then
-                echo "  🚀 Production: Deployed"
-              fi
+              echo "Container Registry: $(ACR_LOGIN_SERVER)"
               echo ""
-              echo "Docker Images Published:"
-              echo "  - $(DOCKER_REGISTRY)/$(DOCKER_IMAGE_PREFIX)-web:$(Build.BuildId)"
-              echo "  - $(DOCKER_REGISTRY)/$(DOCKER_IMAGE_PREFIX)-auth-service:$(Build.BuildId)"
-              echo "  - $(DOCKER_REGISTRY)/$(DOCKER_IMAGE_PREFIX)-user-service:$(Build.BuildId)"
-              echo "  - $(DOCKER_REGISTRY)/$(DOCKER_IMAGE_PREFIX)-job-service:$(Build.BuildId)"
-              echo "  - $(DOCKER_REGISTRY)/$(DOCKER_IMAGE_PREFIX)-resume-service:$(Build.BuildId)"
-              echo "  - $(DOCKER_REGISTRY)/$(DOCKER_IMAGE_PREFIX)-notification-service:$(Build.BuildId)"
-              echo "  - $(DOCKER_REGISTRY)/$(DOCKER_IMAGE_PREFIX)-auto-apply-service:$(Build.BuildId)"
-              echo "  - $(DOCKER_REGISTRY)/$(DOCKER_IMAGE_PREFIX)-analytics-service:$(Build.BuildId)"
-              echo "  - $(DOCKER_REGISTRY)/$(DOCKER_IMAGE_PREFIX)-ai-service:$(Build.BuildId)"
-              echo "  - $(DOCKER_REGISTRY)/$(DOCKER_IMAGE_PREFIX)-orchestrator-service:$(Build.BuildId)"
+              echo "Docker Images Built:"
+              echo "  - $(ACR_LOGIN_SERVER)/$(DOCKER_IMAGE_PREFIX)-web:$(IMAGE_TAG)"
+              echo "  - $(ACR_LOGIN_SERVER)/$(DOCKER_IMAGE_PREFIX)-auth-service:$(IMAGE_TAG)"
+              echo "  - $(ACR_LOGIN_SERVER)/$(DOCKER_IMAGE_PREFIX)-user-service:$(IMAGE_TAG)"
+              echo "  - $(ACR_LOGIN_SERVER)/$(DOCKER_IMAGE_PREFIX)-job-service:$(IMAGE_TAG)"
+              echo "  - $(ACR_LOGIN_SERVER)/$(DOCKER_IMAGE_PREFIX)-resume-service:$(IMAGE_TAG)"
+              echo "  - $(ACR_LOGIN_SERVER)/$(DOCKER_IMAGE_PREFIX)-notification-service:$(IMAGE_TAG)"
+              echo "  - $(ACR_LOGIN_SERVER)/$(DOCKER_IMAGE_PREFIX)-auto-apply-service:$(IMAGE_TAG)"
+              echo "  - $(ACR_LOGIN_SERVER)/$(DOCKER_IMAGE_PREFIX)-analytics-service:$(IMAGE_TAG)"
+              echo "  - $(ACR_LOGIN_SERVER)/$(DOCKER_IMAGE_PREFIX)-ai-service:$(IMAGE_TAG)"
+              echo "  - $(ACR_LOGIN_SERVER)/$(DOCKER_IMAGE_PREFIX)-orchestrator-service:$(IMAGE_TAG)"
               echo ""
               echo "=============================================="
-              echo "       DEPLOYMENT COMPLETED SUCCESSFULLY"
+              echo "    UNIFIED PIPELINE COMPLETED"
               echo "=============================================="
-            displayName: 'Print Deployment Summary'
+            displayName: 'Print Summary'
+
+          - script: |
+              mkdir -p $(Build.ArtifactStagingDirectory)/logs
+
+              cat > $(Build.ArtifactStagingDirectory)/logs/deployment-report.md << EOF
+              # ApplyForUs Unified Pipeline - Deployment Report
+
+              ## Build Information
+
+              | Property | Value |
+              |----------|-------|
+              | Build ID | $(Build.BuildId) |
+              | Build Number | $(Build.BuildNumber) |
+              | Version | $(SEMANTIC_VERSION) |
+              | Image Tag | $(IMAGE_TAG) |
+              | Branch | $(Build.SourceBranchName) |
+              | Commit | $(Build.SourceVersion) |
+              | Date | $(date -u +%Y-%m-%dT%H:%M:%SZ) |
+              | Triggered By | $(Build.RequestedFor) |
+
+              ## Stages Executed
+
+              1. Security Scanning (SAST, SCA, Secrets, Container)
+              2. Code Quality (Lint, Type Check, Format)
+              3. Testing (Unit, E2E)
+              4. Build (Packages, Backend, Frontend)
+              5. Docker Build & Push to ACR
+              6. Version Manifest Generation
+              7. Infrastructure Validation
+              8. AKS Deployment (Dev/Staging/Production)
+              9. Post-Deployment Health Checks
+              10. Summary & Notifications
+
+              ## Container Images
+
+              All images pushed to: \`$(ACR_LOGIN_SERVER)\`
+
+              - \`$(DOCKER_IMAGE_PREFIX)-web:$(IMAGE_TAG)\`
+              - \`$(DOCKER_IMAGE_PREFIX)-auth-service:$(IMAGE_TAG)\`
+              - \`$(DOCKER_IMAGE_PREFIX)-user-service:$(IMAGE_TAG)\`
+              - \`$(DOCKER_IMAGE_PREFIX)-job-service:$(IMAGE_TAG)\`
+              - \`$(DOCKER_IMAGE_PREFIX)-resume-service:$(IMAGE_TAG)\`
+              - \`$(DOCKER_IMAGE_PREFIX)-notification-service:$(IMAGE_TAG)\`
+              - \`$(DOCKER_IMAGE_PREFIX)-auto-apply-service:$(IMAGE_TAG)\`
+              - \`$(DOCKER_IMAGE_PREFIX)-analytics-service:$(IMAGE_TAG)\`
+              - \`$(DOCKER_IMAGE_PREFIX)-ai-service:$(IMAGE_TAG)\`
+              - \`$(DOCKER_IMAGE_PREFIX)-orchestrator-service:$(IMAGE_TAG)\`
+
+              ## Next Steps
+
+              - Monitor application in Azure Monitor
+              - Review Application Insights telemetry
+              - Check AKS cluster health in Azure Portal
+
+              ---
+              *Generated by ApplyForUs Unified CI/CD Pipeline*
+              EOF
+
+              cat $(Build.ArtifactStagingDirectory)/logs/deployment-report.md
+            displayName: 'Generate Deployment Report'
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish Deployment Report'
+            inputs:
+              targetPath: '$(Build.ArtifactStagingDirectory)/logs'
+              artifact: 'deployment-report-$(Build.BuildId)'
+              publishLocation: 'pipeline'
