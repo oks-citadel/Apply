@@ -121,7 +121,7 @@ variables:
 # AGENT POOL
 # ============================================================================
 pool:
-  name: 'Default'  # Self-hosted agent pool
+  vmImage: 'ubuntu-latest'  # Microsoft-hosted agents
 
 # ============================================================================
 # STAGES
