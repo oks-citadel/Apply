@@ -367,70 +367,21 @@ jobs:
           kubectl get pods -n ${{ env.K8S_NAMESPACE }} >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
 
-  notify:
-    name: Send Notifications
-    runs-on: ubuntu-latest
-    needs: [prepare, deploy, health-check]
-    if: always() && vars.SLACK_ENABLED == 'true'
-    steps:
-      - name: Notify Slack
-        if: secrets.SLACK_WEBHOOK_URL != ''
-        uses: slackapi/slack-github-action@v1
-        with:
-          payload: |
-            {
-              "text": "${{ needs.deploy.result == 'success' && '✅' || '❌' }} Dev Deployment ${{ needs.deploy.result }}",
-              "blocks": [
-                {
-                  "type": "header",
-                  "text": {
-                    "type": "plain_text",
-                    "text": "Development Deployment"
-                  }
-                },
-                {
-                  "type": "section",
-                  "fields": [
-                    {
-                      "type": "mrkdwn",
-                      "text": "*Status:*\n${{ needs.deploy.result == 'success' && '✅ Success' || '❌ Failed' }}"
-                    },
-                    {
-                      "type": "mrkdwn",
-                      "text": "*Version:*\n${{ needs.prepare.outputs.version }}"
-                    },
-                    {
-                      "type": "mrkdwn",
-                      "text": "*Branch:*\n${{ github.ref_name }}"
-                    },
-                    {
-                      "type": "mrkdwn",
-                      "text": "*Actor:*\n${{ github.actor }}"
-                    }
-                  ]
-                },
-                {
-                  "type": "actions",
-                  "elements": [
-                    {
-                      "type": "button",
-                      "text": {
-                        "type": "plain_text",
-                        "text": "View Workflow"
-                      },
-                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-                    },
-                    {
-                      "type": "button",
-                      "text": {
-                        "type": "plain_text",
-                        "text": "Open Dev Site"
-                      },
-                      "url": "https://dev.applyforus.com"
-                    }
-                  ]
-                }
-              ]
-            }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+  # Slack notifications disabled - add SLACK_WEBHOOK_URL secret to enable
+  # notify:
+  #   name: Send Notifications
+  #   runs-on: ubuntu-latest
+  #   needs: [prepare, deploy, health-check]
+  #   if: always()
+  #   steps:
+  #     - name: Notify Slack
+  #       uses: slackapi/slack-github-action@v1
+  #       continue-on-error: true
+  #       with:
+  #         payload: |
+  #           {
+  #             "text": "Dev Deployment completed",
+  #             "blocks": []
+  #           }
+  #       env:
+  #         SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
