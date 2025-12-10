@@ -1,0 +1,53 @@
+# ============================================================================
+# Template: Artifact Integrity Check
+# ============================================================================
+parameters:
+  - name: imageTag
+    type: string
+  - name: acrName
+    type: string
+  - name: azureSubscription
+    type: string
+    default: 'ApplyPlatform'
+
+steps:
+  - task: AzureCLI@2
+    displayName: 'Verify Artifact Integrity'
+    inputs:
+      azureSubscription: '${{ parameters.azureSubscription }}'
+      scriptType: 'bash'
+      scriptLocation: 'inlineScript'
+      inlineScript: |
+        echo "=== Artifact Integrity Verification ==="
+        echo "Image Tag: ${{ parameters.imageTag }}"
+        echo ""
+
+        INTEGRITY_OK=true
+
+        SERVICES="web auth-service user-service job-service resume-service notification-service analytics-service ai-service auto-apply-service orchestrator-service"
+
+        for service in $SERVICES; do
+          image="applyai-${service}"
+          echo -n "$image: "
+
+          # Check if image exists with correct tag
+          DIGEST=$(az acr repository show \
+            --name ${{ parameters.acrName }} \
+            --image ${image}:${{ parameters.imageTag }} \
+            --query digest -o tsv 2>/dev/null || echo "")
+
+          if [ -n "$DIGEST" ]; then
+            echo "OK (${DIGEST:0:20}...)"
+          else
+            echo "MISSING"
+            INTEGRITY_OK=false
+          fi
+        done
+
+        echo ""
+        if [ "$INTEGRITY_OK" = false ]; then
+          echo "##vso[task.logissue type=error]Some images are missing from ACR"
+          exit 1
+        fi
+
+        echo "All artifacts verified successfully"

@@ -1,0 +1,70 @@
+# ============================================================================
+# Template: Final Verification Tests
+# ============================================================================
+parameters:
+  - name: environment
+    type: string
+  - name: namespace
+    type: string
+  - name: azureSubscription
+    type: string
+    default: 'ApplyPlatform'
+
+steps:
+  - task: NodeTool@0
+    displayName: 'Install Node.js'
+    inputs:
+      versionSpec: '20'
+
+  - script: |
+      echo "=== Final Verification Tests ==="
+
+      # Run smoke tests script if exists
+      if [ -f "scripts/smoke-tests.sh" ]; then
+        chmod +x scripts/smoke-tests.sh
+        ./scripts/smoke-tests.sh ${{ parameters.environment }} || true
+      fi
+    displayName: 'Run Smoke Test Script'
+    continueOnError: true
+
+  - task: AzureCLI@2
+    displayName: 'Final System Verification'
+    inputs:
+      azureSubscription: '${{ parameters.azureSubscription }}'
+      scriptType: 'bash'
+      scriptLocation: 'inlineScript'
+      inlineScript: |
+        echo "=============================================="
+        echo "FINAL VERIFICATION - ${{ parameters.environment }}"
+        echo "=============================================="
+
+        # Get AKS credentials
+        az aks get-credentials \
+          --resource-group applyforus-prod-rg \
+          --name applyforus-aks \
+          --overwrite-existing
+
+        echo ""
+        echo "=== Deployment Summary ==="
+        kubectl get deployments -n ${{ parameters.namespace }} -o wide
+
+        echo ""
+        echo "=== Pod Summary ==="
+        kubectl get pods -n ${{ parameters.namespace }} -o wide
+
+        echo ""
+        echo "=== Service Summary ==="
+        kubectl get services -n ${{ parameters.namespace }}
+
+        echo ""
+        echo "=== Ingress Summary ==="
+        kubectl get ingress -n ${{ parameters.namespace }} || true
+
+        echo ""
+        echo "=== Resource Usage ==="
+        kubectl top pods -n ${{ parameters.namespace }} 2>/dev/null || echo "Metrics not available"
+
+        echo ""
+        echo "=============================================="
+        echo "VERIFICATION COMPLETE"
+        echo "=============================================="

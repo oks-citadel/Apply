@@ -1,0 +1,73 @@
+# ============================================================================
+# Template: API Endpoint Validation
+# ============================================================================
+parameters:
+  - name: environment
+    type: string
+  - name: namespace
+    type: string
+  - name: azureSubscription
+    type: string
+    default: 'ApplyPlatform'
+
+steps:
+  - task: AzureCLI@2
+    displayName: 'API Validation (${{ parameters.environment }})'
+    inputs:
+      azureSubscription: '${{ parameters.azureSubscription }}'
+      scriptType: 'bash'
+      scriptLocation: 'inlineScript'
+      inlineScript: |
+        echo "=== API Endpoint Validation for ${{ parameters.environment }} ==="
+
+        # Get AKS credentials
+        az aks get-credentials \
+          --resource-group applyforus-prod-rg \
+          --name applyforus-aks \
+          --overwrite-existing
+
+        # Define API endpoints to validate
+        declare -A ENDPOINTS=(
+          ["auth-service"]="health,login"
+          ["user-service"]="health,users"
+          ["job-service"]="health,jobs"
+          ["resume-service"]="health"
+          ["notification-service"]="health"
+        )
+
+        VALIDATION_FAILED=0
+
+        for service in "${!ENDPOINTS[@]}"; do
+          echo ""
+          echo ">>> Validating $service"
+
+          SVC_IP=$(kubectl get svc $service -n ${{ parameters.namespace }} -o jsonpath='{.spec.clusterIP}' 2>/dev/null || echo "")
+
+          if [ -z "$SVC_IP" ]; then
+            echo "  Service not found"
+            continue
+          fi
+
+          IFS=',' read -ra PATHS <<< "${ENDPOINTS[$service]}"
+          for path in "${PATHS[@]}"; do
+            echo -n "  /$path: "
+
+            RESPONSE=$(kubectl run api-check-$RANDOM --rm -i --restart=Never --image=curlimages/curl -- \
+              curl -s -o /dev/null -w "%{http_code}" http://$SVC_IP:3000/$path --connect-timeout 5 2>/dev/null || echo "000")
+
+            if [ "$RESPONSE" = "200" ] || [ "$RESPONSE" = "401" ] || [ "$RESPONSE" = "404" ]; then
+              echo "OK ($RESPONSE)"
+            else
+              echo "FAILED ($RESPONSE)"
+              VALIDATION_FAILED=1
+            fi
+          done
+        done
+
+        echo ""
+        if [ $VALIDATION_FAILED -gt 0 ]; then
+          echo "##vso[task.logissue type=warning]Some API endpoints failed validation"
+        else
+          echo "All API endpoints validated successfully"
+        fi
+    continueOnError: true

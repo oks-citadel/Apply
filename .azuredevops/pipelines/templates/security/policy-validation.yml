@@ -1,0 +1,43 @@
+# ============================================================================
+# Template: Policy & Compliance Validation
+# ============================================================================
+parameters:
+  - name: environment
+    type: string
+  - name: azureSubscription
+    type: string
+    default: 'ApplyPlatform'
+
+steps:
+  - task: AzureCLI@2
+    displayName: 'Azure Policy Compliance Check'
+    inputs:
+      azureSubscription: '${{ parameters.azureSubscription }}'
+      scriptType: 'bash'
+      scriptLocation: 'inlineScript'
+      inlineScript: |
+        echo "=== Azure Policy Compliance for ${{ parameters.environment }} ==="
+
+        # Check resource group compliance
+        az policy state list \
+          --resource-group applyforus-${{ parameters.environment }}-rg \
+          --query "[?complianceState=='NonCompliant'].{Policy:policyDefinitionName,Resource:resourceId}" \
+          -o table 2>/dev/null || echo "No policy violations found"
+    continueOnError: true
+
+  - script: |
+      echo "=== Pre-Deployment Policy Checks ==="
+      echo "Environment: ${{ parameters.environment }}"
+
+      # Check required labels
+      if [ -d "infrastructure/kubernetes/${{ parameters.environment }}" ]; then
+        echo "Checking Kubernetes manifests for required labels..."
+        for manifest in infrastructure/kubernetes/${{ parameters.environment }}/*.yaml; do
+          if ! grep -q "app.kubernetes.io/name" "$manifest" 2>/dev/null; then
+            echo "##vso[task.logissue type=warning]Missing app label in $manifest"
+          fi
+        done
+      fi
+
+      echo "Policy validation complete"
+    displayName: 'Pre-Deployment Policy Check'

@@ -1,0 +1,467 @@
+# ============================================================================
+# Pipeline Monitor - Continuous Monitoring for ApplyForUs Platform
+# ============================================================================
+# This pipeline runs on a schedule to monitor:
+#   - Build status and health
+#   - Deployment state across environments
+#   - API/UI contract compliance
+#   - Resource utilization and alerts
+# ============================================================================
+
+trigger: none
+
+schedules:
+  # Run every 15 minutes during business hours
+  - cron: '*/15 6-22 * * 1-5'
+    displayName: 'Business Hours Monitor'
+    branches:
+      include:
+        - main
+        - develop
+    always: true
+
+  # Run every hour outside business hours
+  - cron: '0 * * * 0,6'
+    displayName: 'Weekend Monitor'
+    branches:
+      include:
+        - main
+    always: true
+
+  # Run every 2 hours overnight
+  - cron: '0 */2 23-5 * * *'
+    displayName: 'Overnight Monitor'
+    branches:
+      include:
+        - main
+    always: true
+
+pool:
+  name: 'Default'
+
+variables:
+  - group: applyplatform-common
+  - name: ACR_NAME
+    value: 'applyforusacr'
+  - name: AKS_CLUSTER_NAME
+    value: 'applyforus-aks'
+  - name: RESOURCE_GROUP
+    value: 'applyforus-prod-rg'
+  - name: SLACK_WEBHOOK_URL
+    value: '$(SLACK_WEBHOOK)'
+  - name: ALERT_THRESHOLD_CPU
+    value: '80'
+  - name: ALERT_THRESHOLD_MEMORY
+    value: '85'
+  - name: ALERT_THRESHOLD_PODS
+    value: '90'
+
+stages:
+  # ============================================================================
+  # Stage A: Build Watcher
+  # ============================================================================
+  - stage: BuildWatcher
+    displayName: 'A. Build Watcher'
+    jobs:
+      - job: CheckBuildHealth
+        displayName: 'Check Build Health'
+        steps:
+          - checkout: none
+
+          - script: |
+              echo "=== Build Health Monitor ==="
+              echo "Timestamp: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+              echo ""
+
+              # Check for recent failed builds
+              echo "Checking recent build status..."
+
+              # Create status file
+              mkdir -p $(Build.ArtifactStagingDirectory)/monitor
+
+              cat > $(Build.ArtifactStagingDirectory)/monitor/build-status.json << 'EOF'
+              {
+                "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+                "monitor": "build-watcher",
+                "checks": []
+              }
+              EOF
+            displayName: 'Initialize Build Monitor'
+
+          - task: AzureCLI@2
+            displayName: 'Check ACR Build Status'
+            inputs:
+              azureSubscription: 'ApplyPlatform'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                echo "=== ACR Build Status ==="
+
+                # Check recent ACR task runs
+                RECENT_BUILDS=$(az acr task list-runs \
+                  --registry $(ACR_NAME) \
+                  --top 10 \
+                  --query "[].{name:runId,status:status,startTime:startTime}" \
+                  -o table 2>/dev/null || echo "No ACR tasks found")
+
+                echo "$RECENT_BUILDS"
+
+                # Count failed builds in last 24 hours
+                FAILED_COUNT=$(az acr task list-runs \
+                  --registry $(ACR_NAME) \
+                  --top 50 \
+                  --query "[?status=='Failed'].runId" \
+                  -o tsv 2>/dev/null | wc -l || echo "0")
+
+                echo ""
+                echo "Failed builds in recent history: $FAILED_COUNT"
+
+                if [ "$FAILED_COUNT" -gt 5 ]; then
+                  echo "##vso[task.logissue type=warning]High number of failed ACR builds: $FAILED_COUNT"
+                  echo "##vso[task.setvariable variable=BUILD_ALERT]true"
+                fi
+            continueOnError: true
+
+          - task: AzureCLI@2
+            displayName: 'Check Image Freshness'
+            inputs:
+              azureSubscription: 'ApplyPlatform'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                echo "=== Image Freshness Check ==="
+
+                SERVICES="web auth-service user-service job-service resume-service notification-service analytics-service ai-service auto-apply-service orchestrator-service"
+                STALE_IMAGES=0
+                STALE_THRESHOLD=$((24 * 60 * 60))  # 24 hours in seconds
+
+                for service in $SERVICES; do
+                  IMAGE="applyai-${service}"
+
+                  # Get latest image timestamp
+                  LAST_UPDATE=$(az acr repository show-tags \
+                    --name $(ACR_NAME) \
+                    --repository $IMAGE \
+                    --orderby time_desc \
+                    --top 1 \
+                    --detail \
+                    --query "[0].createdTime" \
+                    -o tsv 2>/dev/null || echo "")
+
+                  if [ -n "$LAST_UPDATE" ]; then
+                    # Convert to epoch
+                    LAST_EPOCH=$(date -d "$LAST_UPDATE" +%s 2>/dev/null || echo "0")
+                    NOW_EPOCH=$(date +%s)
+                    AGE=$((NOW_EPOCH - LAST_EPOCH))
+
+                    if [ $AGE -gt $STALE_THRESHOLD ]; then
+                      echo "$IMAGE: STALE ($(($AGE / 3600)) hours old)"
+                      STALE_IMAGES=$((STALE_IMAGES + 1))
+                    else
+                      echo "$IMAGE: Fresh ($(($AGE / 3600)) hours old)"
+                    fi
+                  else
+                    echo "$IMAGE: NOT FOUND"
+                    STALE_IMAGES=$((STALE_IMAGES + 1))
+                  fi
+                done
+
+                echo ""
+                echo "Stale/Missing images: $STALE_IMAGES"
+
+                if [ $STALE_IMAGES -gt 3 ]; then
+                  echo "##vso[task.logissue type=warning]Multiple stale images detected: $STALE_IMAGES"
+                fi
+            continueOnError: true
+
+  # ============================================================================
+  # Stage B: Deployment Watcher
+  # ============================================================================
+  - stage: DeploymentWatcher
+    displayName: 'B. Deployment Watcher'
+    dependsOn: BuildWatcher
+    jobs:
+      - job: CheckDeployments
+        displayName: 'Check Deployment Health'
+        steps:
+          - checkout: none
+
+          - task: AzureCLI@2
+            displayName: 'Check AKS Cluster Health'
+            inputs:
+              azureSubscription: 'ApplyPlatform'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                echo "=== AKS Cluster Health ==="
+
+                # Get AKS credentials
+                az aks get-credentials \
+                  --resource-group $(RESOURCE_GROUP) \
+                  --name $(AKS_CLUSTER_NAME) \
+                  --overwrite-existing
+
+                # Check cluster health
+                echo ""
+                echo ">>> Cluster Status:"
+                kubectl cluster-info
+
+                # Check node health
+                echo ""
+                echo ">>> Node Status:"
+                kubectl get nodes -o wide
+
+                # Check for unhealthy nodes
+                UNHEALTHY_NODES=$(kubectl get nodes --no-headers | grep -v "Ready" | wc -l || echo "0")
+
+                if [ "$UNHEALTHY_NODES" -gt 0 ]; then
+                  echo "##vso[task.logissue type=error]Unhealthy nodes detected: $UNHEALTHY_NODES"
+                  echo "##vso[task.setvariable variable=CLUSTER_ALERT]true"
+                fi
+            continueOnError: true
+
+          - task: AzureCLI@2
+            displayName: 'Check Pod Health (All Environments)'
+            inputs:
+              azureSubscription: 'ApplyPlatform'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                echo "=== Pod Health Check ==="
+
+                ENVIRONMENTS="dev test prod"
+                TOTAL_ISSUES=0
+
+                for env in $ENVIRONMENTS; do
+                  NAMESPACE="applyforus-$env"
+
+                  echo ""
+                  echo ">>> Environment: $env (namespace: $NAMESPACE)"
+
+                  # Check if namespace exists
+                  if ! kubectl get namespace $NAMESPACE &>/dev/null; then
+                    echo "  Namespace does not exist"
+                    continue
+                  fi
+
+                  # Get pod status
+                  kubectl get pods -n $NAMESPACE -o wide 2>/dev/null || echo "  No pods found"
+
+                  # Check for crash loops
+                  CRASH_LOOPS=$(kubectl get pods -n $NAMESPACE -o jsonpath='{.items[?(@.status.containerStatuses[*].state.waiting.reason=="CrashLoopBackOff")].metadata.name}' 2>/dev/null || echo "")
+
+                  if [ -n "$CRASH_LOOPS" ]; then
+                    echo ""
+                    echo "  CRASH LOOPS DETECTED:"
+                    echo "  $CRASH_LOOPS"
+                    TOTAL_ISSUES=$((TOTAL_ISSUES + 1))
+                  fi
+
+                  # Check for pending pods
+                  PENDING_PODS=$(kubectl get pods -n $NAMESPACE --field-selector=status.phase=Pending --no-headers 2>/dev/null | wc -l || echo "0")
+
+                  if [ "$PENDING_PODS" -gt 0 ]; then
+                    echo ""
+                    echo "  PENDING PODS: $PENDING_PODS"
+                    TOTAL_ISSUES=$((TOTAL_ISSUES + 1))
+                  fi
+
+                  # Check for failed pods
+                  FAILED_PODS=$(kubectl get pods -n $NAMESPACE --field-selector=status.phase=Failed --no-headers 2>/dev/null | wc -l || echo "0")
+
+                  if [ "$FAILED_PODS" -gt 0 ]; then
+                    echo ""
+                    echo "  FAILED PODS: $FAILED_PODS"
+                    TOTAL_ISSUES=$((TOTAL_ISSUES + 1))
+                  fi
+                done
+
+                echo ""
+                echo "Total Issues Found: $TOTAL_ISSUES"
+
+                if [ $TOTAL_ISSUES -gt 0 ]; then
+                  echo "##vso[task.logissue type=warning]Deployment issues detected: $TOTAL_ISSUES"
+                  echo "##vso[task.setvariable variable=DEPLOYMENT_ALERT]true"
+                fi
+            continueOnError: true
+
+          - task: AzureCLI@2
+            displayName: 'Check Resource Utilization'
+            inputs:
+              azureSubscription: 'ApplyPlatform'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                echo "=== Resource Utilization ==="
+
+                # Check node resources
+                echo ""
+                echo ">>> Node Resource Usage:"
+                kubectl top nodes 2>/dev/null || echo "Metrics server not available"
+
+                # Check pod resources in prod
+                echo ""
+                echo ">>> Pod Resource Usage (prod):"
+                kubectl top pods -n applyforus-prod 2>/dev/null || echo "Metrics server not available"
+
+                # Get HPA status
+                echo ""
+                echo ">>> Horizontal Pod Autoscalers:"
+                kubectl get hpa -A 2>/dev/null || echo "No HPAs found"
+            continueOnError: true
+
+  # ============================================================================
+  # Stage C: API/UI Contract Watcher
+  # ============================================================================
+  - stage: ContractWatcher
+    displayName: 'C. API/UI Contract Watcher'
+    dependsOn: DeploymentWatcher
+    jobs:
+      - job: CheckContracts
+        displayName: 'Check API Contracts'
+        steps:
+          - checkout: none
+
+          - task: AzureCLI@2
+            displayName: 'Validate API Endpoints'
+            inputs:
+              azureSubscription: 'ApplyPlatform'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                echo "=== API Contract Validation ==="
+
+                # Get AKS credentials
+                az aks get-credentials \
+                  --resource-group $(RESOURCE_GROUP) \
+                  --name $(AKS_CLUSTER_NAME) \
+                  --overwrite-existing
+
+                # Check API health endpoints
+                SERVICES="auth-service user-service job-service resume-service notification-service ai-service"
+                NAMESPACE="applyforus-prod"
+                FAILED_APIS=0
+
+                for service in $SERVICES; do
+                  echo ""
+                  echo ">>> Checking $service"
+
+                  SVC_IP=$(kubectl get svc $service -n $NAMESPACE -o jsonpath='{.spec.clusterIP}' 2>/dev/null || echo "")
+
+                  if [ -z "$SVC_IP" ]; then
+                    echo "  Service not found"
+                    FAILED_APIS=$((FAILED_APIS + 1))
+                    continue
+                  fi
+
+                  # Test health endpoint
+                  HEALTH_STATUS=$(kubectl run api-health-$RANDOM --rm -i --restart=Never --image=curlimages/curl -- \
+                    curl -s -o /dev/null -w "%{http_code}" http://$SVC_IP:3000/health --connect-timeout 5 2>/dev/null || echo "000")
+
+                  if [ "$HEALTH_STATUS" = "200" ]; then
+                    echo "  Health: OK ($HEALTH_STATUS)"
+                  else
+                    echo "  Health: FAILED ($HEALTH_STATUS)"
+                    FAILED_APIS=$((FAILED_APIS + 1))
+                  fi
+                done
+
+                echo ""
+                echo "Failed API checks: $FAILED_APIS"
+
+                if [ $FAILED_APIS -gt 2 ]; then
+                  echo "##vso[task.logissue type=error]Multiple API failures: $FAILED_APIS"
+                  echo "##vso[task.setvariable variable=API_ALERT]true"
+                fi
+            continueOnError: true
+
+          - task: AzureCLI@2
+            displayName: 'Check Ingress Health'
+            inputs:
+              azureSubscription: 'ApplyPlatform'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                echo "=== Ingress Health Check ==="
+
+                # Check ingress status
+                echo ">>> Ingress Resources:"
+                kubectl get ingress -A
+
+                # Check ingress controller
+                echo ""
+                echo ">>> Ingress Controller Status:"
+                kubectl get pods -n ingress-nginx 2>/dev/null || kubectl get pods -n nginx-ingress 2>/dev/null || echo "Ingress controller not found"
+
+                # Check certificates
+                echo ""
+                echo ">>> TLS Certificates:"
+                kubectl get certificates -A 2>/dev/null || echo "cert-manager not installed"
+            continueOnError: true
+
+  # ============================================================================
+  # Stage D: Alert & Report
+  # ============================================================================
+  - stage: AlertAndReport
+    displayName: 'D. Alert & Report'
+    dependsOn:
+      - BuildWatcher
+      - DeploymentWatcher
+      - ContractWatcher
+    condition: always()
+    jobs:
+      - job: GenerateReport
+        displayName: 'Generate Monitoring Report'
+        steps:
+          - checkout: none
+
+          - script: |
+              echo "=== Generating Monitoring Report ==="
+
+              mkdir -p $(Build.ArtifactStagingDirectory)/reports
+
+              cat > $(Build.ArtifactStagingDirectory)/reports/monitoring-report.md << EOF
+              # ApplyForUs Platform Monitoring Report
+
+              **Generated:** $(date -u +%Y-%m-%dT%H:%M:%SZ)
+              **Build ID:** $(Build.BuildId)
+              **Branch:** $(Build.SourceBranchName)
+
+              ## Summary
+
+              | Check | Status |
+              |-------|--------|
+              | Build Health | Completed |
+              | Deployment Health | Completed |
+              | API Contracts | Completed |
+
+              ## Alerts
+
+              - Build Alert: $(BUILD_ALERT:-false)
+              - Cluster Alert: $(CLUSTER_ALERT:-false)
+              - Deployment Alert: $(DEPLOYMENT_ALERT:-false)
+              - API Alert: $(API_ALERT:-false)
+
+              ---
+              *ApplyForUs Platform Monitor v1.0*
+              EOF
+
+              echo "Report generated successfully"
+            displayName: 'Generate Report'
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish Monitoring Report'
+            inputs:
+              targetPath: '$(Build.ArtifactStagingDirectory)/reports'
+              artifact: 'monitoring-report-$(Build.BuildId)'
+              publishLocation: 'pipeline'
+
+          - script: |
+              echo "=== Monitoring Cycle Complete ==="
+              echo "Next run scheduled per cron configuration"
+              echo ""
+              echo "For immediate action on alerts, check:"
+              echo "  - Azure Portal: portal.azure.com"
+              echo "  - AKS Dashboard: az aks browse --resource-group $(RESOURCE_GROUP) --name $(AKS_CLUSTER_NAME)"
+              echo "  - Pipeline Logs: $(System.CollectionUri)$(System.TeamProject)/_build?definitionId=$(System.DefinitionId)"
+            displayName: 'Monitoring Summary'

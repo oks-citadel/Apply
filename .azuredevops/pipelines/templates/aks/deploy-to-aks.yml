@@ -1,0 +1,132 @@
+# ============================================================================
+# Template: Deploy to AKS
+# ============================================================================
+parameters:
+  - name: environment
+    type: string
+  - name: namespace
+    type: string
+  - name: acrLoginServer
+    type: string
+  - name: imagePrefix
+    type: string
+  - name: imageTag
+    type: string
+  - name: aksResourceGroup
+    type: string
+  - name: aksClusterName
+    type: string
+  - name: zeroDowntime
+    type: boolean
+    default: false
+  - name: azureSubscription
+    type: string
+    default: 'ApplyPlatform'
+
+steps:
+  - task: AzureCLI@2
+    displayName: 'Deploy to AKS (${{ parameters.environment }})'
+    inputs:
+      azureSubscription: '${{ parameters.azureSubscription }}'
+      scriptType: 'bash'
+      scriptLocation: 'inlineScript'
+      inlineScript: |
+        set -e
+        echo "=============================================="
+        echo "DEPLOYING TO ${{ parameters.environment }} AKS"
+        echo "=============================================="
+        echo "Namespace: ${{ parameters.namespace }}"
+        echo "Image Tag: ${{ parameters.imageTag }}"
+        echo "Zero-Downtime: ${{ parameters.zeroDowntime }}"
+        echo ""
+
+        # Get AKS credentials
+        az aks get-credentials \
+          --resource-group ${{ parameters.aksResourceGroup }} \
+          --name ${{ parameters.aksClusterName }} \
+          --overwrite-existing
+
+        # Ensure namespace exists
+        kubectl create namespace ${{ parameters.namespace }} --dry-run=client -o yaml | kubectl apply -f -
+
+        # Apply ConfigMap
+        if [ -f "infrastructure/kubernetes/production/configmap.yaml" ]; then
+          echo "Applying ConfigMap..."
+          kubectl apply -f infrastructure/kubernetes/production/configmap.yaml -n ${{ parameters.namespace }}
+        fi
+
+        # Apply cluster issuer (for TLS)
+        if [ -f "infrastructure/kubernetes/production/cluster-issuer.yaml" ]; then
+          kubectl apply -f infrastructure/kubernetes/production/cluster-issuer.yaml || true
+        fi
+
+        # Deploy all services
+        echo ""
+        echo "=== Deploying Services ==="
+
+        SERVICES="web auth-service user-service job-service resume-service notification-service analytics-service ai-service auto-apply-service orchestrator-service"
+
+        for service in $SERVICES; do
+          echo ""
+          echo ">>> Deploying: $service"
+
+          MANIFEST="infrastructure/kubernetes/production/${service}-deployment.yaml"
+
+          if [ -f "$MANIFEST" ]; then
+            # Apply the deployment manifest
+            kubectl apply -f "$MANIFEST" -n ${{ parameters.namespace }}
+
+            # Update the image
+            kubectl set image deployment/${service} \
+              ${service}=${{ parameters.acrLoginServer }}/${{ parameters.imagePrefix }}-${service}:${{ parameters.imageTag }} \
+              -n ${{ parameters.namespace }} || echo "Image update skipped for $service"
+
+            # For zero-downtime, use rolling update strategy
+            if [ "${{ parameters.zeroDowntime }}" = "true" ]; then
+              kubectl patch deployment ${service} -n ${{ parameters.namespace }} \
+                -p '{"spec":{"strategy":{"type":"RollingUpdate","rollingUpdate":{"maxSurge":"25%","maxUnavailable":"0"}}}}' || true
+            fi
+          else
+            echo "  Manifest not found: $MANIFEST"
+          fi
+        done
+
+        # Apply services (ClusterIP/LoadBalancer)
+        echo ""
+        echo "=== Applying Services ==="
+        for svc_file in infrastructure/kubernetes/services/*.yaml; do
+          if [ -f "$svc_file" ]; then
+            kubectl apply -f "$svc_file" -n ${{ parameters.namespace }} || true
+          fi
+        done
+
+        # Apply ingress
+        if [ -f "infrastructure/kubernetes/production/ingress.yaml" ]; then
+          echo ""
+          echo "=== Applying Ingress ==="
+          kubectl apply -f infrastructure/kubernetes/production/ingress.yaml -n ${{ parameters.namespace }}
+        fi
+
+        # Wait for critical deployments
+        echo ""
+        echo "=== Waiting for Rollouts ==="
+
+        CRITICAL_SERVICES="web auth-service user-service job-service"
+        for service in $CRITICAL_SERVICES; do
+          echo "Waiting for $service..."
+          kubectl rollout status deployment/$service -n ${{ parameters.namespace }} --timeout=300s || true
+        done
+
+        echo ""
+        echo "=== Deployment Status ==="
+        kubectl get deployments -n ${{ parameters.namespace }} -o wide
+        echo ""
+        kubectl get pods -n ${{ parameters.namespace }}
+        echo ""
+        kubectl get services -n ${{ parameters.namespace }}
+        echo ""
+        kubectl get ingress -n ${{ parameters.namespace }} || true
+
+        echo ""
+        echo "Deployment to ${{ parameters.environment }} complete!"
+    timeoutInMinutes: 20

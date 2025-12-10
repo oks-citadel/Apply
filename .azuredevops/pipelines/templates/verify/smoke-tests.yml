@@ -1,0 +1,70 @@
+# ============================================================================
+# Template: Smoke Tests
+# ============================================================================
+parameters:
+  - name: environment
+    type: string
+  - name: namespace
+    type: string
+  - name: azureSubscription
+    type: string
+    default: 'ApplyPlatform'
+
+steps:
+  - task: AzureCLI@2
+    displayName: 'Run Smoke Tests (${{ parameters.environment }})'
+    inputs:
+      azureSubscription: '${{ parameters.azureSubscription }}'
+      scriptType: 'bash'
+      scriptLocation: 'inlineScript'
+      inlineScript: |
+        echo "=== Smoke Tests for ${{ parameters.environment }} ==="
+
+        # Get AKS credentials
+        az aks get-credentials \
+          --resource-group applyforus-prod-rg \
+          --name applyforus-aks \
+          --overwrite-existing
+
+        # Get ingress IP
+        INGRESS_IP=$(kubectl get ingress -n ${{ parameters.namespace }} -o jsonpath='{.items[0].status.loadBalancer.ingress[0].ip}' 2>/dev/null || echo "")
+
+        if [ -z "$INGRESS_IP" ]; then
+          echo "No ingress IP found, using service IPs..."
+
+          # Test services directly
+          SERVICES="auth-service user-service job-service"
+
+          for service in $SERVICES; do
+            SVC_IP=$(kubectl get svc $service -n ${{ parameters.namespace }} -o jsonpath='{.spec.clusterIP}' 2>/dev/null || echo "")
+            if [ -n "$SVC_IP" ]; then
+              echo ""
+              echo "Testing $service at $SVC_IP:3000"
+              kubectl run smoke-$RANDOM --rm -i --restart=Never --image=curlimages/curl -- \
+                curl -s -o /dev/null -w "%{http_code}" http://$SVC_IP:3000/health --connect-timeout 5 2>/dev/null || echo "  FAILED"
+            fi
+          done
+        else
+          echo "Testing via Ingress at $INGRESS_IP"
+
+          # Test web app
+          echo ""
+          echo "Web App:"
+          curl -s -o /dev/null -w "  Status: %{http_code}\n" --connect-timeout 10 \
+            -H "Host: applyforus.com" http://$INGRESS_IP/ || echo "  FAILED"
+
+          # Test API endpoints
+          echo ""
+          echo "Auth API:"
+          curl -s -o /dev/null -w "  Status: %{http_code}\n" --connect-timeout 10 \
+            -H "Host: api.applyforus.com" http://$INGRESS_IP/auth/health || echo "  FAILED"
+
+          echo ""
+          echo "Jobs API:"
+          curl -s -o /dev/null -w "  Status: %{http_code}\n" --connect-timeout 10 \
+            -H "Host: api.applyforus.com" http://$INGRESS_IP/jobs/health || echo "  FAILED"
+        fi
+
+        echo ""
+        echo "Smoke tests complete"
+    continueOnError: true

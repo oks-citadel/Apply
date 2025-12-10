@@ -1,0 +1,559 @@
+# ============================================================================
+# MAIN ORCHESTRATOR PIPELINE - ApplyForUs Platform
+# ============================================================================
+# Single unified CI/CD pipeline controlling the complete lifecycle:
+#   A. Build & Test (dependencies, linting, tests, artifacts, Docker)
+#   B. Container Push (ACR, versioning, vulnerability scans)
+#   C. Deploy to Dev (AKS, secrets, health validation)
+#   D. Deploy to Test (approval gates, smoke tests, API validation)
+#   E. Deploy to Prod (manual approval, zero-downtime, rollback)
+#
+# This pipeline consolidates all previous pipelines into one structure.
+# ============================================================================
+
+trigger:
+  branches:
+    include:
+      - main
+      - develop
+      - release/*
+      - feature/*
+      - hotfix/*
+  paths:
+    exclude:
+      - '*.md'
+      - 'docs/**'
+      - '.github/**'
+      - 'marketing/**'
+      - 'brand/**'
+
+pr:
+  branches:
+    include:
+      - main
+      - develop
+      - release/*
+  paths:
+    exclude:
+      - '*.md'
+      - 'docs/**'
+
+# ============================================================================
+# RESOURCES
+# ============================================================================
+resources:
+  repositories:
+    - repository: self
+      type: git
+      name: ApplyPlatform
+
+# ============================================================================
+# VARIABLES
+# ============================================================================
+variables:
+  # Build Configuration
+  - name: NODE_VERSION
+    value: '20'
+  - name: PNPM_VERSION
+    value: '8.15.0'
+  - name: PYTHON_VERSION
+    value: '3.11'
+  - name: TERRAFORM_VERSION
+    value: '1.6.0'
+
+  # Docker & Registry
+  - name: DOCKER_BUILDKIT
+    value: '1'
+  - name: ACR_NAME
+    value: 'applyforusacr'
+  - name: ACR_LOGIN_SERVER
+    value: 'applyforusacr.azurecr.io'
+  - name: IMAGE_PREFIX
+    value: 'applyai'
+
+  # Azure Resources
+  - name: AZURE_SUBSCRIPTION
+    value: 'ApplyPlatform'
+  - name: AKS_RESOURCE_GROUP
+    value: 'applyforus-prod-rg'
+  - name: AKS_CLUSTER_NAME
+    value: 'applyforus-aks'
+
+  # Namespaces per environment
+  - name: K8S_NAMESPACE_DEV
+    value: 'applyforus-dev'
+  - name: K8S_NAMESPACE_TEST
+    value: 'applyforus-test'
+  - name: K8S_NAMESPACE_PROD
+    value: 'applyforus'
+
+  # Key Vault
+  - name: KEY_VAULT_NAME
+    value: 'applyforus-kv'
+
+  # Version Tagging
+  - name: MAJOR_VERSION
+    value: '1'
+  - name: MINOR_VERSION
+    value: '0'
+  - name: PATCH_VERSION
+    value: $[counter(format('{0}.{1}', variables['MAJOR_VERSION'], variables['MINOR_VERSION']), 0)]
+  - name: SEMANTIC_VERSION
+    value: '$(MAJOR_VERSION).$(MINOR_VERSION).$(PATCH_VERSION)'
+  - name: IMAGE_TAG
+    value: '$(SEMANTIC_VERSION)-$(Build.BuildId)'
+
+  # Branch Conditions
+  - name: isMain
+    value: $[eq(variables['Build.SourceBranch'], 'refs/heads/main')]
+  - name: isDevelop
+    value: $[eq(variables['Build.SourceBranch'], 'refs/heads/develop')]
+  - name: isRelease
+    value: $[startsWith(variables['Build.SourceBranch'], 'refs/heads/release/')]
+  - name: isPR
+    value: $[eq(variables['Build.Reason'], 'PullRequest')]
+
+  # Services Configuration
+  - name: SERVICES
+    value: 'web,auth-service,user-service,job-service,resume-service,notification-service,auto-apply-service,analytics-service,ai-service,orchestrator-service'
+
+# ============================================================================
+# AGENT POOL
+# ============================================================================
+pool:
+  vmImage: 'ubuntu-latest'
+
+# ============================================================================
+# STAGES
+# ============================================================================
+stages:
+  # ==========================================================================
+  # STAGE A: BUILD & TEST
+  # ==========================================================================
+  - stage: BuildAndTest
+    displayName: 'A. Build & Test'
+    jobs:
+      # ----------------------------------------------------------------------
+      # A.1: Security Scanning
+      # ----------------------------------------------------------------------
+      - job: SecurityScanning
+        displayName: 'Security Scanning'
+        steps:
+          - checkout: self
+            fetchDepth: 0
+
+          - template: templates/security/security-scan.yml
+            parameters:
+              scanType: 'full'
+              failOnCritical: true
+
+      # ----------------------------------------------------------------------
+      # A.2: Install Dependencies & Validate
+      # ----------------------------------------------------------------------
+      - job: DependencyInstall
+        displayName: 'Install & Validate'
+        steps:
+          - checkout: self
+
+          - template: templates/build/install-dependencies.yml
+            parameters:
+              nodeVersion: $(NODE_VERSION)
+              pnpmVersion: $(PNPM_VERSION)
+
+      # ----------------------------------------------------------------------
+      # A.3: Linting & Type Checking
+      # ----------------------------------------------------------------------
+      - job: LintAndTypeCheck
+        displayName: 'Lint & Type Check'
+        dependsOn: DependencyInstall
+        steps:
+          - checkout: self
+
+          - template: templates/build/install-dependencies.yml
+            parameters:
+              nodeVersion: $(NODE_VERSION)
+              pnpmVersion: $(PNPM_VERSION)
+
+          - template: templates/build/lint-typecheck.yml
+
+      # ----------------------------------------------------------------------
+      # A.4: Unit & Integration Tests
+      # ----------------------------------------------------------------------
+      - job: UnitTests
+        displayName: 'Unit & Integration Tests'
+        dependsOn: DependencyInstall
+        steps:
+          - checkout: self
+
+          - template: templates/build/install-dependencies.yml
+            parameters:
+              nodeVersion: $(NODE_VERSION)
+              pnpmVersion: $(PNPM_VERSION)
+
+          - template: templates/build/run-tests.yml
+            parameters:
+              testType: 'unit'
+              publishResults: true
+
+      # ----------------------------------------------------------------------
+      # A.5: Build Artifacts (Backend & Frontend)
+      # ----------------------------------------------------------------------
+      - job: BuildArtifacts
+        displayName: 'Build Artifacts'
+        dependsOn:
+          - LintAndTypeCheck
+          - UnitTests
+        condition: succeeded()
+        steps:
+          - checkout: self
+
+          - template: templates/build/install-dependencies.yml
+            parameters:
+              nodeVersion: $(NODE_VERSION)
+              pnpmVersion: $(PNPM_VERSION)
+
+          - template: templates/build/build-artifacts.yml
+            parameters:
+              buildPackages: true
+              buildBackend: true
+              buildFrontend: true
+
+      # ----------------------------------------------------------------------
+      # A.6: Build Docker Images
+      # ----------------------------------------------------------------------
+      - job: BuildDockerImages
+        displayName: 'Build Docker Images'
+        dependsOn: BuildArtifacts
+        condition: and(succeeded(), or(eq(variables.isDevelop, true), eq(variables.isMain, true), eq(variables.isRelease, true)))
+        steps:
+          - checkout: self
+
+          - template: templates/build/docker-build.yml
+            parameters:
+              acrName: $(ACR_NAME)
+              imagePrefix: $(IMAGE_PREFIX)
+              imageTag: $(IMAGE_TAG)
+              services: $(SERVICES)
+
+  # ==========================================================================
+  # STAGE B: CONTAINER PUSH
+  # ==========================================================================
+  - stage: ContainerPush
+    displayName: 'B. Container Push'
+    dependsOn: BuildAndTest
+    condition: and(succeeded(), or(eq(variables.isDevelop, true), eq(variables.isMain, true), eq(variables.isRelease, true)))
+    jobs:
+      # ----------------------------------------------------------------------
+      # B.1: Push to ACR & Version
+      # ----------------------------------------------------------------------
+      - job: PushToACR
+        displayName: 'Push to ACR'
+        steps:
+          - checkout: self
+
+          - template: templates/build/docker-push.yml
+            parameters:
+              acrName: $(ACR_NAME)
+              imagePrefix: $(IMAGE_PREFIX)
+              imageTag: $(IMAGE_TAG)
+              semanticVersion: $(SEMANTIC_VERSION)
+              services: $(SERVICES)
+
+      # ----------------------------------------------------------------------
+      # B.2: Container Vulnerability Scan
+      # ----------------------------------------------------------------------
+      - job: ContainerVulnScan
+        displayName: 'Container Vulnerability Scan'
+        dependsOn: PushToACR
+        steps:
+          - checkout: self
+
+          - template: templates/security/container-scan.yml
+            parameters:
+              acrName: $(ACR_NAME)
+              imagePrefix: $(IMAGE_PREFIX)
+              imageTag: $(IMAGE_TAG)
+
+      # ----------------------------------------------------------------------
+      # B.3: Generate Version Manifest
+      # ----------------------------------------------------------------------
+      - job: VersionManifest
+        displayName: 'Generate Version Manifest'
+        dependsOn: PushToACR
+        steps:
+          - template: templates/build/version-manifest.yml
+            parameters:
+              semanticVersion: $(SEMANTIC_VERSION)
+              imageTag: $(IMAGE_TAG)
+              acrLoginServer: $(ACR_LOGIN_SERVER)
+              imagePrefix: $(IMAGE_PREFIX)
+
+  # ==========================================================================
+  # STAGE C: DEPLOY TO DEV
+  # ==========================================================================
+  - stage: DeployDev
+    displayName: 'C. Deploy to Dev'
+    dependsOn: ContainerPush
+    condition: and(succeeded(), eq(variables.isDevelop, true))
+    jobs:
+      # ----------------------------------------------------------------------
+      # C.1: Pre-deployment Validation
+      # ----------------------------------------------------------------------
+      - job: ValidateDevInfra
+        displayName: 'Validate Dev Infrastructure'
+        steps:
+          - template: templates/deploy/validate-infrastructure.yml
+            parameters:
+              environment: 'dev'
+              aksResourceGroup: $(AKS_RESOURCE_GROUP)
+              aksClusterName: $(AKS_CLUSTER_NAME)
+              namespace: $(K8S_NAMESPACE_DEV)
+
+      # ----------------------------------------------------------------------
+      # C.2: Rotate Secrets from Key Vault
+      # ----------------------------------------------------------------------
+      - job: RotateSecrets
+        displayName: 'Sync Secrets from Key Vault'
+        dependsOn: ValidateDevInfra
+        steps:
+          - template: templates/deploy/sync-secrets.yml
+            parameters:
+              environment: 'dev'
+              keyVaultName: $(KEY_VAULT_NAME)
+              namespace: $(K8S_NAMESPACE_DEV)
+
+      # ----------------------------------------------------------------------
+      # C.3: Deploy to Dev AKS
+      # ----------------------------------------------------------------------
+      - deployment: DeployDevAKS
+        displayName: 'Deploy to Dev AKS'
+        dependsOn: RotateSecrets
+        environment: 'development'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+
+                - template: templates/aks/deploy-to-aks.yml
+                  parameters:
+                    environment: 'dev'
+                    namespace: $(K8S_NAMESPACE_DEV)
+                    acrLoginServer: $(ACR_LOGIN_SERVER)
+                    imagePrefix: $(IMAGE_PREFIX)
+                    imageTag: $(IMAGE_TAG)
+                    aksResourceGroup: $(AKS_RESOURCE_GROUP)
+                    aksClusterName: $(AKS_CLUSTER_NAME)
+
+      # ----------------------------------------------------------------------
+      # C.4: Health Probe & Readiness Validation
+      # ----------------------------------------------------------------------
+      - job: DevHealthCheck
+        displayName: 'Dev Health Validation'
+        dependsOn: DeployDevAKS
+        steps:
+          - template: templates/verify/health-check.yml
+            parameters:
+              environment: 'dev'
+              namespace: $(K8S_NAMESPACE_DEV)
+              services: $(SERVICES)
+
+  # ==========================================================================
+  # STAGE D: DEPLOY TO TEST
+  # ==========================================================================
+  - stage: DeployTest
+    displayName: 'D. Deploy to Test'
+    dependsOn: DeployDev
+    condition: and(succeeded(), or(eq(variables.isRelease, true), eq(variables.isMain, true)))
+    jobs:
+      # ----------------------------------------------------------------------
+      # D.1: Pre-Test Validation & Policy Check
+      # ----------------------------------------------------------------------
+      - job: PolicyValidation
+        displayName: 'Policy & Compliance Check'
+        steps:
+          - template: templates/security/policy-validation.yml
+            parameters:
+              environment: 'test'
+
+      # ----------------------------------------------------------------------
+      # D.2: Deploy to Test AKS
+      # ----------------------------------------------------------------------
+      - deployment: DeployTestAKS
+        displayName: 'Deploy to Test AKS'
+        dependsOn: PolicyValidation
+        environment: 'staging'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+
+                - template: templates/aks/deploy-to-aks.yml
+                  parameters:
+                    environment: 'test'
+                    namespace: $(K8S_NAMESPACE_TEST)
+                    acrLoginServer: $(ACR_LOGIN_SERVER)
+                    imagePrefix: $(IMAGE_PREFIX)
+                    imageTag: $(IMAGE_TAG)
+                    aksResourceGroup: $(AKS_RESOURCE_GROUP)
+                    aksClusterName: $(AKS_CLUSTER_NAME)
+
+      # ----------------------------------------------------------------------
+      # D.3: Smoke Tests
+      # ----------------------------------------------------------------------
+      - job: SmokeTests
+        displayName: 'Smoke Tests'
+        dependsOn: DeployTestAKS
+        steps:
+          - checkout: self
+
+          - template: templates/verify/smoke-tests.yml
+            parameters:
+              environment: 'test'
+              namespace: $(K8S_NAMESPACE_TEST)
+
+      # ----------------------------------------------------------------------
+      # D.4: API Endpoint Validation
+      # ----------------------------------------------------------------------
+      - job: APIValidation
+        displayName: 'API Endpoint Validation'
+        dependsOn: SmokeTests
+        steps:
+          - template: templates/verify/api-validation.yml
+            parameters:
+              environment: 'test'
+              namespace: $(K8S_NAMESPACE_TEST)
+
+  # ==========================================================================
+  # STAGE E: DEPLOY TO PROD
+  # ==========================================================================
+  - stage: DeployProd
+    displayName: 'E. Deploy to Prod'
+    dependsOn: DeployTest
+    condition: and(succeeded(), eq(variables.isMain, true))
+    jobs:
+      # ----------------------------------------------------------------------
+      # E.1: Security Gate Check
+      # ----------------------------------------------------------------------
+      - job: SecurityGate
+        displayName: 'Security Gate Check'
+        steps:
+          - template: templates/security/security-gate.yml
+            parameters:
+              environment: 'prod'
+
+      # ----------------------------------------------------------------------
+      # E.2: Artifact Integrity Validation
+      # ----------------------------------------------------------------------
+      - job: ArtifactIntegrity
+        displayName: 'Artifact Integrity Check'
+        dependsOn: SecurityGate
+        steps:
+          - template: templates/verify/artifact-integrity.yml
+            parameters:
+              imageTag: $(IMAGE_TAG)
+              acrName: $(ACR_NAME)
+
+      # ----------------------------------------------------------------------
+      # E.3: Create Rollback Plan
+      # ----------------------------------------------------------------------
+      - job: CreateRollbackPlan
+        displayName: 'Create Rollback Plan'
+        dependsOn: ArtifactIntegrity
+        steps:
+          - template: templates/deploy/create-rollback-plan.yml
+            parameters:
+              namespace: $(K8S_NAMESPACE_PROD)
+
+      # ----------------------------------------------------------------------
+      # E.4: Production Deployment (Manual Approval Required)
+      # ----------------------------------------------------------------------
+      - deployment: DeployProdAKS
+        displayName: 'Deploy to Prod AKS'
+        dependsOn: CreateRollbackPlan
+        environment: 'production'  # Requires manual approval
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+
+                - template: templates/aks/deploy-to-aks.yml
+                  parameters:
+                    environment: 'prod'
+                    namespace: $(K8S_NAMESPACE_PROD)
+                    acrLoginServer: $(ACR_LOGIN_SERVER)
+                    imagePrefix: $(IMAGE_PREFIX)
+                    imageTag: $(IMAGE_TAG)
+                    aksResourceGroup: $(AKS_RESOURCE_GROUP)
+                    aksClusterName: $(AKS_CLUSTER_NAME)
+                    zeroDowntime: true
+
+      # ----------------------------------------------------------------------
+      # E.5: Production Health Validation
+      # ----------------------------------------------------------------------
+      - job: ProdHealthCheck
+        displayName: 'Production Health Validation'
+        dependsOn: DeployProdAKS
+        steps:
+          - template: templates/verify/health-check.yml
+            parameters:
+              environment: 'prod'
+              namespace: $(K8S_NAMESPACE_PROD)
+              services: $(SERVICES)
+              criticalValidation: true
+
+      # ----------------------------------------------------------------------
+      # E.6: Final Verification Tests
+      # ----------------------------------------------------------------------
+      - job: FinalVerification
+        displayName: 'Final Verification Tests'
+        dependsOn: ProdHealthCheck
+        steps:
+          - checkout: self
+
+          - template: templates/verify/final-verification.yml
+            parameters:
+              environment: 'prod'
+              namespace: $(K8S_NAMESPACE_PROD)
+
+  # ==========================================================================
+  # STAGE F: POST-DEPLOYMENT
+  # ==========================================================================
+  - stage: PostDeployment
+    displayName: 'F. Post-Deployment'
+    dependsOn:
+      - DeployDev
+      - DeployTest
+      - DeployProd
+    condition: |
+      or(
+        succeeded('DeployDev'),
+        succeeded('DeployTest'),
+        succeeded('DeployProd')
+      )
+    jobs:
+      - job: DeploymentSummary
+        displayName: 'Generate Deployment Summary'
+        steps:
+          - template: templates/verify/deployment-summary.yml
+            parameters:
+              semanticVersion: $(SEMANTIC_VERSION)
+              imageTag: $(IMAGE_TAG)
+              buildId: $(Build.BuildId)
+
+      - job: NotifyTeam
+        displayName: 'Send Notifications'
+        dependsOn: DeploymentSummary
+        steps:
+          - script: |
+              echo "=============================================="
+              echo "DEPLOYMENT COMPLETED SUCCESSFULLY"
+              echo "=============================================="
+              echo "Version: $(SEMANTIC_VERSION)"
+              echo "Image Tag: $(IMAGE_TAG)"
+              echo "Build: $(Build.BuildId)"
+              echo "Branch: $(Build.SourceBranchName)"
+              echo "=============================================="
+            displayName: 'Deployment Notification'

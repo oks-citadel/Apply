@@ -1,0 +1,89 @@
+# ============================================================================
+# Template: Security Scanning
+# ============================================================================
+parameters:
+  - name: scanType
+    type: string
+    default: 'full'
+    values:
+      - full
+      - quick
+      - sast-only
+  - name: failOnCritical
+    type: boolean
+    default: true
+
+steps:
+  # SAST - Static Application Security Testing
+  - script: |
+      echo "=== SAST: ESLint Security Rules ==="
+      pnpm run lint 2>&1 | tee sast-report.txt || true
+    displayName: 'SAST - ESLint'
+    continueOnError: true
+
+  # SCA - Software Composition Analysis
+  - script: |
+      echo "=== SCA: Dependency Audit ==="
+      pnpm audit --audit-level=high 2>&1 | tee sca-report.txt || true
+    displayName: 'SCA - Dependency Audit'
+    continueOnError: true
+
+  # Secrets Detection
+  - script: |
+      echo "=== Secrets Detection ==="
+      FOUND=0
+      if grep -rE "(password|secret|api_key|apikey|access_token|private_key)[\s]*[:=][\s]*['\"][^'\"]{8,}['\"]" \
+        --include="*.ts" --include="*.js" --include="*.json" --include="*.yaml" --include="*.yml" \
+        --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=dist . 2>/dev/null; then
+        echo "##vso[task.logissue type=warning]Potential secrets detected"
+        FOUND=1
+      fi
+      if [ $FOUND -eq 0 ]; then
+        echo "No obvious secrets detected"
+      fi
+    displayName: 'Secrets Detection'
+    continueOnError: true
+
+  # Dockerfile Security Analysis
+  - ${{ if or(eq(parameters.scanType, 'full'), eq(parameters.scanType, 'quick')) }}:
+    - script: |
+        echo "=== Dockerfile Security Analysis ==="
+        for dockerfile in $(find . -name "Dockerfile" -type f 2>/dev/null); do
+          echo "Analyzing: $dockerfile"
+          if grep -q "FROM.*:latest" "$dockerfile"; then
+            echo "##vso[task.logissue type=warning]Using :latest tag in $dockerfile"
+          fi
+          if ! grep -q "USER" "$dockerfile"; then
+            echo "##vso[task.logissue type=warning]No USER directive in $dockerfile"
+          fi
+          if grep -q "ADD http" "$dockerfile"; then
+            echo "##vso[task.logissue type=warning]Using ADD with URL in $dockerfile"
+          fi
+        done
+      displayName: 'Dockerfile Security'
+      continueOnError: true
+
+  # Kubernetes Manifest Security
+  - ${{ if eq(parameters.scanType, 'full') }}:
+    - script: |
+        echo "=== Kubernetes Manifest Security ==="
+        for manifest in $(find infrastructure/kubernetes -name "*.yaml" -type f 2>/dev/null); do
+          if grep -q "privileged: true" "$manifest"; then
+            echo "##vso[task.logissue type=warning]Privileged container in $manifest"
+          fi
+          if grep -q "hostNetwork: true" "$manifest"; then
+            echo "##vso[task.logissue type=warning]Host network in $manifest"
+          fi
+        done
+      displayName: 'K8s Manifest Security'
+      continueOnError: true
+
+  - task: PublishPipelineArtifact@1
+    displayName: 'Publish Security Reports'
+    inputs:
+      targetPath: '$(System.DefaultWorkingDirectory)'
+      artifact: 'security-reports-$(Build.BuildId)'
+      publishLocation: 'pipeline'
+      patterns: |
+        *-report.txt
+    condition: always()

@@ -1,0 +1,65 @@
+# ============================================================================
+# Template: Docker Push to ACR
+# ============================================================================
+parameters:
+  - name: acrName
+    type: string
+  - name: imagePrefix
+    type: string
+  - name: imageTag
+    type: string
+  - name: semanticVersion
+    type: string
+  - name: services
+    type: string
+  - name: azureSubscription
+    type: string
+    default: 'ApplyPlatform'
+
+steps:
+  - task: AzureCLI@2
+    displayName: 'Verify & Tag Images in ACR'
+    inputs:
+      azureSubscription: '${{ parameters.azureSubscription }}'
+      scriptType: 'bash'
+      scriptLocation: 'inlineScript'
+      inlineScript: |
+        echo "=== Verifying Images in ACR ==="
+
+        for service in $(echo "${{ parameters.services }}" | tr ',' ' '); do
+          image="${{ parameters.imagePrefix }}-${service}"
+          echo "Checking: $image"
+
+          # List tags
+          az acr repository show-tags \
+            --name ${{ parameters.acrName }} \
+            --repository $image \
+            --top 5 \
+            --orderby time_desc \
+            -o table 2>/dev/null || echo "  Repository not found"
+        done
+
+        echo ""
+        echo "=== ACR Repository Summary ==="
+        az acr repository list --name ${{ parameters.acrName }} -o table
+
+  - task: AzureCLI@2
+    displayName: 'Add Semantic Version Tags'
+    inputs:
+      azureSubscription: '${{ parameters.azureSubscription }}'
+      scriptType: 'bash'
+      scriptLocation: 'inlineScript'
+      inlineScript: |
+        echo "=== Adding Semantic Version Tags ==="
+
+        for service in $(echo "${{ parameters.services }}" | tr ',' ' '); do
+          image="${{ parameters.imagePrefix }}-${service}"
+
+          # Import with semantic version tag
+          az acr import \
+            --name ${{ parameters.acrName }} \
+            --source ${{ parameters.acrName }}.azurecr.io/${image}:${{ parameters.imageTag }} \
+            --image ${image}:${{ parameters.semanticVersion }} \
+            --force 2>/dev/null || echo "Tag import for $service skipped"
+        done
+    continueOnError: true

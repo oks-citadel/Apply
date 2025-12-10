@@ -1,0 +1,43 @@
+# ============================================================================
+# Template: Container Vulnerability Scan
+# ============================================================================
+parameters:
+  - name: acrName
+    type: string
+  - name: imagePrefix
+    type: string
+  - name: imageTag
+    type: string
+  - name: azureSubscription
+    type: string
+    default: 'ApplyPlatform'
+
+steps:
+  - task: AzureCLI@2
+    displayName: 'Check ACR Security Scanning'
+    inputs:
+      azureSubscription: '${{ parameters.azureSubscription }}'
+      scriptType: 'bash'
+      scriptLocation: 'inlineScript'
+      inlineScript: |
+        echo "=== Container Security Status ==="
+
+        # Check if Defender for Containers is enabled
+        echo "Checking Azure Defender status..."
+        az security pricing show --name ContainerRegistry -o table 2>/dev/null || echo "Defender status check skipped"
+
+        echo ""
+        echo "=== Checking Image Digests ==="
+        SERVICES="web auth-service user-service job-service resume-service"
+
+        for service in $SERVICES; do
+          image="${{ parameters.imagePrefix }}-${service}"
+          echo ""
+          echo ">>> $image"
+          az acr repository show \
+            --name ${{ parameters.acrName }} \
+            --image ${image}:${{ parameters.imageTag }} \
+            --query "{digest:digest,lastUpdateTime:lastUpdateTime}" \
+            -o table 2>/dev/null || echo "  Image not found"
+        done
+    continueOnError: true

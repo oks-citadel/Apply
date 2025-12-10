@@ -1,0 +1,63 @@
+# ============================================================================
+# Template: Validate Infrastructure
+# ============================================================================
+parameters:
+  - name: environment
+    type: string
+  - name: aksResourceGroup
+    type: string
+  - name: aksClusterName
+    type: string
+  - name: namespace
+    type: string
+  - name: azureSubscription
+    type: string
+    default: 'ApplyPlatform'
+
+steps:
+  - task: AzureCLI@2
+    displayName: 'Validate AKS Cluster (${{ parameters.environment }})'
+    inputs:
+      azureSubscription: '${{ parameters.azureSubscription }}'
+      scriptType: 'bash'
+      scriptLocation: 'inlineScript'
+      inlineScript: |
+        echo "=== Validating Infrastructure for ${{ parameters.environment }} ==="
+
+        # Check cluster state
+        CLUSTER_STATE=$(az aks show \
+          --resource-group ${{ parameters.aksResourceGroup }} \
+          --name ${{ parameters.aksClusterName }} \
+          --query "powerState.code" -o tsv 2>/dev/null || echo "Unknown")
+
+        echo "Cluster State: $CLUSTER_STATE"
+
+        if [ "$CLUSTER_STATE" != "Running" ]; then
+          echo "##vso[task.logissue type=error]AKS cluster not running"
+          exit 1
+        fi
+
+        # Get credentials
+        az aks get-credentials \
+          --resource-group ${{ parameters.aksResourceGroup }} \
+          --name ${{ parameters.aksClusterName }} \
+          --overwrite-existing
+
+        # Check nodes
+        echo ""
+        echo "=== Node Status ==="
+        kubectl get nodes
+
+        NOT_READY=$(kubectl get nodes --no-headers | grep -v "Ready" | wc -l)
+        if [ "$NOT_READY" -gt 0 ]; then
+          echo "##vso[task.logissue type=warning]$NOT_READY nodes not ready"
+        fi
+
+        # Create/verify namespace
+        echo ""
+        echo "=== Namespace Check ==="
+        kubectl create namespace ${{ parameters.namespace }} --dry-run=client -o yaml | kubectl apply -f -
+        kubectl label namespace ${{ parameters.namespace }} environment=${{ parameters.environment }} --overwrite
+
+        echo ""
+        echo "Infrastructure validation: PASSED"

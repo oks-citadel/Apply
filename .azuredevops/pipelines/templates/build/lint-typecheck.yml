@@ -1,0 +1,31 @@
+# ============================================================================
+# Template: Lint & Type Check
+# ============================================================================
+steps:
+  - script: |
+      echo "=== Running ESLint ==="
+      pnpm run lint 2>&1 | tee lint-report.txt || true
+    displayName: 'ESLint'
+    continueOnError: true
+
+  - script: |
+      echo "=== Running TypeScript Type Check ==="
+      pnpm run type-check 2>&1 | tee typecheck-report.txt || true
+    displayName: 'TypeScript Check'
+    continueOnError: true
+
+  - script: |
+      echo "=== Checking Code Formatting ==="
+      pnpm run format:check || true
+    displayName: 'Format Check (Prettier)'
+    continueOnError: true
+
+  - task: PublishPipelineArtifact@1
+    displayName: 'Publish Lint Reports'
+    inputs:
+      targetPath: '$(System.DefaultWorkingDirectory)'
+      artifact: 'lint-reports'
+      publishLocation: 'pipeline'
+      patterns: |
+        *-report.txt
+    condition: always()

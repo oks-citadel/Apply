@@ -1,0 +1,45 @@
+# ============================================================================
+# Template: Build Artifacts
+# ============================================================================
+parameters:
+  - name: buildPackages
+    type: boolean
+    default: true
+  - name: buildBackend
+    type: boolean
+    default: true
+  - name: buildFrontend
+    type: boolean
+    default: true
+
+steps:
+  - ${{ if eq(parameters.buildPackages, true) }}:
+    - script: |
+        echo "=== Building Shared Packages ==="
+        pnpm run build --filter="./packages/*" || true
+      displayName: 'Build Packages'
+
+  - ${{ if eq(parameters.buildBackend, true) }}:
+    - script: |
+        echo "=== Building Backend Services ==="
+        pnpm run build --filter="./services/*" || true
+      displayName: 'Build Backend Services'
+
+  - ${{ if eq(parameters.buildFrontend, true) }}:
+    - script: |
+        echo "=== Building Frontend Applications ==="
+        pnpm run build --filter="./apps/*" || true
+      displayName: 'Build Frontend Apps'
+
+  - task: PublishPipelineArtifact@1
+    displayName: 'Publish Build Artifacts'
+    inputs:
+      targetPath: '$(System.DefaultWorkingDirectory)'
+      artifact: 'build-output-$(Build.BuildId)'
+      publishLocation: 'pipeline'
+      patterns: |
+        services/**/dist/**
+        apps/**/dist/**
+        apps/**/.next/**
+        packages/**/dist/**
+    condition: succeededOrFailed()

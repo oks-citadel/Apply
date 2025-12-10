@@ -1,0 +1,54 @@
+# ============================================================================
+# Template: Generate Version Manifest
+# ============================================================================
+parameters:
+  - name: semanticVersion
+    type: string
+  - name: imageTag
+    type: string
+  - name: acrLoginServer
+    type: string
+  - name: imagePrefix
+    type: string
+
+steps:
+  - script: |
+      mkdir -p $(Build.ArtifactStagingDirectory)/release
+
+      cat > $(Build.ArtifactStagingDirectory)/release/version.json << EOF
+      {
+        "version": "${{ parameters.semanticVersion }}",
+        "buildId": "$(Build.BuildId)",
+        "buildNumber": "$(Build.BuildNumber)",
+        "imageTag": "${{ parameters.imageTag }}",
+        "branch": "$(Build.SourceBranchName)",
+        "commit": "$(Build.SourceVersion)",
+        "commitShort": "${BUILD_SOURCEVERSION:0:7}",
+        "date": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+        "triggeredBy": "$(Build.RequestedFor)",
+        "acr": "${{ parameters.acrLoginServer }}",
+        "images": {
+          "web": "${{ parameters.acrLoginServer }}/${{ parameters.imagePrefix }}-web:${{ parameters.imageTag }}",
+          "auth-service": "${{ parameters.acrLoginServer }}/${{ parameters.imagePrefix }}-auth-service:${{ parameters.imageTag }}",
+          "user-service": "${{ parameters.acrLoginServer }}/${{ parameters.imagePrefix }}-user-service:${{ parameters.imageTag }}",
+          "job-service": "${{ parameters.acrLoginServer }}/${{ parameters.imagePrefix }}-job-service:${{ parameters.imageTag }}",
+          "resume-service": "${{ parameters.acrLoginServer }}/${{ parameters.imagePrefix }}-resume-service:${{ parameters.imageTag }}",
+          "notification-service": "${{ parameters.acrLoginServer }}/${{ parameters.imagePrefix }}-notification-service:${{ parameters.imageTag }}",
+          "auto-apply-service": "${{ parameters.acrLoginServer }}/${{ parameters.imagePrefix }}-auto-apply-service:${{ parameters.imageTag }}",
+          "analytics-service": "${{ parameters.acrLoginServer }}/${{ parameters.imagePrefix }}-analytics-service:${{ parameters.imageTag }}",
+          "ai-service": "${{ parameters.acrLoginServer }}/${{ parameters.imagePrefix }}-ai-service:${{ parameters.imageTag }}",
+          "orchestrator-service": "${{ parameters.acrLoginServer }}/${{ parameters.imagePrefix }}-orchestrator-service:${{ parameters.imageTag }}"
+        }
+      }
+      EOF
+
+      echo "=== Version Manifest ==="
+      cat $(Build.ArtifactStagingDirectory)/release/version.json
+    displayName: 'Generate Version Manifest'
+
+  - task: PublishPipelineArtifact@1
+    displayName: 'Publish Version Manifest'
+    inputs:
+      targetPath: '$(Build.ArtifactStagingDirectory)/release'
+      artifact: 'release-${{ parameters.semanticVersion }}'
+      publishLocation: 'pipeline'

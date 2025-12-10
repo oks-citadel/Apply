@@ -1,0 +1,73 @@
+# ============================================================================
+# Template: Docker Build (ACR Tasks)
+# ============================================================================
+parameters:
+  - name: acrName
+    type: string
+  - name: imagePrefix
+    type: string
+  - name: imageTag
+    type: string
+  - name: services
+    type: string
+  - name: azureSubscription
+    type: string
+    default: 'ApplyPlatform'
+
+steps:
+  - task: AzureCLI@2
+    displayName: 'Build All Docker Images'
+    inputs:
+      azureSubscription: '${{ parameters.azureSubscription }}'
+      scriptType: 'bash'
+      scriptLocation: 'inlineScript'
+      inlineScript: |
+        set -e
+        echo "=============================================="
+        echo "Building Docker Images with ACR Tasks"
+        echo "Tag: ${{ parameters.imageTag }}"
+        echo "=============================================="
+
+        # Service to Dockerfile mapping
+        declare -A DOCKERFILES=(
+          ["web"]="apps/web/Dockerfile"
+          ["auth-service"]="services/auth-service/Dockerfile"
+          ["user-service"]="services/user-service/Dockerfile"
+          ["job-service"]="services/job-service/Dockerfile"
+          ["resume-service"]="services/resume-service/Dockerfile"
+          ["notification-service"]="services/notification-service/Dockerfile"
+          ["auto-apply-service"]="services/auto-apply-service/Dockerfile"
+          ["analytics-service"]="services/analytics-service/Dockerfile"
+          ["ai-service"]="services/ai-service/Dockerfile"
+          ["orchestrator-service"]="services/orchestrator-service/Dockerfile"
+        )
+
+        FAILED=""
+
+        for service in $(echo "${{ parameters.services }}" | tr ',' ' '); do
+          dockerfile="${DOCKERFILES[$service]}"
+          image="${{ parameters.imagePrefix }}-${service}"
+
+          if [ -f "$dockerfile" ]; then
+            echo ""
+            echo ">>> Building: $image"
+            az acr build \
+              --registry ${{ parameters.acrName }} \
+              --image ${image}:${{ parameters.imageTag }} \
+              --image ${image}:$(Build.BuildId) \
+              --image ${image}:latest \
+              --file $dockerfile \
+              . 2>&1 || {
+                echo "##vso[task.logissue type=warning]Failed: $service"
+                FAILED="$FAILED $service"
+              }
+          else
+            echo "##vso[task.logissue type=warning]Dockerfile not found: $dockerfile"
+          fi
+        done
+
+        if [ -n "$FAILED" ]; then
+          echo "##vso[task.logissue type=warning]Failed builds:$FAILED"
+        fi
+    timeoutInMinutes: 45
+    continueOnError: true

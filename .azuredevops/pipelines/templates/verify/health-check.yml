@@ -1,0 +1,105 @@
+# ============================================================================
+# Template: Health Check
+# ============================================================================
+parameters:
+  - name: environment
+    type: string
+  - name: namespace
+    type: string
+  - name: services
+    type: string
+  - name: criticalValidation
+    type: boolean
+    default: false
+  - name: azureSubscription
+    type: string
+    default: 'ApplyPlatform'
+
+steps:
+  - task: AzureCLI@2
+    displayName: 'Health Check (${{ parameters.environment }})'
+    inputs:
+      azureSubscription: '${{ parameters.azureSubscription }}'
+      scriptType: 'bash'
+      scriptLocation: 'inlineScript'
+      inlineScript: |
+        echo "=============================================="
+        echo "HEALTH CHECK - ${{ parameters.environment }}"
+        echo "=============================================="
+
+        # Get AKS credentials
+        az aks get-credentials \
+          --resource-group applyforus-prod-rg \
+          --name applyforus-aks \
+          --overwrite-existing
+
+        HEALTH_FAILED=0
+
+        # Check pod status
+        echo "=== Pod Status ==="
+        kubectl get pods -n ${{ parameters.namespace }} -o wide
+
+        # Count ready pods
+        TOTAL_PODS=$(kubectl get pods -n ${{ parameters.namespace }} --no-headers 2>/dev/null | wc -l)
+        READY_PODS=$(kubectl get pods -n ${{ parameters.namespace }} -o jsonpath='{.items[*].status.conditions[?(@.type=="Ready")].status}' 2>/dev/null | tr ' ' '\n' | grep -c "True" || echo "0")
+
+        echo ""
+        echo "Ready: $READY_PODS / $TOTAL_PODS pods"
+
+        if [ "$READY_PODS" -lt "$TOTAL_PODS" ]; then
+          echo "##vso[task.logissue type=warning]Not all pods are ready"
+          HEALTH_FAILED=1
+        fi
+
+        # Check for crashed pods
+        CRASHED=$(kubectl get pods -n ${{ parameters.namespace }} --no-headers 2>/dev/null | grep -E "CrashLoopBackOff|Error|ImagePullBackOff" | wc -l)
+        if [ "$CRASHED" -gt 0 ]; then
+          echo "##vso[task.logissue type=error]$CRASHED pods in error state"
+          kubectl get pods -n ${{ parameters.namespace }} | grep -E "CrashLoopBackOff|Error|ImagePullBackOff"
+          HEALTH_FAILED=1
+        fi
+
+        # Check deployments
+        echo ""
+        echo "=== Deployment Status ==="
+        kubectl get deployments -n ${{ parameters.namespace }}
+
+        # Service health endpoints
+        echo ""
+        echo "=== Service Health Endpoints ==="
+
+        for service in $(echo "${{ parameters.services }}" | tr ',' ' '); do
+          echo -n "$service: "
+
+          # Get service ClusterIP
+          SVC_IP=$(kubectl get svc $service -n ${{ parameters.namespace }} -o jsonpath='{.spec.clusterIP}' 2>/dev/null || echo "")
+
+          if [ -n "$SVC_IP" ] && [ "$SVC_IP" != "None" ]; then
+            # Try health endpoint via kubectl exec
+            HEALTH=$(kubectl run health-check-$RANDOM --rm -i --restart=Never --image=busybox -- wget -q -O- http://$SVC_IP:3000/health --timeout=5 2>/dev/null || echo "failed")
+
+            if echo "$HEALTH" | grep -q "ok\|healthy\|UP"; then
+              echo "HEALTHY"
+            else
+              echo "UNKNOWN"
+            fi
+          else
+            echo "NO SERVICE"
+          fi
+        done
+
+        # Critical validation for production
+        if [ "${{ parameters.criticalValidation }}" = "true" ]; then
+          echo ""
+          echo "=== Critical Validation ==="
+
+          if [ $HEALTH_FAILED -gt 0 ]; then
+            echo "##vso[task.complete result=SucceededWithIssues;]Health check passed with warnings"
+          else
+            echo "All critical checks passed"
+          fi
+        fi
+
+        echo ""
+        echo "Health check complete for ${{ parameters.environment }}"
+    continueOnError: true

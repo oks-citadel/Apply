@@ -1,3 +1,6 @@
+# Azure DevOps pipelines - include build folder
+!.azuredevops/pipelines/templates/build/
+
 # Dependencies
 node_modules/
 .pnp

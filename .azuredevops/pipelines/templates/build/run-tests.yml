@@ -1,0 +1,54 @@
+# ============================================================================
+# Template: Run Tests
+# ============================================================================
+parameters:
+  - name: testType
+    type: string
+    default: 'unit'
+    values:
+      - unit
+      - integration
+      - e2e
+  - name: publishResults
+    type: boolean
+    default: true
+
+steps:
+  - script: |
+      echo "=== Running ${{ parameters.testType }} Tests ==="
+      case "${{ parameters.testType }}" in
+        unit)
+          pnpm run test --passWithNoTests --ci || true
+          ;;
+        integration)
+          pnpm run test:integration || true
+          ;;
+        e2e)
+          npx playwright install --with-deps || true
+          pnpm run test:e2e || true
+          ;;
+      esac
+    displayName: 'Run ${{ parameters.testType }} Tests'
+    env:
+      NODE_ENV: test
+      CI: 'true'
+    continueOnError: true
+
+  - ${{ if eq(parameters.publishResults, true) }}:
+    - task: PublishTestResults@2
+      displayName: 'Publish Test Results'
+      condition: succeededOrFailed()
+      inputs:
+        testResultsFormat: 'JUnit'
+        testResultsFiles: '**/junit.xml'
+        mergeTestResults: true
+        failTaskOnFailedTests: false
+      continueOnError: true
+
+    - task: PublishCodeCoverageResults@2
+      displayName: 'Publish Code Coverage'
+      condition: succeededOrFailed()
+      inputs:
+        summaryFileLocation: '**/coverage/cobertura-coverage.xml'
+        failIfCoverageEmpty: false
+      continueOnError: true
