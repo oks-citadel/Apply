@@ -166,14 +166,18 @@ stages:
             displayName: 'Container Security Scan'
             continueOnError: true
 
+          - script: |
+              mkdir -p $(Build.ArtifactStagingDirectory)/security-reports
+              cp *-report.txt $(Build.ArtifactStagingDirectory)/security-reports/ 2>/dev/null || echo "No reports found"
+            displayName: 'Collect Security Reports'
+            condition: always()
+
           - task: PublishPipelineArtifact@1
             displayName: 'Publish Security Reports'
             inputs:
-              targetPath: '$(System.DefaultWorkingDirectory)'
-              artifact: 'security-reports'
+              targetPath: '$(Build.ArtifactStagingDirectory)/security-reports'
+              artifact: 'security-reports-$(Build.BuildId)'
               publishLocation: 'pipeline'
-              patterns: |
-                *-report.txt
             condition: always()
 
   # ==========================================================================
@@ -317,17 +321,25 @@ stages:
               pnpm run build --filter="./apps/*" || true
             displayName: 'Build Frontend'
 
+          - script: |
+              # Collect build outputs without node_modules
+              mkdir -p $(Build.ArtifactStagingDirectory)/build-output
+              # Copy dist folders only
+              find services -path '*/dist/*' -type f 2>/dev/null | head -1000 | xargs -I{} cp --parents {} $(Build.ArtifactStagingDirectory)/build-output/ 2>/dev/null || true
+              find apps -path '*/dist/*' -type f 2>/dev/null | head -1000 | xargs -I{} cp --parents {} $(Build.ArtifactStagingDirectory)/build-output/ 2>/dev/null || true
+              find packages -path '*/dist/*' -type f 2>/dev/null | head -1000 | xargs -I{} cp --parents {} $(Build.ArtifactStagingDirectory)/build-output/ 2>/dev/null || true
+              # Copy .next folders (excluding cache)
+              find apps -path '*/.next/*' -type f ! -path '*/cache/*' 2>/dev/null | head -5000 | xargs -I{} cp --parents {} $(Build.ArtifactStagingDirectory)/build-output/ 2>/dev/null || true
+              echo "Build artifacts collected"
+            displayName: 'Collect Build Artifacts (no node_modules)'
+            condition: always()
+
           - task: PublishPipelineArtifact@1
             displayName: 'Publish Build Artifacts'
             inputs:
-              targetPath: '$(System.DefaultWorkingDirectory)'
-              artifact: 'build-output'
+              targetPath: '$(Build.ArtifactStagingDirectory)/build-output'
+              artifact: 'build-output-$(Build.BuildId)'
               publishLocation: 'pipeline'
-              patterns: |
-                services/**/dist/**
-                apps/**/dist/**
-                apps/**/.next/**
-                packages/**/dist/**
 
   # ==========================================================================
   # Stage 5: Build & Push Docker Images to ACR
