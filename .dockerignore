@@ -71,3 +71,27 @@ pip-log.txt
 .terraform
 *.tfstate
 *.tfstate.*
+terraform/
+
+# Mobile app (not needed for web)
+apps/mobile/
+apps/admin/
+apps/employer/
+apps/extension/
+**/apps/mobile/**
+**/apps/admin/**
+**/apps/employer/**
+**/apps/extension/**
+
+# Services (not needed for web app build)
+services/
+
+# Ops/Infrastructure
+ops/
+.azuredevops/
+infrastructure/
+
+# Other
+postman/
+.claude/
+*.tar.gz
