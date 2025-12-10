@@ -43,12 +43,12 @@ COPY --from=builder --chown=nodejs:nodejs /app/services/auth-service/node_module
 USER nodejs
 
 ENV NODE_ENV=production
-ENV PORT=4000
+ENV PORT=8001
 
-EXPOSE 4000
+EXPOSE 8001
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
-    CMD curl -f http://localhost:4000/health || exit 1
+    CMD curl -f http://localhost:8001/health || exit 1
 
 ENTRYPOINT ["dumb-init", "--"]
 CMD ["node", "dist/main.js"]

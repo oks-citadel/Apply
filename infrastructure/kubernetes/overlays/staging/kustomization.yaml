@@ -69,7 +69,7 @@ configMapGenerator:
   literals:
   - NODE_ENV=staging
   - LOG_LEVEL=info
-  - CORS_ORIGIN=https://staging.jobpilot.com
+  - CORS_ORIGIN=https://staging.applyforus.com
   - POSTGRES_HOST=jobpilot-postgres-staging.postgres.database.azure.com
   - REDIS_HOST=jobpilot-redis-staging.redis.cache.windows.net
 

@@ -29,8 +29,8 @@ data:
   #     name: letsencrypt-prod
   #     kind: ClusterIssuer
   #   dnsNames:
-  #     - api.jobpilot.com
-  #     - "*.jobpilot.com"
+  #     - api.applyforus.com
+  #     - "*.applyforus.com"
 
   tls.crt: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCi0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0=
   tls.key: LS0tLS1CRUdJTiBQUklWQVRFIEtFWS0tLS0tCi0tLS0tRU5EIFBSSVZBVEUgS0VZLS0tLS0=
@@ -56,12 +56,12 @@ spec:
       - JobPilot
 
   # Common name
-  commonName: api.jobpilot.com
+  commonName: api.applyforus.com
 
   # DNS names
   dnsNames:
-    - api.jobpilot.com
-    - "*.api.jobpilot.com"
+    - api.applyforus.com
+    - "*.api.applyforus.com"
 
   # Issuer reference (ClusterIssuer for Let's Encrypt)
   issuerRef:

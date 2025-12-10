@@ -39,12 +39,12 @@ COPY --from=builder --chown=nodejs:nodejs /app/services/auto-apply-service/node_
 USER nodejs
 
 ENV NODE_ENV=production
-ENV PORT=4003
+ENV PORT=8005
 
-EXPOSE 4003
+EXPOSE 8005
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
-    CMD curl -f http://localhost:4003/health || exit 1
+    CMD curl -f http://localhost:8005/health || exit 1
 
 ENTRYPOINT ["dumb-init", "--"]
 CMD ["node", "dist/main.js"]

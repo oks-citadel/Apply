@@ -31,7 +31,7 @@ spec:
         pod-security.kubernetes.io/warn: restricted
       annotations:
         prometheus.io/scrape: "true"
-        prometheus.io/port: "3009"
+        prometheus.io/port: "8010"
         prometheus.io/path: "/metrics"
         seccomp.security.alpha.kubernetes.io/pod: runtime/default
     spec:
@@ -47,12 +47,12 @@ spec:
         image: ${ACR_LOGIN_SERVER}/orchestrator-service:${VERSION:-v1.0.0}
         imagePullPolicy: IfNotPresent
         ports:
-        - containerPort: 3009
+        - containerPort: 8010
           name: http
           protocol: TCP
         env:
         - name: PORT
-          value: "3009"
+          value: "8010"
         - name: SERVICE_NAME
           value: "orchestrator-service"
         - name: NODE_ENV
@@ -68,21 +68,21 @@ spec:
               name: applyforus-config
               key: REDIS_PORT
         - name: AUTH_SERVICE_URL
-          value: "http://auth-service:4000"
+          value: "http://auth-service:8001"
         - name: USER_SERVICE_URL
-          value: "http://user-service:4004"
+          value: "http://user-service:8002"
         - name: JOB_SERVICE_URL
-          value: "http://job-service:4002"
+          value: "http://job-service:8004"
         - name: AI_SERVICE_URL
-          value: "http://ai-service:5000"
+          value: "http://ai-service:8008"
         - name: RESUME_SERVICE_URL
-          value: "http://resume-service:4001"
+          value: "http://resume-service:8003"
         - name: ANALYTICS_SERVICE_URL
-          value: "http://analytics-service:3007"
+          value: "http://analytics-service:8006"
         - name: NOTIFICATION_SERVICE_URL
-          value: "http://notification-service:4005"
+          value: "http://notification-service:8007"
         - name: AUTO_APPLY_SERVICE_URL
-          value: "http://auto-apply-service:4003"
+          value: "http://auto-apply-service:8005"
         envFrom:
         - configMapRef:
             name: applyforus-config
@@ -98,7 +98,7 @@ spec:
         livenessProbe:
           httpGet:
             path: /health/live
-            port: 3009
+            port: 8010
             scheme: HTTP
           initialDelaySeconds: 30
           periodSeconds: 10
@@ -108,7 +108,7 @@ spec:
         readinessProbe:
           httpGet:
             path: /health/ready
-            port: 3009
+            port: 8010
             scheme: HTTP
           initialDelaySeconds: 15
           periodSeconds: 5
@@ -155,8 +155,8 @@ spec:
   selector:
     app: orchestrator-service
   ports:
-  - port: 3009
-    targetPort: 3009
+  - port: 8010
+    targetPort: 8010
     protocol: TCP
     name: http
   sessionAffinity: None

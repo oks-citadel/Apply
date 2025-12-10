@@ -64,7 +64,7 @@ export default () => ({
       user: process.env.EMAIL_USER || '',
       pass: process.env.EMAIL_PASS || '',
     },
-    from: process.env.EMAIL_FROM || 'noreply@jobpilot.ai',
+    from: process.env.EMAIL_FROM || 'noreply@applyforus.com',
   },
 
   // Password Configuration

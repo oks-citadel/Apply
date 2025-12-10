@@ -50,14 +50,14 @@ USER nodejs
 
 # Environment configuration
 ENV NODE_ENV=production
-ENV PORT=3009
+ENV PORT=8010
 
 # Expose the service port
-EXPOSE 3009
+EXPOSE 8010
 
 # Health check configuration
 HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
-    CMD curl -f http://localhost:3009/health || exit 1
+    CMD curl -f http://localhost:8010/health || exit 1
 
 # Use dumb-init as entrypoint for proper signal handling
 ENTRYPOINT ["dumb-init", "--"]

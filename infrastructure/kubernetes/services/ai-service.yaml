@@ -31,7 +31,7 @@ spec:
         pod-security.kubernetes.io/warn: restricted
       annotations:
         prometheus.io/scrape: "true"
-        prometheus.io/port: "5000"
+        prometheus.io/port: "8008"
         prometheus.io/path: "/metrics"
         # Pod Security Standards - Restricted profile
         seccomp.security.alpha.kubernetes.io/pod: runtime/default
@@ -48,12 +48,12 @@ spec:
         image: ${ACR_LOGIN_SERVER}/ai-service:${VERSION:-v1.0.0}
         imagePullPolicy: IfNotPresent
         ports:
-        - containerPort: 5000
+        - containerPort: 8008
           name: http
           protocol: TCP
         env:
         - name: PORT
-          value: "5000"
+          value: "8008"
         - name: SERVICE_NAME
           value: "ai-service"
         envFrom:
@@ -71,7 +71,7 @@ spec:
         livenessProbe:
           httpGet:
             path: /health/live
-            port: 5000
+            port: 8008
             scheme: HTTP
           initialDelaySeconds: 30
           periodSeconds: 10
@@ -81,7 +81,7 @@ spec:
         readinessProbe:
           httpGet:
             path: /health/ready
-            port: 5000
+            port: 8008
             scheme: HTTP
           initialDelaySeconds: 10
           periodSeconds: 5
@@ -132,8 +132,8 @@ spec:
   selector:
     app: ai-service
   ports:
-  - port: 5000
-    targetPort: 5000
+  - port: 8008
+    targetPort: 8008
     protocol: TCP
     name: http
   sessionAffinity: None

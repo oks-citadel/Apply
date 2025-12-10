@@ -367,8 +367,8 @@ export class GDPRService {
     return {
       controller: {
         name: 'JobPilot AI',
-        contact: 'privacy@jobpilot.ai',
-        dpo: 'dpo@jobpilot.ai',
+        contact: 'privacy@applyforus.com',
+        dpo: 'dpo@applyforus.com',
       },
       purposes: [
         {

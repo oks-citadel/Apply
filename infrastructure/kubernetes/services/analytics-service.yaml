@@ -31,7 +31,7 @@ spec:
         pod-security.kubernetes.io/warn: restricted
       annotations:
         prometheus.io/scrape: "true"
-        prometheus.io/port: "3007"
+        prometheus.io/port: "8006"
         prometheus.io/path: "/metrics"
         # Pod Security Standards - Restricted profile
         seccomp.security.alpha.kubernetes.io/pod: runtime/default
@@ -48,12 +48,12 @@ spec:
         image: ${ACR_LOGIN_SERVER}/analytics-service:${VERSION:-v1.0.0}
         imagePullPolicy: IfNotPresent
         ports:
-        - containerPort: 3007
+        - containerPort: 8006
           name: http
           protocol: TCP
         env:
         - name: PORT
-          value: "3007"
+          value: "8006"
         - name: SERVICE_NAME
           value: "analytics-service"
         envFrom:
@@ -71,7 +71,7 @@ spec:
         livenessProbe:
           httpGet:
             path: /health/live
-            port: 3007
+            port: 8006
             scheme: HTTP
           initialDelaySeconds: 30
           periodSeconds: 10
@@ -81,7 +81,7 @@ spec:
         readinessProbe:
           httpGet:
             path: /health/ready
-            port: 3007
+            port: 8006
             scheme: HTTP
           initialDelaySeconds: 10
           periodSeconds: 5
@@ -132,8 +132,8 @@ spec:
   selector:
     app: analytics-service
   ports:
-  - port: 3007
-    targetPort: 3007
+  - port: 8006
+    targetPort: 8006
     protocol: TCP
     name: http
   sessionAffinity: None

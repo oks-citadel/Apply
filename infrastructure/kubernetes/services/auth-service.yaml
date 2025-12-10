@@ -32,7 +32,7 @@ spec:
         azure.workload.identity/use: "true"
       annotations:
         prometheus.io/scrape: "true"
-        prometheus.io/port: "4000"
+        prometheus.io/port: "8001"
         prometheus.io/path: "/metrics"
         # Pod Security Standards - Restricted profile
         seccomp.security.alpha.kubernetes.io/pod: runtime/default
@@ -50,12 +50,12 @@ spec:
         image: ${ACR_LOGIN_SERVER}/auth-service:${VERSION:-v1.0.0}
         imagePullPolicy: IfNotPresent
         ports:
-        - containerPort: 4000
+        - containerPort: 8001
           name: http
           protocol: TCP
         env:
         - name: PORT
-          value: "4000"
+          value: "8001"
         - name: SERVICE_NAME
           value: "auth-service"
         envFrom:
@@ -73,7 +73,7 @@ spec:
         livenessProbe:
           httpGet:
             path: /health/live
-            port: 4000
+            port: 8001
             scheme: HTTP
           initialDelaySeconds: 30
           periodSeconds: 10
@@ -83,7 +83,7 @@ spec:
         readinessProbe:
           httpGet:
             path: /health/ready
-            port: 4000
+            port: 8001
             scheme: HTTP
           initialDelaySeconds: 10
           periodSeconds: 5
@@ -134,8 +134,8 @@ spec:
   selector:
     app: auth-service
   ports:
-  - port: 4000
-    targetPort: 4000
+  - port: 8001
+    targetPort: 8001
     protocol: TCP
     name: http
   sessionAffinity: None

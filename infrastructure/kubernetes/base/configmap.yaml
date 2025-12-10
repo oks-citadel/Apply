@@ -21,14 +21,14 @@ data:
   REDIS_TLS: "true"
 
   # Service URLs (Internal) - ports match K8s deployment containerPorts
-  AUTH_SERVICE_URL: "http://auth-service.applyforus.svc.cluster.local:4000"
-  USER_SERVICE_URL: "http://user-service.applyforus.svc.cluster.local:4004"
-  JOB_SERVICE_URL: "http://job-service.applyforus.svc.cluster.local:4002"
-  AI_SERVICE_URL: "http://ai-service.applyforus.svc.cluster.local:5000"
-  RESUME_SERVICE_URL: "http://resume-service.applyforus.svc.cluster.local:4001"
-  ANALYTICS_SERVICE_URL: "http://analytics-service.applyforus.svc.cluster.local:3007"
-  NOTIFICATION_SERVICE_URL: "http://notification-service.applyforus.svc.cluster.local:4005"
-  AUTO_APPLY_SERVICE_URL: "http://auto-apply-service.applyforus.svc.cluster.local:4003"
+  AUTH_SERVICE_URL: "http://auth-service.applyforus.svc.cluster.local:8001"
+  USER_SERVICE_URL: "http://user-service.applyforus.svc.cluster.local:8002"
+  JOB_SERVICE_URL: "http://job-service.applyforus.svc.cluster.local:8004"
+  AI_SERVICE_URL: "http://ai-service.applyforus.svc.cluster.local:8008"
+  RESUME_SERVICE_URL: "http://resume-service.applyforus.svc.cluster.local:8003"
+  ANALYTICS_SERVICE_URL: "http://analytics-service.applyforus.svc.cluster.local:8006"
+  NOTIFICATION_SERVICE_URL: "http://notification-service.applyforus.svc.cluster.local:8007"
+  AUTO_APPLY_SERVICE_URL: "http://auto-apply-service.applyforus.svc.cluster.local:8005"
 
   # Azure Configuration
   AZURE_STORAGE_ACCOUNT_NAME: "jobpilotstorage"
@@ -44,10 +44,10 @@ data:
   SMTP_HOST: "smtp.sendgrid.net"
   SMTP_PORT: "587"
   SMTP_SECURE: "false"
-  EMAIL_FROM: "noreply@jobpilot.com"
+  EMAIL_FROM: "noreply@applyforus.com"
 
   # Application Settings
-  CORS_ORIGIN: "https://jobpilot.com,https://www.jobpilot.com"
+  CORS_ORIGIN: "https://applyforus.com,https://www.applyforus.com"
   API_RATE_LIMIT: "100"
   API_RATE_WINDOW: "15"
   SESSION_TIMEOUT: "3600"

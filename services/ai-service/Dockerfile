@@ -62,7 +62,7 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONHASHSEED=random \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    PORT=5000 \
+    PORT=8008 \
     # PyTorch optimizations
     OMP_NUM_THREADS=4 \
     MKL_NUM_THREADS=4 \
@@ -71,16 +71,16 @@ ENV PYTHONUNBUFFERED=1 \
     HF_HOME=/app/cache/huggingface
 
 # Expose port
-EXPOSE 5000
+EXPOSE 8008
 
 # Health check with reduced frequency to save resources
 HEALTHCHECK --interval=60s --timeout=10s --start-period=30s --retries=3 \
-    CMD curl -f http://localhost:5000/health || exit 1
+    CMD curl -f http://localhost:8008/health || exit 1
 
 # Use exec form for proper signal handling
 CMD ["uvicorn", "src.main:app", \
      "--host", "0.0.0.0", \
-     "--port", "5000", \
+     "--port", "8008", \
      "--workers", "2", \
      "--loop", "uvloop", \
      "--http", "httptools", \

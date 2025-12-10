@@ -293,7 +293,7 @@ github_advanced_security:
 # ============================================================================
 security_policy:
   # Vulnerability disclosure
-  disclosure_email: "security@jobpilot.com"
+  disclosure_email: "security@applyforus.com"
 
   # Response time SLAs
   response_sla:
