@@ -73,18 +73,14 @@ pip-log.txt
 *.tfstate.*
 terraform/
 
-# Mobile app (not needed for web)
+# Mobile app (not needed for web build, but keep apps/web/)
 apps/mobile/
 apps/admin/
 apps/employer/
 apps/extension/
-**/apps/mobile/**
-**/apps/admin/**
-**/apps/employer/**
-**/apps/extension/**
 
-# Services (not needed for web app build)
-services/
+# NOTE: services/ is NOT ignored because Docker builds need it
+# Each service Dockerfile specifies what to copy
 
 # Ops/Infrastructure
 ops/
