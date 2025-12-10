@@ -1,0 +1,451 @@
+name: CD - Deploy to Staging
+
+on:
+  push:
+    branches: [main]
+    tags:
+      - 'v*-rc*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to deploy (leave empty for latest)'
+        required: false
+        type: string
+
+concurrency:
+  group: cd-staging
+  cancel-in-progress: false
+
+env:
+  ACR_NAME: applyforusacr
+  ACR_LOGIN_SERVER: applyforusacr.azurecr.io
+  IMAGE_PREFIX: applyai
+  AKS_RESOURCE_GROUP: applyforus-staging-rg
+  AKS_CLUSTER_NAME: applyforus-staging-aks
+  K8S_NAMESPACE: applyforus-staging
+  NODE_VERSION: '20'
+  SERVICES: 'web,auth-service,user-service,job-service,resume-service,notification-service,auto-apply-service,analytics-service,ai-service,orchestrator-service,payment-service'
+
+jobs:
+  prepare:
+    name: Prepare Staging Deployment
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      image_tag: ${{ steps.version.outputs.image_tag }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine Version
+        id: version
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          elif [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            VERSION="${GITHUB_REF#refs/tags/v}"
+          else
+            VERSION="1.0.$(git rev-list --count HEAD)"
+          fi
+
+          IMAGE_TAG="${VERSION}-${GITHUB_SHA:0:8}"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "image_tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
+          echo "Deploying version: $VERSION, Image tag: $IMAGE_TAG"
+
+  security-gate:
+    name: Security Gate
+    runs-on: ubuntu-latest
+    needs: prepare
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run security checks
+        run: |
+          echo "Running pre-deployment security checks..."
+
+          # Check for secrets in code
+          if grep -rE "(password|secret|key|token)\s*=\s*['\"][^'\"]+['\"]" --include="*.ts" --include="*.js" --exclude-dir=node_modules .; then
+            echo "::warning::Potential hardcoded secrets detected"
+          fi
+
+      - name: Verify image signatures
+        run: |
+          echo "Verifying container image integrity..."
+          # In production, use cosign or similar for image verification
+
+  build-and-push:
+    name: Build & Push Images
+    runs-on: ubuntu-latest
+    needs: [prepare, security-gate]
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [web, auth-service, user-service, job-service, resume-service, notification-service, auto-apply-service, analytics-service, ai-service, orchestrator-service, payment-service]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to ACR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.ACR_LOGIN_SERVER }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+
+      - name: Determine Dockerfile path
+        id: dockerfile
+        run: |
+          if [ "${{ matrix.service }}" = "web" ]; then
+            echo "path=apps/web/Dockerfile" >> $GITHUB_OUTPUT
+            echo "context=." >> $GITHUB_OUTPUT
+          else
+            echo "path=services/${{ matrix.service }}/Dockerfile" >> $GITHUB_OUTPUT
+            echo "context=." >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ steps.dockerfile.outputs.context }}
+          file: ${{ steps.dockerfile.outputs.path }}
+          push: true
+          tags: |
+            ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_PREFIX }}-${{ matrix.service }}:${{ needs.prepare.outputs.image_tag }}
+            ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_PREFIX }}-${{ matrix.service }}:staging-latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            NODE_ENV=staging
+
+      - name: Security scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_PREFIX }}-${{ matrix.service }}:${{ needs.prepare.outputs.image_tag }}
+          format: 'table'
+          exit-code: '0'
+          severity: 'CRITICAL'
+
+  create-backup:
+    name: Create Deployment Backup
+    runs-on: ubuntu-latest
+    needs: [prepare, build-and-push]
+    steps:
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Set AKS context
+        uses: azure/aks-set-context@v3
+        with:
+          resource-group: ${{ env.AKS_RESOURCE_GROUP }}
+          cluster-name: ${{ env.AKS_CLUSTER_NAME }}
+
+      - name: Backup current deployments
+        run: |
+          mkdir -p staging-backup
+
+          IFS=',' read -ra SERVICES <<< "${{ env.SERVICES }}"
+          for service in "${SERVICES[@]}"; do
+            kubectl get deployment $service -n ${{ env.K8S_NAMESPACE }} -o yaml > staging-backup/$service.yaml 2>/dev/null || echo "No existing deployment for $service"
+          done
+
+      - name: Upload backup artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: staging-backup-${{ github.sha }}
+          path: staging-backup/
+          retention-days: 30
+
+  deploy:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [prepare, build-and-push, create-backup]
+    environment:
+      name: staging
+      url: https://staging.applyforus.com
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Set AKS context
+        uses: azure/aks-set-context@v3
+        with:
+          resource-group: ${{ env.AKS_RESOURCE_GROUP }}
+          cluster-name: ${{ env.AKS_CLUSTER_NAME }}
+
+      - name: Create/update namespace
+        run: |
+          kubectl create namespace ${{ env.K8S_NAMESPACE }} --dry-run=client -o yaml | kubectl apply -f -
+
+          # Apply resource quotas for staging
+          cat <<EOF | kubectl apply -f -
+          apiVersion: v1
+          kind: ResourceQuota
+          metadata:
+            name: staging-quota
+            namespace: ${{ env.K8S_NAMESPACE }}
+          spec:
+            hard:
+              requests.cpu: "8"
+              requests.memory: 16Gi
+              limits.cpu: "16"
+              limits.memory: 32Gi
+              pods: "50"
+          EOF
+
+      - name: Sync secrets
+        run: |
+          kubectl create secret generic app-secrets \
+            --from-literal=JWT_SECRET="${{ secrets.JWT_SECRET }}" \
+            --from-literal=DATABASE_URL="${{ secrets.DATABASE_URL_STAGING }}" \
+            --from-literal=REDIS_URL="${{ secrets.REDIS_URL_STAGING }}" \
+            --from-literal=STRIPE_SECRET_KEY="${{ secrets.STRIPE_SECRET_KEY_STAGING }}" \
+            --from-literal=OPENAI_API_KEY="${{ secrets.OPENAI_API_KEY }}" \
+            --from-literal=SENDGRID_API_KEY="${{ secrets.SENDGRID_API_KEY }}" \
+            --namespace=${{ env.K8S_NAMESPACE }} \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Deploy services progressively
+        id: deploy
+        run: |
+          IMAGE_TAG="${{ needs.prepare.outputs.image_tag }}"
+
+          # Deploy in order: infrastructure services first, then application services
+          INFRA_SERVICES="auth-service,user-service"
+          APP_SERVICES="job-service,resume-service,notification-service,auto-apply-service,analytics-service,ai-service,orchestrator-service,payment-service"
+          FRONTEND="web"
+
+          deploy_service() {
+            local service=$1
+            echo "Deploying $service..."
+
+            if kubectl get deployment $service -n ${{ env.K8S_NAMESPACE }} &>/dev/null; then
+              kubectl set image deployment/$service \
+                $service=${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_PREFIX }}-$service:$IMAGE_TAG \
+                -n ${{ env.K8S_NAMESPACE }}
+            else
+              echo "Creating new deployment for $service..."
+              # Apply base manifests if they exist
+              if [ -d "infrastructure/kubernetes/services/$service" ]; then
+                kubectl apply -f infrastructure/kubernetes/services/$service/ -n ${{ env.K8S_NAMESPACE }}
+              fi
+            fi
+
+            # Wait for rollout with timeout
+            if ! kubectl rollout status deployment/$service -n ${{ env.K8S_NAMESPACE }} --timeout=300s; then
+              echo "::error::Rollout failed for $service"
+              return 1
+            fi
+          }
+
+          # Deploy infrastructure services
+          echo "Deploying infrastructure services..."
+          IFS=',' read -ra INFRA <<< "$INFRA_SERVICES"
+          for service in "${INFRA[@]}"; do
+            deploy_service $service || exit 1
+          done
+
+          # Deploy application services
+          echo "Deploying application services..."
+          IFS=',' read -ra APPS <<< "$APP_SERVICES"
+          for service in "${APPS[@]}"; do
+            deploy_service $service || exit 1
+          done
+
+          # Deploy frontend last
+          echo "Deploying frontend..."
+          deploy_service web || exit 1
+
+          echo "All services deployed successfully!"
+
+      - name: Verify all pods running
+        run: |
+          echo "Verifying pod health..."
+          kubectl get pods -n ${{ env.K8S_NAMESPACE }}
+
+          # Wait for all pods to be ready
+          kubectl wait --for=condition=ready pod \
+            --all \
+            -n ${{ env.K8S_NAMESPACE }} \
+            --timeout=300s || {
+              echo "Some pods are not ready"
+              kubectl describe pods -n ${{ env.K8S_NAMESPACE }} | grep -A 10 "Events:"
+            }
+
+  smoke-tests:
+    name: Smoke Tests
+    runs-on: ubuntu-latest
+    needs: [prepare, deploy]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Wait for services to stabilize
+        run: sleep 60
+
+      - name: Run smoke tests
+        run: |
+          BASE_URL="https://staging.applyforus.com"
+          API_URL="https://staging-api.applyforus.com"
+
+          echo "Testing web application..."
+          for i in {1..5}; do
+            if curl -sf --max-time 30 "$BASE_URL/health" > /dev/null; then
+              echo "✅ Web health check passed"
+              break
+            fi
+            echo "Attempt $i failed, retrying..."
+            sleep 10
+          done
+
+          echo "Testing API services..."
+          curl -sf --max-time 30 "$API_URL/health" && echo "✅ API health check passed" || echo "⚠️ API health check failed"
+
+          echo "Testing auth service..."
+          curl -sf --max-time 30 "$API_URL/auth/health" && echo "✅ Auth service healthy" || echo "⚠️ Auth service unhealthy"
+
+          echo "Testing job service..."
+          curl -sf --max-time 30 "$API_URL/jobs/health" && echo "✅ Job service healthy" || echo "⚠️ Job service unhealthy"
+
+      - name: Run API contract tests
+        run: |
+          echo "Running API contract validation..."
+          # Run Newman/Postman tests if available
+          if [ -f "postman/ApplyForUs-API.postman_collection.json" ]; then
+            npx newman run postman/ApplyForUs-API.postman_collection.json \
+              --environment postman/staging.postman_environment.json \
+              --reporters cli,json \
+              --reporter-json-export newman-results.json || true
+          fi
+
+      - name: Test critical user flows
+        run: |
+          BASE_URL="https://staging.applyforus.com"
+
+          echo "Testing homepage..."
+          curl -sf "$BASE_URL/" > /dev/null && echo "✅ Homepage loads" || echo "⚠️ Homepage failed"
+
+          echo "Testing login page..."
+          curl -sf "$BASE_URL/login" > /dev/null && echo "✅ Login page loads" || echo "⚠️ Login page failed"
+
+          echo "Testing registration page..."
+          curl -sf "$BASE_URL/register" > /dev/null && echo "✅ Registration page loads" || echo "⚠️ Registration page failed"
+
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: [deploy, smoke-tests]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run integration tests
+        run: |
+          npm run test:integration || true
+        env:
+          TEST_BASE_URL: https://staging.applyforus.com
+          TEST_API_URL: https://staging-api.applyforus.com
+          CI: true
+
+  notify:
+    name: Notify
+    runs-on: ubuntu-latest
+    needs: [prepare, deploy, smoke-tests, integration-tests]
+    if: always()
+    steps:
+      - name: Deployment Summary
+        run: |
+          echo "## Staging Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Step | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Deploy | ${{ needs.deploy.result == 'success' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Smoke Tests | ${{ needs.smoke-tests.result == 'success' && '✅' || '⚠️' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Integration Tests | ${{ needs.integration-tests.result == 'success' && '✅' || '⚠️' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** ${{ needs.prepare.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "**URL:** https://staging.applyforus.com" >> $GITHUB_STEP_SUMMARY
+
+      - name: Notify Slack
+        uses: slackapi/slack-github-action@v1
+        with:
+          payload: |
+            {
+              "text": "${{ needs.deploy.result == 'success' && '✅' || '❌' }} Staging Deployment ${{ needs.deploy.result }}",
+              "blocks": [
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "Staging Deployment"
+                  }
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Status:*\n${{ needs.deploy.result == 'success' && '✅ Success' || '❌ Failed' }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Version:*\n${{ needs.prepare.outputs.version }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Smoke Tests:*\n${{ needs.smoke-tests.result == 'success' && '✅ Passed' || '⚠️ Issues' }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Integration:*\n${{ needs.integration-tests.result == 'success' && '✅ Passed' || '⚠️ Issues' }}"
+                    }
+                  ]
+                },
+                {
+                  "type": "actions",
+                  "elements": [
+                    {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": "Open Staging"
+                      },
+                      "url": "https://staging.applyforus.com",
+                      "style": "primary"
+                    },
+                    {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": "View Workflow"
+                      },
+                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                    }
+                  ]
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

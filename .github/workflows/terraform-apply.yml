@@ -1,0 +1,316 @@
+name: Terraform Apply
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'infrastructure/terraform/**'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy'
+        required: true
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
+      auto_approve:
+        description: 'Auto-approve apply (only for dev)'
+        required: false
+        type: boolean
+        default: false
+
+concurrency:
+  group: terraform-apply-${{ github.event.inputs.environment || 'main' }}
+  cancel-in-progress: false
+
+env:
+  TF_VERSION: '1.6.0'
+  TF_WORKING_DIR: 'infrastructure/terraform'
+  ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+  ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+  ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+  ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+
+jobs:
+  determine-environment:
+    name: Determine Environment
+    runs-on: ubuntu-latest
+    outputs:
+      environment: ${{ steps.set-env.outputs.environment }}
+    steps:
+      - name: Set Environment
+        id: set-env
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "environment=${{ github.event.inputs.environment }}" >> $GITHUB_OUTPUT
+          else
+            echo "environment=dev" >> $GITHUB_OUTPUT
+          fi
+
+  apply-dev:
+    name: Apply to Dev
+    runs-on: ubuntu-latest
+    needs: determine-environment
+    if: needs.determine-environment.outputs.environment == 'dev'
+    environment: development
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Terraform Init
+        run: |
+          terraform init \
+            -backend-config="resource_group_name=${{ secrets.TF_STATE_RESOURCE_GROUP }}" \
+            -backend-config="storage_account_name=${{ secrets.TF_STATE_STORAGE_ACCOUNT }}" \
+            -backend-config="container_name=${{ secrets.TF_STATE_CONTAINER }}" \
+            -backend-config="key=applyforus-dev.tfstate"
+        working-directory: ${{ env.TF_WORKING_DIR }}
+
+      - name: Terraform Plan
+        id: plan
+        run: |
+          terraform plan \
+            -var-file="environments/dev.tfvars" \
+            -out=tfplan-dev \
+            -no-color
+        working-directory: ${{ env.TF_WORKING_DIR }}
+
+      - name: Terraform Apply
+        run: |
+          terraform apply \
+            -auto-approve \
+            tfplan-dev
+        working-directory: ${{ env.TF_WORKING_DIR }}
+
+      - name: Export Outputs
+        id: outputs
+        run: |
+          echo "aks_cluster_name=$(terraform output -raw aks_cluster_name 2>/dev/null || echo '')" >> $GITHUB_OUTPUT
+          echo "acr_login_server=$(terraform output -raw acr_login_server 2>/dev/null || echo '')" >> $GITHUB_OUTPUT
+          echo "resource_group_name=$(terraform output -raw resource_group_name 2>/dev/null || echo '')" >> $GITHUB_OUTPUT
+        working-directory: ${{ env.TF_WORKING_DIR }}
+
+      - name: Verify AKS Connectivity
+        if: steps.outputs.outputs.aks_cluster_name != ''
+        run: |
+          az aks get-credentials \
+            --resource-group ${{ steps.outputs.outputs.resource_group_name }} \
+            --name ${{ steps.outputs.outputs.aks_cluster_name }} \
+            --overwrite-existing
+
+          kubectl get nodes
+          kubectl get namespaces
+
+      - name: Post Apply Summary
+        if: always()
+        run: |
+          echo "## Terraform Apply Summary - Dev" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Resource | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Environment | dev |" >> $GITHUB_STEP_SUMMARY
+          echo "| AKS Cluster | ${{ steps.outputs.outputs.aks_cluster_name }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| ACR Server | ${{ steps.outputs.outputs.acr_login_server }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Resource Group | ${{ steps.outputs.outputs.resource_group_name }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "*Applied at: $(date)*" >> $GITHUB_STEP_SUMMARY
+
+  apply-staging:
+    name: Apply to Staging
+    runs-on: ubuntu-latest
+    needs: determine-environment
+    if: needs.determine-environment.outputs.environment == 'staging'
+    environment:
+      name: staging
+      url: https://staging.applyforus.com
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Terraform Init
+        run: |
+          terraform init \
+            -backend-config="resource_group_name=${{ secrets.TF_STATE_RESOURCE_GROUP }}" \
+            -backend-config="storage_account_name=${{ secrets.TF_STATE_STORAGE_ACCOUNT }}" \
+            -backend-config="container_name=${{ secrets.TF_STATE_CONTAINER }}" \
+            -backend-config="key=applyforus-staging.tfstate"
+        working-directory: ${{ env.TF_WORKING_DIR }}
+
+      - name: Terraform Plan
+        id: plan
+        run: |
+          terraform plan \
+            -var-file="environments/staging.tfvars" \
+            -out=tfplan-staging \
+            -no-color
+        working-directory: ${{ env.TF_WORKING_DIR }}
+
+      - name: Terraform Apply
+        run: |
+          terraform apply \
+            -auto-approve \
+            tfplan-staging
+        working-directory: ${{ env.TF_WORKING_DIR }}
+
+      - name: Export Outputs
+        id: outputs
+        run: |
+          echo "aks_cluster_name=$(terraform output -raw aks_cluster_name 2>/dev/null || echo '')" >> $GITHUB_OUTPUT
+          echo "acr_login_server=$(terraform output -raw acr_login_server 2>/dev/null || echo '')" >> $GITHUB_OUTPUT
+          echo "resource_group_name=$(terraform output -raw resource_group_name 2>/dev/null || echo '')" >> $GITHUB_OUTPUT
+        working-directory: ${{ env.TF_WORKING_DIR }}
+
+      - name: Verify Staging Infrastructure
+        if: steps.outputs.outputs.aks_cluster_name != ''
+        run: |
+          az aks get-credentials \
+            --resource-group ${{ steps.outputs.outputs.resource_group_name }} \
+            --name ${{ steps.outputs.outputs.aks_cluster_name }} \
+            --overwrite-existing
+
+          kubectl get nodes
+          kubectl get namespaces
+          kubectl get pods -n applyforus-staging || echo "Namespace not yet created"
+
+  apply-prod:
+    name: Apply to Production
+    runs-on: ubuntu-latest
+    needs: determine-environment
+    if: needs.determine-environment.outputs.environment == 'prod'
+    environment:
+      name: production
+      url: https://applyforus.com
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Terraform Init
+        run: |
+          terraform init \
+            -backend-config="resource_group_name=${{ secrets.TF_STATE_RESOURCE_GROUP }}" \
+            -backend-config="storage_account_name=${{ secrets.TF_STATE_STORAGE_ACCOUNT }}" \
+            -backend-config="container_name=${{ secrets.TF_STATE_CONTAINER }}" \
+            -backend-config="key=applyforus-prod.tfstate"
+        working-directory: ${{ env.TF_WORKING_DIR }}
+
+      - name: Terraform Plan
+        id: plan
+        run: |
+          terraform plan \
+            -var-file="environments/prod.tfvars" \
+            -out=tfplan-prod \
+            -no-color 2>&1 | tee plan-output.txt
+        working-directory: ${{ env.TF_WORKING_DIR }}
+
+      - name: Upload Plan for Audit
+        uses: actions/upload-artifact@v4
+        with:
+          name: prod-terraform-plan-${{ github.sha }}
+          path: |
+            ${{ env.TF_WORKING_DIR }}/tfplan-prod
+            ${{ env.TF_WORKING_DIR }}/plan-output.txt
+          retention-days: 90
+
+      - name: Terraform Apply
+        run: |
+          terraform apply \
+            -auto-approve \
+            tfplan-prod
+        working-directory: ${{ env.TF_WORKING_DIR }}
+
+      - name: Export Production Outputs
+        id: outputs
+        run: |
+          echo "aks_cluster_name=$(terraform output -raw aks_cluster_name 2>/dev/null || echo '')" >> $GITHUB_OUTPUT
+          echo "acr_login_server=$(terraform output -raw acr_login_server 2>/dev/null || echo '')" >> $GITHUB_OUTPUT
+          echo "resource_group_name=$(terraform output -raw resource_group_name 2>/dev/null || echo '')" >> $GITHUB_OUTPUT
+          echo "key_vault_name=$(terraform output -raw key_vault_name 2>/dev/null || echo '')" >> $GITHUB_OUTPUT
+          echo "app_insights_key=$(terraform output -raw app_insights_instrumentation_key 2>/dev/null || echo '')" >> $GITHUB_OUTPUT
+        working-directory: ${{ env.TF_WORKING_DIR }}
+
+      - name: Verify Production Infrastructure
+        if: steps.outputs.outputs.aks_cluster_name != ''
+        run: |
+          az aks get-credentials \
+            --resource-group ${{ steps.outputs.outputs.resource_group_name }} \
+            --name ${{ steps.outputs.outputs.aks_cluster_name }} \
+            --overwrite-existing
+
+          echo "### Node Status"
+          kubectl get nodes
+
+          echo "### Namespace Status"
+          kubectl get namespaces
+
+          echo "### Production Pods"
+          kubectl get pods -n applyforus || echo "Namespace not yet created"
+
+          echo "### Services"
+          kubectl get services -n applyforus || echo "No services yet"
+
+      - name: Production Apply Summary
+        if: always()
+        run: |
+          echo "## Production Terraform Apply Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Infrastructure Details" >> $GITHUB_STEP_SUMMARY
+          echo "| Resource | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| AKS Cluster | ${{ steps.outputs.outputs.aks_cluster_name }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| ACR Server | ${{ steps.outputs.outputs.acr_login_server }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Resource Group | ${{ steps.outputs.outputs.resource_group_name }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Key Vault | ${{ steps.outputs.outputs.key_vault_name }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "*Deployed by: @${{ github.actor }} at $(date)*" >> $GITHUB_STEP_SUMMARY
+
+      - name: Notify Slack - Production Deploy
+        if: always()
+        uses: slackapi/slack-github-action@v1
+        with:
+          payload: |
+            {
+              "text": "${{ job.status == 'success' && '✅' || '❌' }} Production Infrastructure ${{ job.status }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Production Terraform Apply ${{ job.status }}*\n*Commit:* ${{ github.sha }}\n*Actor:* ${{ github.actor }}"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

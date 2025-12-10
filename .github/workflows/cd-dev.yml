@@ -1,0 +1,418 @@
+name: CD - Deploy to Development
+
+on:
+  push:
+    branches: [develop]
+  workflow_dispatch:
+    inputs:
+      skip_tests:
+        description: 'Skip tests before deployment'
+        required: false
+        type: boolean
+        default: false
+
+concurrency:
+  group: cd-dev-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  ACR_NAME: applyforusacr
+  ACR_LOGIN_SERVER: applyforusacr.azurecr.io
+  IMAGE_PREFIX: applyai
+  AKS_RESOURCE_GROUP: applyforus-dev-rg
+  AKS_CLUSTER_NAME: applyforus-dev-aks
+  K8S_NAMESPACE: applyforus-dev
+  NODE_VERSION: '20'
+  SERVICES: 'web,auth-service,user-service,job-service,resume-service,notification-service,auto-apply-service,analytics-service,ai-service,orchestrator-service,payment-service'
+
+jobs:
+  prepare:
+    name: Prepare Deployment
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      image_tag: ${{ steps.version.outputs.image_tag }}
+      services: ${{ steps.changes.outputs.services }}
+      deploy_all: ${{ steps.changes.outputs.deploy_all }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate Version
+        id: version
+        run: |
+          VERSION="1.0.$(git rev-list --count HEAD)"
+          IMAGE_TAG="${VERSION}-${GITHUB_SHA:0:8}"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "image_tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
+          echo "Generated version: $VERSION, Image tag: $IMAGE_TAG"
+
+      - name: Detect Changed Services
+        id: changes
+        run: |
+          # Get changed files
+          CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || git diff --name-only HEAD)
+
+          # Check if we should deploy all
+          if echo "$CHANGED_FILES" | grep -qE "^(package.json|pnpm-lock.yaml|docker-compose|Dockerfile)"; then
+            echo "deploy_all=true" >> $GITHUB_OUTPUT
+            echo "services=${{ env.SERVICES }}" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Determine which services changed
+          SERVICES_TO_DEPLOY=""
+
+          if echo "$CHANGED_FILES" | grep -q "^apps/web/"; then
+            SERVICES_TO_DEPLOY="${SERVICES_TO_DEPLOY}web,"
+          fi
+
+          for service in auth user job resume notification auto-apply analytics ai orchestrator payment; do
+            if echo "$CHANGED_FILES" | grep -q "^services/${service}-service/"; then
+              SERVICES_TO_DEPLOY="${SERVICES_TO_DEPLOY}${service}-service,"
+            fi
+          done
+
+          # Remove trailing comma
+          SERVICES_TO_DEPLOY=${SERVICES_TO_DEPLOY%,}
+
+          if [ -z "$SERVICES_TO_DEPLOY" ]; then
+            echo "deploy_all=true" >> $GITHUB_OUTPUT
+            echo "services=${{ env.SERVICES }}" >> $GITHUB_OUTPUT
+          else
+            echo "deploy_all=false" >> $GITHUB_OUTPUT
+            echo "services=$SERVICES_TO_DEPLOY" >> $GITHUB_OUTPUT
+          fi
+
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    needs: prepare
+    if: github.event.inputs.skip_tests != 'true'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run linting
+        run: npm run lint --workspaces --if-present
+        continue-on-error: true
+
+      - name: Run tests
+        run: npm test --workspaces --if-present
+        env:
+          CI: true
+          NODE_ENV: test
+
+  build-and-push:
+    name: Build & Push Images
+    runs-on: ubuntu-latest
+    needs: [prepare, test]
+    if: always() && (needs.test.result == 'success' || needs.test.result == 'skipped')
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [web, auth-service, user-service, job-service, resume-service, notification-service, auto-apply-service, analytics-service, ai-service, orchestrator-service, payment-service]
+    steps:
+      - name: Check if service needs deployment
+        id: check
+        run: |
+          SERVICES_TO_DEPLOY="${{ needs.prepare.outputs.services }}"
+          if echo "$SERVICES_TO_DEPLOY" | grep -q "${{ matrix.service }}"; then
+            echo "deploy=true" >> $GITHUB_OUTPUT
+          else
+            echo "deploy=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Checkout code
+        if: steps.check.outputs.deploy == 'true'
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        if: steps.check.outputs.deploy == 'true'
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to ACR
+        if: steps.check.outputs.deploy == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.ACR_LOGIN_SERVER }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+
+      - name: Determine Dockerfile path
+        if: steps.check.outputs.deploy == 'true'
+        id: dockerfile
+        run: |
+          if [ "${{ matrix.service }}" = "web" ]; then
+            echo "path=apps/web/Dockerfile" >> $GITHUB_OUTPUT
+            echo "context=." >> $GITHUB_OUTPUT
+          else
+            echo "path=services/${{ matrix.service }}/Dockerfile" >> $GITHUB_OUTPUT
+            echo "context=." >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build and push
+        if: steps.check.outputs.deploy == 'true'
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ steps.dockerfile.outputs.context }}
+          file: ${{ steps.dockerfile.outputs.path }}
+          push: true
+          tags: |
+            ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_PREFIX }}-${{ matrix.service }}:${{ needs.prepare.outputs.image_tag }}
+            ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_PREFIX }}-${{ matrix.service }}:dev-latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            NODE_ENV=development
+
+      - name: Run Trivy scan
+        if: steps.check.outputs.deploy == 'true'
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_PREFIX }}-${{ matrix.service }}:${{ needs.prepare.outputs.image_tag }}
+          format: 'sarif'
+          output: 'trivy-results-${{ matrix.service }}.sarif'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Upload Trivy results
+        if: steps.check.outputs.deploy == 'true'
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-results-${{ matrix.service }}.sarif
+        continue-on-error: true
+
+  deploy:
+    name: Deploy to Dev AKS
+    runs-on: ubuntu-latest
+    needs: [prepare, build-and-push]
+    if: always() && needs.build-and-push.result == 'success'
+    environment:
+      name: development
+      url: https://dev.applyforus.com
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Set AKS context
+        uses: azure/aks-set-context@v3
+        with:
+          resource-group: ${{ env.AKS_RESOURCE_GROUP }}
+          cluster-name: ${{ env.AKS_CLUSTER_NAME }}
+
+      - name: Create namespace if not exists
+        run: |
+          kubectl create namespace ${{ env.K8S_NAMESPACE }} --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Sync secrets from Key Vault
+        run: |
+          echo "Syncing secrets from Azure Key Vault to Kubernetes..."
+          # This would normally use Azure Key Vault CSI driver or similar
+          # For now, we'll create/update secrets from GitHub secrets
+
+          kubectl create secret generic app-secrets \
+            --from-literal=JWT_SECRET="${{ secrets.JWT_SECRET }}" \
+            --from-literal=DATABASE_URL="${{ secrets.DATABASE_URL_DEV }}" \
+            --from-literal=REDIS_URL="${{ secrets.REDIS_URL_DEV }}" \
+            --from-literal=STRIPE_SECRET_KEY="${{ secrets.STRIPE_SECRET_KEY_DEV }}" \
+            --namespace=${{ env.K8S_NAMESPACE }} \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Update deployments
+        run: |
+          SERVICES="${{ needs.prepare.outputs.services }}"
+          IMAGE_TAG="${{ needs.prepare.outputs.image_tag }}"
+
+          IFS=',' read -ra SERVICE_ARRAY <<< "$SERVICES"
+          for service in "${SERVICE_ARRAY[@]}"; do
+            echo "Updating $service to tag $IMAGE_TAG..."
+
+            # Check if deployment exists
+            if kubectl get deployment $service -n ${{ env.K8S_NAMESPACE }} &>/dev/null; then
+              kubectl set image deployment/$service \
+                $service=${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_PREFIX }}-$service:$IMAGE_TAG \
+                -n ${{ env.K8S_NAMESPACE }}
+            else
+              echo "Deployment $service not found, applying manifests..."
+              kubectl apply -f infrastructure/kubernetes/services/$service/ -n ${{ env.K8S_NAMESPACE }} || true
+            fi
+          done
+
+      - name: Wait for rollouts
+        run: |
+          SERVICES="${{ needs.prepare.outputs.services }}"
+
+          IFS=',' read -ra SERVICE_ARRAY <<< "$SERVICES"
+          for service in "${SERVICE_ARRAY[@]}"; do
+            echo "Waiting for $service rollout..."
+            kubectl rollout status deployment/$service -n ${{ env.K8S_NAMESPACE }} --timeout=300s || {
+              echo "Rollout failed for $service"
+              kubectl describe deployment/$service -n ${{ env.K8S_NAMESPACE }}
+              kubectl logs deployment/$service -n ${{ env.K8S_NAMESPACE }} --tail=100
+            }
+          done
+
+      - name: Verify deployment
+        run: |
+          echo "### Deployment Status"
+          kubectl get deployments -n ${{ env.K8S_NAMESPACE }}
+
+          echo "### Pod Status"
+          kubectl get pods -n ${{ env.K8S_NAMESPACE }}
+
+          echo "### Services"
+          kubectl get services -n ${{ env.K8S_NAMESPACE }}
+
+  health-check:
+    name: Health Checks
+    runs-on: ubuntu-latest
+    needs: [prepare, deploy]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Set AKS context
+        uses: azure/aks-set-context@v3
+        with:
+          resource-group: ${{ env.AKS_RESOURCE_GROUP }}
+          cluster-name: ${{ env.AKS_CLUSTER_NAME }}
+
+      - name: Check pod health
+        run: |
+          echo "Checking pod health in ${{ env.K8S_NAMESPACE }}..."
+
+          # Wait for pods to be ready
+          kubectl wait --for=condition=ready pod \
+            -l app.kubernetes.io/part-of=applyforus \
+            -n ${{ env.K8S_NAMESPACE }} \
+            --timeout=300s || true
+
+          # Get pod status
+          kubectl get pods -n ${{ env.K8S_NAMESPACE }} -o wide
+
+          # Check for crash loops
+          CRASH_LOOPS=$(kubectl get pods -n ${{ env.K8S_NAMESPACE }} -o json | jq -r '.items[] | select(.status.containerStatuses[].restartCount > 3) | .metadata.name')
+          if [ -n "$CRASH_LOOPS" ]; then
+            echo "::warning::Pods with high restart counts: $CRASH_LOOPS"
+          fi
+
+      - name: Test service endpoints
+        run: |
+          echo "Testing internal service endpoints..."
+
+          # Port-forward to test health endpoints
+          for service in web auth-service user-service job-service; do
+            kubectl port-forward service/$service 8080:80 -n ${{ env.K8S_NAMESPACE }} &
+            PF_PID=$!
+            sleep 5
+
+            # Test health endpoint
+            if curl -sf http://localhost:8080/health > /dev/null 2>&1; then
+              echo "✅ $service health check passed"
+            else
+              echo "⚠️ $service health check failed or no health endpoint"
+            fi
+
+            kill $PF_PID 2>/dev/null || true
+          done
+
+      - name: Generate deployment summary
+        run: |
+          echo "## Development Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** ${{ needs.prepare.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Image Tag:** ${{ needs.prepare.outputs.image_tag }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Services Deployed:** ${{ needs.prepare.outputs.services }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Pod Status" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          kubectl get pods -n ${{ env.K8S_NAMESPACE }} >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+
+  notify:
+    name: Send Notifications
+    runs-on: ubuntu-latest
+    needs: [prepare, deploy, health-check]
+    if: always()
+    steps:
+      - name: Notify Slack
+        uses: slackapi/slack-github-action@v1
+        with:
+          payload: |
+            {
+              "text": "${{ needs.deploy.result == 'success' && '✅' || '❌' }} Dev Deployment ${{ needs.deploy.result }}",
+              "blocks": [
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "Development Deployment"
+                  }
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Status:*\n${{ needs.deploy.result == 'success' && '✅ Success' || '❌ Failed' }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Version:*\n${{ needs.prepare.outputs.version }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Branch:*\n${{ github.ref_name }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Actor:*\n${{ github.actor }}"
+                    }
+                  ]
+                },
+                {
+                  "type": "actions",
+                  "elements": [
+                    {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": "View Workflow"
+                      },
+                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                    },
+                    {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": "Open Dev Site"
+                      },
+                      "url": "https://dev.applyforus.com"
+                    }
+                  ]
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

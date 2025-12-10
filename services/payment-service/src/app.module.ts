@@ -3,6 +3,9 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { StripeModule } from './modules/stripe/stripe.module';
+import { FlutterwaveModule } from './modules/flutterwave/flutterwave.module';
+import { PaystackModule } from './modules/paystack/paystack.module';
+import { CoinsModule } from './modules/coins/coins.module';
 import { SubscriptionsModule } from './modules/subscriptions/subscriptions.module';
 import { InvoicesModule } from './modules/invoices/invoices.module';
 import { HealthModule } from './health/health.module';
@@ -67,6 +70,9 @@ import { typeOrmConfig } from './common/config/typeorm.config';
 
     // Feature modules
     StripeModule,
+    FlutterwaveModule,
+    PaystackModule,
+    CoinsModule,
     SubscriptionsModule,
     InvoicesModule,
     HealthModule,
