@@ -3,30 +3,22 @@
 # Master controller for JobPilot AI multi-agent system
 # ============================================================================
 
-# Build stage
+# Build stage - Standalone service build (no monorepo context)
 FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Install pnpm
-RUN corepack enable && corepack prepare pnpm@8.15.0 --activate
+# Copy only the service's package files
+COPY services/orchestrator-service/package.json ./
 
-# Copy workspace configuration files from root
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+# Install dependencies directly (no workspace)
+RUN npm install
 
-# Copy packages directory for shared dependencies
-COPY packages ./packages
+# Copy service source code
+COPY services/orchestrator-service/ ./
 
-# Copy service package.json
-COPY services/orchestrator-service/package.json ./services/orchestrator-service/
-
-# Install dependencies with frozen lockfile
-RUN pnpm install --frozen-lockfile
-
-# Copy source and build
-COPY services/orchestrator-service/ ./services/orchestrator-service/
-WORKDIR /app/services/orchestrator-service
-RUN pnpm run build
+# Build NestJS application
+RUN npm run build
 
 # Production stage
 FROM node:20-alpine AS production
@@ -41,9 +33,9 @@ RUN addgroup -g 1001 -S nodejs && \
 WORKDIR /app
 
 # Copy built application
-COPY --from=builder --chown=nodejs:nodejs /app/services/orchestrator-service/dist ./dist
-COPY --from=builder --chown=nodejs:nodejs /app/services/orchestrator-service/package.json ./
-COPY --from=builder --chown=nodejs:nodejs /app/services/orchestrator-service/node_modules ./node_modules
+COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
+COPY --from=builder --chown=nodejs:nodejs /app/package.json ./
+COPY --from=builder --chown=nodejs:nodejs /app/node_modules ./node_modules
 
 # Switch to non-root user
 USER nodejs

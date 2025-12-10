@@ -1,4 +1,4 @@
-# Multi-stage build for payment-service
+# Build stage - Standalone service build (no monorepo context)
 FROM node:20-alpine AS builder
 
 # Install build dependencies
@@ -6,22 +6,17 @@ RUN apk add --no-cache python3 make g++
 
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
-COPY pnpm-lock.yaml* ./
+# Copy only the service's package files
+COPY services/payment-service/package.json ./
 
-# Install pnpm and dependencies
-RUN npm install -g pnpm@8.15.0
-RUN pnpm install --frozen-lockfile
+# Install dependencies directly (no workspace)
+RUN npm install
 
-# Copy source code
-COPY . .
+# Copy service source code
+COPY services/payment-service/ ./
 
-# Build the application
-RUN pnpm run build
-
-# Remove dev dependencies
-RUN pnpm prune --prod
+# Build NestJS application
+RUN npm run build
 
 # Production stage
 FROM node:20-alpine AS production
@@ -38,7 +33,7 @@ WORKDIR /app
 # Copy built application and dependencies from builder
 COPY --from=builder --chown=nestjs:nodejs /app/dist ./dist
 COPY --from=builder --chown=nestjs:nodejs /app/node_modules ./node_modules
-COPY --from=builder --chown=nestjs:nodejs /app/package*.json ./
+COPY --from=builder --chown=nestjs:nodejs /app/package.json ./
 
 # Switch to non-root user
 USER nestjs

@@ -1,20 +1,19 @@
-# Build stage
+# Build stage - Standalone service build (no monorepo context)
 FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Install dependencies
-RUN corepack enable && corepack prepare pnpm@8.15.0 --activate
-
-# Copy package files
+# Copy only the service's package files
 COPY services/analytics-service/package.json ./
 
-# Install dependencies
-RUN pnpm install
+# Install dependencies directly (no workspace)
+RUN npm install
 
-# Copy source and build
+# Copy service source code
 COPY services/analytics-service/ ./
-RUN pnpm run build
+
+# Build NestJS application
+RUN npm run build
 
 # Production stage
 FROM node:20-alpine AS production

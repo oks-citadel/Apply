@@ -19,9 +19,9 @@ env:
   ACR_NAME: applyforusacr
   ACR_LOGIN_SERVER: applyforusacr.azurecr.io
   IMAGE_PREFIX: applyai
-  AKS_RESOURCE_GROUP: applyforus-dev-rg
-  AKS_CLUSTER_NAME: applyforus-dev-aks
-  K8S_NAMESPACE: applyforus-dev
+  AKS_RESOURCE_GROUP: applyforus-prod-rg
+  AKS_CLUSTER_NAME: applyforus-aks
+  K8S_NAMESPACE: applyforus
   NODE_VERSION: '20'
   SERVICES: 'web,auth-service,user-service,job-service,resume-service,notification-service,auto-apply-service,analytics-service,ai-service,orchestrator-service,payment-service'
 
