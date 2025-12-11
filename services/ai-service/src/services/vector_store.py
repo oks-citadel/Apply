@@ -4,7 +4,6 @@ Vector store service using Pinecone.
 
 from typing import List, Dict, Any, Optional
 import numpy as np
-from pinecone import Pinecone, ServerlessSpec
 import structlog
 
 from ..config import settings
@@ -34,12 +33,31 @@ class VectorStore:
         self.index_name = index_name or settings.pinecone_index_name
         self.dimension = settings.embedding_dimension
 
-        self.pc: Optional[Pinecone] = None
+        self.pc: Optional[Any] = None
         self.index: Optional[Any] = None
+        self._initialized = False
+        self._disabled = False
 
     async def initialize(self) -> None:
         """Initialize Pinecone connection and index."""
+        # Check if API key is missing or is a placeholder
+        if not self.api_key or self.api_key in (
+            "placeholder-configure-in-secrets",
+            "placeholder",
+            "",
+        ):
+            logger.warning(
+                "Pinecone API key not configured - Vector Store running in disabled mode. "
+                "Set PINECONE_API_KEY environment variable to enable vector search."
+            )
+            self._disabled = True
+            self._initialized = True
+            return
+
         try:
+            # Import Pinecone only when we have a valid API key
+            from pinecone import Pinecone, ServerlessSpec
+
             # Initialize Pinecone
             self.pc = Pinecone(api_key=self.api_key)
 
@@ -63,6 +81,7 @@ class VectorStore:
 
             # Connect to index
             self.index = self.pc.Index(self.index_name)
+            self._initialized = True
 
             logger.info(
                 "Pinecone initialized",
@@ -72,12 +91,72 @@ class VectorStore:
 
         except Exception as e:
             logger.error(f"Pinecone initialization failed: {e}", exc_info=True)
-            raise
+            # Don't raise - just disable the service
+            self._disabled = True
+            self._initialized = True
+            logger.warning(
+                "Vector Store disabled due to initialization failure. "
+                "Service will continue without vector search capabilities."
+            )
 
     async def close(self) -> None:
         """Close Pinecone connection."""
         # Pinecone doesn't require explicit closing
         logger.info("Vector store closed")
+
+    async def health_check(self) -> Dict[str, Any]:
+        """
+        Check health of vector store connection.
+
+        Returns:
+            Health status dictionary
+        """
+        if self._disabled:
+            return {
+                "status": "disabled",
+                "message": "Vector store is disabled (no API key configured or initialization failed)",
+                "initialized": self._initialized,
+            }
+
+        if not self._initialized:
+            return {
+                "status": "unhealthy",
+                "message": "Vector store not initialized",
+                "initialized": False,
+            }
+
+        if not self.index:
+            return {
+                "status": "unhealthy",
+                "message": "Vector store index not connected",
+                "initialized": True,
+            }
+
+        try:
+            # Try to get stats to verify connection
+            stats = self.index.describe_index_stats()
+            return {
+                "status": "healthy",
+                "message": "Vector store connected and operational",
+                "initialized": True,
+                "index_name": self.index_name,
+                "total_vectors": stats.total_vector_count,
+            }
+        except Exception as e:
+            return {
+                "status": "unhealthy",
+                "message": f"Vector store connection error: {str(e)}",
+                "initialized": True,
+            }
+
+    def _check_enabled(self) -> bool:
+        """Check if vector store is enabled and raise appropriate error if not."""
+        if self._disabled:
+            logger.warning("Vector store operation called but service is disabled")
+            return False
+        if not self.index:
+            raise RuntimeError("Vector store not initialized")
+        return True
 
     async def upsert(
         self,
@@ -93,8 +172,8 @@ class VectorStore:
             vector: Embedding vector
             metadata: Optional metadata
         """
-        if not self.index:
-            raise RuntimeError("Vector store not initialized")
+        if not self._check_enabled():
+            return
 
         try:
             # Convert numpy array to list
@@ -129,8 +208,8 @@ class VectorStore:
             vectors: List of (id, vector, metadata) tuples
             batch_size: Batch size for upserts
         """
-        if not self.index:
-            raise RuntimeError("Vector store not initialized")
+        if not self._check_enabled():
+            return
 
         try:
             # Process in batches
@@ -179,6 +258,10 @@ class VectorStore:
         Returns:
             List of matching results
         """
+        if self._disabled:
+            logger.warning("Vector query called but service is disabled - returning empty results")
+            return []
+
         if not self.index:
             raise RuntimeError("Vector store not initialized")
 
@@ -230,8 +313,8 @@ class VectorStore:
         Args:
             ids: List of vector IDs to delete
         """
-        if not self.index:
-            raise RuntimeError("Vector store not initialized")
+        if not self._check_enabled():
+            return
 
         try:
             self.index.delete(ids=ids)
@@ -248,8 +331,8 @@ class VectorStore:
         Args:
             filter: Metadata filter
         """
-        if not self.index:
-            raise RuntimeError("Vector store not initialized")
+        if not self._check_enabled():
+            return
 
         try:
             self.index.delete(filter=filter)
@@ -269,6 +352,10 @@ class VectorStore:
         Returns:
             Dictionary of id -> vector data
         """
+        if self._disabled:
+            logger.warning("Vector fetch called but service is disabled - returning empty results")
+            return {}
+
         if not self.index:
             raise RuntimeError("Vector store not initialized")
 
@@ -298,6 +385,13 @@ class VectorStore:
         Returns:
             Index statistics
         """
+        if self._disabled:
+            return {
+                "status": "disabled",
+                "message": "Vector store is disabled",
+                "total_vector_count": 0,
+            }
+
         if not self.index:
             raise RuntimeError("Vector store not initialized")
 
@@ -327,8 +421,8 @@ class VectorStore:
             id: Vector ID
             metadata: New metadata
         """
-        if not self.index:
-            raise RuntimeError("Vector store not initialized")
+        if not self._check_enabled():
+            return
 
         try:
             self.index.update(
