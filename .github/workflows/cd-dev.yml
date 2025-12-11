@@ -52,39 +52,11 @@ jobs:
       - name: Detect Changed Services
         id: changes
         run: |
-          # Get changed files
-          CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || git diff --name-only HEAD)
-
-          # Check if we should deploy all
-          if echo "$CHANGED_FILES" | grep -qE "^(package.json|pnpm-lock.yaml|docker-compose|Dockerfile)"; then
-            echo "deploy_all=true" >> $GITHUB_OUTPUT
-            echo "services=${{ env.SERVICES }}" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-
-          # Determine which services changed
-          SERVICES_TO_DEPLOY=""
-
-          if echo "$CHANGED_FILES" | grep -q "^apps/web/"; then
-            SERVICES_TO_DEPLOY="${SERVICES_TO_DEPLOY}web,"
-          fi
-
-          for service in auth user job resume notification auto-apply analytics ai orchestrator payment; do
-            if echo "$CHANGED_FILES" | grep -q "^services/${service}-service/"; then
-              SERVICES_TO_DEPLOY="${SERVICES_TO_DEPLOY}${service}-service,"
-            fi
-          done
-
-          # Remove trailing comma
-          SERVICES_TO_DEPLOY=${SERVICES_TO_DEPLOY%,}
-
-          if [ -z "$SERVICES_TO_DEPLOY" ]; then
-            echo "deploy_all=true" >> $GITHUB_OUTPUT
-            echo "services=${{ env.SERVICES }}" >> $GITHUB_OUTPUT
-          else
-            echo "deploy_all=false" >> $GITHUB_OUTPUT
-            echo "services=$SERVICES_TO_DEPLOY" >> $GITHUB_OUTPUT
-          fi
+          # Always deploy all services for now to simplify debugging
+          # TODO: Re-enable change detection once builds are working
+          echo "deploy_all=true" >> $GITHUB_OUTPUT
+          echo "services=${{ env.SERVICES }}" >> $GITHUB_OUTPUT
+          echo "Deploying all services: ${{ env.SERVICES }}"
 
   test:
     name: Run Tests
@@ -135,7 +107,7 @@ jobs:
     name: Build & Push Images
     runs-on: ubuntu-latest
     needs: [prepare, test]
-    if: always() && (needs.test.result == 'success' || needs.test.result == 'skipped')
+    if: always() && needs.prepare.result == 'success' && (needs.test.result == 'success' || needs.test.result == 'skipped')
     strategy:
       fail-fast: false
       matrix:
