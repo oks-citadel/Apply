@@ -50,7 +50,8 @@ RUN cd packages/security && pnpm build || true
 
 # Build the service
 WORKDIR /app/services/auth-service
-RUN pnpm build
+ENV PATH="/app/node_modules/.bin:$PATH"
+RUN pnpm exec nest build
 
 # Stage 3: Production
 FROM node:20-alpine AS production

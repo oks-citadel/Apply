@@ -37,7 +37,8 @@ RUN cd packages/telemetry && pnpm build || true
 RUN cd packages/security && pnpm build || true
 
 WORKDIR /app/services/job-service
-RUN pnpm build
+ENV PATH="/app/node_modules/.bin:$PATH"
+RUN pnpm exec nest build
 
 FROM node:20-alpine AS production
 RUN apk add --no-cache dumb-init curl
