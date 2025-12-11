@@ -5,6 +5,7 @@ on:
 
 env:
   ACR_LOGIN_SERVER: applyforusacr.azurecr.io
+  ACR_NAME: applyforusacr
   IMAGE_PREFIX: applyai
 
 jobs:
@@ -43,12 +44,13 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Log in to ACR
-        uses: docker/login-action@v3
+      - name: Azure Login
+        uses: azure/login@v2
         with:
-          registry: ${{ env.ACR_LOGIN_SERVER }}
-          username: ${{ secrets.ACR_USERNAME }}
-          password: ${{ secrets.ACR_PASSWORD }}
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Log in to ACR
+        run: az acr login --name ${{ env.ACR_NAME }}
 
       - name: Determine Dockerfile path
         id: dockerfile
