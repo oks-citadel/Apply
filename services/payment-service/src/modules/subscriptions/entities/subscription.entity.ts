@@ -31,7 +31,7 @@ export class Subscription {
   @Column({
     type: 'enum',
     enum: SubscriptionTier,
-    default: SubscriptionTier.FREE,
+    default: SubscriptionTier.FREEMIUM,
   })
   tier: SubscriptionTier;
 

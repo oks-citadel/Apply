@@ -1,11 +1,35 @@
 export enum SubscriptionTier {
-  FREE = 'FREE',
+  // Tier 1: Free tier - limited functionality
+  FREEMIUM = 'FREEMIUM',
+  // Tier 2: Entry paid tier
   STARTER = 'STARTER',
+  // Tier 3: Basic paid tier
   BASIC = 'BASIC',
-  PRO = 'PRO',
-  BUSINESS = 'BUSINESS',
-  ENTERPRISE = 'ENTERPRISE',
+  // Tier 4: Professional tier
+  PROFESSIONAL = 'PROFESSIONAL',
+  // Tier 5: Advanced Career tier
+  ADVANCED_CAREER = 'ADVANCED_CAREER',
+  // Tier 6: Executive Elite tier
+  EXECUTIVE_ELITE = 'EXECUTIVE_ELITE',
 }
+
+// Backwards compatibility aliases (deprecated - use new names)
+export const SubscriptionTierAlias = {
+  FREE: SubscriptionTier.FREEMIUM,
+  PRO: SubscriptionTier.PROFESSIONAL,
+  BUSINESS: SubscriptionTier.ADVANCED_CAREER,
+  ENTERPRISE: SubscriptionTier.EXECUTIVE_ELITE,
+} as const;
+
+// Display names for UI
+export const SUBSCRIPTION_TIER_DISPLAY_NAMES: Record<SubscriptionTier, string> = {
+  [SubscriptionTier.FREEMIUM]: 'Freemium',
+  [SubscriptionTier.STARTER]: 'Starter',
+  [SubscriptionTier.BASIC]: 'Basic',
+  [SubscriptionTier.PROFESSIONAL]: 'Professional',
+  [SubscriptionTier.ADVANCED_CAREER]: 'Advanced Career',
+  [SubscriptionTier.EXECUTIVE_ELITE]: 'Executive Elite',
+};
 
 export interface SubscriptionTierLimits {
   jobApplicationsPerMonth: number;
@@ -27,16 +51,17 @@ export interface SubscriptionTierLimits {
 }
 
 export const SUBSCRIPTION_TIER_LIMITS: Record<SubscriptionTier, SubscriptionTierLimits> = {
-  [SubscriptionTier.FREE]: {
-    jobApplicationsPerMonth: 10,
-    aiGeneratedCoverLetters: 3,
+  // Tier 1: Freemium - $0/month
+  [SubscriptionTier.FREEMIUM]: {
+    jobApplicationsPerMonth: 5,
+    aiGeneratedCoverLetters: 2,
     resumeTemplates: 2,
-    savedJobs: 20,
+    savedJobs: 10,
     emailAlerts: false,
     prioritySupport: false,
     advancedAnalytics: false,
     customBranding: false,
-    virtualCoinsPerMonth: 50,
+    virtualCoinsPerMonth: 25,
     boostVisibilitySlots: 0,
     autoApplyEnabled: false,
     interviewPrepAccess: false,
@@ -45,17 +70,18 @@ export const SUBSCRIPTION_TIER_LIMITS: Record<SubscriptionTier, SubscriptionTier
     dedicatedAccountManager: false,
     apiAccess: false,
   },
+  // Tier 2: Starter - $23.99/month ($239.99/year)
   [SubscriptionTier.STARTER]: {
-    jobApplicationsPerMonth: 25,
-    aiGeneratedCoverLetters: 10,
+    jobApplicationsPerMonth: 30,
+    aiGeneratedCoverLetters: 15,
     resumeTemplates: 5,
     savedJobs: 50,
     emailAlerts: true,
     prioritySupport: false,
     advancedAnalytics: false,
     customBranding: false,
-    virtualCoinsPerMonth: 200,
-    boostVisibilitySlots: 1,
+    virtualCoinsPerMonth: 300,
+    boostVisibilitySlots: 2,
     autoApplyEnabled: false,
     interviewPrepAccess: false,
     salaryInsights: false,
@@ -63,17 +89,18 @@ export const SUBSCRIPTION_TIER_LIMITS: Record<SubscriptionTier, SubscriptionTier
     dedicatedAccountManager: false,
     apiAccess: false,
   },
+  // Tier 3: Basic - $49.99/month ($499.99/year)
   [SubscriptionTier.BASIC]: {
-    jobApplicationsPerMonth: 50,
-    aiGeneratedCoverLetters: 25,
+    jobApplicationsPerMonth: 75,
+    aiGeneratedCoverLetters: 40,
     resumeTemplates: 10,
-    savedJobs: 100,
+    savedJobs: 150,
     emailAlerts: true,
     prioritySupport: false,
     advancedAnalytics: false,
     customBranding: false,
-    virtualCoinsPerMonth: 500,
-    boostVisibilitySlots: 3,
+    virtualCoinsPerMonth: 750,
+    boostVisibilitySlots: 5,
     autoApplyEnabled: true,
     interviewPrepAccess: false,
     salaryInsights: true,
@@ -81,7 +108,8 @@ export const SUBSCRIPTION_TIER_LIMITS: Record<SubscriptionTier, SubscriptionTier
     dedicatedAccountManager: false,
     apiAccess: false,
   },
-  [SubscriptionTier.PRO]: {
+  // Tier 4: Professional - $89.99/month ($899.99/year)
+  [SubscriptionTier.PROFESSIONAL]: {
     jobApplicationsPerMonth: 200,
     aiGeneratedCoverLetters: 100,
     resumeTemplates: -1, // unlimited
@@ -90,8 +118,8 @@ export const SUBSCRIPTION_TIER_LIMITS: Record<SubscriptionTier, SubscriptionTier
     prioritySupport: true,
     advancedAnalytics: true,
     customBranding: false,
-    virtualCoinsPerMonth: 1500,
-    boostVisibilitySlots: 10,
+    virtualCoinsPerMonth: 2000,
+    boostVisibilitySlots: 15,
     autoApplyEnabled: true,
     interviewPrepAccess: true,
     salaryInsights: true,
@@ -99,7 +127,8 @@ export const SUBSCRIPTION_TIER_LIMITS: Record<SubscriptionTier, SubscriptionTier
     dedicatedAccountManager: false,
     apiAccess: false,
   },
-  [SubscriptionTier.BUSINESS]: {
+  // Tier 5: Advanced Career - $149.99/month ($1,499.99/year)
+  [SubscriptionTier.ADVANCED_CAREER]: {
     jobApplicationsPerMonth: 500,
     aiGeneratedCoverLetters: 300,
     resumeTemplates: -1, // unlimited
@@ -109,7 +138,7 @@ export const SUBSCRIPTION_TIER_LIMITS: Record<SubscriptionTier, SubscriptionTier
     advancedAnalytics: true,
     customBranding: true,
     virtualCoinsPerMonth: 5000,
-    boostVisibilitySlots: 25,
+    boostVisibilitySlots: 30,
     autoApplyEnabled: true,
     interviewPrepAccess: true,
     salaryInsights: true,
@@ -117,7 +146,8 @@ export const SUBSCRIPTION_TIER_LIMITS: Record<SubscriptionTier, SubscriptionTier
     dedicatedAccountManager: false,
     apiAccess: true,
   },
-  [SubscriptionTier.ENTERPRISE]: {
+  // Tier 6: Executive Elite - $299.99/month ($2,999.99/year)
+  [SubscriptionTier.EXECUTIVE_ELITE]: {
     jobApplicationsPerMonth: -1, // unlimited
     aiGeneratedCoverLetters: -1, // unlimited
     resumeTemplates: -1, // unlimited
@@ -137,13 +167,39 @@ export const SUBSCRIPTION_TIER_LIMITS: Record<SubscriptionTier, SubscriptionTier
   },
 };
 
-export const SUBSCRIPTION_TIER_PRICES = {
-  [SubscriptionTier.FREE]: { monthly: 0, yearly: 0 },
-  [SubscriptionTier.STARTER]: { monthly: 4.99, yearly: 49.99 },
-  [SubscriptionTier.BASIC]: { monthly: 9.99, yearly: 99.99 },
-  [SubscriptionTier.PRO]: { monthly: 29.99, yearly: 299.99 },
-  [SubscriptionTier.BUSINESS]: { monthly: 59.99, yearly: 599.99 },
-  [SubscriptionTier.ENTERPRISE]: { monthly: 149.99, yearly: 1499.99 },
+// New pricing structure - 2025 rebrand
+export const SUBSCRIPTION_TIER_PRICES: Record<SubscriptionTier, { monthly: number; yearly: number }> = {
+  [SubscriptionTier.FREEMIUM]: { monthly: 0, yearly: 0 },
+  [SubscriptionTier.STARTER]: { monthly: 23.99, yearly: 239.99 },
+  [SubscriptionTier.BASIC]: { monthly: 49.99, yearly: 499.99 },
+  [SubscriptionTier.PROFESSIONAL]: { monthly: 89.99, yearly: 899.99 },
+  [SubscriptionTier.ADVANCED_CAREER]: { monthly: 149.99, yearly: 1499.99 },
+  [SubscriptionTier.EXECUTIVE_ELITE]: { monthly: 299.99, yearly: 2999.99 },
+};
+
+// Stripe Price IDs - Update these after creating products in Stripe Dashboard
+export const STRIPE_PRICE_IDS: Record<SubscriptionTier, { monthly: string; yearly: string }> = {
+  [SubscriptionTier.FREEMIUM]: { monthly: '', yearly: '' }, // Free tier - no Stripe price
+  [SubscriptionTier.STARTER]: {
+    monthly: process.env.STRIPE_PRICE_STARTER_MONTHLY || 'price_starter_monthly',
+    yearly: process.env.STRIPE_PRICE_STARTER_YEARLY || 'price_starter_yearly',
+  },
+  [SubscriptionTier.BASIC]: {
+    monthly: process.env.STRIPE_PRICE_BASIC_MONTHLY || 'price_basic_monthly',
+    yearly: process.env.STRIPE_PRICE_BASIC_YEARLY || 'price_basic_yearly',
+  },
+  [SubscriptionTier.PROFESSIONAL]: {
+    monthly: process.env.STRIPE_PRICE_PROFESSIONAL_MONTHLY || 'price_professional_monthly',
+    yearly: process.env.STRIPE_PRICE_PROFESSIONAL_YEARLY || 'price_professional_yearly',
+  },
+  [SubscriptionTier.ADVANCED_CAREER]: {
+    monthly: process.env.STRIPE_PRICE_ADVANCED_MONTHLY || 'price_advanced_monthly',
+    yearly: process.env.STRIPE_PRICE_ADVANCED_YEARLY || 'price_advanced_yearly',
+  },
+  [SubscriptionTier.EXECUTIVE_ELITE]: {
+    monthly: process.env.STRIPE_PRICE_EXECUTIVE_MONTHLY || 'price_executive_monthly',
+    yearly: process.env.STRIPE_PRICE_EXECUTIVE_YEARLY || 'price_executive_yearly',
+  },
 };
 
 export enum PaymentProvider {
