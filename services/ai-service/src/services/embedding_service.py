@@ -31,7 +31,20 @@ class EmbeddingService:
             openai_client: OpenAI client instance
             redis_client: Redis client for caching
         """
-        self.openai_client = openai_client or AsyncOpenAI(api_key=settings.openai_api_key)
+        self._disabled = False
+
+        # Check if API key is valid (not placeholder or empty)
+        api_key = settings.openai_api_key
+        if not api_key or api_key in ("", "placeholder", "placeholder-configure-in-secrets"):
+            logger.warning(
+                "OpenAI API key not configured - Embedding Service running in disabled mode. "
+                "Set OPENAI_API_KEY environment variable to enable embedding features."
+            )
+            self._disabled = True
+            self.openai_client = None
+        else:
+            self.openai_client = openai_client or AsyncOpenAI(api_key=api_key)
+
         self.redis_client = redis_client
         self.model = settings.embedding_model
         self.dimension = settings.embedding_dimension
@@ -136,6 +149,9 @@ class EmbeddingService:
         Raises:
             Exception: If API call fails after retries
         """
+        if self._disabled or not self.openai_client:
+            raise RuntimeError("Embedding service is disabled - no valid OpenAI API key configured")
+
         try:
             # Clean and truncate text
             text = text.strip()
@@ -174,6 +190,9 @@ class EmbeddingService:
         Returns:
             Embedding vector
         """
+        if self._disabled:
+            raise RuntimeError("Embedding service is disabled - no valid OpenAI API key configured")
+
         # Check cache first
         if use_cache:
             cached_embedding = await self._get_from_cache(text)
@@ -206,6 +225,9 @@ class EmbeddingService:
         Returns:
             List of embedding vectors
         """
+        if self._disabled or not self.openai_client:
+            raise RuntimeError("Embedding service is disabled - no valid OpenAI API key configured")
+
         embeddings: List[np.ndarray] = []
 
         # Process in batches

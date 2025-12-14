@@ -242,41 +242,71 @@ class LLMService:
             primary_provider: Primary LLM provider
             fallback_provider: Fallback LLM provider
         """
+        self._disabled = False
+
+        # Check if API keys are valid (not placeholder or empty)
+        def is_valid_api_key(key: str) -> bool:
+            return key and key not in ("", "placeholder", "placeholder-configure-in-secrets")
+
         # Initialize providers
         if primary_provider:
             self.primary_provider = primary_provider
         elif settings.default_llm_provider == "openai":
-            self.primary_provider = OpenAIProvider(
-                api_key=settings.openai_api_key,
-                model="gpt-3.5-turbo",
-            )
+            if is_valid_api_key(settings.openai_api_key):
+                self.primary_provider = OpenAIProvider(
+                    api_key=settings.openai_api_key,
+                    model="gpt-3.5-turbo",
+                )
+            else:
+                logger.warning(
+                    "OpenAI API key not configured - LLM Service running in disabled mode. "
+                    "Set OPENAI_API_KEY environment variable to enable AI features."
+                )
+                self._disabled = True
+                self.primary_provider = None
         else:
-            self.primary_provider = AnthropicProvider(
-                api_key=settings.anthropic_api_key,
-                model="claude-3-sonnet-20240229",
-            )
+            if is_valid_api_key(settings.anthropic_api_key):
+                self.primary_provider = AnthropicProvider(
+                    api_key=settings.anthropic_api_key,
+                    model="claude-3-sonnet-20240229",
+                )
+            else:
+                logger.warning(
+                    "Anthropic API key not configured - LLM Service running in disabled mode. "
+                    "Set ANTHROPIC_API_KEY environment variable to enable AI features."
+                )
+                self._disabled = True
+                self.primary_provider = None
 
         # Setup fallback
         if fallback_provider:
             self.fallback_provider = fallback_provider
-        elif settings.default_llm_provider == "openai":
+        elif not self._disabled and settings.default_llm_provider == "openai":
             # If primary is OpenAI, fallback to Anthropic
-            try:
-                self.fallback_provider = AnthropicProvider(
-                    api_key=settings.anthropic_api_key,
-                    model="claude-3-sonnet-20240229",
-                )
-            except Exception:
+            if is_valid_api_key(settings.anthropic_api_key):
+                try:
+                    self.fallback_provider = AnthropicProvider(
+                        api_key=settings.anthropic_api_key,
+                        model="claude-3-sonnet-20240229",
+                    )
+                except Exception:
+                    self.fallback_provider = None
+            else:
+                self.fallback_provider = None
+        elif not self._disabled:
+            # If primary is Anthropic, fallback to OpenAI
+            if is_valid_api_key(settings.openai_api_key):
+                try:
+                    self.fallback_provider = OpenAIProvider(
+                        api_key=settings.openai_api_key,
+                        model="gpt-3.5-turbo",
+                    )
+                except Exception:
+                    self.fallback_provider = None
+            else:
                 self.fallback_provider = None
         else:
-            # If primary is Anthropic, fallback to OpenAI
-            try:
-                self.fallback_provider = OpenAIProvider(
-                    api_key=settings.openai_api_key,
-                    model="gpt-3.5-turbo",
-                )
-            except Exception:
-                self.fallback_provider = None
+            self.fallback_provider = None
 
     async def complete(
         self,
@@ -299,6 +329,9 @@ class LLMService:
         Returns:
             Generated completion text
         """
+        if self._disabled or not self.primary_provider:
+            raise RuntimeError("LLM service is disabled - no valid API keys configured")
+
         max_tokens = max_tokens or settings.llm_max_tokens
         temperature = temperature or settings.llm_temperature
 
@@ -352,6 +385,9 @@ class LLMService:
         Returns:
             Generated completion text
         """
+        if self._disabled or not self.primary_provider:
+            raise RuntimeError("LLM service is disabled - no valid API keys configured")
+
         max_tokens = max_tokens or settings.llm_max_tokens
         temperature = temperature or settings.llm_temperature
 
