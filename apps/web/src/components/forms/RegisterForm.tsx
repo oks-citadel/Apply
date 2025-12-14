@@ -23,8 +23,8 @@ const registerSchema = z
       .string()
       .min(8, 'Password must be at least 8 characters')
       .regex(
-        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
-        'Password must contain at least one uppercase letter, one lowercase letter, and one number'
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/,
+        'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character (@$!%*?&)'
       ),
     confirmPassword: z.string(),
     acceptTerms: z.boolean().refine((val) => val === true, {
@@ -117,7 +117,7 @@ export function RegisterForm() {
         error={errors.password?.message}
         disabled={isLoading}
         autoComplete="new-password"
-        helperText="Must be at least 8 characters with uppercase, lowercase, and number"
+        helperText="Must be at least 8 characters with uppercase, lowercase, number, and special character (@$!%*?&)"
         required
       />
 
