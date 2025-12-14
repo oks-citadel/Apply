@@ -47,12 +47,13 @@ export const useAuthStore = create<AuthStore>()(
       login: async (credentials: LoginCredentials) => {
         set({ isLoading: true, error: null, mfaRequired: false, mfaTempToken: null });
         try {
-          const response = await axios.post<AuthResponse | MfaRequiredResponse>(
+          const response = await axios.post<{ data: AuthResponse | MfaRequiredResponse }>(
             `${API_BASE_URL}/auth/login`,
             credentials
           );
 
-          const data = response.data;
+          // Backend wraps response in 'data' object
+          const data = response.data.data;
 
           // Check if MFA is required
           if ('requiresMfa' in data && data.requiresMfa) {
@@ -133,16 +134,23 @@ export const useAuthStore = create<AuthStore>()(
       register: async (data: RegisterData) => {
         set({ isLoading: true, error: null });
         try {
-          const response = await axios.post<AuthResponse>(
+          // Split fullName into firstName and lastName for the API
+          const nameParts = data.fullName.trim().split(/\s+/);
+          const firstName = nameParts[0] || '';
+          const lastName = nameParts.slice(1).join(' ') || '';
+
+          const response = await axios.post<{ data: AuthResponse }>(
             `${API_BASE_URL}/auth/register`,
             {
-              fullName: data.fullName,
+              firstName,
+              lastName,
               email: data.email,
               password: data.password,
             }
           );
 
-          const { user, accessToken, refreshToken } = response.data;
+          // Backend wraps response in 'data' object
+          const { user, accessToken, refreshToken } = response.data.data;
 
           set({
             user,
