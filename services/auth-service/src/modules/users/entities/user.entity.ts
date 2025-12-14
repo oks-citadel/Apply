@@ -4,7 +4,6 @@ import {
   PrimaryGeneratedColumn,
   CreateDateColumn,
   UpdateDateColumn,
-  Index,
 } from 'typeorm';
 import { Exclude } from 'class-transformer';
 
@@ -30,18 +29,14 @@ export enum AuthProvider {
 }
 
 @Entity('users')
-@Index(['email'])
-@Index(['username'])
 export class User {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
   @Column({ unique: true })
-  @Index()
   email: string;
 
   @Column({ unique: true, nullable: true })
-  @Index()
   username: string | null;
 
   @Column({ nullable: true })
