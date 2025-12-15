@@ -63,9 +63,9 @@ export class TelemetryModule implements NestModule {
       logLevel = 'info',
     } = options;
 
-    const imports = [];
-    const providers = [];
-    const exports = [];
+    const imports: any[] = [];
+    const providers: any[] = [];
+    const exports: any[] = [];
 
     // Add Prometheus module if enabled
     if (enablePrometheus) {
@@ -242,13 +242,6 @@ export class LoggingInterceptor implements NestInterceptor {
   }
 }
 
-/**
- * Export interceptors and module
- */
-export {
-  MetricsInterceptor,
-  LoggingInterceptor,
-  PrometheusMetricsService,
-  PrometheusController,
-  PrometheusInterceptor,
-};
+// Note: MetricsInterceptor and LoggingInterceptor are exported above via 'export class'
+// PrometheusMetricsService, PrometheusController, and PrometheusInterceptor
+// are exported via their own files in index.ts to avoid duplicate exports

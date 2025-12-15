@@ -292,13 +292,13 @@ export function Measure(metricName?: string): MethodDecorator {
   ) {
     const originalMethod = descriptor.value;
 
-    descriptor.value = async function (...args: any[]) {
+    descriptor.value = async function (this: any, ...args: any[]) {
       const startTime = Date.now();
       try {
         const result = await originalMethod.apply(this, args);
         const duration = (Date.now() - startTime) / 1000;
 
-        // Record metric if metrics service is available
+        // Record metric if metrics service is available on the instance
         if (this.metricsService) {
           const name = metricName || `${target.constructor.name}_${String(propertyKey)}_duration`;
           this.metricsService
@@ -308,9 +308,7 @@ export function Measure(metricName?: string): MethodDecorator {
 
         return result;
       } catch (error) {
-        const duration = (Date.now() - startTime) / 1000;
-
-        // Record error metric
+        // Record error metric if metrics service is available
         if (this.metricsService) {
           const name = metricName || `${target.constructor.name}_${String(propertyKey)}_errors`;
           this.metricsService.createCounter(name, `Errors in ${String(propertyKey)} method`).inc();

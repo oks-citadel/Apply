@@ -287,8 +287,4 @@ export * from './prometheus.controller';
 export * from './prometheus.interceptor';
 export * from './prometheus-metrics.service';
 export * from './gateway-metrics';
-
-// Re-export commonly used types
-export type { Logger } from './logger';
-export type { MetricsConfig, MetricsService } from './metrics';
-export type { GatewayMetricsConfig, GatewayMetricsService } from './gateway-metrics';
+// Note: nestjs-metrics.ts is excluded due to incompatible API with current metrics.ts
