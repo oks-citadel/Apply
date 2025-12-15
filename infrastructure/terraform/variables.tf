@@ -87,6 +87,35 @@ variable "sql_admin_password" {
   }
 }
 
+variable "enable_postgresql" {
+  description = "Enable Azure PostgreSQL Flexible Server deployment"
+  type        = bool
+  default     = true
+}
+
+variable "postgres_admin_username" {
+  description = "PostgreSQL Server administrator username"
+  type        = string
+  sensitive   = true
+  default     = "applyforusadmin"
+
+  validation {
+    condition     = can(regex("^[a-zA-Z][a-zA-Z0-9_]{2,63}$", var.postgres_admin_username))
+    error_message = "PostgreSQL admin username must be 3-64 characters, start with a letter, and contain only alphanumeric characters and underscores"
+  }
+}
+
+variable "postgres_admin_password" {
+  description = "PostgreSQL Server administrator password"
+  type        = string
+  sensitive   = true
+
+  validation {
+    condition     = length(var.postgres_admin_password) >= 12
+    error_message = "PostgreSQL admin password must be at least 12 characters long"
+  }
+}
+
 # ============================================================================
 # Resource Tagging
 # ============================================================================

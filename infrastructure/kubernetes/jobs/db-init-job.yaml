@@ -1,0 +1,193 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: database-init
+  namespace: applyforus
+  labels:
+    app: applyforus-platform
+    component: database-init
+spec:
+  ttlSecondsAfterFinished: 300
+  backoffLimit: 3
+  template:
+    metadata:
+      labels:
+        app: database-init
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: db-init
+          image: postgres:15-alpine
+          env:
+            - name: PGHOST
+              value: "applyforus-postgres.postgres.database.azure.com"
+            - name: PGPORT
+              value: "5432"
+            - name: PGUSER
+              valueFrom:
+                secretKeyRef:
+                  name: applyforus-secrets
+                  key: DB_USERNAME
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: applyforus-secrets
+                  key: DB_PASSWORD
+            - name: PGSSLMODE
+              value: "require"
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              echo "Starting database initialization..."
+
+              # Create databases if they don't exist
+              databases=(
+                "applyforus_auth"
+                "applyforus_user"
+                "applyforus_job"
+                "applyforus_resume"
+                "applyforus_notification"
+                "applyforus_analytics"
+                "applyforus_autoapply"
+                "applyforus_payment"
+              )
+
+              for db in "${databases[@]}"; do
+                echo "Creating database: $db"
+                psql -v ON_ERROR_STOP=1 << EOF
+                SELECT 'CREATE DATABASE $db'
+                WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = '$db')\gexec
+              EOF
+
+                if [ $? -eq 0 ]; then
+                  echo "Database $db created or already exists"
+
+                  # Enable uuid-ossp extension
+                  PGDATABASE=$db psql -v ON_ERROR_STOP=1 << EOF
+                  CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+              EOF
+                  echo "Extension uuid-ossp enabled for $db"
+                else
+                  echo "Error creating database $db"
+                  exit 1
+                fi
+              done
+
+              echo "Database initialization completed successfully!"
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: database-migrations
+  namespace: applyforus
+  labels:
+    app: applyforus-platform
+    component: database-migrations
+spec:
+  ttlSecondsAfterFinished: 300
+  backoffLimit: 3
+  template:
+    metadata:
+      labels:
+        app: database-migrations
+    spec:
+      restartPolicy: Never
+      initContainers:
+        # Wait for database init to complete
+        - name: wait-for-db-init
+          image: busybox:1.35
+          command:
+            - sh
+            - -c
+            - |
+              echo "Waiting for database initialization job to complete..."
+              sleep 30
+      containers:
+        # Auth Service Migrations
+        - name: auth-migrations
+          image: applyforusacr.azurecr.io/applyai-auth-service:latest
+          env:
+            - name: DB_HOST
+              value: "applyforus-postgres.postgres.database.azure.com"
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: applyforus-secrets
+                  key: DB_USERNAME
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: applyforus-secrets
+                  key: DB_PASSWORD
+            - name: DB_DATABASE
+              value: "applyforus_auth"
+            - name: DB_SSL
+              value: "true"
+            - name: NODE_ENV
+              value: "production"
+          command:
+            - npm
+            - run
+            - migration:run
+
+        # User Service Migrations
+        - name: user-migrations
+          image: applyforusacr.azurecr.io/applyai-user-service:latest
+          env:
+            - name: DB_HOST
+              value: "applyforus-postgres.postgres.database.azure.com"
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: applyforus-secrets
+                  key: DB_USERNAME
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: applyforus-secrets
+                  key: DB_PASSWORD
+            - name: DB_DATABASE
+              value: "applyforus_user"
+            - name: DB_SSL
+              value: "true"
+            - name: NODE_ENV
+              value: "production"
+          command:
+            - npm
+            - run
+            - migration:run
+
+        # Job Service Migrations
+        - name: job-migrations
+          image: applyforusacr.azurecr.io/applyai-job-service:latest
+          env:
+            - name: DB_HOST
+              value: "applyforus-postgres.postgres.database.azure.com"
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: applyforus-secrets
+                  key: DB_USERNAME
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: applyforus-secrets
+                  key: DB_PASSWORD
+            - name: DB_DATABASE
+              value: "applyforus_job"
+            - name: DB_SSL
+              value: "true"
+            - name: NODE_ENV
+              value: "production"
+          command:
+            - npm
+            - run
+            - migration:run

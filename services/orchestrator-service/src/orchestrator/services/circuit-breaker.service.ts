@@ -24,10 +24,10 @@ export class CircuitBreakerService {
   private readonly circuits: Map<AgentType, AgentCircuitState> = new Map();
 
   private readonly defaultConfig: CircuitBreakerConfig = {
-    timeout: 30000,
+    timeout: 60000, // Increased from 30s to 60s to prevent premature timeouts
     errorThresholdPercentage: 50,
     resetTimeout: 30000,
-    volumeThreshold: 5,
+    volumeThreshold: 10, // Increased from 5 to 10 to reduce false positives
   };
 
   createBreaker<T>(
@@ -42,6 +42,10 @@ export class CircuitBreakerService {
       errorThresholdPercentage: finalConfig.errorThresholdPercentage,
       resetTimeout: finalConfig.resetTimeout,
       volumeThreshold: finalConfig.volumeThreshold,
+      // Enable fallback for graceful degradation
+      allowWarmUp: true,
+      // Cache successful results to reduce load
+      cache: true,
     });
 
     // Event handlers
@@ -90,6 +94,7 @@ export class CircuitBreakerService {
   async execute<T>(
     agentType: AgentType,
     action: (...args: unknown[]) => Promise<T>,
+    fallback?: T,
     ...args: unknown[]
   ): Promise<T> {
     let state = this.circuits.get(agentType);
@@ -99,7 +104,18 @@ export class CircuitBreakerService {
       state = this.circuits.get(agentType)!;
     }
 
-    return state.breaker.fire(...args) as Promise<T>;
+    try {
+      return await (state.breaker.fire(...args) as Promise<T>);
+    } catch (error) {
+      // If circuit is open and fallback is provided, return fallback
+      if (state.breaker.opened && fallback !== undefined) {
+        this.logger.warn(
+          `Circuit open for ${agentType}, returning fallback response`,
+        );
+        return fallback;
+      }
+      throw error;
+    }
   }
 
   private onSuccess(agentType: AgentType): void {

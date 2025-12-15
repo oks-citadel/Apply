@@ -182,6 +182,99 @@ output "sql_connection_string" {
 }
 
 # ============================================================================
+# PostgreSQL Flexible Server Outputs (conditional - only when PostgreSQL is enabled)
+# ============================================================================
+
+output "postgresql_enabled" {
+  description = "Whether PostgreSQL Flexible Server is enabled"
+  value       = var.enable_postgresql
+}
+
+output "postgresql_server_name" {
+  description = "Name of the PostgreSQL Flexible Server"
+  value       = var.enable_postgresql ? module.postgresql[0].server_name : null
+}
+
+output "postgresql_server_fqdn" {
+  description = "Fully qualified domain name of the PostgreSQL Flexible Server"
+  value       = var.enable_postgresql ? module.postgresql[0].server_fqdn : null
+}
+
+output "postgresql_server_id" {
+  description = "ID of the PostgreSQL Flexible Server"
+  value       = var.enable_postgresql ? module.postgresql[0].server_id : null
+}
+
+output "postgresql_database_names" {
+  description = "Map of PostgreSQL database names for all microservices"
+  value       = var.enable_postgresql ? module.postgresql[0].database_names : null
+}
+
+output "postgresql_db_host" {
+  description = "PostgreSQL database host (FQDN)"
+  value       = var.enable_postgresql ? module.postgresql[0].db_host : null
+}
+
+output "postgresql_db_port" {
+  description = "PostgreSQL database port"
+  value       = var.enable_postgresql ? module.postgresql[0].db_port : null
+}
+
+output "postgresql_connection_strings" {
+  description = "PostgreSQL connection strings for all microservices"
+  value       = var.enable_postgresql ? module.postgresql[0].typeorm_connection_strings : null
+  sensitive   = true
+}
+
+output "postgresql_env_vars_auth_service" {
+  description = "PostgreSQL environment variables for auth service"
+  value       = var.enable_postgresql ? module.postgresql[0].env_vars_auth_service : null
+  sensitive   = true
+}
+
+output "postgresql_env_vars_user_service" {
+  description = "PostgreSQL environment variables for user service"
+  value       = var.enable_postgresql ? module.postgresql[0].env_vars_user_service : null
+  sensitive   = true
+}
+
+output "postgresql_env_vars_job_service" {
+  description = "PostgreSQL environment variables for job service"
+  value       = var.enable_postgresql ? module.postgresql[0].env_vars_job_service : null
+  sensitive   = true
+}
+
+output "postgresql_env_vars_resume_service" {
+  description = "PostgreSQL environment variables for resume service"
+  value       = var.enable_postgresql ? module.postgresql[0].env_vars_resume_service : null
+  sensitive   = true
+}
+
+output "postgresql_env_vars_notification_service" {
+  description = "PostgreSQL environment variables for notification service"
+  value       = var.enable_postgresql ? module.postgresql[0].env_vars_notification_service : null
+  sensitive   = true
+}
+
+output "postgresql_env_vars_analytics_service" {
+  description = "PostgreSQL environment variables for analytics service"
+  value       = var.enable_postgresql ? module.postgresql[0].env_vars_analytics_service : null
+  sensitive   = true
+}
+
+output "postgresql_env_vars_auto_apply_service" {
+  description = "PostgreSQL environment variables for auto-apply service"
+  value       = var.enable_postgresql ? module.postgresql[0].env_vars_auto_apply_service : null
+  sensitive   = true
+}
+
+output "postgresql_env_vars_payment_service" {
+  description = "PostgreSQL environment variables for payment service"
+  value       = var.enable_postgresql ? module.postgresql[0].env_vars_payment_service : null
+  sensitive   = true
+}
+
+# ============================================================================
 # Redis Cache Outputs
 # ============================================================================
 

@@ -195,6 +195,73 @@ module "sql_database" {
 }
 
 # ============================================================================
+# Module: PostgreSQL Flexible Server (Recommended for New Deployments)
+# ============================================================================
+
+module "postgresql" {
+  count  = var.enable_postgresql ? 1 : 0
+  source = "./modules/postgresql-flexible"
+
+  resource_group_name = azurerm_resource_group.main.name
+  location            = azurerm_resource_group.main.location
+  project_name        = var.project_name
+  environment         = var.environment
+  tags                = local.common_tags
+
+  unique_suffix           = local.unique_suffix
+  postgres_admin_username = var.postgres_admin_username
+  postgres_admin_password = var.postgres_admin_password
+
+  # Server configuration based on environment
+  sku_name       = local.config.postgresql_sku.name
+  storage_mb     = local.config.postgresql_sku.storage_mb
+  postgres_version = "16"
+
+  # Backup configuration
+  backup_retention_days        = var.environment == "prod" ? 35 : 7
+  geo_redundant_backup_enabled = var.environment == "prod" ? true : false
+
+  # High availability (only for production)
+  enable_high_availability = var.environment == "prod" ? true : false
+  high_availability_mode   = "ZoneRedundant"
+  standby_availability_zone = "2"
+
+  # Network security - PUBLIC access with firewall rules
+  allow_azure_services = true
+  allowed_ip_addresses = []  # Add your IPs here if needed
+
+  # Database names for each microservice
+  database_names = {
+    auth_service         = "auth_service_db"
+    user_service         = "user_service_db"
+    job_service          = "job_service_db"
+    resume_service       = "resume_service_db"
+    notification_service = "notification_service_db"
+    analytics_service    = "analytics_service_db"
+    auto_apply_service   = "auto_apply_service_db"
+    payment_service      = "payment_service_db"
+  }
+
+  # Performance configuration
+  max_connections = var.environment == "prod" ? "200" : "100"
+  timezone        = "UTC"
+
+  # Maintenance window (Sunday 2 AM UTC for production)
+  maintenance_window = var.environment == "prod" ? {
+    day_of_week  = 0
+    start_hour   = 2
+    start_minute = 0
+  } : null
+
+  # Diagnostics
+  enable_diagnostics         = var.enable_diagnostics
+  log_analytics_workspace_id = module.app_insights.workspace_id
+  diagnostic_retention_days  = var.environment == "prod" ? 90 : 30
+
+  depends_on = [module.app_insights]
+}
+
+# ============================================================================
 # Module: Redis Cache
 # ============================================================================
 

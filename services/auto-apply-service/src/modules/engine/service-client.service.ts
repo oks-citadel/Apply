@@ -38,16 +38,20 @@ class CircuitBreaker {
     config?: Partial<CircuitBreakerConfig>,
   ) {
     this.config = {
-      failureThreshold: config?.failureThreshold || 5,
+      failureThreshold: config?.failureThreshold || 10, // Increased from 5 to 10
       successThreshold: config?.successThreshold || 2,
-      timeout: config?.timeout || 30000,
+      timeout: config?.timeout || 60000, // Increased from 30s to 60s
       resetTimeout: config?.resetTimeout || 60000,
     };
   }
 
-  async execute<T>(fn: () => Promise<T>): Promise<T> {
+  async execute<T>(fn: () => Promise<T>, fallback?: T): Promise<T> {
     if (this.state === CircuitState.OPEN) {
       if (Date.now() < this.nextAttempt) {
+        // If fallback is provided, return it instead of throwing error (fail-open)
+        if (fallback !== undefined) {
+          return fallback;
+        }
         throw new ServiceUnavailableException(
           `Circuit breaker is OPEN for ${this.serviceName}. Service is temporarily unavailable.`,
         );
@@ -62,6 +66,10 @@ class CircuitBreaker {
       return result;
     } catch (error) {
       this.onFailure();
+      // If fallback is provided and circuit just opened, return fallback
+      if (fallback !== undefined && this.state === CircuitState.OPEN) {
+        return fallback;
+      }
       throw error;
     }
   }
@@ -134,7 +142,7 @@ export class ServiceClientService {
       try {
         const response = await firstValueFrom(
           this.httpService.get(`${this.jobServiceUrl}/jobs/${jobId}`).pipe(
-            timeout(30000),
+            timeout(60000), // Increased from 30s to 60s
             retry({ count: 2, delay: 1000 }),
             catchError((error: AxiosError) => {
               this.logger.error(`Error fetching job ${jobId}: ${error.message}`);
@@ -168,7 +176,7 @@ export class ServiceClientService {
 
         const response = await firstValueFrom(
           this.httpService.get(`${this.userServiceUrl}/profile`, { headers }).pipe(
-            timeout(30000),
+            timeout(60000), // Increased from 30s to 60s
             retry({ count: 2, delay: 1000 }),
             catchError((error: AxiosError) => {
               this.logger.error(`Error fetching user profile ${userId}: ${error.message}`);
@@ -202,7 +210,7 @@ export class ServiceClientService {
 
         const response = await firstValueFrom(
           this.httpService.get(`${this.resumeServiceUrl}/resumes/${resumeId}`, { headers }).pipe(
-            timeout(30000),
+            timeout(60000), // Increased from 30s to 60s
             retry({ count: 2, delay: 1000 }),
             catchError((error: AxiosError) => {
               this.logger.error(`Error fetching resume ${resumeId}: ${error.message}`);
@@ -239,7 +247,7 @@ export class ServiceClientService {
             headers,
             params: { page: 1, limit: 100 }
           }).pipe(
-            timeout(30000),
+            timeout(60000), // Increased from 30s to 60s
             retry({ count: 2, delay: 1000 }),
             catchError((error: AxiosError) => {
               this.logger.error(`Error fetching resumes for user ${userId}: ${error.message}`);
@@ -276,7 +284,7 @@ export class ServiceClientService {
         // Assuming cover letters endpoint exists, adjust as needed
         const response = await firstValueFrom(
           this.httpService.get(`${this.resumeServiceUrl}/cover-letters/${coverLetterId}`, { headers }).pipe(
-            timeout(30000),
+            timeout(60000), // Increased from 30s to 60s
             retry({ count: 2, delay: 1000 }),
             catchError((error: AxiosError) => {
               this.logger.error(`Error fetching cover letter ${coverLetterId}: ${error.message}`);

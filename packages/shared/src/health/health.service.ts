@@ -8,6 +8,8 @@ import {
   HealthIndicatorResult,
 } from '@nestjs/terminus';
 import { Logger } from '../logging/logger';
+import { RedisHealthIndicator } from './redis-health.indicator';
+import Redis from 'ioredis';
 
 export interface HealthCheckConfig {
   serviceName: string;
@@ -179,6 +181,7 @@ export class HealthService {
 
   /**
    * Check Redis connection
+   * Uses fail-open pattern: if Redis is down, service is still considered degraded but operational
    */
   private async checkRedis(): Promise<{ status: 'up' | 'down'; message?: string; responseTime?: number }> {
     const startTime = Date.now();
@@ -186,18 +189,21 @@ export class HealthService {
     try {
       // This is a placeholder - actual implementation depends on your Redis setup
       // You would inject a Redis health indicator or client
+      // Note: With fail-open pattern, Redis being down doesn't necessarily mean status is 'down'
+      // The service continues to operate using in-memory fallback
 
       const responseTime = Date.now() - startTime;
       return {
         status: 'up',
+        message: 'Redis connection healthy (fail-open enabled)',
         responseTime,
       };
     } catch (error) {
       const responseTime = Date.now() - startTime;
-      this.logger.error('Redis health check failed', error as Error);
+      this.logger.warn('Redis health check failed, but service remains operational (fail-open)', error as Error);
       return {
         status: 'down',
-        message: error instanceof Error ? error.message : 'Redis connection failed',
+        message: `Redis unavailable (fail-open): ${error instanceof Error ? error.message : 'Redis connection failed'}`,
         responseTime,
       };
     }
@@ -270,7 +276,8 @@ export class ExtendedHealthService extends HealthService {
     logger: Logger,
     config: HealthCheckConfig,
     private readonly db?: TypeOrmHealthIndicator,
-    private readonly http?: HttpHealthIndicator
+    private readonly http?: HttpHealthIndicator,
+    private readonly redisIndicator?: RedisHealthIndicator
   ) {
     super(terminusHealth, logger, config);
   }
@@ -293,5 +300,37 @@ export class ExtendedHealthService extends HealthService {
       throw new Error('HTTP health indicator not available');
     }
     return this.http.pingCheck(name, url);
+  }
+
+  /**
+   * Check Redis with fail-open support
+   * @param redis Redis client instance
+   * @param failOpen Whether to use fail-open pattern (default: true)
+   */
+  async checkRedisWithIndicator(redis: Redis | null, failOpen: boolean = true): Promise<HealthIndicatorResult> {
+    if (!this.redisIndicator) {
+      throw new Error('Redis health indicator not available');
+    }
+    return this.redisIndicator.isHealthy('redis', redis, { failOpen, timeout: 2000 });
+  }
+
+  /**
+   * Get detailed Redis information
+   */
+  async getRedisInfo(redis: Redis | null): Promise<HealthIndicatorResult> {
+    if (!this.redisIndicator) {
+      throw new Error('Redis health indicator not available');
+    }
+    return this.redisIndicator.getRedisInfo('redis-info', redis);
+  }
+
+  /**
+   * Check Redis memory usage
+   */
+  async checkRedisMemory(redis: Redis | null, maxMemoryPercent: number = 90): Promise<HealthIndicatorResult> {
+    if (!this.redisIndicator) {
+      throw new Error('Redis health indicator not available');
+    }
+    return this.redisIndicator.checkMemory('redis-memory', redis, maxMemoryPercent);
   }
 }

@@ -1,0 +1,286 @@
+# ============================================================================
+# PostgreSQL Flexible Server Configuration Example
+# ============================================================================
+# This file provides example values for PostgreSQL Flexible Server deployment.
+# Copy this file to postgresql.tfvars and update with your actual values.
+#
+# Usage:
+#   terraform apply -var-file=environments/prod.tfvars -var-file=postgresql.tfvars
+#
+# IMPORTANT: Never commit postgresql.tfvars with real credentials to Git!
+# Add postgresql.tfvars to .gitignore
+# ============================================================================
+
+# ============================================================================
+# Enable PostgreSQL Deployment
+# ============================================================================
+
+# Set to true to deploy PostgreSQL Flexible Server
+enable_postgresql = true
+
+# Optional: Disable SQL Server if migrating from MSSQL
+# enable_sql_database = false
+
+# ============================================================================
+# PostgreSQL Credentials
+# ============================================================================
+# SECURITY WARNING: Do not commit real credentials to Git!
+# Use environment variables or CI/CD secrets instead:
+#
+# Option 1: Environment Variables (Recommended)
+#   export TF_VAR_postgres_admin_username="applyforusadmin"
+#   export TF_VAR_postgres_admin_password="your-secure-password"
+#
+# Option 2: Azure DevOps Pipeline Variables
+#   Set as secret pipeline variables
+#
+# Option 3: GitHub Actions Secrets
+#   Set as repository secrets
+#
+# Option 4: Terraform Cloud/Enterprise
+#   Set as sensitive workspace variables
+# ============================================================================
+
+# PostgreSQL administrator username
+# Must start with a letter, 3-64 characters, alphanumeric and underscores only
+postgres_admin_username = "applyforusadmin"
+
+# PostgreSQL administrator password
+# Minimum 12 characters recommended
+# For production: Use 16+ characters with mix of upper/lower/numbers/symbols
+postgres_admin_password = "REPLACE-WITH-SECURE-PASSWORD"
+
+# ============================================================================
+# PostgreSQL Server Configuration (Optional - defaults from locals.tf)
+# ============================================================================
+# These settings override the defaults from locals.tf
+# Uncomment to customize per deployment
+
+# # PostgreSQL version (11, 12, 13, 14, 15, 16)
+# postgres_version = "16"
+
+# # SKU name for compute tier
+# # Development: B_Standard_B1ms (1 vCore, 2 GB RAM)
+# # Staging: GP_Standard_D2s_v3 (2 vCores, 8 GB RAM)
+# # Production: GP_Standard_D4s_v3 (4 vCores, 16 GB RAM)
+# postgres_sku_name = "GP_Standard_D2s_v3"
+
+# # Storage in MB (minimum 32768 = 32 GB)
+# postgres_storage_mb = 65536  # 64 GB
+
+# ============================================================================
+# Backup Configuration (Optional)
+# ============================================================================
+# Defaults are set based on environment (dev/staging/prod)
+# Uncomment to override
+
+# # Backup retention in days (7-35)
+# postgres_backup_retention_days = 14
+
+# # Enable geo-redundant backups (increases cost)
+# postgres_geo_redundant_backup = false
+
+# ============================================================================
+# High Availability (Optional)
+# ============================================================================
+# Production environments can enable HA for 99.99% SLA
+# Adds ~50% to compute cost
+
+# # Enable high availability
+# postgres_enable_high_availability = true
+
+# # HA mode: "ZoneRedundant" or "SameZone"
+# postgres_high_availability_mode = "ZoneRedundant"
+
+# # Standby server availability zone (1, 2, or 3)
+# postgres_standby_availability_zone = "2"
+
+# ============================================================================
+# Network Security (Optional)
+# ============================================================================
+# By default, Azure services are allowed
+# Add specific IPs for local development or VPN access
+
+# # Allow Azure services (App Services, AKS, etc.)
+# postgres_allow_azure_services = true
+
+# # Allowed IP addresses for firewall rules
+# # Add your development machine, VPN gateway, CI/CD system, etc.
+# postgres_allowed_ip_addresses = [
+#   "1.2.3.4",     # Corporate VPN
+#   "5.6.7.8",     # CI/CD System
+#   "9.10.11.12",  # Developer Machine
+# ]
+
+# ============================================================================
+# Performance Configuration (Optional)
+# ============================================================================
+# Customize performance parameters
+# Defaults are set based on environment
+
+# # Maximum concurrent connections
+# postgres_max_connections = "200"
+
+# # Server timezone
+# postgres_timezone = "UTC"
+
+# ============================================================================
+# Maintenance Window (Optional)
+# ============================================================================
+# Schedule maintenance during low-traffic periods
+# Default: Sunday 2 AM UTC for production, not set for dev/staging
+
+# postgres_maintenance_window = {
+#   day_of_week  = 0  # 0 = Sunday, 1 = Monday, etc.
+#   start_hour   = 2  # 0-23
+#   start_minute = 0  # 0-59
+# }
+
+# ============================================================================
+# Database Names (Optional)
+# ============================================================================
+# Override default database names if needed
+# Default names: <service>_db (e.g., auth_service_db)
+
+# postgres_database_names = {
+#   auth_service         = "auth_service_db"
+#   user_service         = "user_service_db"
+#   job_service          = "job_service_db"
+#   resume_service       = "resume_service_db"
+#   notification_service = "notification_service_db"
+#   analytics_service    = "analytics_service_db"
+#   auto_apply_service   = "auto_apply_service_db"
+#   payment_service      = "payment_service_db"
+# }
+
+# ============================================================================
+# Monitoring and Diagnostics (Optional)
+# ============================================================================
+# Enable diagnostic logging to Log Analytics
+# Default: enabled in all environments
+
+# # Enable diagnostic settings
+# postgres_enable_diagnostics = true
+
+# # Diagnostic log retention in days
+# postgres_diagnostic_retention_days = 30
+
+# ============================================================================
+# Example Configurations
+# ============================================================================
+
+# --------- Development Environment ---------
+# Minimal cost configuration for development and testing
+#
+# enable_postgresql = true
+# postgres_admin_username = "applyforusadmin"
+# postgres_admin_password = "DevPassword123!"
+# postgres_sku_name = "B_Standard_B1ms"
+# postgres_storage_mb = 32768
+# postgres_backup_retention_days = 7
+# postgres_geo_redundant_backup = false
+# postgres_enable_high_availability = false
+# postgres_allow_azure_services = true
+# postgres_allowed_ip_addresses = ["0.0.0.0"]  # Allow all (dev only!)
+#
+# Estimated cost: ~$20/month
+
+# --------- Staging Environment ---------
+# Medium configuration for staging and QA testing
+#
+# enable_postgresql = true
+# postgres_admin_username = "applyforusadmin"
+# postgres_admin_password = "StagingPassword123!"
+# postgres_sku_name = "GP_Standard_D2s_v3"
+# postgres_storage_mb = 65536
+# postgres_backup_retention_days = 14
+# postgres_geo_redundant_backup = false
+# postgres_enable_high_availability = false
+# postgres_allow_azure_services = true
+# postgres_allowed_ip_addresses = ["1.2.3.4", "5.6.7.8"]
+#
+# Estimated cost: ~$120/month
+
+# --------- Production Environment ---------
+# High-availability production configuration
+#
+# enable_postgresql = true
+# postgres_admin_username = "applyforusadmin"
+# postgres_admin_password = "ProductionPassword123!@#"
+# postgres_sku_name = "GP_Standard_D4s_v3"
+# postgres_storage_mb = 131072
+# postgres_backup_retention_days = 35
+# postgres_geo_redundant_backup = true
+# postgres_enable_high_availability = true
+# postgres_high_availability_mode = "ZoneRedundant"
+# postgres_standby_availability_zone = "2"
+# postgres_max_connections = "200"
+# postgres_allow_azure_services = true
+# postgres_allowed_ip_addresses = ["10.0.0.5", "20.0.0.10"]
+# postgres_maintenance_window = {
+#   day_of_week  = 0
+#   start_hour   = 2
+#   start_minute = 0
+# }
+#
+# Estimated cost: ~$500/month
+
+# ============================================================================
+# Security Best Practices
+# ============================================================================
+#
+# 1. Credentials Management:
+#    - Use strong passwords (16+ characters for production)
+#    - Store in Azure Key Vault
+#    - Rotate quarterly
+#    - Use environment variables, not files
+#    - Never commit credentials to Git
+#
+# 2. Network Security:
+#    - Use specific IPs, not 0.0.0.0/0 in production
+#    - Enable firewall logging
+#    - Regular security audits
+#    - Monitor failed connection attempts
+#
+# 3. Access Control:
+#    - Separate credentials per environment
+#    - Implement least privilege
+#    - Enable Azure AD authentication
+#    - Regular access reviews
+#
+# 4. Monitoring:
+#    - Enable diagnostic logging
+#    - Set up alerts for unusual activity
+#    - Monitor connection counts
+#    - Track query performance
+#
+# 5. Backup and Recovery:
+#    - Test restore procedures regularly
+#    - Enable geo-redundancy in production
+#    - Document recovery procedures
+#    - Maintain backup inventory
+#
+# ============================================================================
+# Quick Start
+# ============================================================================
+#
+# 1. Copy this file:
+#    cp postgresql.tfvars.example postgresql.tfvars
+#
+# 2. Edit postgresql.tfvars with your values:
+#    - Set postgres_admin_password
+#    - Add your IP addresses to allowed list
+#
+# 3. Add to .gitignore (if not already):
+#    echo "postgresql.tfvars" >> .gitignore
+#
+# 4. Deploy:
+#    terraform init
+#    terraform plan -var-file=environments/prod.tfvars -var-file=postgresql.tfvars
+#    terraform apply -var-file=environments/prod.tfvars -var-file=postgresql.tfvars
+#
+# 5. Get connection strings:
+#    terraform output postgresql_server_fqdn
+#    terraform output -json postgresql_connection_strings
+#
+# ============================================================================

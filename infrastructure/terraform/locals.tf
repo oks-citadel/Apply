@@ -36,6 +36,13 @@ locals {
         capacity = 5
       }
 
+      # PostgreSQL Flexible Server configuration
+      postgresql_sku = {
+        name       = "B_Standard_B1ms"
+        tier       = "Burstable"
+        storage_mb = 32768
+      }
+
       # Redis Cache configuration
       redis_cache_sku = {
         name     = "Basic"
@@ -67,6 +74,13 @@ locals {
         capacity = 20
       }
 
+      # PostgreSQL Flexible Server configuration
+      postgresql_sku = {
+        name       = "GP_Standard_D2s_v3"
+        tier       = "GeneralPurpose"
+        storage_mb = 65536
+      }
+
       # Redis Cache configuration
       redis_cache_sku = {
         name     = "Standard"
@@ -96,6 +110,13 @@ locals {
         name     = "S3"
         tier     = "Standard"
         capacity = 100
+      }
+
+      # PostgreSQL Flexible Server configuration
+      postgresql_sku = {
+        name       = "GP_Standard_D4s_v3"
+        tier       = "GeneralPurpose"
+        storage_mb = 131072
       }
 
       # Redis Cache configuration

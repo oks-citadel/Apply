@@ -317,14 +317,22 @@ data:
 
         # AI-specific plugins
         plugins:
-          # Stricter rate limiting for AI operations (50 req/min)
+          # Stricter rate limiting for AI operations (50 req/min) - Redis-backed with fail-open
           - name: rate-limiting
             config:
               minute: 50
               hour: 2000
-              policy: local
+              policy: redis
               limit_by: ip
               hide_client_headers: false
+              # Redis configuration
+              redis_host: applyforus-redis.redis.cache.windows.net
+              redis_port: 6380
+              redis_ssl: true
+              redis_ssl_verify: true
+              redis_timeout: 2000
+              # Fail-open: if Redis is unavailable, allow requests through
+              fault_tolerant: true
             tags:
               - ai-rate-limit
 
@@ -472,7 +480,7 @@ data:
           - observability
 
       # --------------------------------------------------------------------------
-      # Default Rate Limiting - 100 requests per minute
+      # Default Rate Limiting - 100 requests per minute (Redis-backed with fail-open)
       # --------------------------------------------------------------------------
       - name: rate-limiting
         config:
@@ -480,14 +488,25 @@ data:
           minute: 100
           hour: 5000
 
-          # Policy: local (in-memory), redis, or cluster
-          policy: local
+          # Policy: redis for distributed rate limiting
+          policy: redis
 
           # Limit by: consumer, credential, ip, service, or header
           limit_by: ip
 
           # Hide client headers
           hide_client_headers: false
+
+          # Redis configuration for distributed rate limiting
+          redis_host: applyforus-redis.redis.cache.windows.net
+          redis_port: 6380
+          redis_ssl: true
+          redis_ssl_verify: true
+          redis_timeout: 2000
+
+          # Fail-open pattern: if Redis is unavailable, allow requests through
+          # This prevents gateway timeouts when Redis is down
+          fault_tolerant: true
 
         tags:
           - rate-limiting

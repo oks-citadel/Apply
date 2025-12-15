@@ -10,50 +10,133 @@ data:
   NODE_ENV: "production"
   LOG_LEVEL: "info"
 
-  # Database Configuration
+  # Frontend URLs
+  FRONTEND_URL: "https://applyforus.com"
+  APP_URL: "https://applyforus.com"
+  API_URL: "https://api.applyforus.com"
+  NEXT_PUBLIC_API_URL: "https://api.applyforus.com"
+
+  # Database Configuration - Azure PostgreSQL
   POSTGRES_HOST: "applyforus-postgres.postgres.database.azure.com"
   POSTGRES_PORT: "5432"
   POSTGRES_DB: "applyforus"
+  POSTGRES_USER: "applyforusadmin@applyforus-postgres"
+  POSTGRES_SSL: "true"
+  DB_HOST: "applyforus-postgres.postgres.database.azure.com"
+  DB_PORT: "5432"
+  DB_DATABASE: "applyforus"
+  DB_NAME: "applyforus"
+  DB_USERNAME: "applyforusadmin@applyforus-postgres"
+  DB_SSL: "true"
 
-  # Redis Configuration
+  # Redis Configuration - Azure Cache for Redis
   REDIS_HOST: "applyforus-redis.redis.cache.windows.net"
   REDIS_PORT: "6380"
   REDIS_TLS: "true"
+  REDIS_SSL: "true"
+  REDIS_DB: "0"
 
-  # Service URLs (Internal) - ports match K8s deployment containerPorts
+  # Elasticsearch Configuration - Azure hosted
+  ELASTICSEARCH_NODE: "https://applyforus-elasticsearch.azurewebsites.net:9200"
+  ELASTICSEARCH_URL: "https://applyforus-elasticsearch.azurewebsites.net:9200"
+  ELASTICSEARCH_USERNAME: "elastic"
+  ELASTICSEARCH_SSL: "true"
+
+  # Service URLs (Internal Kubernetes DNS) - ports match K8s deployment containerPorts
   AUTH_SERVICE_URL: "http://auth-service.applyforus.svc.cluster.local:8001"
   USER_SERVICE_URL: "http://user-service.applyforus.svc.cluster.local:8002"
-  JOB_SERVICE_URL: "http://job-service.applyforus.svc.cluster.local:8004"
-  AI_SERVICE_URL: "http://ai-service.applyforus.svc.cluster.local:8008"
   RESUME_SERVICE_URL: "http://resume-service.applyforus.svc.cluster.local:8003"
+  JOB_SERVICE_URL: "http://job-service.applyforus.svc.cluster.local:8004"
+  AUTO_APPLY_SERVICE_URL: "http://auto-apply-service.applyforus.svc.cluster.local:8005"
   ANALYTICS_SERVICE_URL: "http://analytics-service.applyforus.svc.cluster.local:8006"
   NOTIFICATION_SERVICE_URL: "http://notification-service.applyforus.svc.cluster.local:8007"
-  AUTO_APPLY_SERVICE_URL: "http://auto-apply-service.applyforus.svc.cluster.local:8005"
+  AI_SERVICE_URL: "http://ai-service.applyforus.svc.cluster.local:8000"
+  ORCHESTRATOR_SERVICE_URL: "http://orchestrator-service.applyforus.svc.cluster.local:8008"
+  APPLICATION_SERVICE_URL: "http://auto-apply-service.applyforus.svc.cluster.local:8005"
 
-  # Azure Configuration
+  # Azure Storage Configuration
   AZURE_STORAGE_ACCOUNT_NAME: "applyforusstorage"
   AZURE_BLOB_CONTAINER_RESUMES: "resumes"
   AZURE_BLOB_CONTAINER_DOCUMENTS: "documents"
+  AZURE_BLOB_CONTAINER_UPLOADS: "user-uploads"
+  AZURE_BLOB_CONTAINER_PROFILE_PHOTOS: "profile-photos"
+  AZURE_BLOB_CONTAINER_PARSED: "parsed-resumes"
+  AZURE_BLOB_CONTAINER_GENERATED: "generated-resumes"
 
   # Azure OpenAI Configuration
   AZURE_OPENAI_ENDPOINT: "https://applyforus-openai.openai.azure.com/"
   AZURE_OPENAI_DEPLOYMENT_NAME: "gpt-4"
   AZURE_OPENAI_API_VERSION: "2024-02-15-preview"
 
+  # Azure Service Bus (replaces RabbitMQ for production)
+  # Connection string stored in secrets, not configmap
+
   # Email Configuration
   SMTP_HOST: "smtp.sendgrid.net"
   SMTP_PORT: "587"
   SMTP_SECURE: "false"
   EMAIL_FROM: "noreply@applyforus.com"
+  EMAIL_FROM_NAME: "ApplyForUs AI Platform"
 
   # Application Settings
-  CORS_ORIGIN: "https://applyforus.com,https://www.applyforus.com"
+  CORS_ORIGIN: "https://applyforus.com,https://www.applyforus.com,https://api.applyforus.com"
+  CORS_ORIGINS: "https://applyforus.com,https://www.applyforus.com,https://api.applyforus.com"
+  CORS_ALLOW_CREDENTIALS: "true"
+
+  # Rate Limiting
   API_RATE_LIMIT: "100"
   API_RATE_WINDOW: "15"
+  RATE_LIMIT_TTL: "60"
+  RATE_LIMIT_MAX: "100"
+  THROTTLE_TTL: "60000"
+  THROTTLE_LIMIT: "100"
+
+  # Session
   SESSION_TIMEOUT: "3600"
+  SESSION_MAX_AGE: "86400000"
+
+  # Cache Configuration
+  CACHE_TTL: "300"
+  CACHE_MAX_ITEMS: "1000"
 
   # Feature Flags
   FEATURE_AUTO_APPLY: "true"
   FEATURE_AI_RESUME: "true"
   FEATURE_ANALYTICS: "true"
   FEATURE_NOTIFICATIONS: "true"
+  FEATURE_AI_RESUME_BUILDER: "true"
+  FEATURE_ANALYTICS_DASHBOARD: "true"
+  FEATURE_CHROME_EXTENSION: "true"
+
+  # AI Configuration
+  AI_SUGGESTIONS_ENABLED: "true"
+  RESUME_OPTIMIZATION_ENABLED: "true"
+  DEFAULT_LLM_PROVIDER: "openai"
+  LLM_TEMPERATURE: "0.7"
+  LLM_MAX_TOKENS: "2000"
+
+  # File Upload Configuration
+  MAX_FILE_SIZE: "5242880"
+  ALLOWED_FILE_TYPES: "application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
+  ALLOWED_IMAGE_TYPES: "image/jpeg,image/png,image/webp"
+
+  # Browser Automation
+  BROWSER_HEADLESS: "true"
+  HEADLESS_BROWSER: "true"
+  BROWSER_TIMEOUT: "30000"
+
+  # Job Processing
+  MAX_CONCURRENT_JOBS: "3"
+  MAX_APPLICATIONS_PER_DAY: "50"
+  JOB_PROCESSING_TIMEOUT: "300000"
+
+  # Notifications
+  NOTIFICATIONS_ENABLED: "true"
+
+  # Analytics
+  ENABLE_ANALYTICS: "true"
+  ANALYTICS_RETENTION_DAYS: "90"
+
+  # Version Control
+  ENABLE_VERSION_CONTROL: "true"
+  MAX_VERSIONS_PER_RESUME: "10"

@@ -4,11 +4,16 @@ import { TenantService } from '../tenant.service';
 
 /**
  * Per-tenant rate limiting middleware
+ * Uses in-memory storage with fail-open pattern for reliability
+ * NEVER causes timeouts - tenant service calls limited to 2s max
  */
 @Injectable()
 export class TenantRateLimitMiddleware implements NestMiddleware {
   private readonly logger = new Logger(TenantRateLimitMiddleware.name);
   private rateLimitStore: Map<string, { count: number; resetTime: number }> = new Map();
+  private readonly TENANT_SERVICE_TIMEOUT_MS = 2000; // 2 second timeout for tenant service calls
+  private degradedModeActivations = 0;
+  private totalChecks = 0;
 
   constructor(private readonly tenantService: TenantService) {
     // Clean up old entries every 5 minutes
@@ -27,8 +32,26 @@ export class TenantRateLimitMiddleware implements NestMiddleware {
       return next();
     }
 
+    this.totalChecks++;
+
     try {
-      const license = await this.tenantService.getTenantLicense(tenantId as string);
+      // Fail-open: if we can't get the license within 2s, allow the request
+      const license = await this.withTimeout(
+        this.tenantService.getTenantLicense(tenantId as string),
+        this.TENANT_SERVICE_TIMEOUT_MS,
+      ).catch((err) => {
+        this.degradedModeActivations++;
+        this.logger.warn(`Failed to get tenant license, allowing request (fail-open): ${err.message}`, {
+          rate_limit_degraded: true,
+          error_type: err.message.includes('timeout') ? 'tenant_service_timeout' : 'tenant_service_error',
+          gateway_rate_limit_degraded_total: this.degradedModeActivations,
+        });
+        return null;
+      });
+
+      if (!license) {
+        return next();
+      }
 
       // Check rate limits
       const rateLimit = license.rate_limits;
@@ -108,35 +131,61 @@ export class TenantRateLimitMiddleware implements NestMiddleware {
       if (error instanceof HttpException) {
         throw error;
       }
-      this.logger.error(`Rate limit check failed: ${error.message}`);
+      // Fail-open: if there's an unexpected error, allow the request
+      this.degradedModeActivations++;
+      this.logger.warn(`Rate limit check failed, allowing request (fail-open): ${error.message}`, {
+        rate_limit_degraded: true,
+        error_type: 'unexpected_error',
+      });
       next();
     }
   }
 
   /**
    * Check rate limit for a specific key
+   * Uses fail-open pattern: if there's an error, allow the request
+   * This is a synchronous in-memory operation, so extremely fast (<1ms)
    */
   private async checkRateLimit(key: string, limit: number, windowSeconds: number): Promise<boolean> {
-    const now = Date.now();
-    const entry = this.rateLimitStore.get(key);
+    try {
+      const now = Date.now();
+      const entry = this.rateLimitStore.get(key);
 
-    if (!entry || entry.resetTime < now) {
-      // Create new entry
-      this.rateLimitStore.set(key, {
-        count: 1,
-        resetTime: now + windowSeconds * 1000,
-      });
+      if (!entry || entry.resetTime < now) {
+        // Create new entry
+        this.rateLimitStore.set(key, {
+          count: 1,
+          resetTime: now + windowSeconds * 1000,
+        });
+        return true;
+      }
+
+      if (entry.count >= limit) {
+        return false;
+      }
+
+      // Increment count
+      entry.count++;
+      this.rateLimitStore.set(key, entry);
+      return true;
+    } catch (error) {
+      // Fail-open: if there's an error checking rate limit, allow the request
+      this.logger.warn(`Rate limit check failed, allowing request (fail-open): ${error.message}`);
       return true;
     }
+  }
 
-    if (entry.count >= limit) {
-      return false;
-    }
-
-    // Increment count
-    entry.count++;
-    this.rateLimitStore.set(key, entry);
-    return true;
+  /**
+   * Wrap an operation with a timeout
+   * Ensures tenant service calls never exceed 2s
+   */
+  private async withTimeout<T>(operation: Promise<T>, timeoutMs: number): Promise<T> {
+    return Promise.race([
+      operation,
+      new Promise<T>((_, reject) =>
+        setTimeout(() => reject(new Error(`Operation timeout after ${timeoutMs}ms`)), timeoutMs)
+      ),
+    ]);
   }
 
   /**
@@ -154,10 +203,27 @@ export class TenantRateLimitMiddleware implements NestMiddleware {
    */
   private cleanupRateLimitStore() {
     const now = Date.now();
+    let cleanedCount = 0;
     for (const [key, entry] of this.rateLimitStore.entries()) {
       if (entry.resetTime < now) {
         this.rateLimitStore.delete(key);
+        cleanedCount++;
       }
     }
+    if (cleanedCount > 0) {
+      this.logger.debug(`Cleaned up ${cleanedCount} expired rate limit entries`);
+    }
+  }
+
+  /**
+   * Get metrics for monitoring
+   */
+  getMetrics() {
+    return {
+      totalChecks: this.totalChecks,
+      degradedModeActivations: this.degradedModeActivations,
+      degradedModePercentage: this.totalChecks > 0 ? (this.degradedModeActivations / this.totalChecks) * 100 : 0,
+      activeRateLimitEntries: this.rateLimitStore.size,
+    };
   }
 }

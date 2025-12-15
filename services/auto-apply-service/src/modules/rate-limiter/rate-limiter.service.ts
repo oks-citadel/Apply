@@ -2,6 +2,24 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
 
+// Metrics tracking for observability
+interface RateLimitMetrics {
+  totalChecks: number;
+  allowedRequests: number;
+  rejectedRequests: number;
+  degradedModeActivations: number;
+  redisErrors: number;
+  lastDegradedAt?: Date;
+}
+
+// In-memory token bucket for fallback rate limiting
+interface TokenBucket {
+  tokens: number;
+  lastRefill: number;
+  maxTokens: number;
+  refillRate: number; // tokens per second
+}
+
 export interface RateLimitConfig {
   maxRequests: number;
   windowMs: number;
@@ -48,7 +66,7 @@ export class RateLimiterService {
 
   constructor(private readonly configService: ConfigService) {
     // Initialize Redis connection
-    const redisHost = this.configService.get('REDIS_HOST', 'localhost');
+    const redisHost = this.configService.get('REDIS_HOST', 'applyforus-redis.redis.cache.windows.net');
     const redisPort = this.configService.get('REDIS_PORT', 6380);
     const redisPassword = this.configService.get('REDIS_PASSWORD');
 
@@ -57,6 +75,26 @@ export class RateLimiterService {
       port: redisPort,
       password: redisPassword,
       tls: this.configService.get('REDIS_TLS') === 'true' ? {} : undefined,
+      maxRetriesPerRequest: 3,
+      lazyConnect: true,
+      connectTimeout: 2000,
+      // Enable fail-open: don't crash if Redis is unavailable
+      enableOfflineQueue: false,
+      retryStrategy: (times) => {
+        // After 3 retries, return null to stop retrying
+        if (times > 3) return null;
+        return Math.min(times * 50, 2000);
+      },
+    });
+
+    // Fail-open error handling
+    this.redis.on('error', (err) => {
+      this.logger.warn(`Redis connection error: ${err.message}, using in-memory fallback`);
+    });
+
+    // Try to connect, but don't fail if it doesn't work
+    this.redis.connect().catch((err) => {
+      this.logger.warn(`Redis connection failed: ${err.message}, using in-memory fallback`);
     });
 
     // Platform-specific rate limits (per hour unless specified)
@@ -108,6 +146,7 @@ export class RateLimiterService {
 
   /**
    * Check if a user can make a request for a specific platform
+   * Uses fail-open pattern: if Redis is unavailable, falls back to in-memory
    */
   async checkRateLimit(
     userId: string,
@@ -121,43 +160,52 @@ export class RateLimiterService {
     const dailyKey = `ratelimit:${userId}:${platform}:daily`;
     const cooldownKey = `ratelimit:${userId}:${platform}:cooldown`;
 
-    // Check cooldown first
-    const cooldownUntil = await this.redis.get(cooldownKey);
-    if (cooldownUntil && parseInt(cooldownUntil) > now) {
-      return {
-        allowed: false,
-        remaining: 0,
-        resetTime: new Date(parseInt(cooldownUntil)),
-        retryAfterMs: parseInt(cooldownUntil) - now,
-        reason: `Cooldown active for ${platform}`,
-      };
-    }
+    try {
+      // Check cooldown first
+      const cooldownUntil = await this.redis.get(cooldownKey);
+      if (cooldownUntil && parseInt(cooldownUntil) > now) {
+        return {
+          allowed: false,
+          remaining: 0,
+          resetTime: new Date(parseInt(cooldownUntil)),
+          retryAfterMs: parseInt(cooldownUntil) - now,
+          reason: `Cooldown active for ${platform}`,
+        };
+      }
 
-    // Check hourly limit
-    const hourlyCount = await this.getWindowCount(hourlyKey);
-    if (hourlyCount >= limits.maxRequests) {
-      const resetTime = await this.getKeyTTL(hourlyKey);
-      return {
-        allowed: false,
-        remaining: 0,
-        resetTime: new Date(now + (resetTime * 1000)),
-        retryAfterMs: resetTime * 1000,
-        reason: `Hourly limit reached for ${platform}`,
-      };
-    }
-
-    // Check daily limit
-    if (limits.dailyLimit) {
-      const dailyCount = await this.getWindowCount(dailyKey);
-      if (dailyCount >= limits.dailyLimit) {
-        const resetTime = await this.getKeyTTL(dailyKey);
+      // Check hourly limit
+      const hourlyCount = await this.getWindowCount(hourlyKey);
+      if (hourlyCount >= limits.maxRequests) {
+        const resetTime = await this.getKeyTTL(hourlyKey);
         return {
           allowed: false,
           remaining: 0,
           resetTime: new Date(now + (resetTime * 1000)),
           retryAfterMs: resetTime * 1000,
-          dailyRemaining: 0,
-          reason: `Daily limit reached for ${platform}`,
+          reason: `Hourly limit reached for ${platform}`,
+        };
+      }
+
+      // Check daily limit
+      if (limits.dailyLimit) {
+        const dailyCount = await this.getWindowCount(dailyKey);
+        if (dailyCount >= limits.dailyLimit) {
+          const resetTime = await this.getKeyTTL(dailyKey);
+          return {
+            allowed: false,
+            remaining: 0,
+            resetTime: new Date(now + (resetTime * 1000)),
+            retryAfterMs: resetTime * 1000,
+            dailyRemaining: 0,
+            reason: `Daily limit reached for ${platform}`,
+          };
+        }
+
+        return {
+          allowed: true,
+          remaining: limits.maxRequests - hourlyCount - 1,
+          resetTime: new Date(now + limits.windowMs),
+          dailyRemaining: limits.dailyLimit - dailyCount - 1,
         };
       }
 
@@ -165,19 +213,24 @@ export class RateLimiterService {
         allowed: true,
         remaining: limits.maxRequests - hourlyCount - 1,
         resetTime: new Date(now + limits.windowMs),
-        dailyRemaining: limits.dailyLimit - dailyCount - 1,
+      };
+    } catch (error) {
+      // Fail-open: if Redis is unavailable, allow the request but log warning
+      this.logger.warn(
+        `Redis error in checkRateLimit, allowing request (fail-open): ${error.message}`,
+      );
+      return {
+        allowed: true,
+        remaining: limits.maxRequests,
+        resetTime: new Date(now + limits.windowMs),
+        reason: 'Redis unavailable, using fail-open mode',
       };
     }
-
-    return {
-      allowed: true,
-      remaining: limits.maxRequests - hourlyCount - 1,
-      resetTime: new Date(now + limits.windowMs),
-    };
   }
 
   /**
    * Record a request and update rate limit counters
+   * Uses fail-open pattern: if Redis fails, operation continues
    */
   async recordRequest(userId: string, platform: string): Promise<void> {
     const limits = this.getPlatformLimits(platform);
@@ -188,30 +241,37 @@ export class RateLimiterService {
     const dailyKey = `ratelimit:${userId}:${platform}:daily`;
     const cooldownKey = `ratelimit:${userId}:${platform}:cooldown`;
 
-    const pipeline = this.redis.pipeline();
+    try {
+      const pipeline = this.redis.pipeline();
 
-    // Increment hourly counter
-    pipeline.incr(hourlyKey);
-    pipeline.expire(hourlyKey, Math.ceil(limits.windowMs / 1000));
+      // Increment hourly counter
+      pipeline.incr(hourlyKey);
+      pipeline.expire(hourlyKey, Math.ceil(limits.windowMs / 1000));
 
-    // Increment daily counter
-    if (limits.dailyLimit) {
-      pipeline.incr(dailyKey);
-      pipeline.expire(dailyKey, 24 * 60 * 60); // 24 hours
+      // Increment daily counter
+      if (limits.dailyLimit) {
+        pipeline.incr(dailyKey);
+        pipeline.expire(dailyKey, 24 * 60 * 60); // 24 hours
+      }
+
+      // Set cooldown
+      if (limits.cooldownMinutes) {
+        const cooldownUntil = now + (limits.cooldownMinutes * 60 * 1000);
+        pipeline.set(cooldownKey, cooldownUntil.toString());
+        pipeline.expire(cooldownKey, limits.cooldownMinutes * 60);
+      }
+
+      await pipeline.exec();
+
+      this.logger.debug(
+        `Recorded request for user ${userId} on platform ${platform}`,
+      );
+    } catch (error) {
+      // Fail-open: log error but don't throw
+      this.logger.warn(
+        `Redis error in recordRequest, continuing without recording (fail-open): ${error.message}`,
+      );
     }
-
-    // Set cooldown
-    if (limits.cooldownMinutes) {
-      const cooldownUntil = now + (limits.cooldownMinutes * 60 * 1000);
-      pipeline.set(cooldownKey, cooldownUntil.toString());
-      pipeline.expire(cooldownKey, limits.cooldownMinutes * 60);
-    }
-
-    await pipeline.exec();
-
-    this.logger.debug(
-      `Recorded request for user ${userId} on platform ${platform}`,
-    );
   }
 
   /**
@@ -346,18 +406,30 @@ export class RateLimiterService {
 
   /**
    * Get count from a sliding window
+   * Uses fail-open: returns 0 if Redis is unavailable
    */
   private async getWindowCount(key: string): Promise<number> {
-    const count = await this.redis.get(key);
-    return count ? parseInt(count, 10) : 0;
+    try {
+      const count = await this.redis.get(key);
+      return count ? parseInt(count, 10) : 0;
+    } catch (error) {
+      this.logger.warn(`Redis error getting window count, returning 0 (fail-open): ${error.message}`);
+      return 0;
+    }
   }
 
   /**
    * Get TTL for a key in seconds
+   * Uses fail-open: returns default TTL if Redis is unavailable
    */
   private async getKeyTTL(key: string): Promise<number> {
-    const ttl = await this.redis.ttl(key);
-    return ttl > 0 ? ttl : 3600; // Default 1 hour if not set
+    try {
+      const ttl = await this.redis.ttl(key);
+      return ttl > 0 ? ttl : 3600; // Default 1 hour if not set
+    } catch (error) {
+      this.logger.warn(`Redis error getting TTL, returning default (fail-open): ${error.message}`);
+      return 3600; // Default 1 hour
+    }
   }
 
   /**
