@@ -165,11 +165,12 @@ export class StructuredLogger {
     }
 
     const mergedContext = { ...this.context, ...traceContext };
+    const logFn = (this.logger as any)[level];
 
     if (args.length > 0 && typeof args[0] === 'object') {
-      this.logger[level]({ ...mergedContext, ...args[0] }, message);
+      logFn.call(this.logger, { ...mergedContext, ...args[0] }, message);
     } else {
-      this.logger[level](mergedContext, message, ...args);
+      logFn.call(this.logger, mergedContext, message, ...args);
     }
   }
 
