@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { User, Briefcase, GraduationCap, Award, Code, MapPin, Link as LinkIcon } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -10,7 +10,7 @@ import { WorkExperienceForm } from '@/components/forms/WorkExperienceForm';
 import { EducationForm } from '@/components/forms/EducationForm';
 import { SkillsForm } from '@/components/forms/SkillsForm';
 import { CertificationsForm, type Certification } from '@/components/forms/CertificationsForm';
-import { useProfile } from '@/hooks/useUser';
+import { useProfile, useUpdateProfile } from '@/hooks/useUser';
 import type { Experience, Education as EducationType, Skill } from '@/types/resume';
 
 export default function ProfilePage() {
@@ -209,17 +209,78 @@ export default function ProfilePage() {
 }
 
 function ContactForm({ profile }: { profile: any }) {
+  const { mutate: updateProfile, isPending } = useUpdateProfile();
   const [formData, setFormData] = useState({
     phone: profile?.phone || '',
     location: profile?.location || '',
-    linkedin_url: profile?.linkedin_url || '',
-    github_url: profile?.github_url || '',
-    portfolio_url: profile?.portfolio_url || '',
+    linkedinUrl: profile?.linkedinUrl || profile?.linkedin_url || '',
+    githubUrl: profile?.githubUrl || profile?.github_url || '',
+    portfolioUrl: profile?.portfolioUrl || profile?.portfolio_url || '',
   });
+  const [isModified, setIsModified] = useState(false);
+
+  // Update form when profile data changes (e.g., after save or initial load)
+  useEffect(() => {
+    if (profile) {
+      setFormData({
+        phone: profile?.phone || '',
+        location: profile?.location || '',
+        linkedinUrl: profile?.linkedinUrl || profile?.linkedin_url || '',
+        githubUrl: profile?.githubUrl || profile?.github_url || '',
+        portfolioUrl: profile?.portfolioUrl || profile?.portfolio_url || '',
+      });
+      setIsModified(false);
+    }
+  }, [profile]);
+
+  // Track if form has been modified
+  const handleChange = (field: string, value: string) => {
+    setFormData({ ...formData, [field]: value });
+    setIsModified(true);
+  };
 
   const handleSave = () => {
-    // TODO: Implement save functionality with API
-    console.log('Saving contact info:', formData);
+    // Validate URLs before saving
+    const urlFields: Array<keyof typeof formData> = ['linkedinUrl', 'githubUrl', 'portfolioUrl'];
+    for (const field of urlFields) {
+      const value = formData[field];
+      if (value && value.trim() !== '') {
+        try {
+          new URL(value);
+        } catch {
+          // Invalid URL
+          alert(`Please enter a valid URL for ${field.replace('Url', '').replace(/([A-Z])/g, ' $1').trim()}`);
+          return;
+        }
+      }
+    }
+
+    // Transform camelCase to snake_case for backend compatibility
+    const updateData = {
+      phone: formData.phone || undefined,
+      location: formData.location || undefined,
+      linkedin_url: formData.linkedinUrl || undefined,
+      github_url: formData.githubUrl || undefined,
+      portfolio_url: formData.portfolioUrl || undefined,
+    };
+
+    updateProfile(updateData as any, {
+      onSuccess: () => {
+        setIsModified(false);
+      },
+    });
+  };
+
+  const handleCancel = () => {
+    // Reset form to original profile values
+    setFormData({
+      phone: profile?.phone || '',
+      location: profile?.location || '',
+      linkedinUrl: profile?.linkedinUrl || profile?.linkedin_url || '',
+      githubUrl: profile?.githubUrl || profile?.github_url || '',
+      portfolioUrl: profile?.portfolioUrl || profile?.portfolio_url || '',
+    });
+    setIsModified(false);
   };
 
   return (
@@ -229,14 +290,16 @@ function ContactForm({ profile }: { profile: any }) {
           label="Phone Number"
           type="tel"
           value={formData.phone}
-          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+          onChange={(e) => handleChange('phone', e.target.value)}
           placeholder="+1 (555) 123-4567"
+          disabled={isPending}
         />
         <Input
           label="Location"
           value={formData.location}
-          onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+          onChange={(e) => handleChange('location', e.target.value)}
           placeholder="San Francisco, CA"
+          disabled={isPending}
         />
       </div>
 
@@ -244,29 +307,44 @@ function ContactForm({ profile }: { profile: any }) {
         <Input
           label="LinkedIn URL"
           type="url"
-          value={formData.linkedin_url}
-          onChange={(e) => setFormData({ ...formData, linkedin_url: e.target.value })}
+          value={formData.linkedinUrl}
+          onChange={(e) => handleChange('linkedinUrl', e.target.value)}
           placeholder="https://linkedin.com/in/username"
+          disabled={isPending}
         />
         <Input
           label="GitHub URL"
           type="url"
-          value={formData.github_url}
-          onChange={(e) => setFormData({ ...formData, github_url: e.target.value })}
+          value={formData.githubUrl}
+          onChange={(e) => handleChange('githubUrl', e.target.value)}
           placeholder="https://github.com/username"
+          disabled={isPending}
         />
         <Input
           label="Portfolio URL"
           type="url"
-          value={formData.portfolio_url}
-          onChange={(e) => setFormData({ ...formData, portfolio_url: e.target.value })}
+          value={formData.portfolioUrl}
+          onChange={(e) => handleChange('portfolioUrl', e.target.value)}
           placeholder="https://yourportfolio.com"
+          disabled={isPending}
         />
       </div>
 
       <div className="flex justify-end gap-3">
-        <Button variant="outline">Cancel</Button>
-        <Button onClick={handleSave}>Save Changes</Button>
+        <Button
+          variant="outline"
+          onClick={handleCancel}
+          disabled={isPending || !isModified}
+        >
+          Cancel
+        </Button>
+        <Button
+          onClick={handleSave}
+          loading={isPending}
+          disabled={!isModified}
+        >
+          Save Changes
+        </Button>
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
 /**
  * Feature Flags Package
- * Comprehensive feature flag system for JobPilot AI Platform
+ * Comprehensive feature flag system for ApplyForUs AI Platform
  */
 
 // Module

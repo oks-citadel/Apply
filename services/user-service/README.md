@@ -1,6 +1,6 @@
 # User Service
 
-User profile and preferences management microservice for JobPilot AI Platform.
+User profile and preferences management microservice for ApplyForUs AI Platform.
 
 ## Overview
 
@@ -72,13 +72,13 @@ The User Service manages user profiles, skills, experience, education, preferenc
 PORT=8002
 NODE_ENV=development
 
-DATABASE_URL=postgresql://postgres:postgres@localhost:5434/jobpilot
+DATABASE_URL=postgresql://postgres:postgres@localhost:5434/applyforus
 REDIS_URL=redis://localhost:6381
 
 # AWS S3
 AWS_ACCESS_KEY_ID=your-access-key
 AWS_SECRET_ACCESS_KEY=your-secret-key
-AWS_S3_BUCKET=jobpilot-user-uploads
+AWS_S3_BUCKET=applyforus-user-uploads
 AWS_S3_REGION=us-east-1
 AWS_S3_PROFILE_PHOTOS_PREFIX=profile-photos/
 
@@ -151,4 +151,4 @@ pnpm test:e2e
 
 ## Support
 
-Email: dev@jobpilot.ai
+Email: dev@applyforus.ai

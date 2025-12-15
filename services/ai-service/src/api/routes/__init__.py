@@ -2,4 +2,22 @@
 API routes for AI Service.
 """
 
-__all__ = ["generate", "optimize", "match", "interview", "salary", "ai_endpoints"]
+from . import (
+    generate,
+    optimize,
+    match,
+    interview,
+    salary,
+    ai_endpoints,
+    probability_matching
+)
+
+__all__ = [
+    "generate",
+    "optimize",
+    "match",
+    "interview",
+    "salary",
+    "ai_endpoints",
+    "probability_matching"
+]

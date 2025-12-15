@@ -642,7 +642,7 @@ describe('Calendar Integration', () => {
       it('should create Microsoft Graph subscription', async () => {
         const subscription = {
           changeType: 'created,updated,deleted',
-          notificationUrl: 'https://jobpilot.com/webhooks/outlook',
+          notificationUrl: 'https://applyforus.com/webhooks/outlook',
           resource: '/me/events',
           expirationDateTime: new Date(Date.now() + 86400000).toISOString(),
           clientState: 'secret-state-123',

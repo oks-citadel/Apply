@@ -1,8 +1,8 @@
 {
-  "name": "@jobpilot/orchestrator-service",
+  "name": "@applyforus/orchestrator-service",
   "version": "1.0.0",
-  "description": "Master Orchestrator Agent for JobPilot AI multi-agent system",
-  "author": "JobPilot AI",
+  "description": "Master Orchestrator Agent for ApplyForUs AI multi-agent system",
+  "author": "ApplyForUs AI",
   "private": true,
   "license": "UNLICENSED",
   "scripts": {

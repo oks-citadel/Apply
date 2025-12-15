@@ -107,9 +107,9 @@ export class NotificationManager {
    * Clear all notifications
    */
   async clearAll(): Promise<void> {
-    const notifications = await chrome.notifications.getAll();
+    const allNotifs = await chrome.notifications.getAll()|| {} ;
     await Promise.all(
-      Object.keys(notifications).map((id) => this.clear(id))
+      Object.keys(allNotifs || {}).map((id) => this.clear(id))
     );
   }
 
@@ -130,11 +130,11 @@ export class NotificationManager {
     });
 
     chrome.notifications.onButtonClicked.addListener(
-      (notificationId, buttonIndex) => {
-        console.log('Notification button clicked:', notificationId, buttonIndex);
+      (notificationId, _buttonIndex) => {
+        console.log('Notification button clicked:', notificationId, _buttonIndex);
 
         // Handle button clicks
-        this.handleButtonClick(notificationId, buttonIndex);
+        this.handleButtonClick(notificationId, _buttonIndex);
 
         // Clear the notification
         this.clear(notificationId);
@@ -151,7 +151,7 @@ export class NotificationManager {
    */
   private async handleButtonClick(
     notificationId: string,
-    buttonIndex: number
+    _buttonIndex: number
   ): Promise<void> {
     // Implement specific button actions here
     // For example, button 0 might open a specific page, button 1 might dismiss

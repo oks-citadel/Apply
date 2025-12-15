@@ -2,8 +2,8 @@ import Link from 'next/link';
 import { RegisterForm } from '@/components/forms/RegisterForm';
 
 export const metadata = {
-  title: 'Sign Up - JobPilot AI',
-  description: 'Create your JobPilot AI account',
+  title: 'Sign Up - ApplyForUs',
+  description: 'Create your ApplyForUs account',
 };
 
 export default function RegisterPage() {

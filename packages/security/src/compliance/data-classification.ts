@@ -1,5 +1,5 @@
 /**
- * JobPilot AI - Data Classification System
+ * ApplyForUs AI - Data Classification System
  *
  * Classifies data based on sensitivity level and defines handling requirements.
  */

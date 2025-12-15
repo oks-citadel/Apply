@@ -1,5 +1,5 @@
 /**
- * JobPilot AI - RBAC Policies System
+ * ApplyForUs AI - RBAC Policies System
  *
  * Resource-based and attribute-based access control policies.
  */

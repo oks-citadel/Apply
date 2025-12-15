@@ -6,7 +6,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { ThrottlerModule } from '@nestjs/throttler';
 
 /**
- * Comprehensive Security & Compliance Test Suite for JobPilot AI Platform
+ * Comprehensive Security & Compliance Test Suite for ApplyForUs AI Platform
  *
  * Tests cover:
  * - Rate Limiting on all endpoints
@@ -235,10 +235,10 @@ describe('Security & Compliance Tests', () => {
     it('should allow requests from whitelisted origins', async () => {
       const response = await request(app.getHttpServer())
         .get('/api/v1/health')
-        .set('Origin', 'https://jobpilot-ai.com')
+        .set('Origin', 'https://applyforus-ai.com')
         .expect(200);
 
-      expect(response.headers['access-control-allow-origin']).toBe('https://jobpilot-ai.com');
+      expect(response.headers['access-control-allow-origin']).toBe('https://applyforus-ai.com');
     });
 
     it('should reject requests from non-whitelisted origins', async () => {
@@ -253,7 +253,7 @@ describe('Security & Compliance Tests', () => {
     it('should include correct CORS headers', async () => {
       const response = await request(app.getHttpServer())
         .options('/api/v1/auth/login')
-        .set('Origin', 'https://jobpilot-ai.com')
+        .set('Origin', 'https://applyforus-ai.com')
         .expect(200);
 
       expect(response.headers['access-control-allow-methods']).toContain('POST');
@@ -264,7 +264,7 @@ describe('Security & Compliance Tests', () => {
     it('should handle preflight OPTIONS requests', async () => {
       const response = await request(app.getHttpServer())
         .options('/api/v1/jobs')
-        .set('Origin', 'https://jobpilot-ai.com')
+        .set('Origin', 'https://applyforus-ai.com')
         .set('Access-Control-Request-Method', 'POST')
         .set('Access-Control-Request-Headers', 'Content-Type,Authorization')
         .expect(200);

@@ -20,7 +20,7 @@ import { v4 as uuidv4 } from 'uuid';
  * ```typescript
  * // app.module.ts
  * import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
- * import { TraceContextMiddleware } from '@jobpilot/telemetry';
+ * import { TraceContextMiddleware } from '@applyforus/telemetry';
  *
  * @Module({
  *   // ...
@@ -48,7 +48,7 @@ export class TraceContextMiddleware implements NestMiddleware {
     const extractedContext = propagation.extract(context.active(), req.headers);
 
     // Get current tracer
-    const tracer = trace.getTracer('jobpilot-tracer');
+    const tracer = trace.getTracer('applyforus-tracer');
 
     // Create a span for this request
     const span = tracer.startSpan(
@@ -115,7 +115,7 @@ export class TraceContextMiddleware implements NestMiddleware {
  * @example
  * ```typescript
  * import express from 'express';
- * import { traceContextMiddleware } from '@jobpilot/telemetry';
+ * import { traceContextMiddleware } from '@applyforus/telemetry';
  *
  * const app = express();
  * app.use(traceContextMiddleware);
@@ -316,7 +316,7 @@ export function extractContext(headers: Record<string, string>) {
  * @example
  * ```typescript
  * import axios from 'axios';
- * import { createTracedHttpClient } from '@jobpilot/telemetry';
+ * import { createTracedHttpClient } from '@applyforus/telemetry';
  *
  * const client = axios.create(createTracedHttpClient('https://api.example.com'));
  * ```

@@ -1,6 +1,6 @@
 # OAuth Integration Setup Guide
 
-This guide will help you set up LinkedIn and GitHub OAuth authentication for the JobPilot platform.
+This guide will help you set up LinkedIn and GitHub OAuth authentication for the ApplyForUs platform.
 
 ## Prerequisites
 
@@ -39,7 +39,7 @@ GOOGLE_CALLBACK_URL=http://localhost:8001/api/v1/auth/google/callback
 1. Go to [LinkedIn Developers](https://www.linkedin.com/developers/apps)
 2. Click "Create app"
 3. Fill in the application details:
-   - App name: JobPilot
+   - App name: ApplyForUs
    - LinkedIn Page: Select your company page or create one
    - Privacy policy URL: Your privacy policy URL
    - App logo: Upload your logo
@@ -63,7 +63,7 @@ LINKEDIN_CALLBACK_URL=http://localhost:8001/api/v1/auth/linkedin/callback
 1. Go to [GitHub Settings > Developer settings > OAuth Apps](https://github.com/settings/developers)
 2. Click "New OAuth App"
 3. Fill in the application details:
-   - Application name: JobPilot
+   - Application name: ApplyForUs
    - Homepage URL: `http://localhost:3000` (for development)
    - Authorization callback URL: `http://localhost:8001/api/v1/auth/github/callback`
 4. Click "Register application"

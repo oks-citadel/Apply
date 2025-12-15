@@ -2,8 +2,11 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { BullModule } from '@nestjs/bull';
-import { APP_INTERCEPTOR } from '@nestjs/core';
-import { LoggingModule, LoggingInterceptor } from '@jobpilot/logging';
+import { HttpModule } from '@nestjs/axios';
+import { APP_INTERCEPTOR, APP_GUARD } from '@nestjs/core';
+import { LoggingModule, LoggingInterceptor } from '@applyforus/logging';
+import { AuthModule } from './modules/auth/auth.module';
+import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
 import { ApplicationsModule } from './modules/applications/applications.module';
 import { EngineModule } from './modules/engine/engine.module';
 import { BrowserModule } from './modules/browser/browser.module';
@@ -82,6 +85,19 @@ import { HealthController } from './health.controller';
       }),
     }),
 
+    // HTTP Module for inter-service communication
+    HttpModule.registerAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        timeout: configService.get('HTTP_TIMEOUT', 30000),
+        maxRedirects: 5,
+      }),
+    }),
+
+    // Authentication
+    AuthModule,
+
     // Feature Modules
     ApplicationsModule,
     EngineModule,
@@ -99,6 +115,10 @@ import { HealthController } from './health.controller';
     {
       provide: APP_INTERCEPTOR,
       useClass: LoggingInterceptor,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
     },
   ],
 })

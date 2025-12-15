@@ -16,7 +16,7 @@ import {
   TelemetryModule,
   MetricsInterceptor,
   LoggingInterceptor,
-} from '@jobpilot/telemetry';
+} from '@applyforus/telemetry';
 
 // Your existing modules
 import { JobsModule } from './modules/jobs/jobs.module';

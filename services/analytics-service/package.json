@@ -1,8 +1,8 @@
 {
-  "name": "jobpilot-analytics-service",
+  "name": "applyforus-analytics-service",
   "version": "1.0.0",
-  "description": "Analytics and Metrics Service for JobPilot AI Platform",
-  "author": "JobPilot Team",
+  "description": "Analytics and Metrics Service for ApplyForUs AI Platform",
+  "author": "ApplyForUs Team",
   "private": true,
   "license": "MIT",
   "scripts": {
@@ -24,9 +24,9 @@
     "migration:revert": "npm run typeorm -- migration:revert -d src/config/data-source.ts"
   },
   "dependencies": {
-    "@jobpilot/telemetry": "workspace:*",
-    "@jobpilot/logging": "workspace:*",
-    "@jobpilot/security": "workspace:*",
+    "@applyforus/telemetry": "workspace:*",
+    "@applyforus/logging": "workspace:*",
+    "@applyforus/security": "workspace:*",
     "@nestjs/common": "^10.3.0",
     "@nestjs/config": "^3.1.1",
     "@nestjs/core": "^10.3.0",

@@ -1,6 +1,6 @@
 # Push Notifications Frontend Setup Guide
 
-This guide will help you set up push notifications in the JobPilot web application.
+This guide will help you set up push notifications in the ApplyForUs web application.
 
 ## Overview
 

@@ -49,7 +49,7 @@ export function LoginForm({
     <div className="w-full max-w-md mx-auto">
       <div className="bg-white shadow-md rounded-lg px-8 py-6">
         <h2 className="text-2xl font-bold text-center mb-6">
-          Sign In to JobPilot
+          Sign In to ApplyForUs
         </h2>
 
         {error && (

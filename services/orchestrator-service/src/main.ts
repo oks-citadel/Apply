@@ -27,8 +27,8 @@ async function bootstrap() {
 
   // Swagger API documentation
   const config = new DocumentBuilder()
-    .setTitle('JobPilot Orchestrator Service')
-    .setDescription('Master Orchestrator Agent for JobPilot AI multi-agent system')
+    .setTitle('ApplyForUs Orchestrator Service')
+    .setDescription('Master Orchestrator Agent for ApplyForUs AI multi-agent system')
     .setVersion('1.0')
     .addBearerAuth()
     .addTag('orchestration', 'Task orchestration and workflow management')

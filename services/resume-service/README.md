@@ -1,6 +1,6 @@
 # Resume Service
 
-Resume creation, management, and parsing microservice for JobPilot AI Platform.
+Resume creation, management, and parsing microservice for ApplyForUs AI Platform.
 
 ## Overview
 
@@ -55,11 +55,11 @@ The Resume Service handles all resume-related operations including CRUD operatio
 PORT=8003
 NODE_ENV=development
 
-DATABASE_URL=postgresql://postgres:postgres@localhost:5434/jobpilot
+DATABASE_URL=postgresql://postgres:postgres@localhost:5434/applyforus
 REDIS_URL=redis://localhost:6381
 
 # AWS S3
-AWS_S3_BUCKET=jobpilot-resumes
+AWS_S3_BUCKET=applyforus-resumes
 AWS_S3_RESUMES_PREFIX=resumes/
 AWS_S3_PARSED_PREFIX=parsed-resumes/
 
@@ -111,4 +111,4 @@ interface Resume {
 
 ## Support
 
-Email: dev@jobpilot.ai
+Email: dev@applyforus.ai

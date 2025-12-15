@@ -27,6 +27,9 @@ spec:
               value: "production"
             - name: PORT
               value: "3007"
+          envFrom:
+            - secretRef:
+                name: applyforus-secrets
           resources:
             requests:
               memory: "128Mi"

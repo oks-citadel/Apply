@@ -1,5 +1,5 @@
 /**
- * JobPilot AI - RBAC Service
+ * ApplyForUs AI - RBAC Service
  *
  * Main service for role-based access control operations.
  */

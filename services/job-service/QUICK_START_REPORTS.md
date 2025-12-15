@@ -447,7 +447,7 @@ DB_HOST=localhost
 DB_PORT=5432
 DB_USERNAME=postgres
 DB_PASSWORD=your_password
-DB_DATABASE=jobpilot
+DB_DATABASE=applyforus
 
 # Service
 PORT=3002

@@ -15,7 +15,7 @@ export class MfaSetupResponseDto {
 
   @ApiProperty({
     description: 'OTP Auth URL',
-    example: 'otpauth://totp/JobPilot:user@example.com?secret=JBSWY3DPEHPK3PXP&issuer=JobPilot',
+    example: 'otpauth://totp/ApplyForUs:user@example.com?secret=JBSWY3DPEHPK3PXP&issuer=ApplyForUs',
   })
   otpauthUrl: string;
 }

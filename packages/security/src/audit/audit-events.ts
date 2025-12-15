@@ -1,5 +1,5 @@
 /**
- * JobPilot AI - Audit Event Definitions
+ * ApplyForUs AI - Audit Event Definitions
  *
  * Defines audit event types and structures for compliance and security monitoring.
  */

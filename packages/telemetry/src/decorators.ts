@@ -73,7 +73,7 @@ export function Trace(options: TraceOptions = {}): MethodDecorator {
     const methodName = String(propertyKey);
 
     descriptor.value = async function (...args: any[]) {
-      const tracer = trace.getTracer('jobpilot-tracer');
+      const tracer = trace.getTracer('applyforus-tracer');
       const spanName = options.name || `${className}.${methodName}`;
 
       const attributes: Attributes = {

@@ -56,7 +56,7 @@ export class FileUploadHandler {
 
       await this.handleFileUpload(input, file);
     } catch (error) {
-      throw new Error(`Failed to upload file from URL: ${error.message}`);
+      throw new Error(`Failed to upload file from URL: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 

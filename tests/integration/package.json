@@ -1,7 +1,7 @@
 {
-  "name": "@jobpilot/integration-tests",
+  "name": "@applyforus/integration-tests",
   "version": "1.0.0",
-  "description": "Integration tests for JobPilot microservices",
+  "description": "Integration tests for ApplyForUs microservices",
   "private": true,
   "scripts": {
     "test": "jest",

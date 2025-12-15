@@ -1,9 +1,9 @@
 {
-  "name": "JobPilot",
-  "displayName": "JobPilot - AI Job Application Platform",
+  "name": "ApplyForUs",
+  "displayName": "ApplyForUs - AI Job Application Platform",
   "expo": {
-    "name": "JobPilot",
-    "slug": "jobpilot",
+    "name": "ApplyForUs",
+    "slug": "applyforus",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -17,17 +17,17 @@
     "scheme": "applyforus",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.jobpilot.app",
+      "bundleIdentifier": "com.applyforus.app",
       "buildNumber": "1.0.0",
       "infoPlist": {
-        "NSCameraUsageDescription": "JobPilot needs access to your camera to upload profile pictures and resume documents.",
-        "NSPhotoLibraryUsageDescription": "JobPilot needs access to your photo library to upload profile pictures and resume documents.",
-        "NSUserNotificationsUsageDescription": "JobPilot sends you notifications about job application updates and new opportunities.",
+        "NSCameraUsageDescription": "ApplyForUs needs access to your camera to upload profile pictures and resume documents.",
+        "NSPhotoLibraryUsageDescription": "ApplyForUs needs access to your photo library to upload profile pictures and resume documents.",
+        "NSUserNotificationsUsageDescription": "ApplyForUs sends you notifications about job application updates and new opportunities.",
         "UIBackgroundModes": ["fetch", "remote-notification"]
       },
       "associatedDomains": [
-        "applinks:jobpilot.app",
-        "applinks:*.jobpilot.app"
+        "applinks:applyforus.com",
+        "applinks:*.applyforus.com"
       ]
     },
     "android": {
@@ -35,7 +35,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.jobpilot.app",
+      "package": "com.applyforus.app",
       "versionCode": 1,
       "permissions": [
         "CAMERA",
@@ -52,12 +52,12 @@
           "data": [
             {
               "scheme": "https",
-              "host": "jobpilot.app",
+              "host": "applyforus.com",
               "pathPrefix": "/"
             },
             {
               "scheme": "https",
-              "host": "*.jobpilot.app",
+              "host": "*.applyforus.com",
               "pathPrefix": "/"
             }
           ],
@@ -102,8 +102,8 @@
       },
       "apiUrl": {
         "development": "http://localhost:3000/api",
-        "preview": "https://preview-api.jobpilot.app/api",
-        "production": "https://api.jobpilot.app/api"
+        "preview": "https://api.applyforus.com/api",
+        "production": "https://api.applyforus.com/api"
       }
     },
     "updates": {

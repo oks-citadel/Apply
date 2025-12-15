@@ -4,7 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerGuard } from '@nestjs/throttler';
-import { LoggingModule, LoggingInterceptor } from '@jobpilot/logging';
+import { LoggingModule, LoggingInterceptor } from '@applyforus/logging';
 import { appConfig, validationSchema } from './config/app.config';
 import { dataSourceOptions } from './config/database.config';
 import { ResumesModule } from './modules/resumes/resumes.module';
@@ -12,6 +12,7 @@ import { SectionsModule } from './modules/sections/sections.module';
 import { TemplatesModule } from './modules/templates/templates.module';
 import { ParserModule } from './modules/parser/parser.module';
 import { ExportModule } from './modules/export/export.module';
+import { AlignmentModule } from './modules/alignment/alignment.module';
 import { HealthModule } from './health/health.module';
 
 @Module({
@@ -69,6 +70,7 @@ import { HealthModule } from './health/health.module';
     TemplatesModule,
     ParserModule,
     ExportModule,
+    AlignmentModule,
     HealthModule,
   ],
   controllers: [],

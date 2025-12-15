@@ -1,5 +1,5 @@
 /**
- * JobPilot AI - RBAC Roles System
+ * ApplyForUs AI - RBAC Roles System
  *
  * Defines platform roles and their associated permissions.
  */

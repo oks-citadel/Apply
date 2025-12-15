@@ -8,7 +8,6 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
-import { Company } from '../../companies/entities/company.entity';
 
 export enum RemoteType {
   ONSITE = 'onsite',
@@ -67,9 +66,9 @@ export class Job {
   @Column({ type: 'uuid', nullable: true })
   company_id: string;
 
-  @ManyToOne(() => Company, { nullable: true, eager: false })
+  @ManyToOne('Company', 'jobs', { nullable: true, eager: false })
   @JoinColumn({ name: 'company_id' })
-  company: Company;
+  company: any;
 
   @Column({ type: 'varchar', length: 255, nullable: true })
   company_name: string;

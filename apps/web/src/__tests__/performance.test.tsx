@@ -1,5 +1,5 @@
 /**
- * Frontend Performance Test Suite for JobPilot AI Web Application
+ * Frontend Performance Test Suite for ApplyForUs Web Application
  *
  * Tests focus on:
  * 1. Core Web Vitals (LCP, FID, CLS)

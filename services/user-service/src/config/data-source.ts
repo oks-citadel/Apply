@@ -15,7 +15,7 @@ export const dataSourceOptions: DataSourceOptions = {
   port: parseInt(process.env.DB_PORT || '5434', 10),
   username: process.env.DB_USERNAME || 'postgres',
   password: process.env.DB_PASSWORD || 'postgres',
-  database: process.env.DB_DATABASE || 'jobpilot',
+  database: process.env.DB_DATABASE || 'applyforus',
   entities: [Profile, WorkExperience, Education, Skill, Preference, Subscription],
   migrations: ['dist/migrations/*.js'],
   migrationsRun: false,

@@ -22,20 +22,156 @@ const config: Config = {
         ring: 'hsl(var(--ring))',
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
+
+        /* ===================================
+           APPLYFORUS FUTURISTIC COLOR SYSTEM
+           Deep Black + Neon Yellow + Electric Green
+           =================================== */
+
+        // Primary: Neon Yellow - High energy, optimism, innovation
+        neonYellow: {
+          50: '#FFFEF5',
+          100: '#FFFDE8',
+          200: '#FFF9C4',
+          300: '#FFF59D',
+          400: '#FFEE58',
+          500: '#FACC15', // Primary neon yellow #FACC15
+          600: '#EAB308',
+          700: '#CA8A04',
+          800: '#A16207',
+          900: '#854D0E',
+          950: '#713F12',
+          DEFAULT: '#FACC15',
+        },
+
+        // Secondary: Electric Green - Growth, success, futuristic
+        electricGreen: {
+          50: '#F0FDF4',
+          100: '#DCFCE7',
+          200: '#BBF7D0',
+          300: '#86EFAC',
+          400: '#4ADE80',
+          500: '#22C55E', // Primary electric green #22C55E
+          600: '#16A34A',
+          700: '#15803D',
+          800: '#166534',
+          900: '#14532D',
+          950: '#052E16',
+          DEFAULT: '#22C55E',
+        },
+
+        // Deep Black - Base, sophistication, depth
+        deepBlack: {
+          50: '#F5F5F5',
+          100: '#E5E5E5',
+          200: '#CCCCCC',
+          300: '#999999',
+          400: '#666666',
+          500: '#333333',
+          600: '#1F1F1F',
+          700: '#171717',
+          800: '#0F0F0F', // Main deep black
+          900: '#0A0A0A',
+          950: '#050505', // Near pure black
+          DEFAULT: '#0A0A0A',
+        },
+
+        // Soft Black - Cards, elevated surfaces
+        softBlack: {
+          50: '#F8F8F8',
+          100: '#E8E8E8',
+          200: '#D0D0D0',
+          300: '#A8A8A8',
+          400: '#787878',
+          500: '#484848',
+          600: '#282828',
+          700: '#1C1C1C', // Main soft black
+          800: '#141414',
+          900: '#0D0D0D',
+          950: '#080808',
+          DEFAULT: '#1C1C1C',
+        },
+
+        // Legacy - Keep for backwards compatibility
+        charcoal: {
+          50: '#F7F7F8',
+          100: '#EBEBED',
+          200: '#D1D1D6',
+          300: '#B7B7BF',
+          400: '#9D9DA8',
+          500: '#6B6B7A',
+          600: '#525261',
+          700: '#3D3D49',
+          800: '#2A2A33',
+          900: '#1A1A1F',
+          950: '#0F0F13',
+        },
+        slate: {
+          50: '#F8F9FA',
+          100: '#F1F3F5',
+          200: '#E9ECEF',
+          300: '#DEE2E6',
+          400: '#CED4DA',
+          500: '#ADB5BD',
+          600: '#6C757D', // #6C757D - Main slate
+          700: '#495057',
+          800: '#343A40',
+          900: '#212529',
+          950: '#1A1D20',
+        },
+        warmGray: {
+          50: '#FAFAF9',
+          100: '#F5F5F4',
+          200: '#E7E5E4',
+          300: '#D6D3D1',
+          400: '#A8A29E',
+          500: '#78716C', // #78716C - Main warm gray
+          600: '#57534E',
+          700: '#44403C',
+          800: '#292524',
+          900: '#1C1917',
+          950: '#0C0A09',
+        },
+        teal: {
+          50: '#F0FDFA',
+          100: '#CCFBF1',
+          200: '#99F6E4',
+          300: '#5EEAD4',
+          400: '#2DD4BF',
+          500: '#14B8A6', // #14B8A6 - Main teal
+          600: '#0D9488',
+          700: '#0F766E',
+          800: '#115E59',
+          900: '#134E4A',
+          950: '#042F2E',
+        },
+        mutedBlue: {
+          50: '#F0F4F8',
+          100: '#D9E2EC',
+          200: '#BCCCDC',
+          300: '#9FB3C8',
+          400: '#829AB1',
+          500: '#627D98', // #627D98 - Main muted blue
+          600: '#486581',
+          700: '#334E68',
+          800: '#243B53',
+          900: '#102A43',
+          950: '#0A1F33',
+        },
         primary: {
           DEFAULT: 'hsl(var(--primary))',
           foreground: 'hsl(var(--primary-foreground))',
-          50: '#EEF2FF',
-          100: '#E0E7FF',
-          200: '#C7D2FE',
-          300: '#A5B4FC',
-          400: '#818CF8',
-          500: '#6366F1',
-          600: '#4F46E5',
-          700: '#4338CA',
-          800: '#3730A3',
-          900: '#312E81',
-          950: '#1E1B4B',
+          50: '#F0FDFA',
+          100: '#CCFBF1',
+          200: '#99F6E4',
+          300: '#5EEAD4',
+          400: '#2DD4BF',
+          500: '#14B8A6',
+          600: '#0D9488',
+          700: '#0F766E',
+          800: '#115E59',
+          900: '#134E4A',
+          950: '#042F2E',
         },
         secondary: {
           DEFAULT: 'hsl(var(--secondary))',
@@ -243,6 +379,44 @@ const config: Config = {
             opacity: '0',
           },
         },
+        // Futuristic Animations
+        'glow-pulse': {
+          '0%, 100%': {
+            boxShadow: '0 0 20px rgba(250, 204, 21, 0.5)',
+          },
+          '50%': {
+            boxShadow: '0 0 40px rgba(250, 204, 21, 0.8)',
+          },
+        },
+        'glow-pulse-green': {
+          '0%, 100%': {
+            boxShadow: '0 0 20px rgba(34, 197, 94, 0.5)',
+          },
+          '50%': {
+            boxShadow: '0 0 40px rgba(34, 197, 94, 0.8)',
+          },
+        },
+        'gradient-shift': {
+          '0%': { backgroundPosition: '0% 50%' },
+          '50%': { backgroundPosition: '100% 50%' },
+          '100%': { backgroundPosition: '0% 50%' },
+        },
+        'float': {
+          '0%, 100%': { transform: 'translateY(0px)' },
+          '50%': { transform: 'translateY(-10px)' },
+        },
+        'shimmer': {
+          '0%': { backgroundPosition: '-200% 0' },
+          '100%': { backgroundPosition: '200% 0' },
+        },
+        'scan-line': {
+          '0%': { transform: 'translateY(-100%)' },
+          '100%': { transform: 'translateY(100%)' },
+        },
+        'border-flow': {
+          '0%, 100%': { backgroundPosition: '0% 50%' },
+          '50%': { backgroundPosition: '100% 50%' },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
@@ -258,6 +432,35 @@ const config: Config = {
         'pulse': 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
         'bounce': 'bounce 1s infinite',
         'ping': 'ping 1s cubic-bezier(0, 0, 0.2, 1) infinite',
+        // Futuristic Animations
+        'glow-pulse': 'glow-pulse 2s ease-in-out infinite',
+        'glow-pulse-green': 'glow-pulse-green 2s ease-in-out infinite',
+        'gradient-shift': 'gradient-shift 3s ease infinite',
+        'float': 'float 3s ease-in-out infinite',
+        'shimmer': 'shimmer 2s linear infinite',
+        'scan-line': 'scan-line 2s linear infinite',
+        'border-flow': 'border-flow 3s ease infinite',
+      },
+      backgroundImage: {
+        // Futuristic Gradients
+        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
+        'gradient-conic': 'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
+        'gradient-futuristic': 'linear-gradient(135deg, #0A0A0A 0%, #1C1C1C 50%, #0A0A0A 100%)',
+        'gradient-yellow-green': 'linear-gradient(135deg, #FACC15 0%, #22C55E 100%)',
+        'gradient-green-black': 'linear-gradient(135deg, #22C55E 0%, #0A0A0A 100%)',
+        'gradient-yellow-black': 'linear-gradient(135deg, #FACC15 0%, #0A0A0A 100%)',
+        'gradient-hero': 'linear-gradient(135deg, #0A0A0A 0%, #141414 25%, #0A0A0A 50%, #1C1C1C 75%, #0A0A0A 100%)',
+        'gradient-glow-yellow': 'radial-gradient(circle at center, rgba(250, 204, 21, 0.15) 0%, transparent 70%)',
+        'gradient-glow-green': 'radial-gradient(circle at center, rgba(34, 197, 94, 0.15) 0%, transparent 70%)',
+        'grid-pattern': 'linear-gradient(rgba(250, 204, 21, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(250, 204, 21, 0.03) 1px, transparent 1px)',
+      },
+      boxShadow: {
+        'glow-yellow': '0 0 20px rgba(250, 204, 21, 0.5)',
+        'glow-yellow-lg': '0 0 40px rgba(250, 204, 21, 0.6)',
+        'glow-green': '0 0 20px rgba(34, 197, 94, 0.5)',
+        'glow-green-lg': '0 0 40px rgba(34, 197, 94, 0.6)',
+        'glow-white': '0 0 20px rgba(255, 255, 255, 0.1)',
+        'inner-glow': 'inset 0 0 20px rgba(250, 204, 21, 0.1)',
       },
       transitionDuration: {
         '75': '75ms',

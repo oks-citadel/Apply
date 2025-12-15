@@ -1,7 +1,7 @@
 {
-  "name": "@job-apply-platform/extension",
+  "name": "@applyforus/extension",
   "version": "1.0.0",
-  "description": "JobPilot AI - Chrome Extension for automated job applications",
+  "description": "ApplyForUs AI - Chrome Extension for automated job applications",
   "type": "module",
   "scripts": {
     "dev": "vite build --watch --mode development",

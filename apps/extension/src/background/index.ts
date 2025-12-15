@@ -134,7 +134,7 @@ chrome.runtime.onStartup.addListener(async () => {
 });
 
 // Tab events
-chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+chrome.tabs.onUpdated.addListener(async (_tabId, changeInfo, tab) => {
   if (changeInfo.status === 'complete' && tab.url) {
     // Check if on job board
     const isJobBoard = await checkIfJobBoard(tab.url);
@@ -149,7 +149,6 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
 chrome.tabs.onActivated.addListener(async (activeInfo) => {
   const tab = await chrome.tabs.get(activeInfo.tabId);
   if (tab.url) {
-    const isJobBoard = await checkIfJobBoard(tab.url);
     // Could update extension icon or badge
   }
 });

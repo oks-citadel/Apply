@@ -576,8 +576,8 @@ export class AuthService {
 
     // Generate MFA secret
     const secret = speakeasy.generateSecret({
-      name: `JobPilot (${user.email})`,
-      issuer: 'JobPilot',
+      name: `ApplyForUs (${user.email})`,
+      issuer: 'ApplyForUs',
       length: 32,
     });
 

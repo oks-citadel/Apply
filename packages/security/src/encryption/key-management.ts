@@ -1,5 +1,5 @@
 /**
- * JobPilot AI - Key Management System
+ * ApplyForUs AI - Key Management System
  *
  * Manages encryption keys with support for rotation and external key management systems.
  *
@@ -12,7 +12,7 @@
  * // - AWS_ACCESS_KEY_ID: Your AWS access key
  * // - AWS_SECRET_ACCESS_KEY: Your AWS secret key
  *
- * import { AWSKMSAdapter, KeyManager } from '@jobpilot/security';
+ * import { AWSKMSAdapter, KeyManager } from '@applyforus/security';
  *
  * // Create KMS adapter
  * const kmsAdapter = new AWSKMSAdapter({
@@ -393,29 +393,535 @@ export class AWSKMSAdapter implements ExternalKMS {
 }
 
 /**
- * HashiCorp Vault adapter (interface for future implementation)
+ * HashiCorp Vault KMS adapter implementation
+ *
+ * Uses Vault's Transit secrets engine for encryption operations.
+ *
+ * @example Vault KMS Usage
+ * ```typescript
+ * // Initialize Vault KMS adapter with environment variables
+ * // Required environment variables:
+ * // - VAULT_ADDR: Vault server address (e.g., 'https://vault.example.com:8200')
+ * // - VAULT_TOKEN: Vault authentication token
+ * // - VAULT_NAMESPACE: Vault namespace (optional, for Vault Enterprise)
+ * // - VAULT_TRANSIT_MOUNT: Transit mount path (optional, defaults to 'transit')
+ *
+ * import { VaultKMSAdapter, KeyManager } from '@applyforus/security';
+ *
+ * // Create Vault KMS adapter
+ * const vaultAdapter = new VaultKMSAdapter({
+ *   address: process.env.VAULT_ADDR || 'https://vault.example.com:8200',
+ *   token: process.env.VAULT_TOKEN!,
+ *   namespace: process.env.VAULT_NAMESPACE,
+ *   transitMount: process.env.VAULT_TRANSIT_MOUNT || 'transit',
+ * });
+ *
+ * // Use with KeyManager
+ * const keyManager = new KeyManager(
+ *   { rotationPeriodDays: 90, gracePeriodDays: 30, autoRotate: true },
+ *   vaultAdapter
+ * );
+ *
+ * await keyManager.initialize();
+ *
+ * // Encrypt data
+ * const plaintext = Buffer.from('sensitive data');
+ * const encrypted = await keyManager.encryptWithKMS(plaintext, 'my-encryption-key');
+ *
+ * // Decrypt data
+ * const decrypted = await keyManager.decryptWithKMS(encrypted, 'my-encryption-key');
+ *
+ * // Generate data encryption key
+ * const { plaintext: dataKey, ciphertext: encryptedKey } =
+ *   await vaultAdapter.generateDataKey('my-encryption-key');
+ *
+ * // Rotate key
+ * await vaultAdapter.rotateKey('my-encryption-key');
+ * ```
  */
 export class VaultKMSAdapter implements ExternalKMS {
-  constructor(private config: { address: string; token: string; namespace?: string }) {}
+  private vault: any;
+  private transitMount: string;
+  private defaultKeyName: string;
 
+  constructor(private config: {
+    address: string;
+    token: string;
+    namespace?: string;
+    transitMount?: string;
+    defaultKeyName?: string;
+  }) {
+    // Import node-vault dynamically
+    const nodeVault = require('node-vault');
+
+    // Initialize Vault client
+    const vaultOptions: any = {
+      apiVersion: 'v1',
+      endpoint: config.address || process.env.VAULT_ADDR || 'http://127.0.0.1:8200',
+      token: config.token || process.env.VAULT_TOKEN,
+    };
+
+    // Add namespace for Vault Enterprise
+    if (config.namespace || process.env.VAULT_NAMESPACE) {
+      vaultOptions.namespace = config.namespace || process.env.VAULT_NAMESPACE;
+    }
+
+    this.vault = nodeVault(vaultOptions);
+    this.transitMount = config.transitMount || process.env.VAULT_TRANSIT_MOUNT || 'transit';
+    this.defaultKeyName = config.defaultKeyName || process.env.VAULT_DEFAULT_KEY_NAME || '';
+
+    // Log initialization
+    this.logEvent('Vault KMS adapter initialized', {
+      endpoint: vaultOptions.endpoint,
+      namespace: vaultOptions.namespace || 'default',
+      transitMount: this.transitMount,
+      hasToken: !!vaultOptions.token,
+      defaultKeyName: this.defaultKeyName || 'not configured',
+    });
+  }
+
+  /**
+   * Helper method to log Vault KMS events
+   */
+  private logEvent(message: string, details: Record<string, any>): void {
+    console.log(`[Vault KMS] ${message}`, details);
+  }
+
+  /**
+   * Encrypt data using Vault's Transit secrets engine
+   * @param plaintext - Data to encrypt as a Buffer
+   * @param keyId - Vault transit key name (required)
+   * @returns Encrypted data as a Buffer (includes Vault's ciphertext format)
+   */
   async encrypt(plaintext: Buffer, keyId: string): Promise<Buffer> {
-    // TODO: Implement Vault encryption
-    throw new Error('Vault KMS not implemented. Use Vault API client.');
+    const effectiveKeyId = keyId || this.defaultKeyName;
+
+    if (!effectiveKeyId) {
+      const error = new Error(
+        'Vault key name not provided. Set VAULT_DEFAULT_KEY_NAME environment variable or provide keyId parameter.'
+      );
+      this.logEvent('Encryption failed - missing key name', {
+        error: error.message,
+        reason: 'missing_key_name',
+      });
+      throw error;
+    }
+
+    try {
+      // Encode plaintext to base64 as required by Vault Transit API
+      const base64Plaintext = plaintext.toString('base64');
+
+      // Call Vault Transit encrypt endpoint
+      const response = await this.vault.write(
+        `${this.transitMount}/encrypt/${effectiveKeyId}`,
+        {
+          plaintext: base64Plaintext,
+        }
+      );
+
+      if (!response.data || !response.data.ciphertext) {
+        throw new Error('Vault encryption failed: No ciphertext returned');
+      }
+
+      // Log successful encryption
+      this.logEvent('Data encrypted successfully', {
+        keyName: effectiveKeyId,
+        plaintextSize: plaintext.length,
+        ciphertextFormat: 'vault:v1',
+      });
+
+      // Return ciphertext as Buffer
+      // Vault returns format: "vault:v1:base64data"
+      return Buffer.from(response.data.ciphertext);
+    } catch (error: any) {
+      // Log encryption failure
+      this.logEvent('Encryption failed', {
+        keyName: effectiveKeyId,
+        error: error.message,
+        errorCode: error.response?.statusCode || 'unknown',
+      });
+
+      // Provide helpful error messages
+      if (error.response?.statusCode === 404) {
+        throw new Error(
+          `Vault encryption failed: Key '${effectiveKeyId}' not found. Create it with: vault write -f ${this.transitMount}/keys/${effectiveKeyId}`
+        );
+      } else if (error.response?.statusCode === 403) {
+        throw new Error(
+          `Vault encryption failed: Permission denied. Ensure the token has permission to encrypt with key '${effectiveKeyId}'`
+        );
+      }
+
+      throw new Error(`Vault encryption failed: ${error.message}`);
+    }
   }
 
+  /**
+   * Decrypt data using Vault's Transit secrets engine
+   * @param ciphertext - Encrypted data as a Buffer (Vault's ciphertext format)
+   * @param keyId - Vault transit key name (required)
+   * @returns Decrypted data as a Buffer
+   */
   async decrypt(ciphertext: Buffer, keyId: string): Promise<Buffer> {
-    // TODO: Implement Vault decryption
-    throw new Error('Vault KMS not implemented. Use Vault API client.');
+    const effectiveKeyId = keyId || this.defaultKeyName;
+
+    if (!effectiveKeyId) {
+      const error = new Error(
+        'Vault key name not provided. Set VAULT_DEFAULT_KEY_NAME environment variable or provide keyId parameter.'
+      );
+      this.logEvent('Decryption failed - missing key name', {
+        error: error.message,
+        reason: 'missing_key_name',
+      });
+      throw error;
+    }
+
+    try {
+      // Convert Buffer to string (Vault ciphertext format: "vault:v1:base64data")
+      const ciphertextString = ciphertext.toString('utf8');
+
+      // Call Vault Transit decrypt endpoint
+      const response = await this.vault.write(
+        `${this.transitMount}/decrypt/${effectiveKeyId}`,
+        {
+          ciphertext: ciphertextString,
+        }
+      );
+
+      if (!response.data || !response.data.plaintext) {
+        throw new Error('Vault decryption failed: No plaintext returned');
+      }
+
+      // Decode base64 plaintext
+      const plaintext = Buffer.from(response.data.plaintext, 'base64');
+
+      // Log successful decryption
+      this.logEvent('Data decrypted successfully', {
+        keyName: effectiveKeyId,
+        ciphertextSize: ciphertext.length,
+        plaintextSize: plaintext.length,
+      });
+
+      return plaintext;
+    } catch (error: any) {
+      // Log decryption failure
+      this.logEvent('Decryption failed', {
+        keyName: effectiveKeyId,
+        error: error.message,
+        errorCode: error.response?.statusCode || 'unknown',
+      });
+
+      // Provide helpful error messages
+      if (error.response?.statusCode === 404) {
+        throw new Error(
+          `Vault decryption failed: Key '${effectiveKeyId}' not found or ciphertext is invalid`
+        );
+      } else if (error.response?.statusCode === 403) {
+        throw new Error(
+          `Vault decryption failed: Permission denied. Ensure the token has permission to decrypt with key '${effectiveKeyId}'`
+        );
+      } else if (error.response?.statusCode === 400) {
+        throw new Error(
+          `Vault decryption failed: Invalid ciphertext format or key version not found`
+        );
+      }
+
+      throw new Error(`Vault decryption failed: ${error.message}`);
+    }
   }
 
+  /**
+   * Generate a data encryption key (DEK) using Vault's Transit secrets engine
+   * This returns both the plaintext and encrypted version of the key using Vault's datakey endpoint
+   * @param keyId - Vault transit key name (required)
+   * @returns Object with plaintext and ciphertext versions of the data key
+   */
   async generateDataKey(keyId: string): Promise<{ plaintext: Buffer; ciphertext: Buffer }> {
-    // TODO: Implement Vault data key generation
-    throw new Error('Vault KMS not implemented. Use Vault API client.');
+    const effectiveKeyId = keyId || this.defaultKeyName;
+
+    if (!effectiveKeyId) {
+      const error = new Error(
+        'Vault key name not provided. Set VAULT_DEFAULT_KEY_NAME environment variable or provide keyId parameter.'
+      );
+      this.logEvent('Data key generation failed - missing key name', {
+        error: error.message,
+        reason: 'missing_key_name',
+      });
+      throw error;
+    }
+
+    try {
+      // Call Vault Transit datakey endpoint to generate a 256-bit AES key
+      const response = await this.vault.write(
+        `${this.transitMount}/datakey/plaintext/${effectiveKeyId}`,
+        {
+          bits: 256, // Generate a 256-bit key (32 bytes)
+        }
+      );
+
+      if (!response.data || !response.data.plaintext || !response.data.ciphertext) {
+        throw new Error('Vault data key generation failed: Incomplete response');
+      }
+
+      // Decode base64 plaintext key
+      const plaintextKey = Buffer.from(response.data.plaintext, 'base64');
+
+      // Ciphertext is in Vault format: "vault:v1:base64data"
+      const ciphertextKey = Buffer.from(response.data.ciphertext);
+
+      // Log successful data key generation
+      this.logEvent('Data key generated successfully', {
+        keyName: effectiveKeyId,
+        keySize: 256,
+        plaintextSize: plaintextKey.length,
+        ciphertextFormat: 'vault:v1',
+      });
+
+      return {
+        plaintext: plaintextKey,
+        ciphertext: ciphertextKey,
+      };
+    } catch (error: any) {
+      // Log data key generation failure
+      this.logEvent('Data key generation failed', {
+        keyName: effectiveKeyId,
+        error: error.message,
+        errorCode: error.response?.statusCode || 'unknown',
+      });
+
+      // Provide helpful error messages
+      if (error.response?.statusCode === 404) {
+        throw new Error(
+          `Vault data key generation failed: Key '${effectiveKeyId}' not found. Create it with: vault write -f ${this.transitMount}/keys/${effectiveKeyId}`
+        );
+      } else if (error.response?.statusCode === 403) {
+        throw new Error(
+          `Vault data key generation failed: Permission denied. Ensure the token has permission to generate data keys with '${effectiveKeyId}'`
+        );
+      }
+
+      throw new Error(`Vault data key generation failed: ${error.message}`);
+    }
   }
 
+  /**
+   * Rotate the Vault transit encryption key
+   * This creates a new version of the key while keeping old versions for decryption
+   * @param keyId - Vault transit key name to rotate
+   */
   async rotateKey(keyId: string): Promise<void> {
-    // TODO: Implement Vault key rotation
-    throw new Error('Vault KMS not implemented. Use Vault API client.');
+    const effectiveKeyId = keyId || this.defaultKeyName;
+
+    if (!effectiveKeyId) {
+      const error = new Error(
+        'Vault key name not provided. Set VAULT_DEFAULT_KEY_NAME environment variable or provide keyId parameter.'
+      );
+      this.logEvent('Key rotation failed - missing key name', {
+        error: error.message,
+        reason: 'missing_key_name',
+      });
+      throw error;
+    }
+
+    try {
+      // Call Vault Transit rotate endpoint
+      await this.vault.write(
+        `${this.transitMount}/keys/${effectiveKeyId}/rotate`,
+        {}
+      );
+
+      // Log successful key rotation
+      this.logEvent('Key rotated successfully', {
+        keyName: effectiveKeyId,
+        action: 'new_version_created',
+        message: 'A new key version has been created. Old versions remain available for decryption.',
+      });
+
+      console.log(
+        `Vault key '${effectiveKeyId}' has been rotated. ` +
+        `A new version is now the default for encryption. ` +
+        `Old versions remain available for decryption.`
+      );
+    } catch (error: any) {
+      // Log key rotation failure
+      this.logEvent('Key rotation failed', {
+        keyName: effectiveKeyId,
+        error: error.message,
+        errorCode: error.response?.statusCode || 'unknown',
+      });
+
+      // Provide helpful error messages
+      if (error.response?.statusCode === 404) {
+        throw new Error(
+          `Vault key rotation failed: Key '${effectiveKeyId}' not found. Create it with: vault write -f ${this.transitMount}/keys/${effectiveKeyId}`
+        );
+      } else if (error.response?.statusCode === 403) {
+        throw new Error(
+          `Vault key rotation failed: Permission denied. Ensure the token has permission to rotate key '${effectiveKeyId}'`
+        );
+      }
+
+      throw new Error(`Vault key rotation failed: ${error.message}`);
+    }
+  }
+
+  /**
+   * Get the Vault client instance (for advanced operations)
+   */
+  getClient(): any {
+    return this.vault;
+  }
+
+  /**
+   * Get the default key name
+   */
+  getDefaultKeyName(): string {
+    return this.defaultKeyName;
+  }
+
+  /**
+   * Set a new default key name
+   */
+  setDefaultKeyName(keyName: string): void {
+    this.defaultKeyName = keyName;
+    this.logEvent('Default key name updated', {
+      newKeyName: keyName,
+    });
+  }
+
+  /**
+   * Get the transit mount path
+   */
+  getTransitMount(): string {
+    return this.transitMount;
+  }
+
+  /**
+   * Create a new encryption key in Vault Transit
+   * @param keyName - Name of the key to create
+   * @param options - Optional key configuration
+   */
+  async createKey(
+    keyName: string,
+    options?: {
+      type?: 'aes256-gcm96' | 'chacha20-poly1305' | 'rsa-2048' | 'rsa-4096';
+      derivation?: boolean;
+      exportable?: boolean;
+    }
+  ): Promise<void> {
+    try {
+      const payload: any = {};
+
+      if (options?.type) {
+        payload.type = options.type;
+      }
+      if (options?.derivation !== undefined) {
+        payload.derived = options.derivation;
+      }
+      if (options?.exportable !== undefined) {
+        payload.exportable = options.exportable;
+      }
+
+      await this.vault.write(
+        `${this.transitMount}/keys/${keyName}`,
+        payload
+      );
+
+      this.logEvent('Encryption key created successfully', {
+        keyName,
+        type: options?.type || 'aes256-gcm96 (default)',
+        derivation: options?.derivation || false,
+        exportable: options?.exportable || false,
+      });
+    } catch (error: any) {
+      this.logEvent('Key creation failed', {
+        keyName,
+        error: error.message,
+        errorCode: error.response?.statusCode || 'unknown',
+      });
+
+      if (error.response?.statusCode === 400 && error.message.includes('already exists')) {
+        throw new Error(`Vault key creation failed: Key '${keyName}' already exists`);
+      }
+
+      throw new Error(`Vault key creation failed: ${error.message}`);
+    }
+  }
+
+  /**
+   * Delete an encryption key from Vault Transit
+   * Note: This requires the key to be configured with deletion_allowed=true
+   * @param keyName - Name of the key to delete
+   */
+  async deleteKey(keyName: string): Promise<void> {
+    try {
+      // First, enable deletion if not already enabled
+      await this.vault.write(
+        `${this.transitMount}/keys/${keyName}/config`,
+        {
+          deletion_allowed: true,
+        }
+      );
+
+      // Delete the key
+      await this.vault.delete(`${this.transitMount}/keys/${keyName}`);
+
+      this.logEvent('Encryption key deleted successfully', {
+        keyName,
+      });
+    } catch (error: any) {
+      this.logEvent('Key deletion failed', {
+        keyName,
+        error: error.message,
+        errorCode: error.response?.statusCode || 'unknown',
+      });
+
+      throw new Error(`Vault key deletion failed: ${error.message}`);
+    }
+  }
+
+  /**
+   * Get information about a key
+   * @param keyName - Name of the key to query
+   */
+  async getKeyInfo(keyName: string): Promise<any> {
+    try {
+      const response = await this.vault.read(
+        `${this.transitMount}/keys/${keyName}`
+      );
+
+      return response.data;
+    } catch (error: any) {
+      this.logEvent('Get key info failed', {
+        keyName,
+        error: error.message,
+        errorCode: error.response?.statusCode || 'unknown',
+      });
+
+      throw new Error(`Failed to get key info: ${error.message}`);
+    }
+  }
+
+  /**
+   * Health check - verify connectivity to Vault
+   */
+  async healthCheck(): Promise<boolean> {
+    try {
+      const response = await this.vault.health();
+
+      this.logEvent('Health check passed', {
+        initialized: response.initialized,
+        sealed: response.sealed,
+        standby: response.standby,
+      });
+
+      return response.initialized && !response.sealed;
+    } catch (error: any) {
+      this.logEvent('Health check failed', {
+        error: error.message,
+      });
+      return false;
+    }
   }
 }
 

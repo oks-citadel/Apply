@@ -1,7 +1,7 @@
 import { createNamespace, getNamespace, Namespace } from 'cls-hooked';
 import { v4 as uuidv4 } from 'uuid';
 
-const NAMESPACE_NAME = 'jobpilot-logging-context';
+const NAMESPACE_NAME = 'applyforus-logging-context';
 
 export interface LoggingContext {
   correlationId: string;

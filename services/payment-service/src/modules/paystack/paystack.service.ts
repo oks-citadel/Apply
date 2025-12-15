@@ -135,7 +135,7 @@ export class PaystackService {
     try {
       this.logger.log(`Initializing subscription for ${email}, tier: ${tier}`);
 
-      if (tier === SubscriptionTier.FREE) {
+      if (tier === SubscriptionTier.FREEMIUM) {
         throw new BadRequestException('Cannot initialize subscription for FREE tier');
       }
 
@@ -522,15 +522,33 @@ export class PaystackService {
   }
 
   /**
-   * Verify webhook signature
+   * Verify webhook signature using HMAC SHA512
+   * @param payload - Raw request body as Buffer or string
+   * @param signature - x-paystack-signature header value
+   * @returns boolean indicating if signature is valid
    */
-  verifyWebhookSignature(payload: string, signature: string): boolean {
-    const hash = crypto
-      .createHmac('sha512', this.secretKey)
-      .update(payload)
-      .digest('hex');
+  verifyWebhookSignature(payload: Buffer | string, signature: string): boolean {
+    if (!this.secretKey) {
+      this.logger.error('Paystack secret key not configured');
+      return false;
+    }
 
-    return hash === signature;
+    if (!signature) {
+      this.logger.error('No signature provided');
+      return false;
+    }
+
+    try {
+      const hash = crypto
+        .createHmac('sha512', this.secretKey)
+        .update(payload)
+        .digest('hex');
+
+      return hash === signature;
+    } catch (error) {
+      this.logger.error(`Error verifying webhook signature: ${error.message}`);
+      return false;
+    }
   }
 
   /**

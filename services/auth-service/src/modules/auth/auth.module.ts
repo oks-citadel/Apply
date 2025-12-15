@@ -26,8 +26,8 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
         secret: configService.get<string>('jwt.secret'),
         signOptions: {
           expiresIn: configService.get<string>('jwt.accessTokenExpiresIn', '15m'),
-          issuer: configService.get<string>('jwt.issuer', 'jobpilot-auth'),
-          audience: configService.get<string>('jwt.audience', 'jobpilot-api'),
+          issuer: configService.get<string>('jwt.issuer', 'applyforus-auth'),
+          audience: configService.get<string>('jwt.audience', 'applyforus-api'),
         },
       }),
     }),

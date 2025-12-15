@@ -1,6 +1,8 @@
 import { Controller, Get } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { HealthService } from './health/health.service';
+import { ServiceClientService } from './modules/engine/service-client.service';
+import { Public } from './common/decorators/public.decorator';
 
 /**
  * Health Check Controller for Auto Apply Service
@@ -8,8 +10,12 @@ import { HealthService } from './health/health.service';
  */
 @ApiTags('Health')
 @Controller('health')
+@Public()
 export class HealthController {
-  constructor(private readonly healthService: HealthService) {}
+  constructor(
+    private readonly healthService: HealthService,
+    private readonly serviceClient?: ServiceClientService,
+  ) {}
 
   /**
    * Basic health check endpoint
@@ -66,5 +72,47 @@ export class HealthController {
   })
   async getReadiness() {
     return this.healthService.getReadiness();
+  }
+
+  /**
+   * Circuit breaker status endpoint
+   * Returns the state of circuit breakers for all external services
+   */
+  @Get('circuit-breakers')
+  @ApiOperation({ summary: 'Get circuit breaker status' })
+  @ApiResponse({
+    status: 200,
+    description: 'Circuit breaker status for all services',
+    schema: {
+      type: 'object',
+      properties: {
+        status: { type: 'string', example: 'ok' },
+        circuitBreakers: {
+          type: 'object',
+          example: {
+            'job-service': 'CLOSED',
+            'user-service': 'CLOSED',
+            'resume-service': 'CLOSED',
+            'ai-service': 'CLOSED',
+          },
+        },
+        timestamp: { type: 'string', format: 'date-time' },
+      },
+    },
+  })
+  async getCircuitBreakerStatus() {
+    if (!this.serviceClient) {
+      return {
+        status: 'unavailable',
+        message: 'ServiceClient not initialized',
+        timestamp: new Date().toISOString(),
+      };
+    }
+
+    return {
+      status: 'ok',
+      circuitBreakers: this.serviceClient.getCircuitBreakerStatus(),
+      timestamp: new Date().toISOString(),
+    };
   }
 }

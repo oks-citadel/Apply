@@ -55,7 +55,7 @@ describe('EmailService', () => {
       expect(sendMailSpy).toHaveBeenCalledWith(
         expect.objectContaining({
           to: email,
-          subject: 'Verify Your Email - JobPilot AI Platform',
+          subject: 'Verify Your Email - ApplyForUs AI Platform',
           from: 'test@example.com',
         }),
       );
@@ -93,7 +93,7 @@ describe('EmailService', () => {
       expect(sendMailSpy).toHaveBeenCalledWith(
         expect.objectContaining({
           to: email,
-          subject: 'Reset Your Password - JobPilot AI Platform',
+          subject: 'Reset Your Password - ApplyForUs AI Platform',
           from: 'test@example.com',
         }),
       );
@@ -131,7 +131,7 @@ describe('EmailService', () => {
       expect(sendMailSpy).toHaveBeenCalledWith(
         expect.objectContaining({
           to: email,
-          subject: 'Welcome to JobPilot AI Platform!',
+          subject: 'Welcome to ApplyForUs AI Platform!',
           from: 'test@example.com',
         }),
       );
@@ -151,7 +151,7 @@ describe('EmailService', () => {
       expect(sendMailSpy).toHaveBeenCalledWith(
         expect.objectContaining({
           to: email,
-          subject: 'Welcome to JobPilot AI Platform!',
+          subject: 'Welcome to ApplyForUs AI Platform!',
           from: 'test@example.com',
         }),
       );

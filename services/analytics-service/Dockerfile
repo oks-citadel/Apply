@@ -1,63 +1,55 @@
 # Monorepo-aware Dockerfile for analytics-service
-FROM node:20-alpine AS deps
-RUN apk add --no-cache libc6-compat
-WORKDIR /app
-
-RUN corepack enable && corepack prepare pnpm@8.15.0 --activate
-
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-COPY services/analytics-service/package.json ./services/analytics-service/
-COPY packages/telemetry/package.json ./packages/telemetry/
-COPY packages/logging/package.json ./packages/logging/
-COPY packages/security/package.json ./packages/security/
-COPY packages/types/package.json ./packages/types/
-COPY packages/utils/package.json ./packages/utils/
-COPY packages/shared/package.json ./packages/shared/
-
-RUN pnpm install --frozen-lockfile
-
 FROM node:20-alpine AS builder
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
+# Install pnpm
 RUN corepack enable && corepack prepare pnpm@8.15.0 --activate
 
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/package.json ./
-COPY --from=deps /app/pnpm-lock.yaml ./
-COPY --from=deps /app/pnpm-workspace.yaml ./
+# Copy all source code first
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY packages/ ./packages/
 COPY services/analytics-service/ ./services/analytics-service/
 
-RUN cd packages/types && pnpm build || true
-RUN cd packages/utils && pnpm build || true
-RUN cd packages/shared && pnpm build || true
-RUN cd packages/logging && pnpm build || true
-RUN cd packages/telemetry && pnpm build || true
-RUN cd packages/security && pnpm build || true
+# Install all dependencies (--no-frozen-lockfile needed due to workspace package renames)
+RUN pnpm install --no-frozen-lockfile
 
+# Build the service
 WORKDIR /app/services/analytics-service
-ENV PATH="/app/node_modules/.bin:$PATH"
-RUN pnpm exec nest build
+RUN pnpm run build
 
+# Stage 2: Production - preserve monorepo structure for pnpm symlinks
 FROM node:20-alpine AS production
+
 RUN apk add --no-cache dumb-init curl
-RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001
+
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001
+
 WORKDIR /app
 
-COPY --from=builder --chown=nodejs:nodejs /app/services/analytics-service/dist ./dist
-COPY --from=builder --chown=nodejs:nodejs /app/services/analytics-service/package.json ./
-COPY --from=builder --chown=nodejs:nodejs /app/services/analytics-service/node_modules ./node_modules
+# Copy root node_modules (contains .pnpm store with actual packages)
+COPY --from=builder --chown=nodejs:nodejs /app/node_modules ./node_modules
+
+# Copy packages (workspace dependencies)
 COPY --from=builder --chown=nodejs:nodejs /app/packages ./packages
-COPY --from=builder --chown=nodejs:nodejs /app/node_modules/@jobpilot ./node_modules/@jobpilot
+
+# Copy analytics-service with its node_modules (has symlinks to root .pnpm)
+COPY --from=builder --chown=nodejs:nodejs /app/services/analytics-service/dist ./services/analytics-service/dist
+COPY --from=builder --chown=nodejs:nodejs /app/services/analytics-service/node_modules ./services/analytics-service/node_modules
+COPY --from=builder --chown=nodejs:nodejs /app/services/analytics-service/package.json ./services/analytics-service/
 
 USER nodejs
+
 ENV NODE_ENV=production
 ENV PORT=8007
+
 EXPOSE 8007
 
-HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+WORKDIR /app/services/analytics-service
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
     CMD curl -f http://localhost:8007/health || exit 1
 
 ENTRYPOINT ["dumb-init", "--"]
-CMD ["node", "dist/main.js"]
+CMD ["node", "dist/services/analytics-service/src/main.js"]

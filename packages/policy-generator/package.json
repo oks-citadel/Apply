@@ -1,0 +1,39 @@
+{
+  "name": "@jobpilot/policy-generator",
+  "version": "1.0.0",
+  "description": "Global Policy Generator Engine for ApplyForUs - generates region-specific legal and compliance policies",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "jest",
+    "lint": "eslint src/",
+    "generate:all": "ts-node src/cli.ts generate --all",
+    "generate:region": "ts-node src/cli.ts generate --region",
+    "changelog": "ts-node src/cli.ts changelog"
+  },
+  "keywords": [
+    "policy",
+    "gdpr",
+    "ccpa",
+    "compliance",
+    "legal",
+    "generator"
+  ],
+  "author": "ApplyForUs",
+  "license": "MIT",
+  "dependencies": {
+    "handlebars": "^4.7.8",
+    "marked": "^11.0.0",
+    "date-fns": "^3.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "typescript": "^5.3.0",
+    "ts-node": "^10.9.0"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  }
+}

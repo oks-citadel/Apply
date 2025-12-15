@@ -5,7 +5,7 @@
  * Replace your existing main.ts with this example (after adjusting for your specific needs).
  */
 
-import { initTelemetry } from '@jobpilot/telemetry';
+import { initTelemetry } from '@applyforus/telemetry';
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -26,7 +26,7 @@ async function bootstrap() {
 
   // STEP 2: Now import application modules
   const { AppModule } = await import('./app.module');
-  const { StructuredLogger } = await import('@jobpilot/telemetry');
+  const { StructuredLogger } = await import('@applyforus/telemetry');
 
   // STEP 3: Create NestJS application with custom logger
   const logger = new StructuredLogger({

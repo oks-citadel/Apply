@@ -22,7 +22,7 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres123
-      POSTGRES_DB: jobpilot
+      POSTGRES_DB: applyforus
       POSTGRES_INITDB_ARGS: '-A md5'
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -111,7 +111,7 @@ services:
       PORT: 3000
       NEXT_PUBLIC_API_URL: http://localhost:4000
       NEXT_PUBLIC_AI_SERVICE_URL: http://localhost:5000
-      DATABASE_URL: postgresql://postgres:postgres123@postgres:5432/jobpilot
+      DATABASE_URL: postgresql://postgres:postgres123@postgres:5432/applyforus
       REDIS_URL: redis://:redis123@redis:6379
       NEXTAUTH_URL: http://localhost:3000
       NEXTAUTH_SECRET: super-secret-nextauth-key-change-in-production
@@ -133,7 +133,7 @@ services:
     environment:
       NODE_ENV: development
       PORT: 4000
-      DATABASE_URL: postgresql://postgres:postgres123@postgres:5432/jobpilot
+      DATABASE_URL: postgresql://postgres:postgres123@postgres:5432/applyforus
       REDIS_URL: redis://:redis123@redis:6379
       JWT_SECRET: super-secret-jwt-key-change-in-production
       JWT_EXPIRES_IN: 7d
@@ -182,7 +182,7 @@ services:
     environment:
       NODE_ENV: development
       PORT: 4001
-      DATABASE_URL: postgresql://postgres:postgres123@postgres:5432/jobpilot
+      DATABASE_URL: postgresql://postgres:postgres123@postgres:5432/applyforus
       REDIS_URL: redis://:redis123@redis:6379
       AI_SERVICE_URL: http://ai-service:5000
       RABBITMQ_URL: amqp://admin:admin123@rabbitmq:5672
@@ -204,7 +204,7 @@ services:
     environment:
       NODE_ENV: development
       PORT: 4002
-      DATABASE_URL: postgresql://postgres:postgres123@postgres:5432/jobpilot
+      DATABASE_URL: postgresql://postgres:postgres123@postgres:5432/applyforus
       REDIS_URL: redis://:redis123@redis:6379
       ELASTICSEARCH_URL: http://elasticsearch:9200
       RABBITMQ_URL: amqp://admin:admin123@rabbitmq:5672
@@ -228,7 +228,7 @@ services:
     environment:
       NODE_ENV: development
       PORT: 4003
-      DATABASE_URL: postgresql://postgres:postgres123@postgres:5432/jobpilot
+      DATABASE_URL: postgresql://postgres:postgres123@postgres:5432/applyforus
       REDIS_URL: redis://:redis123@redis:6379
       JOB_SERVICE_URL: http://job-service:4002
       RESUME_SERVICE_URL: http://resume-service:4001
@@ -252,7 +252,7 @@ services:
     environment:
       NODE_ENV: development
       PORT: 4004
-      DATABASE_URL: postgresql://postgres:postgres123@postgres:5432/jobpilot
+      DATABASE_URL: postgresql://postgres:postgres123@postgres:5432/applyforus
       REDIS_URL: redis://:redis123@redis:6379
       RABBITMQ_URL: amqp://admin:admin123@rabbitmq:5672
     depends_on:
@@ -273,7 +273,7 @@ services:
     environment:
       NODE_ENV: development
       PORT: 4005
-      DATABASE_URL: postgresql://postgres:postgres123@postgres:5432/jobpilot
+      DATABASE_URL: postgresql://postgres:postgres123@postgres:5432/applyforus
       REDIS_URL: redis://:redis123@redis:6379
       RABBITMQ_URL: amqp://admin:admin123@rabbitmq:5672
       SMTP_HOST: mailhog

@@ -95,9 +95,9 @@ export function Header({ onMenuClick }: HeaderProps) {
           className="flex items-center gap-2 font-bold text-xl text-gray-900 dark:text-white hover:text-primary-600 dark:hover:text-primary-400 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 rounded"
         >
           <div className="h-8 w-8 bg-primary-600 rounded-lg flex items-center justify-center text-white font-bold">
-            J
+            A
           </div>
-          <span className="hidden sm:inline">JobPilot</span>
+          <span className="hidden sm:inline">ApplyForUs</span>
         </Link>
 
         {/* Spacer */}

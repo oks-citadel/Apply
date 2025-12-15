@@ -90,7 +90,7 @@ export class StripeService {
         `Creating checkout session for customer: ${customerId}, tier: ${tier}, period: ${billingPeriod}`,
       );
 
-      if (tier === SubscriptionTier.FREE) {
+      if (tier === SubscriptionTier.FREEMIUM) {
         throw new BadRequestException('Cannot create checkout session for FREE tier');
       }
 

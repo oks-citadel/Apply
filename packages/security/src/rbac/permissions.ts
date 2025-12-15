@@ -1,5 +1,5 @@
 /**
- * JobPilot AI - RBAC Permissions System
+ * ApplyForUs AI - RBAC Permissions System
  *
  * Defines all platform permissions for granular access control.
  */

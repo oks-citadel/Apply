@@ -5,7 +5,7 @@ import { ConfigService } from '@nestjs/config';
 import { Client } from '@elastic/elasticsearch';
 import Redis from 'ioredis';
 
-// Inline health check utilities (replacing @jobpilot/utils)
+// Inline health check utilities (replacing @applyforus/utils)
 const checkDatabaseConnection = async (dataSource: any) => {
   try {
     await dataSource.query('SELECT 1');

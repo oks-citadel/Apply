@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document describes the complete MFA implementation for the ApplyforUs (JobPilot) platform frontend. The implementation includes TOTP-based 2FA with QR code scanning and a seamless login flow.
+This document describes the complete MFA implementation for the ApplyforUs (ApplyForUs) platform frontend. The implementation includes TOTP-based 2FA with QR code scanning and a seamless login flow.
 
 ## Features Implemented
 

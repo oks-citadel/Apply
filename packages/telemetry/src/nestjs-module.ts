@@ -33,7 +33,7 @@ export interface TelemetryModuleOptions {
  *
  * @example
  * ```typescript
- * import { TelemetryModule } from '@jobpilot/telemetry';
+ * import { TelemetryModule } from '@applyforus/telemetry';
  *
  * @Module({
  *   imports: [

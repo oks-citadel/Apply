@@ -119,6 +119,26 @@ export interface SkillGapAnalysisResponse {
   recommendations: string[];
 }
 
+export interface SuggestSkillsRequest {
+  resumeId?: string;
+  experience?: Array<{
+    position: string;
+    company: string;
+    description: string;
+  }>;
+  targetRole?: string;
+  industry?: string;
+}
+
+export interface SuggestSkillsResponse {
+  suggestedSkills: {
+    skill: string;
+    category: 'technical' | 'soft' | 'tool' | 'language';
+    relevance: 'high' | 'medium' | 'low';
+    reason: string;
+  }[];
+}
+
 export const aiApi = {
   /**
    * Generate professional summary
@@ -261,6 +281,18 @@ export const aiApi = {
   }> => {
     try {
       const response = await apiClient.post('/ai/career-path', { resumeId });
+      return response.data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+
+  /**
+   * Suggest skills based on resume and target role
+   */
+  suggestSkills: async (data: SuggestSkillsRequest): Promise<SuggestSkillsResponse> => {
+    try {
+      const response = await apiClient.post<SuggestSkillsResponse>('/ai/suggest-skills', data);
       return response.data;
     } catch (error) {
       throw handleApiError(error);

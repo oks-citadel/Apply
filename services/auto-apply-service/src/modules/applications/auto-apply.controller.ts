@@ -4,15 +4,18 @@ import {
   Post,
   Put,
   Body,
-  Headers,
-  BadRequestException,
+  Param,
+  UseGuards,
   Logger,
 } from '@nestjs/common';
 import { AutoApplyService } from './services/auto-apply.service';
 import { UpdateAutoApplySettingsDto } from './dto/auto-apply-settings.dto';
 import { QueueService } from '../queue/queue.service';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { User } from '../../common/decorators/user.decorator';
 
 @Controller('auto-apply')
+@UseGuards(JwtAuthGuard)
 export class AutoApplyController {
   private readonly logger = new Logger(AutoApplyController.name);
 
@@ -21,46 +24,33 @@ export class AutoApplyController {
     private readonly queueService: QueueService,
   ) {}
 
-  private extractUserId(headers: any): string {
-    const userId = headers['x-user-id'];
-    if (!userId) {
-      throw new BadRequestException('User ID is required in headers');
-    }
-    return userId;
-  }
-
   @Get('settings')
-  async getSettings(@Headers() headers: any) {
-    const userId = this.extractUserId(headers);
+  async getSettings(@User('id') userId: string) {
     return await this.autoApplyService.getSettings(userId);
   }
 
   @Put('settings')
   async updateSettings(
     @Body() dto: UpdateAutoApplySettingsDto,
-    @Headers() headers: any,
+    @User('id') userId: string,
   ) {
-    const userId = this.extractUserId(headers);
     return await this.autoApplyService.updateSettings(userId, dto);
   }
 
   @Post('start')
-  async startAutoApply(@Headers() headers: any) {
-    const userId = this.extractUserId(headers);
+  async startAutoApply(@User('id') userId: string) {
     this.logger.log(`Starting auto-apply for user: ${userId}`);
     return await this.autoApplyService.startAutoApply(userId);
   }
 
   @Post('stop')
-  async stopAutoApply(@Headers() headers: any) {
-    const userId = this.extractUserId(headers);
+  async stopAutoApply(@User('id') userId: string) {
     this.logger.log(`Stopping auto-apply for user: ${userId}`);
     return await this.autoApplyService.stopAutoApply(userId);
   }
 
   @Get('status')
-  async getStatus(@Headers() headers: any) {
-    const userId = this.extractUserId(headers);
+  async getStatus(@User('id') userId: string) {
     return await this.autoApplyService.getStatus(userId);
   }
 
@@ -80,21 +70,13 @@ export class AutoApplyController {
   }
 
   @Post('queue/:jobId/retry')
-  async retryJob(@Headers() headers: any) {
-    const jobId = headers['x-job-id'];
-    if (!jobId) {
-      throw new BadRequestException('Job ID is required');
-    }
+  async retryJob(@Param('jobId') jobId: string) {
     await this.queueService.retryJob(jobId);
     return { message: 'Job queued for retry' };
   }
 
   @Post('queue/:jobId/remove')
-  async removeJob(@Headers() headers: any) {
-    const jobId = headers['x-job-id'];
-    if (!jobId) {
-      throw new BadRequestException('Job ID is required');
-    }
+  async removeJob(@Param('jobId') jobId: string) {
     await this.queueService.removeJob(jobId);
     return { message: 'Job removed from queue' };
   }

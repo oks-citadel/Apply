@@ -1,7 +1,7 @@
 {
-  "name": "@jobpilot/shared",
+  "name": "@applyforus/shared",
   "version": "1.0.0",
-  "description": "Shared utilities for JobPilot AI Platform including logging, metrics, and health checks",
+  "description": "Shared utilities for ApplyForUs AI Platform including logging, metrics, and health checks",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
@@ -17,7 +17,7 @@
     "health-check",
     "monitoring"
   ],
-  "author": "JobPilot Team",
+  "author": "ApplyForUs Team",
   "license": "MIT",
   "dependencies": {
     "winston": "^3.11.0",

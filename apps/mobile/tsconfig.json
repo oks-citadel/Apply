@@ -5,7 +5,7 @@
     "lib": ["esnext"],
     "jsx": "react-native",
     "module": "commonjs",
-    "moduleResolution": "bundler",
+    "moduleResolution": "node",
     "allowJs": true,
     "noEmit": true,
     "strict": true,

@@ -1,7 +1,7 @@
 [project]
-name = "jobpilot-ai-service"
+name = "applyforus-ai-service"
 version = "1.0.0"
-description = "AI Service for JobPilot - Job matching and resume optimization"
+description = "AI Service for ApplyForUs - Job matching and resume optimization"
 requires-python = ">=3.11"
 dependencies = [
     "fastapi==0.109.0",

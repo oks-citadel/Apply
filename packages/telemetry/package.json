@@ -1,10 +1,10 @@
 {
-  "name": "@jobpilot/telemetry",
+  "name": "@applyforus/telemetry",
   "version": "1.0.0",
-  "description": "OpenTelemetry distributed tracing package for JobPilot microservices",
+  "description": "OpenTelemetry distributed tracing package for ApplyForUs microservices",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "author": "JobPilot Team",
+  "author": "ApplyForUs Team",
   "license": "MIT",
   "private": true,
   "scripts": {
@@ -15,25 +15,28 @@
     "format": "prettier --write \"src/**/*.ts\""
   },
   "dependencies": {
+    "@azure/monitor-opentelemetry-exporter": "^1.0.0-beta.23",
     "@opentelemetry/api": "^1.9.0",
-    "@opentelemetry/sdk-node": "^0.52.1",
     "@opentelemetry/auto-instrumentations-node": "^0.48.0",
+    "@opentelemetry/core": "^1.25.1",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.52.1",
     "@opentelemetry/instrumentation": "^0.52.1",
-    "@opentelemetry/instrumentation-http": "^0.52.1",
     "@opentelemetry/instrumentation-express": "^0.41.1",
+    "@opentelemetry/instrumentation-http": "^0.52.1",
     "@opentelemetry/instrumentation-nestjs-core": "^0.39.0",
     "@opentelemetry/instrumentation-pg": "^0.43.0",
     "@opentelemetry/instrumentation-redis-4": "^0.41.0",
     "@opentelemetry/resources": "^1.25.1",
-    "@opentelemetry/semantic-conventions": "^1.25.1",
-    "@opentelemetry/exporter-trace-otlp-http": "^0.52.1",
-    "@azure/monitor-opentelemetry-exporter": "^1.0.0-beta.23",
-    "@opentelemetry/sdk-trace-node": "^1.25.1",
+    "@opentelemetry/sdk-node": "^0.52.1",
     "@opentelemetry/sdk-trace-base": "^1.25.1",
-    "@opentelemetry/core": "^1.25.1"
+    "@opentelemetry/sdk-trace-node": "^1.25.1",
+    "@opentelemetry/semantic-conventions": "^1.25.1",
+    "uuid": "^9.0.1"
   },
   "devDependencies": {
+    "@types/express": "^4.17.21",
     "@types/node": "^20.10.6",
+    "@types/uuid": "^9.0.7",
     "rimraf": "^5.0.5",
     "typescript": "^5.3.3"
   },

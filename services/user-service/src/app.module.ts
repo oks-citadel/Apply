@@ -4,17 +4,17 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerGuard } from '@nestjs/throttler';
-import { LoggingModule, LoggingInterceptor } from '@jobpilot/logging';
+import { LoggingModule, LoggingInterceptor } from '@applyforus/logging';
 import { ProfileModule } from './modules/profile/profile.module';
 import { CareerModule } from './modules/career/career.module';
 import { SkillsModule } from './modules/skills/skills.module';
 import { PreferencesModule } from './modules/preferences/preferences.module';
 import { SubscriptionModule } from './modules/subscription/subscription.module';
 import { StorageModule } from './modules/storage/storage.module';
-// TODO: Re-enable when modules are implemented
-// import { AnalyticsModule } from './modules/analytics/analytics.module';
+import { RecruiterModule } from './modules/recruiter/recruiter.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { HealthModule } from './health/health.module';
+import { TenantModule } from './modules/tenant/tenant.module';
 
 @Module({
   imports: [
@@ -91,8 +91,8 @@ import { HealthModule } from './health/health.module';
     SkillsModule,
     PreferencesModule,
     SubscriptionModule,
-    // TODO: Re-enable when modules are implemented
-    // AnalyticsModule,
+    TenantModule,
+    RecruiterModule,
   ],
   providers: [
     {

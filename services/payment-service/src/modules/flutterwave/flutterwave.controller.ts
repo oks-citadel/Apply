@@ -11,6 +11,7 @@ import {
   Get,
   Param,
   Query,
+  RawBodyRequest,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiQuery } from '@nestjs/swagger';
 import { Request } from 'express';
@@ -58,15 +59,20 @@ export class FlutterwaveController {
   @ApiResponse({ status: 200, description: 'Webhook processed successfully' })
   @ApiResponse({ status: 400, description: 'Invalid webhook' })
   async handleWebhook(
-    @Req() request: Request,
-    @Headers('verif-hash') signature: string,
+    @Req() request: RawBodyRequest<Request>,
+    @Headers('verif-hash') verifHash: string,
     @Body() payload: FlutterwaveWebhookPayload,
   ) {
     this.logger.log(`Received Flutterwave webhook: ${payload.event}`);
 
     // Verify webhook signature
-    const rawBody = JSON.stringify(payload);
-    if (!this.flutterwaveService.verifyWebhookSignature(rawBody, signature)) {
+    // Flutterwave uses a simple hash comparison - the verif-hash header should match the webhook secret
+    if (!verifHash) {
+      this.logger.error('No verif-hash header found');
+      throw new BadRequestException('Missing webhook verification hash');
+    }
+
+    if (!this.flutterwaveService.verifyWebhookSignature(verifHash)) {
       this.logger.error('Invalid webhook signature');
       throw new BadRequestException('Invalid webhook signature');
     }

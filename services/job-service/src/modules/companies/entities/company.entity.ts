@@ -7,7 +7,6 @@ import {
   Index,
   OneToMany,
 } from 'typeorm';
-import { Job } from '../../jobs/entities/job.entity';
 
 export enum CompanySize {
   STARTUP = 'startup', // 1-50
@@ -98,8 +97,8 @@ export class Company {
   @Column({ type: 'jsonb', nullable: true })
   metadata: Record<string, any>;
 
-  @OneToMany(() => Job, (job) => job.company)
-  jobs: Job[];
+  @OneToMany('Job', 'company')
+  jobs: any[];
 
   @CreateDateColumn()
   created_at: Date;

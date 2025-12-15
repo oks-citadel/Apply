@@ -93,7 +93,7 @@ async sendSimpleNotification(userId: string) {
     userIds: [userId],
     notification: {
       title: 'Welcome!',
-      body: 'Thanks for joining JobPilot',
+      body: 'Thanks for joining ApplyForUs',
       sound: 'default',
       badge: 1,
     },

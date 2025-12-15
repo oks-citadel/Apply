@@ -4,7 +4,7 @@
  */
 
 import { onMessage, createMessageHandler, combineMessageHandlers } from '@shared/messaging';
-import { MessageType, DetectedJob, JobPlatform } from '@shared/types';
+import { MessageType, DetectedJob } from '@shared/types';
 import { JobDetector } from './detector';
 import { UIInjector } from './injector';
 import { FormFiller } from './formFiller';

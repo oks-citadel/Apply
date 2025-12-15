@@ -1,14 +1,14 @@
 // Initialize telemetry BEFORE importing other modules for proper auto-instrumentation
-// import { initTelemetry } from '@jobpilot/telemetry';
+import { initTelemetry } from '@applyforus/telemetry';
 
 async function bootstrap() {
   // Initialize distributed tracing with Azure Application Insights
-  // await initTelemetry({
-  //   serviceName: 'job-service',
-  //   serviceVersion: '1.0.0',
-  //   environment: process.env.NODE_ENV || 'development',
-  //   azureMonitorConnectionString: process.env.APPLICATIONINSIGHTS_CONNECTION_STRING,
-  // });
+  await initTelemetry({
+    serviceName: 'job-service',
+    serviceVersion: '1.0.0',
+    environment: process.env.NODE_ENV || 'development',
+    azureMonitorConnectionString: process.env.APPLICATIONINSIGHTS_CONNECTION_STRING,
+  });
 
   // Import NestJS modules
   const { NestFactory } = await import('@nestjs/core');

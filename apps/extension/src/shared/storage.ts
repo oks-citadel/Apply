@@ -1,4 +1,4 @@
-import { STORAGE_KEYS } from './types';
+// import { STORAGE_KEYS } - imported but not used from './types';
 
 /**
  * Chrome Storage API Wrapper

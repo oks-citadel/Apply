@@ -4,10 +4,11 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerGuard } from '@nestjs/throttler';
-import { LoggingModule, LoggingInterceptor } from '@jobpilot/logging';
+import { LoggingModule, LoggingInterceptor } from '@applyforus/logging';
 import configuration from './config/configuration';
 import { databaseConfig } from './config/database.config';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
+import { SLAModule } from './modules/sla/sla.module';
 import { HealthModule } from './health/health.module';
 
 @Module({
@@ -55,6 +56,7 @@ import { HealthModule } from './health/health.module';
 
     // Feature modules
     AnalyticsModule,
+    SLAModule,
     HealthModule,
   ],
   providers: [

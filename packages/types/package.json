@@ -1,7 +1,7 @@
 {
-  "name": "@job-apply-platform/types",
+  "name": "@applyforus/types",
   "version": "1.0.0",
-  "description": "Shared TypeScript types for Job Apply Platform",
+  "description": "Shared TypeScript types for ApplyForUs Platform",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {

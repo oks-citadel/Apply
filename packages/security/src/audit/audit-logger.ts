@@ -1,5 +1,5 @@
 /**
- * JobPilot AI - Audit Logger
+ * ApplyForUs AI - Audit Logger
  *
  * Comprehensive audit logging system for security, compliance, and monitoring.
  */

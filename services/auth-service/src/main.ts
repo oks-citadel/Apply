@@ -1,20 +1,16 @@
 import { Logger } from '@nestjs/common';
-
-// TODO: Re-enable workspace package after build
-// Initialize telemetry BEFORE importing other modules for proper auto-instrumentation
-// import { initTelemetry } from '@applyforus/telemetry';
+import { initTelemetry } from '@applyforus/telemetry';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
 
-  // TODO: Re-enable workspace package after build
   // Initialize distributed tracing with Azure Application Insights
-  // await initTelemetry({
-  //   serviceName: 'auth-service',
-  //   serviceVersion: '1.0.0',
-  //   environment: process.env.NODE_ENV || 'development',
-  //   azureMonitorConnectionString: process.env.APPLICATIONINSIGHTS_CONNECTION_STRING,
-  // });
+  await initTelemetry({
+    serviceName: 'auth-service',
+    serviceVersion: '1.0.0',
+    environment: process.env.NODE_ENV || 'development',
+    azureMonitorConnectionString: process.env.APPLICATIONINSIGHTS_CONNECTION_STRING,
+  });
 
   // Import NestJS modules AFTER telemetry initialization
   const { NestFactory } = await import('@nestjs/core');

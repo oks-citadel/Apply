@@ -24,6 +24,7 @@ resources:
   - services/notification-service.yaml
   - services/auto-apply-service.yaml
   - services/orchestrator-service.yaml
+  - services/payment-service.yaml
   - services/web-app.yaml
 
   # Monitoring Stack (optional - comment out if not needed)
@@ -42,23 +43,25 @@ commonAnnotations:
 # SECURITY FIX: Pin all image tags to specific versions instead of 'latest'
 # This ensures reproducible deployments and prevents unexpected changes
 images:
-  - name: jobpilotacr.azurecr.io/auth-service
+  - name: applyforusacr.azurecr.io/auth-service
     newTag: v1.0.0
-  - name: jobpilotacr.azurecr.io/user-service
+  - name: applyforusacr.azurecr.io/user-service
     newTag: v1.0.0
-  - name: jobpilotacr.azurecr.io/job-service
+  - name: applyforusacr.azurecr.io/job-service
     newTag: v1.0.0
-  - name: jobpilotacr.azurecr.io/ai-service
+  - name: applyforusacr.azurecr.io/ai-service
     newTag: v1.0.0
-  - name: jobpilotacr.azurecr.io/resume-service
+  - name: applyforusacr.azurecr.io/resume-service
     newTag: v1.0.0
-  - name: jobpilotacr.azurecr.io/analytics-service
+  - name: applyforusacr.azurecr.io/analytics-service
     newTag: v1.0.0
-  - name: jobpilotacr.azurecr.io/notification-service
+  - name: applyforusacr.azurecr.io/notification-service
     newTag: v1.0.0
-  - name: jobpilotacr.azurecr.io/auto-apply-service
+  - name: applyforusacr.azurecr.io/auto-apply-service
     newTag: v1.0.0
-  - name: jobpilotacr.azurecr.io/orchestrator-service
+  - name: applyforusacr.azurecr.io/orchestrator-service
     newTag: v1.0.0
-  - name: jobpilotacr.azurecr.io/web-app
+  - name: applyforusacr.azurecr.io/payment-service
+    newTag: v1.0.0
+  - name: applyforusacr.azurecr.io/web-app
     newTag: v1.0.0

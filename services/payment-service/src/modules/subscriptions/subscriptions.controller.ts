@@ -67,7 +67,7 @@ export class SubscriptionsController {
   @ApiResponse({ status: 200, description: 'Limits retrieved successfully' })
   async getUserLimits(@Param('userId') userId: string) {
     const subscription = await this.subscriptionsService.findByUserId(userId);
-    const tier = subscription?.tier || SubscriptionTier.FREE;
+    const tier = subscription?.tier || SubscriptionTier.FREEMIUM;
     return this.subscriptionsService.getSubscriptionLimits(tier);
   }
 

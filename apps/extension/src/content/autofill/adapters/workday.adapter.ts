@@ -436,7 +436,7 @@ export class WorkdayAdapter extends BaseAdapter {
       const input = educationSection.querySelector<HTMLInputElement>(field.selector);
       if (input) {
         if (input.tagName === 'SELECT') {
-          await this.fillSelect(input as HTMLSelectElement, field.value);
+          await this.fillSelect(input as unknown as HTMLSelectElement, field.value);
         } else {
           await this.fillTextInput(input, field.value);
         }

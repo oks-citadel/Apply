@@ -6,12 +6,12 @@ import { Providers } from '@/components/providers/Providers';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'JobPilot AI - Your AI-Powered Job Application Assistant',
+  title: 'ApplyForUs - Your AI-Powered Job Application Assistant',
   description: 'Automate your job search with AI-powered resume customization, cover letter generation, and application tracking.',
   keywords: 'job search, AI, resume, cover letter, job application, career',
-  authors: [{ name: 'JobPilot AI Team' }],
+  authors: [{ name: 'ApplyForUs Team' }],
   openGraph: {
-    title: 'JobPilot AI - Your AI-Powered Job Application Assistant',
+    title: 'ApplyForUs - Your AI-Powered Job Application Assistant',
     description: 'Automate your job search with AI-powered resume customization, cover letter generation, and application tracking.',
     type: 'website',
   },

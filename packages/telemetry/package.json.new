@@ -1,10 +1,10 @@
 {
-  "name": "@jobpilot/telemetry",
+  "name": "@applyforus/telemetry",
   "version": "1.0.0",
-  "description": "OpenTelemetry distributed tracing, Prometheus metrics, and structured logging package for JobPilot microservices",
+  "description": "OpenTelemetry distributed tracing, Prometheus metrics, and structured logging package for ApplyForUs microservices",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "author": "JobPilot Team",
+  "author": "ApplyForUs Team",
   "license": "MIT",
   "private": true,
   "scripts": {

@@ -60,7 +60,7 @@ export interface SpanOptions {
  * ```
  */
 export function createSpan(name: string, options: SpanOptions = {}): Span {
-  const tracer = trace.getTracer('jobpilot-tracer');
+  const tracer = trace.getTracer('applyforus-tracer');
   const parentContext = options.parentContext || context.active();
 
   const span = tracer.startSpan(
@@ -101,7 +101,7 @@ export async function withSpan<T>(
   fn: (span: Span) => Promise<T>,
   options: SpanOptions = {},
 ): Promise<T> {
-  const tracer = trace.getTracer('jobpilot-tracer');
+  const tracer = trace.getTracer('applyforus-tracer');
   const parentContext = options.parentContext || context.active();
 
   return await tracer.startActiveSpan(
@@ -455,7 +455,7 @@ export function propagateTraceContext(headers: Record<string, string> = {}): Rec
   const carrier: Record<string, string> = { ...headers };
 
   // Inject current trace context into headers
-  trace.getTracer('jobpilot-tracer');
+  trace.getTracer('applyforus-tracer');
   const currentContext = context.active();
 
   // The auto-instrumentation will handle propagation automatically

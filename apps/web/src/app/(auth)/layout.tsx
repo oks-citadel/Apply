@@ -9,7 +9,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         <div>
           <Link href="/" className="flex items-center space-x-2 text-2xl font-bold">
             <Sparkles className="w-8 h-8" />
-            <span>JobPilot AI</span>
+            <span>ApplyForUs</span>
           </Link>
         </div>
         <div>
@@ -64,7 +64,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           <div className="lg:hidden mb-8 text-center">
             <Link href="/" className="inline-flex items-center space-x-2 text-2xl font-bold text-primary-600">
               <Sparkles className="w-8 h-8" />
-              <span>JobPilot AI</span>
+              <span>ApplyForUs</span>
             </Link>
           </div>
           {children}

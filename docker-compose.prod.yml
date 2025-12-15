@@ -14,7 +14,7 @@ services:
   # PostgreSQL Database
   postgres:
     image: postgres:15-alpine
-    container_name: jobpilot-postgres-prod
+    container_name: applyforus-postgres-prod
     restart: always
     ports:
       - '5432:5432'
@@ -35,7 +35,7 @@ services:
       retries: 5
       start_period: 10s
     networks:
-      - jobpilot-network
+      - applyforus-network
     deploy:
       resources:
         limits:
@@ -50,13 +50,13 @@ services:
         max-size: "10m"
         max-file: "3"
     labels:
-      - "com.jobpilot.service=database"
-      - "com.jobpilot.environment=production"
+      - "com.applyforus.service=database"
+      - "com.applyforus.environment=production"
 
   # Redis Cache
   redis:
     image: redis:7-alpine
-    container_name: jobpilot-redis-prod
+    container_name: applyforus-redis-prod
     restart: always
     ports:
       - '6379:6379'
@@ -79,7 +79,7 @@ services:
       retries: 5
       start_period: 5s
     networks:
-      - jobpilot-network
+      - applyforus-network
     deploy:
       resources:
         limits:
@@ -94,13 +94,13 @@ services:
         max-size: "10m"
         max-file: "3"
     labels:
-      - "com.jobpilot.service=cache"
-      - "com.jobpilot.environment=production"
+      - "com.applyforus.service=cache"
+      - "com.applyforus.environment=production"
 
   # Web Application (Next.js)
   web:
     image: ${ACR_LOGIN_SERVER}/web-app:${IMAGE_TAG:-latest}
-    container_name: jobpilot-web-prod
+    container_name: applyforus-web-prod
     restart: always
     ports:
       - '3000:3000'
@@ -127,7 +127,7 @@ services:
       retries: 3
       start_period: 40s
     networks:
-      - jobpilot-network
+      - applyforus-network
     deploy:
       resources:
         limits:
@@ -143,13 +143,13 @@ services:
         max-size: "10m"
         max-file: "5"
     labels:
-      - "com.jobpilot.service=web"
-      - "com.jobpilot.environment=production"
+      - "com.applyforus.service=web"
+      - "com.applyforus.environment=production"
 
   # Auth Service (Node.js)
   auth-service:
     image: ${ACR_LOGIN_SERVER}/auth-service:${IMAGE_TAG:-latest}
-    container_name: jobpilot-auth-prod
+    container_name: applyforus-auth-prod
     restart: always
     ports:
       - '4000:4000'
@@ -177,7 +177,7 @@ services:
       retries: 3
       start_period: 30s
     networks:
-      - jobpilot-network
+      - applyforus-network
     deploy:
       resources:
         limits:
@@ -193,13 +193,13 @@ services:
         max-size: "10m"
         max-file: "5"
     labels:
-      - "com.jobpilot.service=auth"
-      - "com.jobpilot.environment=production"
+      - "com.applyforus.service=auth"
+      - "com.applyforus.environment=production"
 
   # AI Service (Python FastAPI)
   ai-service:
     image: ${ACR_LOGIN_SERVER}/ai-service:${IMAGE_TAG:-latest}
-    container_name: jobpilot-ai-prod
+    container_name: applyforus-ai-prod
     restart: always
     ports:
       - '5000:5000'
@@ -223,7 +223,7 @@ services:
       retries: 3
       start_period: 30s
     networks:
-      - jobpilot-network
+      - applyforus-network
     deploy:
       resources:
         limits:
@@ -239,13 +239,13 @@ services:
         max-size: "10m"
         max-file: "5"
     labels:
-      - "com.jobpilot.service=ai"
-      - "com.jobpilot.environment=production"
+      - "com.applyforus.service=ai"
+      - "com.applyforus.environment=production"
 
   # NGINX Reverse Proxy
   nginx:
     image: nginx:alpine
-    container_name: jobpilot-nginx-prod
+    container_name: applyforus-nginx-prod
     restart: always
     ports:
       - '80:80'
@@ -265,7 +265,7 @@ services:
       timeout: 10s
       retries: 3
     networks:
-      - jobpilot-network
+      - applyforus-network
     deploy:
       resources:
         limits:
@@ -280,8 +280,8 @@ services:
         max-size: "10m"
         max-file: "5"
     labels:
-      - "com.jobpilot.service=proxy"
-      - "com.jobpilot.environment=production"
+      - "com.applyforus.service=proxy"
+      - "com.applyforus.environment=production"
 
 volumes:
   postgres_data:
@@ -289,18 +289,18 @@ volumes:
     driver_opts:
       type: none
       o: bind
-      device: /var/lib/jobpilot/postgres
+      device: /var/lib/applyforus/postgres
   redis_data:
     driver: local
     driver_opts:
       type: none
       o: bind
-      device: /var/lib/jobpilot/redis
+      device: /var/lib/applyforus/redis
   nginx_logs:
     driver: local
 
 networks:
-  jobpilot-network:
+  applyforus-network:
     driver: bridge
     ipam:
       config:

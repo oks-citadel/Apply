@@ -1,7 +1,7 @@
 {
-  "name": "@jobpilot/utils",
+  "name": "@applyforus/utils",
   "version": "1.0.0",
-  "description": "Shared utilities for JobPilot platform",
+  "description": "Shared utilities for ApplyForUs platform",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
@@ -9,11 +9,11 @@
     "clean": "rm -rf dist"
   },
   "keywords": [
-    "jobpilot",
+    "applyforus",
     "utils",
     "health-check"
   ],
-  "author": "JobPilot Team",
+  "author": "ApplyForUs Team",
   "license": "MIT",
   "devDependencies": {
     "typescript": "^5.3.3"

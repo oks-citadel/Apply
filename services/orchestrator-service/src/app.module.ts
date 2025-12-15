@@ -4,7 +4,7 @@ import { BullModule } from '@nestjs/bull';
 import { HttpModule } from '@nestjs/axios';
 import { TerminusModule } from '@nestjs/terminus';
 import { APP_INTERCEPTOR } from '@nestjs/core';
-import { LoggingModule, LoggingInterceptor } from '@jobpilot/logging';
+import { LoggingModule, LoggingInterceptor } from '@applyforus/logging';
 import { OrchestratorModule } from './orchestrator/orchestrator.module';
 import { ComplianceModule } from './agents/compliance/compliance.module';
 import { HealthModule } from './health/health.module';

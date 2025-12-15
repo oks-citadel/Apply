@@ -2,7 +2,7 @@
 
 ## Overview
 
-A complete push notification system has been implemented for the JobPilot web application using Firebase Cloud Messaging (FCM). This implementation provides real-time notifications for job matches, application updates, interview reminders, and more.
+A complete push notification system has been implemented for the ApplyForUs web application using Firebase Cloud Messaging (FCM). This implementation provides real-time notifications for job matches, application updates, interview reminders, and more.
 
 ## Implementation Status
 

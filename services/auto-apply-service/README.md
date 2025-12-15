@@ -463,4 +463,4 @@ MIT License - see LICENSE file for details
 For issues and questions:
 - GitHub Issues: [Link to issues]
 - Documentation: [Link to docs]
-- Email: support@jobpilot.com
+- Email: support@applyforus.com

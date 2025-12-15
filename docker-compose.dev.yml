@@ -2,7 +2,7 @@ services:
   # Web Application - Available at http://localhost:3100
   web:
     image: citadelplatforms/applyai:web-latest
-    container_name: jobpilot-web
+    container_name: applyforus-web
     restart: unless-stopped
     ports:
       - '3100:3000'
@@ -15,19 +15,19 @@ services:
       timeout: 10s
       retries: 3
     networks:
-      - jobpilot-network
+      - applyforus-network
 
   # PostgreSQL Database - Using port 5434 to avoid conflict
   postgres:
     image: postgres:15-alpine
-    container_name: jobpilot-postgres
+    container_name: applyforus-postgres
     restart: unless-stopped
     ports:
       - '5434:5432'
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: jobpilot
+      POSTGRES_DB: applyforus
       POSTGRES_INITDB_ARGS: '-A md5'
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -37,12 +37,12 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - jobpilot-network
+      - applyforus-network
 
   # Redis Cache - Using port 6381 to avoid conflict
   redis:
     image: redis:7-alpine
-    container_name: jobpilot-redis
+    container_name: applyforus-redis
     restart: unless-stopped
     ports:
       - '6381:6379'
@@ -55,12 +55,12 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - jobpilot-network
+      - applyforus-network
 
   # RabbitMQ Message Broker - Using different ports to avoid conflict
   rabbitmq:
     image: rabbitmq:3.12-management-alpine
-    container_name: jobpilot-rabbitmq
+    container_name: applyforus-rabbitmq
     restart: unless-stopped
     ports:
       - '5673:5672'
@@ -76,18 +76,18 @@ services:
       timeout: 10s
       retries: 5
     networks:
-      - jobpilot-network
+      - applyforus-network
 
   # Mailhog for email testing - Using different ports to avoid conflict
   mailhog:
     image: mailhog/mailhog:latest
-    container_name: jobpilot-mailhog
+    container_name: applyforus-mailhog
     restart: unless-stopped
     ports:
       - '1026:1025'
       - '8026:8025'
     networks:
-      - jobpilot-network
+      - applyforus-network
 
 volumes:
   postgres_data:
@@ -98,5 +98,5 @@ volumes:
     driver: local
 
 networks:
-  jobpilot-network:
+  applyforus-network:
     driver: bridge

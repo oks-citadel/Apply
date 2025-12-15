@@ -23,9 +23,9 @@
       "@/*": ["src/*"],
       "@modules/*": ["src/modules/*"],
       "@config/*": ["src/config/*"],
-      "@jobpilot/telemetry": ["../../packages/telemetry/src/index.ts"],
-      "@jobpilot/logging": ["../../packages/logging/src/index.ts"],
-      "@jobpilot/security": ["../../packages/security/src/index.ts"]
+      "@applyforus/telemetry": ["../../packages/telemetry/src/index.ts"],
+      "@applyforus/logging": ["../../packages/logging/src/index.ts"],
+      "@applyforus/security": ["../../packages/security/src/index.ts"]
     }
   },
   "include": ["src/**/*"],

@@ -81,7 +81,7 @@ export class FlutterwaveService {
     try {
       this.logger.log(`Creating Flutterwave payment link for ${customer.email}, tier: ${tier}`);
 
-      if (tier === SubscriptionTier.FREE) {
+      if (tier === SubscriptionTier.FREEMIUM) {
         throw new BadRequestException('Cannot create payment link for FREE tier');
       }
 
@@ -281,14 +281,31 @@ export class FlutterwaveService {
 
   /**
    * Verify webhook signature
+   * Flutterwave sends the webhook secret hash in the 'verif-hash' header
+   * We just need to compare it with our configured webhook secret
+   * @param verifHash - The value from the 'verif-hash' header
+   * @returns boolean indicating if the hash matches our webhook secret
    */
-  verifyWebhookSignature(payload: string, signature: string): boolean {
-    const hash = crypto
-      .createHmac('sha256', this.secretKey)
-      .update(payload)
-      .digest('hex');
+  verifyWebhookSignature(verifHash: string): boolean {
+    const webhookSecret = this.configService.get<string>('FLUTTERWAVE_WEBHOOK_SECRET');
 
-    return hash === signature;
+    if (!webhookSecret) {
+      this.logger.error('Flutterwave webhook secret not configured');
+      return false;
+    }
+
+    if (!verifHash) {
+      this.logger.error('No verification hash provided');
+      return false;
+    }
+
+    try {
+      // Flutterwave uses a simple hash comparison
+      return verifHash === webhookSecret;
+    } catch (error) {
+      this.logger.error(`Error verifying webhook signature: ${error.message}`);
+      return false;
+    }
   }
 
   /**

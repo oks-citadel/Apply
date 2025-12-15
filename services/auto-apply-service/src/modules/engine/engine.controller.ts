@@ -9,8 +9,10 @@ import {
   Logger,
   BadRequestException,
   NotFoundException,
+  UseGuards,
 } from '@nestjs/common';
 import { EngineService } from './engine.service';
+import { ServiceClientService } from './service-client.service';
 import { ApplicationsService } from '../applications/applications.service';
 import { QueueService } from '../queue/queue.service';
 import {
@@ -28,13 +30,17 @@ import {
 } from './dto/application-status.dto';
 import { JobData, UserProfile, Resume, CoverLetter } from './interfaces/engine.interface';
 import { ApplicationStatus, ApplicationSource } from '../applications/entities/application.entity';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { User } from '../../common/decorators/user.decorator';
 
 @Controller('engine')
+@UseGuards(JwtAuthGuard)
 export class EngineController {
   private readonly logger = new Logger(EngineController.name);
 
   constructor(
     private readonly engineService: EngineService,
+    private readonly serviceClient: ServiceClientService,
     private readonly applicationsService: ApplicationsService,
     private readonly queueService: QueueService,
   ) {}
@@ -46,16 +52,18 @@ export class EngineController {
   @HttpCode(HttpStatus.ACCEPTED)
   async startApplication(
     @Body() dto: StartApplicationDto,
+    @User('id') userId: string,
   ): Promise<StartApplicationResponseDto> {
-    this.logger.log(`Starting application for user ${dto.userId}, job ${dto.jobId}`);
+    // Override DTO userId with authenticated user ID to prevent impersonation
+    dto.userId = userId;
+    this.logger.log(`Starting application for user ${userId}, job ${dto.jobId}`);
 
     try {
-      // TODO: Fetch job data from job service
-      // For now, using placeholder
+      // Fetch job data from job service
       const job: JobData = await this.fetchJobData(dto.jobId);
 
-      // TODO: Fetch user profile from user service
-      const userProfile: UserProfile = await this.fetchUserProfile(dto.userId);
+      // Fetch user profile from user service
+      const userProfile: UserProfile = await this.fetchUserProfile(userId);
 
       // Validate eligibility
       const eligibility = await this.engineService.validateJobEligibility(job, userProfile);
@@ -73,9 +81,9 @@ export class EngineController {
       // Get or select resume
       let resume: Resume;
       if (dto.resumeId) {
-        resume = await this.fetchResume(dto.resumeId, dto.userId);
+        resume = await this.fetchResume(dto.resumeId, userId);
       } else if (dto.autoSelectResume) {
-        const resumes = await this.fetchUserResumes(dto.userId);
+        const resumes = await this.fetchUserResumes(userId);
         const selection = await this.engineService.selectBestResume(job, resumes);
         resume = selection.selectedResume;
         this.logger.log(`Auto-selected resume ${resume.id} with score ${selection.matchScore}`);
@@ -86,12 +94,12 @@ export class EngineController {
       // Get cover letter if provided
       let coverLetter: CoverLetter | undefined;
       if (dto.coverLetterId) {
-        coverLetter = await this.fetchCoverLetter(dto.coverLetterId, dto.userId);
+        coverLetter = await this.fetchCoverLetter(dto.coverLetterId, userId);
       }
 
       // Create application record
       const application = await this.applicationsService.create({
-        user_id: dto.userId,
+        user_id: userId,
         job_id: dto.jobId,
         resume_id: resume.id,
         cover_letter_id: coverLetter?.id,
@@ -116,7 +124,7 @@ export class EngineController {
       // Add to queue for async processing
       const queueJob = await this.queueService.addApplicationJob({
         applicationId: application.id,
-        userId: dto.userId,
+        userId: userId,
         jobId: dto.jobId,
         jobData: job,
         applicationData: preparedApplication,
@@ -126,7 +134,7 @@ export class EngineController {
 
       // Update application with queue status
       await this.applicationsService.update(application.id, {
-        user_id: dto.userId,
+        user_id: userId,
         queue_status: 'waiting',
       });
 
@@ -135,7 +143,7 @@ export class EngineController {
       return {
         applicationId: application.id,
         jobId: dto.jobId,
-        userId: dto.userId,
+        userId: userId,
         status: ApplicationStatusEnum.QUEUED,
         queueStatus: QueueStatusEnum.WAITING,
         message: 'Application queued successfully',
@@ -154,21 +162,24 @@ export class EngineController {
   @HttpCode(HttpStatus.ACCEPTED)
   async batchApply(
     @Body() dto: BatchApplicationDto,
+    @User('id') userId: string,
   ): Promise<BatchApplicationResponseDto> {
-    this.logger.log(`Starting batch application for user ${dto.userId}, ${dto.jobIds.length} jobs`);
+    // Override DTO userId with authenticated user ID to prevent impersonation
+    dto.userId = userId;
+    this.logger.log(`Starting batch application for user ${userId}, ${dto.jobIds.length} jobs`);
 
     const queuedApplications: Array<{ jobId: string; queueItemId: string; scheduledAt: Date }> = [];
     const rejectedApplications: Array<{ jobId: string; reason: string }> = [];
 
     // Fetch user profile once
-    const userProfile = await this.fetchUserProfile(dto.userId);
+    const userProfile = await this.fetchUserProfile(userId);
 
     // Get or select resume once
     let resume: Resume;
     if (dto.resumeId) {
-      resume = await this.fetchResume(dto.resumeId, dto.userId);
+      resume = await this.fetchResume(dto.resumeId, userId);
     } else if (dto.autoSelectResume) {
-      const resumes = await this.fetchUserResumes(dto.userId);
+      const resumes = await this.fetchUserResumes(userId);
       if (resumes.length === 0) {
         throw new BadRequestException('No resumes found for user');
       }
@@ -182,7 +193,7 @@ export class EngineController {
     // Get cover letter if provided
     let coverLetter: CoverLetter | undefined;
     if (dto.coverLetterId) {
-      coverLetter = await this.fetchCoverLetter(dto.coverLetterId, dto.userId);
+      coverLetter = await this.fetchCoverLetter(dto.coverLetterId, userId);
     }
 
     // Process each job
@@ -207,7 +218,7 @@ export class EngineController {
 
         // Create application record
         const application = await this.applicationsService.create({
-          user_id: dto.userId,
+          user_id: userId,
           job_id: jobId,
           resume_id: resume.id,
           cover_letter_id: coverLetter?.id,
@@ -233,7 +244,7 @@ export class EngineController {
         // Add to queue
         const queueJob = await this.queueService.addApplicationJob({
           applicationId: application.id,
-          userId: dto.userId,
+          userId: userId,
           jobId,
           jobData: job,
           applicationData: preparedApplication,
@@ -244,7 +255,7 @@ export class EngineController {
 
         // Update application with queue status
         await this.applicationsService.update(application.id, {
-          user_id: dto.userId,
+          user_id: userId,
           queue_status: 'waiting',
         });
 
@@ -311,8 +322,11 @@ export class EngineController {
   async retryApplication(
     @Param('applicationId') applicationId: string,
     @Body() dto: RetryApplicationDto,
+    @User('id') userId: string,
   ): Promise<RetryApplicationResponseDto> {
-    this.logger.log(`Retrying application ${applicationId}`);
+    // Override DTO userId with authenticated user ID to prevent impersonation
+    dto.userId = userId;
+    this.logger.log(`Retrying application ${applicationId} for user ${userId}`);
 
     try {
       // Get application
@@ -323,7 +337,7 @@ export class EngineController {
       }
 
       // Verify user owns this application
-      if (application.user_id !== dto.userId) {
+      if (application.user_id !== userId) {
         throw new BadRequestException('Application does not belong to this user');
       }
 
@@ -372,7 +386,7 @@ export class EngineController {
 
       // Update application status
       await this.applicationsService.update(application.id, {
-        user_id: dto.userId,
+        user_id: userId,
         queue_status: 'waiting',
       });
 
@@ -391,91 +405,262 @@ export class EngineController {
     }
   }
 
-  // Helper methods to fetch data (these would integrate with other services)
+  // Helper methods to fetch data from external services
   private async fetchJobData(jobId: string): Promise<JobData> {
-    // TODO: Integrate with job service
-    // For now, return mock data
-    this.logger.warn(`fetchJobData using mock data for job ${jobId}`);
-    return {
-      id: jobId,
-      title: 'Software Engineer',
-      company: 'Tech Company',
-      url: 'https://example.com/jobs/123',
-      description: 'Great opportunity for a software engineer',
-      requirements: ['5+ years of experience', 'JavaScript', 'TypeScript'],
-      location: 'Remote',
-      atsType: 'workday',
-    };
+    try {
+      this.logger.log(`Fetching job data for job ${jobId} from job-service`);
+      const jobResponse = await this.serviceClient.getJob(jobId);
+
+      // Map job-service response to JobData interface
+      return {
+        id: jobResponse.id,
+        title: jobResponse.title,
+        company: jobResponse.company?.name || jobResponse.company || 'Unknown Company',
+        url: jobResponse.url || jobResponse.jobUrl || jobResponse.externalUrl,
+        description: jobResponse.description,
+        requirements: jobResponse.requirements || this.extractRequirements(jobResponse.description),
+        location: jobResponse.location || 'Not specified',
+        atsType: jobResponse.atsType || jobResponse.ats_type || 'generic',
+      };
+    } catch (error) {
+      this.logger.error(`Failed to fetch job data for ${jobId}: ${error.message}`);
+      throw new NotFoundException(`Job ${jobId} not found or unavailable`);
+    }
+  }
+
+  /**
+   * Extract requirements from job description if not explicitly provided
+   */
+  private extractRequirements(description: string): string[] {
+    if (!description) return [];
+
+    // Simple extraction logic - can be enhanced
+    const requirements: string[] = [];
+    const lines = description.split('\n');
+
+    for (const line of lines) {
+      const trimmed = line.trim();
+      // Look for bullet points or requirement patterns
+      if (trimmed.match(/^[-•*]\s+(.+)/) || trimmed.match(/^(Required|Must have):/i)) {
+        requirements.push(trimmed.replace(/^[-•*]\s+/, ''));
+      }
+    }
+
+    return requirements.length > 0 ? requirements : ['See job description'];
   }
 
   private async fetchUserProfile(userId: string): Promise<UserProfile> {
-    // TODO: Integrate with user service
-    this.logger.warn(`fetchUserProfile using mock data for user ${userId}`);
-    return {
-      id: userId,
-      firstName: 'John',
-      lastName: 'Doe',
-      email: 'john.doe@example.com',
-      phone: '+1234567890',
-      yearsOfExperience: 5,
-      skills: ['JavaScript', 'TypeScript', 'Node.js', 'React'],
-      preferences: {
-        workAuthorization: true,
-        requiresSponsorship: false,
-        availability: '2 weeks notice',
-      },
-    };
+    try {
+      this.logger.log(`Fetching user profile for user ${userId} from user-service`);
+      const profileResponse = await this.serviceClient.getUserProfile(userId);
+
+      // Map user-service response to UserProfile interface
+      return {
+        id: profileResponse.id || profileResponse.user_id || userId,
+        firstName: profileResponse.firstName || profileResponse.first_name || '',
+        lastName: profileResponse.lastName || profileResponse.last_name || '',
+        email: profileResponse.email || '',
+        phone: profileResponse.phone || profileResponse.phoneNumber || '',
+        yearsOfExperience: profileResponse.yearsOfExperience ||
+                           profileResponse.years_of_experience ||
+                           this.calculateYearsOfExperience(profileResponse.workExperience),
+        skills: this.extractSkills(profileResponse),
+        preferences: {
+          workAuthorization: profileResponse.preferences?.workAuthorization ??
+                            profileResponse.work_authorization ?? true,
+          requiresSponsorship: profileResponse.preferences?.requiresSponsorship ??
+                              profileResponse.requires_sponsorship ?? false,
+          availability: profileResponse.preferences?.availability ||
+                       profileResponse.availability ||
+                       'Immediate',
+        },
+      };
+    } catch (error) {
+      this.logger.error(`Failed to fetch user profile for ${userId}: ${error.message}`);
+      throw new NotFoundException(`User profile for ${userId} not found or unavailable`);
+    }
+  }
+
+  /**
+   * Extract skills from profile response
+   */
+  private extractSkills(profileResponse: any): string[] {
+    if (Array.isArray(profileResponse.skills)) {
+      return profileResponse.skills.map((skill: any) =>
+        typeof skill === 'string' ? skill : skill.name || skill.skill_name
+      );
+    }
+    return [];
+  }
+
+  /**
+   * Calculate years of experience from work experience array
+   */
+  private calculateYearsOfExperience(workExperience: any[]): number {
+    if (!Array.isArray(workExperience) || workExperience.length === 0) {
+      return 0;
+    }
+
+    let totalMonths = 0;
+    for (const exp of workExperience) {
+      const startDate = exp.startDate || exp.start_date;
+      const endDate = exp.endDate || exp.end_date || new Date();
+
+      if (startDate) {
+        const start = new Date(startDate);
+        const end = typeof endDate === 'string' ? new Date(endDate) : endDate;
+        const months = (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24 * 30);
+        totalMonths += months;
+      }
+    }
+
+    return Math.round(totalMonths / 12);
   }
 
   private async fetchResume(resumeId: string, userId: string): Promise<Resume> {
-    // TODO: Integrate with resume service
-    this.logger.warn(`fetchResume using mock data for resume ${resumeId}`);
-    return {
-      id: resumeId,
-      userId,
-      fileName: 'resume.pdf',
-      filePath: `/uploads/resumes/${resumeId}.pdf`,
-      title: 'Software Engineer Resume',
-      isPrimary: true,
-      skills: ['JavaScript', 'TypeScript', 'Node.js'],
-      experience: ['Software Engineer', 'Full Stack Developer'],
-      education: ['BS Computer Science'],
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
+    try {
+      this.logger.log(`Fetching resume ${resumeId} for user ${userId} from resume-service`);
+      const resumeResponse = await this.serviceClient.getResume(resumeId, userId);
+
+      // Map resume-service response to Resume interface
+      return {
+        id: resumeResponse.id,
+        userId: resumeResponse.userId || resumeResponse.user_id || userId,
+        fileName: resumeResponse.fileName || resumeResponse.file_name || 'resume.pdf',
+        filePath: resumeResponse.filePath || resumeResponse.file_path || '',
+        title: resumeResponse.title || 'Resume',
+        isPrimary: resumeResponse.isPrimary ?? resumeResponse.is_primary ?? false,
+        skills: this.extractResumeSkills(resumeResponse),
+        experience: this.extractExperience(resumeResponse),
+        education: this.extractEducation(resumeResponse),
+        createdAt: resumeResponse.createdAt ? new Date(resumeResponse.createdAt) : new Date(),
+        updatedAt: resumeResponse.updatedAt ? new Date(resumeResponse.updatedAt) : new Date(),
+      };
+    } catch (error) {
+      this.logger.error(`Failed to fetch resume ${resumeId}: ${error.message}`);
+      throw new NotFoundException(`Resume ${resumeId} not found or unavailable`);
+    }
+  }
+
+  /**
+   * Extract skills from resume response
+   */
+  private extractResumeSkills(resumeResponse: any): string[] {
+    if (Array.isArray(resumeResponse.skills)) {
+      return resumeResponse.skills.map((skill: any) =>
+        typeof skill === 'string' ? skill : skill.name || skill.skill_name
+      );
+    }
+
+    // Check in sections
+    if (resumeResponse.sections) {
+      const skillsSection = resumeResponse.sections.find(
+        (s: any) => s.type === 'skills' || s.section_type === 'skills'
+      );
+      if (skillsSection?.items) {
+        return skillsSection.items.map((item: any) => item.name || item.skill);
+      }
+    }
+
+    return [];
+  }
+
+  /**
+   * Extract experience from resume response
+   */
+  private extractExperience(resumeResponse: any): string[] {
+    if (Array.isArray(resumeResponse.experience)) {
+      return resumeResponse.experience.map((exp: any) =>
+        exp.title || exp.position || exp.job_title
+      );
+    }
+
+    // Check in sections
+    if (resumeResponse.sections) {
+      const experienceSection = resumeResponse.sections.find(
+        (s: any) => s.type === 'experience' || s.section_type === 'work_experience'
+      );
+      if (experienceSection?.items) {
+        return experienceSection.items.map((item: any) =>
+          item.title || item.position || item.job_title
+        );
+      }
+    }
+
+    return [];
+  }
+
+  /**
+   * Extract education from resume response
+   */
+  private extractEducation(resumeResponse: any): string[] {
+    if (Array.isArray(resumeResponse.education)) {
+      return resumeResponse.education.map((edu: any) =>
+        `${edu.degree || edu.degree_type || ''} ${edu.fieldOfStudy || edu.field_of_study || ''}`.trim()
+      );
+    }
+
+    // Check in sections
+    if (resumeResponse.sections) {
+      const educationSection = resumeResponse.sections.find(
+        (s: any) => s.type === 'education' || s.section_type === 'education'
+      );
+      if (educationSection?.items) {
+        return educationSection.items.map((item: any) =>
+          `${item.degree || item.degree_type || ''} ${item.field || item.field_of_study || ''}`.trim()
+        );
+      }
+    }
+
+    return [];
   }
 
   private async fetchUserResumes(userId: string): Promise<Resume[]> {
-    // TODO: Integrate with resume service
-    this.logger.warn(`fetchUserResumes using mock data for user ${userId}`);
-    return [
-      {
-        id: 'resume-1',
-        userId,
-        fileName: 'resume.pdf',
-        filePath: `/uploads/resumes/resume-1.pdf`,
-        title: 'Software Engineer Resume',
-        isPrimary: true,
-        skills: ['JavaScript', 'TypeScript', 'Node.js'],
-        experience: ['Software Engineer'],
-        education: ['BS Computer Science'],
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-    ];
+    try {
+      this.logger.log(`Fetching all resumes for user ${userId} from resume-service`);
+      const resumesResponse = await this.serviceClient.getUserResumes(userId);
+
+      // Map each resume to Resume interface
+      return resumesResponse.map((resumeResponse: any) => ({
+        id: resumeResponse.id,
+        userId: resumeResponse.userId || resumeResponse.user_id || userId,
+        fileName: resumeResponse.fileName || resumeResponse.file_name || 'resume.pdf',
+        filePath: resumeResponse.filePath || resumeResponse.file_path || '',
+        title: resumeResponse.title || 'Resume',
+        isPrimary: resumeResponse.isPrimary ?? resumeResponse.is_primary ?? false,
+        skills: this.extractResumeSkills(resumeResponse),
+        experience: this.extractExperience(resumeResponse),
+        education: this.extractEducation(resumeResponse),
+        createdAt: resumeResponse.createdAt ? new Date(resumeResponse.createdAt) : new Date(),
+        updatedAt: resumeResponse.updatedAt ? new Date(resumeResponse.updatedAt) : new Date(),
+      }));
+    } catch (error) {
+      this.logger.error(`Failed to fetch resumes for user ${userId}: ${error.message}`);
+      // Return empty array instead of throwing to allow graceful handling
+      return [];
+    }
   }
 
   private async fetchCoverLetter(coverLetterId: string, userId: string): Promise<CoverLetter> {
-    // TODO: Integrate with cover letter service
-    this.logger.warn(`fetchCoverLetter using mock data for cover letter ${coverLetterId}`);
-    return {
-      id: coverLetterId,
-      userId,
-      fileName: 'cover-letter.pdf',
-      filePath: `/uploads/cover-letters/${coverLetterId}.pdf`,
-      title: 'Generic Cover Letter',
-      isTemplate: false,
-      createdAt: new Date(),
-    };
+    try {
+      this.logger.log(`Fetching cover letter ${coverLetterId} for user ${userId}`);
+      const coverLetterResponse = await this.serviceClient.getCoverLetter(coverLetterId, userId);
+
+      // Map cover letter response to CoverLetter interface
+      return {
+        id: coverLetterResponse.id,
+        userId: coverLetterResponse.userId || coverLetterResponse.user_id || userId,
+        fileName: coverLetterResponse.fileName || coverLetterResponse.file_name || 'cover-letter.pdf',
+        filePath: coverLetterResponse.filePath || coverLetterResponse.file_path || '',
+        title: coverLetterResponse.title || 'Cover Letter',
+        isTemplate: coverLetterResponse.isTemplate ?? coverLetterResponse.is_template ?? false,
+        createdAt: coverLetterResponse.createdAt ? new Date(coverLetterResponse.createdAt) : new Date(),
+      };
+    } catch (error) {
+      this.logger.error(`Failed to fetch cover letter ${coverLetterId}: ${error.message}`);
+      // Log warning but don't throw - cover letter is optional
+      this.logger.warn(`Cover letter ${coverLetterId} not found, proceeding without it`);
+      return undefined;
+    }
   }
 }

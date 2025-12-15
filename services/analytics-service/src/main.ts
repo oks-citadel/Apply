@@ -1,7 +1,5 @@
 import { Logger } from '@nestjs/common';
-
-// Initialize telemetry BEFORE importing other modules for proper auto-instrumentation
-import { initTelemetry } from '@jobpilot/telemetry';
+import { initTelemetry } from '@applyforus/telemetry';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
@@ -66,8 +64,8 @@ async function bootstrap() {
   // Swagger documentation setup
   if (configService.get('nodeEnv') !== 'production') {
     const config = new DocumentBuilder()
-      .setTitle('JobPilot Analytics Service API')
-      .setDescription('Analytics and Metrics Service for JobPilot AI Platform')
+      .setTitle('ApplyForUs Analytics Service API')
+      .setDescription('Analytics and Metrics Service for ApplyForUs AI Platform')
       .setVersion('1.0')
       .addBearerAuth(
         {

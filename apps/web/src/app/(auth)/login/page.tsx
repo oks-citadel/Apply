@@ -2,8 +2,8 @@ import Link from 'next/link';
 import { LoginForm } from '@/components/forms/LoginForm';
 
 export const metadata = {
-  title: 'Login - JobPilot AI',
-  description: 'Sign in to your JobPilot AI account',
+  title: 'Login - ApplyForUs',
+  description: 'Sign in to your ApplyForUs account',
 };
 
 export default function LoginPage() {

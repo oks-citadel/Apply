@@ -27,7 +27,7 @@ telemetry_config = TelemetryConfig(
 init_telemetry(telemetry_config)
 
 from .config import settings
-from .api.routes import generate, optimize, match, interview, salary, ai_endpoints
+from .api.routes import generate, optimize, match, interview, salary, ai_endpoints, probability_matching
 from .api.middleware import RequestLoggingMiddleware, TimingMiddleware
 from .api.middleware.security import (
     SecurityHeadersMiddleware,
@@ -399,6 +399,12 @@ app.include_router(
     ai_endpoints.router,
     prefix="/ai",
     tags=["AI Services"],
+)
+
+app.include_router(
+    probability_matching.router,
+    prefix="/api/v1/matching",
+    tags=["Interview Probability Matching"],
 )
 
 # Main entry point

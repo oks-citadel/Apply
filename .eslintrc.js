@@ -65,7 +65,7 @@ module.exports = {
         ],
         pathGroups: [
           {
-            pattern: '@jobpilot/**',
+            pattern: '@applyforus/**',
             group: 'internal',
             position: 'before',
           },

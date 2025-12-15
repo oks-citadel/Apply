@@ -57,8 +57,8 @@ describe('JwtStrategy', () => {
     get: jest.fn((key: string) => {
       const config = {
         'jwt.secret': 'test-secret-key',
-        'jwt.issuer': 'jobpilot',
-        'jwt.audience': 'jobpilot-users',
+        'jwt.issuer': 'applyforus',
+        'jwt.audience': 'applyforus-users',
       };
       return config[key];
     }),

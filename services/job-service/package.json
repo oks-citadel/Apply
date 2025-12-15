@@ -1,8 +1,8 @@
 {
-  "name": "job-service",
+  "name": "applyforus-job-service",
   "version": "1.0.0",
-  "description": "Job Service Microservice for Job-Apply-Platform",
-  "author": "Job-Apply-Platform Team",
+  "description": "Job Service Microservice for ApplyForUs Platform",
+  "author": "ApplyForUs Team",
   "private": true,
   "license": "MIT",
   "scripts": {
@@ -25,15 +25,17 @@
     "migration:revert": "npm run typeorm -- migration:revert -d src/config/data-source.ts"
   },
   "dependencies": {
-    "@jobpilot/telemetry": "workspace:*",
-    "@jobpilot/logging": "workspace:*",
-    "@jobpilot/security": "workspace:*",
+    "@applyforus/telemetry": "workspace:*",
+    "@applyforus/logging": "workspace:*",
+    "@applyforus/security": "workspace:*",
     "@elastic/elasticsearch": "^8.11.0",
     "@nestjs/axios": "^3.0.1",
     "@nestjs/bull": "^10.0.1",
     "@nestjs/common": "^10.2.10",
     "@nestjs/config": "^3.1.1",
     "@nestjs/core": "^10.2.10",
+    "@nestjs/jwt": "^10.2.0",
+    "@nestjs/passport": "^10.0.3",
     "@nestjs/platform-express": "^10.2.10",
     "@nestjs/schedule": "^4.0.0",
     "@nestjs/swagger": "^7.1.16",

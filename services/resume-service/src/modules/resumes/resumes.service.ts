@@ -32,7 +32,7 @@ export class ResumesService {
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
   ) {
-    this.aiServiceUrl = this.configService.get<string>('AI_SERVICE_URL');
+    this.aiServiceUrl = this.configService.get<string>('AI_SERVICE_URL') || 'http://localhost:8000';
   }
 
   async create(userId: string, createResumeDto: CreateResumeDto): Promise<Resume> {
@@ -318,7 +318,14 @@ export class ResumesService {
     try {
       // Call AI service for optimization
       const response = await firstValueFrom(
-        this.httpService.post(
+        this.httpService.post<{
+          optimized_content?: any;
+          suggestions?: string[];
+          projected_score?: number;
+          summary?: string;
+          missing_keywords?: string[];
+          matched_keywords?: string[];
+        }>(
           `${this.aiServiceUrl}/resume/optimize`,
           {
             resume_id: resumeId,

@@ -12,7 +12,7 @@ import {
   AutofillError,
   AdapterMetadata,
   FormSubmissionResult,
-  ATSPlatform,
+  
   AutofillProgress,
   WaitForElementOptions,
 } from './types';
@@ -32,7 +32,7 @@ export abstract class BaseAdapter {
   protected progressTracker: ProgressTracker;
 
   protected config: AutofillConfig;
-  protected resumeData: ResumeData;
+  protected resumeData!: ResumeData;
   protected errors: AutofillError[] = [];
   protected warnings: string[] = [];
 
@@ -126,7 +126,7 @@ export abstract class BaseAdapter {
       }
 
       // Handle custom questions
-      let customQuestions = [];
+      let customQuestions: any[] = [];
       if (!this.config.skipCustomQuestions) {
         customQuestions = await this.handleCustomQuestions();
       }
@@ -136,10 +136,9 @@ export abstract class BaseAdapter {
       const missingRequired = await this.validateForm(fields);
 
       // Auto-submit if configured
-      let submissionResult = null;
+      // Auto-submit if configured
       if (this.config.autoSubmit && missingRequired.length === 0) {
         this.progressTracker.updateStatus('submitting', 'Submitting form...');
-        submissionResult = await this.submitForm();
       }
 
       // Cleanup
@@ -158,12 +157,12 @@ export abstract class BaseAdapter {
         missingRequired,
       };
     } catch (error) {
-      this.progressTracker.updateStatus('error', `Error: ${error.message}`);
-      this.progressTracker.error(error.message);
+      this.progressTracker.updateStatus('error', `Error: ${error instanceof Error ? error.message : 'Unknown error occurred'}`);
+      this.progressTracker.error(error instanceof Error ? error.message : 'Unknown error occurred');
 
       this.errors.push({
         field: 'general',
-        message: error.message,
+        message: error instanceof Error ? error.message : 'Unknown error occurred',
         type: 'interaction_failed',
         severity: 'error',
       });
@@ -234,13 +233,13 @@ export abstract class BaseAdapter {
         }
 
         // Add delay between fields to avoid triggering anti-bot measures
-        if (this.config.fillDelay > 0) {
+        if (this.config.fillDelay && this.config.fillDelay > 0) {
           await this.delay(this.config.fillDelay);
         }
       } catch (error) {
         this.errors.push({
           field: field.label || field.name,
-          message: error.message,
+          message: error instanceof Error ? error.message : 'Unknown error occurred',
           type: 'interaction_failed',
           severity: 'error',
         });
@@ -375,7 +374,7 @@ export abstract class BaseAdapter {
       } catch (error) {
         this.errors.push({
           field: 'file_upload',
-          message: error.message,
+          message: error instanceof Error ? error.message : 'Unknown error occurred',
           type: 'interaction_failed',
           severity: 'error',
         });

@@ -106,8 +106,8 @@ describe('AuthService', () => {
         'security.lockoutDuration': 900,
         'jwt.accessTokenExpiresIn': '15m',
         'jwt.refreshTokenExpiresIn': '7d',
-        'jwt.issuer': 'jobpilot',
-        'jwt.audience': 'jobpilot-users',
+        'jwt.issuer': 'applyforus',
+        'jwt.audience': 'applyforus-users',
         'email.verificationExpiresIn': 86400,
         'email.passwordResetExpiresIn': 3600,
       };
@@ -693,7 +693,7 @@ describe('AuthService', () => {
       const mockSecret = {
         base32: 'JBSWY3DPEHPK3PXP',
         otpauth_url:
-          'otpauth://totp/JobPilot%20(test@example.com)?secret=JBSWY3DPEHPK3PXP&issuer=JobPilot',
+          'otpauth://totp/ApplyForUs%20(test@example.com)?secret=JBSWY3DPEHPK3PXP&issuer=ApplyForUs',
       };
       const mockQrCode = 'data:image/png;base64,iVBORw0KGgoAAAANS...';
 

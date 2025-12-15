@@ -5,7 +5,7 @@ import { BullModule } from '@nestjs/bull';
 import { ScheduleModule } from '@nestjs/schedule';
 import { HttpModule } from '@nestjs/axios';
 import { APP_INTERCEPTOR } from '@nestjs/core';
-import { LoggingModule, LoggingInterceptor } from '@jobpilot/logging';
+import { LoggingModule, LoggingInterceptor } from '@applyforus/logging';
 
 // Configuration
 import { databaseConfig } from './config/database.config';
@@ -19,6 +19,9 @@ import { AlertsModule } from './modules/alerts/alerts.module';
 import { SearchModule } from './modules/search/search.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { AggregatorModule } from './modules/aggregator/aggregator.module';
+import { PlaybooksModule } from './modules/playbooks/playbooks.module';
+import { NormalizationModule } from './modules/normalization/normalization.module';
+import { IngestionModule } from './modules/ingestion/ingestion.module';
 import { HealthModule } from './health/health.module';
 import { SeederModule } from './seeds/seeder.module';
 
@@ -119,6 +122,9 @@ import { SeederModule } from './seeds/seeder.module';
     ReportsModule,
     SeederModule,
     AggregatorModule,
+    PlaybooksModule,
+    NormalizationModule,
+    IngestionModule,
   ],
   controllers: [],
   providers: [

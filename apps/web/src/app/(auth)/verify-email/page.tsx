@@ -73,7 +73,7 @@ function VerifyEmailContent() {
           Email Verified Successfully!
         </h1>
         <p className="text-gray-600 dark:text-gray-400 mb-6">
-          Your email address has been verified. You can now access all features of JobPilot AI.
+          Your email address has been verified. You can now access all features of ApplyForUs.
         </p>
         <p className="text-sm text-gray-500 dark:text-gray-500 mb-6">
           Redirecting you to the login page...

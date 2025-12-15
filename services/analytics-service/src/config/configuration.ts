@@ -13,7 +13,7 @@ export default () => ({
     port: parseInt(process.env.DB_PORT || '5432', 10),
     username: process.env.DB_USERNAME || 'postgres',
     password: process.env.DB_PASSWORD || 'postgres',
-    database: process.env.DB_NAME || 'jobpilot_analytics',
+    database: process.env.DB_NAME || 'applyforus_analytics',
     synchronize: process.env.DB_SYNCHRONIZE === 'true' || false,
     logging: process.env.DB_LOGGING === 'true' || false,
   },

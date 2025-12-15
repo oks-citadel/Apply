@@ -56,7 +56,7 @@ export class EmailService {
       const mailOptions = {
         from: this.fromEmail,
         to: email,
-        subject: 'Verify Your Email - JobPilot AI Platform',
+        subject: 'Verify Your Email - ApplyForUs AI Platform',
         html: `
           <!DOCTYPE html>
           <html>
@@ -110,11 +110,11 @@ export class EmailService {
             </head>
             <body>
               <div class="header">
-                <h1>Welcome to JobPilot AI!</h1>
+                <h1>Welcome to ApplyForUs AI!</h1>
               </div>
               <div class="content">
                 <h2>Verify Your Email Address</h2>
-                <p>Thank you for registering with JobPilot AI Platform. To complete your registration, please verify your email address by clicking the button below:</p>
+                <p>Thank you for registering with ApplyForUs AI Platform. To complete your registration, please verify your email address by clicking the button below:</p>
 
                 <div style="text-align: center;">
                   <a href="${verificationUrl}" class="button">Verify Email Address</a>
@@ -125,33 +125,33 @@ export class EmailService {
 
                 <p><strong>This verification link will expire in 24 hours.</strong></p>
 
-                <p>If you didn't create an account with JobPilot AI, please ignore this email.</p>
+                <p>If you didn't create an account with ApplyForUs AI, please ignore this email.</p>
 
-                <p>Best regards,<br>The JobPilot AI Team</p>
+                <p>Best regards,<br>The ApplyForUs AI Team</p>
               </div>
               <div class="footer">
-                <p>&copy; ${new Date().getFullYear()} JobPilot AI Platform. All rights reserved.</p>
+                <p>&copy; ${new Date().getFullYear()} ApplyForUs AI Platform. All rights reserved.</p>
               </div>
             </body>
           </html>
         `,
         text: `
-Welcome to JobPilot AI!
+Welcome to ApplyForUs AI!
 
 Verify Your Email Address
 
-Thank you for registering with JobPilot AI Platform. To complete your registration, please verify your email address by visiting this link:
+Thank you for registering with ApplyForUs AI Platform. To complete your registration, please verify your email address by visiting this link:
 
 ${verificationUrl}
 
 This verification link will expire in 24 hours.
 
-If you didn't create an account with JobPilot AI, please ignore this email.
+If you didn't create an account with ApplyForUs AI, please ignore this email.
 
 Best regards,
-The JobPilot AI Team
+The ApplyForUs AI Team
 
-© ${new Date().getFullYear()} JobPilot AI Platform. All rights reserved.
+© ${new Date().getFullYear()} ApplyForUs AI Platform. All rights reserved.
         `,
       };
 
@@ -178,7 +178,7 @@ The JobPilot AI Team
       const mailOptions = {
         from: this.fromEmail,
         to: email,
-        subject: 'Reset Your Password - JobPilot AI Platform',
+        subject: 'Reset Your Password - ApplyForUs AI Platform',
         html: `
           <!DOCTYPE html>
           <html>
@@ -242,7 +242,7 @@ The JobPilot AI Team
               </div>
               <div class="content">
                 <h2>Reset Your Password</h2>
-                <p>We received a request to reset your password for your JobPilot AI account. Click the button below to reset your password:</p>
+                <p>We received a request to reset your password for your ApplyForUs AI account. Click the button below to reset your password:</p>
 
                 <div style="text-align: center;">
                   <a href="${resetUrl}" class="button">Reset Password</a>
@@ -264,10 +264,10 @@ The JobPilot AI Team
                   <li>Enable two-factor authentication</li>
                 </ul>
 
-                <p>Best regards,<br>The JobPilot AI Team</p>
+                <p>Best regards,<br>The ApplyForUs AI Team</p>
               </div>
               <div class="footer">
-                <p>&copy; ${new Date().getFullYear()} JobPilot AI Platform. All rights reserved.</p>
+                <p>&copy; ${new Date().getFullYear()} ApplyForUs AI Platform. All rights reserved.</p>
               </div>
             </body>
           </html>
@@ -277,7 +277,7 @@ Password Reset Request
 
 Reset Your Password
 
-We received a request to reset your password for your JobPilot AI account. Visit this link to reset your password:
+We received a request to reset your password for your ApplyForUs AI account. Visit this link to reset your password:
 
 ${resetUrl}
 
@@ -291,9 +291,9 @@ For security reasons, we recommend that you:
 - Enable two-factor authentication
 
 Best regards,
-The JobPilot AI Team
+The ApplyForUs AI Team
 
-© ${new Date().getFullYear()} JobPilot AI Platform. All rights reserved.
+© ${new Date().getFullYear()} ApplyForUs AI Platform. All rights reserved.
         `,
       };
 
@@ -320,7 +320,7 @@ The JobPilot AI Team
       const mailOptions = {
         from: this.fromEmail,
         to: email,
-        subject: 'Welcome to JobPilot AI Platform!',
+        subject: 'Welcome to ApplyForUs AI Platform!',
         html: `
           <!DOCTYPE html>
           <html>
@@ -372,11 +372,11 @@ The JobPilot AI Team
             </head>
             <body>
               <div class="header">
-                <h1>Welcome to JobPilot AI! 🎉</h1>
+                <h1>Welcome to ApplyForUs AI! 🎉</h1>
               </div>
               <div class="content">
                 <h2>Hi ${name}!</h2>
-                <p>Your email has been verified successfully. Welcome to JobPilot AI Platform!</p>
+                <p>Your email has been verified successfully. Welcome to ApplyForUs AI Platform!</p>
 
                 <div class="features">
                   <h3>Get Started:</h3>
@@ -394,20 +394,20 @@ The JobPilot AI Team
 
                 <p>If you have any questions or need assistance, feel free to reach out to our support team.</p>
 
-                <p>Best regards,<br>The JobPilot AI Team</p>
+                <p>Best regards,<br>The ApplyForUs AI Team</p>
               </div>
               <div class="footer">
-                <p>&copy; ${new Date().getFullYear()} JobPilot AI Platform. All rights reserved.</p>
+                <p>&copy; ${new Date().getFullYear()} ApplyForUs AI Platform. All rights reserved.</p>
               </div>
             </body>
           </html>
         `,
         text: `
-Welcome to JobPilot AI!
+Welcome to ApplyForUs AI!
 
 Hi ${name}!
 
-Your email has been verified successfully. Welcome to JobPilot AI Platform!
+Your email has been verified successfully. Welcome to ApplyForUs AI Platform!
 
 Get Started:
 - Complete your profile
@@ -420,9 +420,9 @@ Visit your dashboard: ${this.frontendUrl}/dashboard
 If you have any questions or need assistance, feel free to reach out to our support team.
 
 Best regards,
-The JobPilot AI Team
+The ApplyForUs AI Team
 
-© ${new Date().getFullYear()} JobPilot AI Platform. All rights reserved.
+© ${new Date().getFullYear()} ApplyForUs AI Platform. All rights reserved.
         `,
       };
 

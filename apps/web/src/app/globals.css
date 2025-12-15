@@ -2,50 +2,85 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ============================================
+   APPLYFORUS FUTURISTIC DESIGN SYSTEM
+   Deep Black + Neon Yellow + Electric Green
+   ============================================ */
+
 @layer base {
   :root {
+    /* Light Mode - Still clean but with brand accents */
     --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --foreground: 0 0% 7%;
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 0 0% 7%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
-    --radius: 0.5rem;
+    --popover-foreground: 0 0% 7%;
+
+    /* Primary: Neon Yellow */
+    --primary: 54 100% 50%;
+    --primary-foreground: 0 0% 7%;
+
+    /* Secondary: Electric Green */
+    --secondary: 142 76% 45%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 45%;
+    --accent: 142 76% 45%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 54 100% 50%;
+    --radius: 0.75rem;
+
+    /* Futuristic Brand Colors */
+    --neon-yellow: 54 100% 50%;
+    --electric-green: 142 76% 45%;
+    --deep-black: 0 0% 7%;
+    --soft-black: 0 0% 12%;
+
+    /* Glow Effects */
+    --glow-yellow: 0 0 20px hsla(54, 100%, 50%, 0.5);
+    --glow-green: 0 0 20px hsla(142, 76%, 45%, 0.5);
+    --glow-yellow-strong: 0 0 40px hsla(54, 100%, 50%, 0.7);
+    --glow-green-strong: 0 0 40px hsla(142, 76%, 45%, 0.7);
   }
 
+  /* Dark Mode - The Primary Experience */
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 48%;
+    --background: 0 0% 5%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 8%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 8%;
+    --popover-foreground: 0 0% 98%;
+
+    /* Primary: Neon Yellow */
+    --primary: 54 100% 50%;
+    --primary-foreground: 0 0% 7%;
+
+    /* Secondary: Electric Green */
+    --secondary: 142 76% 50%;
+    --secondary-foreground: 0 0% 7%;
+
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 65%;
+    --accent: 142 76% 50%;
+    --accent-foreground: 0 0% 7%;
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 18%;
+    --input: 0 0% 18%;
+    --ring: 54 100% 50%;
+
+    /* Futuristic Brand Colors - More Vibrant in Dark */
+    --neon-yellow: 54 100% 55%;
+    --electric-green: 142 76% 55%;
+    --deep-black: 0 0% 5%;
+    --soft-black: 0 0% 10%;
   }
 }
 
@@ -57,6 +92,16 @@
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
+
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Selection color */
+  ::selection {
+    @apply bg-neonYellow/30 text-foreground;
+  }
 }
 
 @layer utilities {
@@ -66,5 +111,102 @@
   }
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
+  }
+
+  /* Futuristic Gradient Utilities */
+  .gradient-yellow-green {
+    @apply bg-gradient-to-r from-neonYellow to-electricGreen;
+  }
+  .gradient-green-black {
+    @apply bg-gradient-to-r from-electricGreen to-deepBlack;
+  }
+  .gradient-yellow-black {
+    @apply bg-gradient-to-r from-neonYellow to-deepBlack;
+  }
+  .gradient-radial-glow {
+    background: radial-gradient(circle at center, hsla(54, 100%, 50%, 0.15) 0%, transparent 70%);
+  }
+
+  /* Glow Effects */
+  .glow-yellow {
+    box-shadow: var(--glow-yellow);
+  }
+  .glow-green {
+    box-shadow: var(--glow-green);
+  }
+  .glow-yellow-strong {
+    box-shadow: var(--glow-yellow-strong);
+  }
+  .glow-green-strong {
+    box-shadow: var(--glow-green-strong);
+  }
+
+  /* Text Glow */
+  .text-glow-yellow {
+    text-shadow: 0 0 20px hsla(54, 100%, 50%, 0.5);
+  }
+  .text-glow-green {
+    text-shadow: 0 0 20px hsla(142, 76%, 45%, 0.5);
+  }
+
+  /* Animated Gradient Text */
+  .text-gradient-animated {
+    background: linear-gradient(90deg, #FACC15, #22C55E, #FACC15);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: gradient-shift 3s ease infinite;
+  }
+
+  /* Glass Effect */
+  .glass {
+    @apply bg-white/5 backdrop-blur-md border border-white/10;
+  }
+  .glass-dark {
+    @apply bg-black/40 backdrop-blur-md border border-white/10;
+  }
+
+  /* Futuristic Border */
+  .border-glow-yellow {
+    border: 1px solid hsla(54, 100%, 50%, 0.3);
+    box-shadow: inset 0 0 20px hsla(54, 100%, 50%, 0.05);
+  }
+  .border-glow-green {
+    border: 1px solid hsla(142, 76%, 45%, 0.3);
+    box-shadow: inset 0 0 20px hsla(142, 76%, 45%, 0.05);
+  }
+}
+
+/* Keyframes */
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 1; box-shadow: 0 0 20px hsla(54, 100%, 50%, 0.5); }
+  50% { opacity: 0.8; box-shadow: 0 0 40px hsla(54, 100%, 50%, 0.8); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes scan-line {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

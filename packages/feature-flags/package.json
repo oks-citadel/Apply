@@ -1,7 +1,7 @@
 {
-  "name": "@jobpilot/feature-flags",
+  "name": "@applyforus/feature-flags",
   "version": "1.0.0",
-  "description": "Feature flag system for JobPilot AI Platform",
+  "description": "Feature flag system for ApplyForUs AI Platform",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {

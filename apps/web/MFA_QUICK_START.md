@@ -23,7 +23,7 @@
 2. Click **"Sign In"**
 3. You'll see a new screen asking for a verification code
 4. Open your authenticator app
-5. Enter the 6-digit code shown for JobPilot
+5. Enter the 6-digit code shown for ApplyForUs
 6. Click **"Verify and Sign In"**
 7. You're logged in!
 

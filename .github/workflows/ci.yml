@@ -365,4 +365,4 @@ jobs:
 
       - name: Deploy to preview
         id: deploy
-        run: echo "url=https://preview-${{ github.event.pull_request.number }}.jobpilot.dev" >> $GITHUB_OUTPUT
+        run: echo "url=https://preview-${{ github.event.pull_request.number }}.applyforus.com" >> $GITHUB_OUTPUT

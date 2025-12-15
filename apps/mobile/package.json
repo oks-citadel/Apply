@@ -1,7 +1,7 @@
 {
-  "name": "@jobpilot/mobile",
+  "name": "@applyforus/mobile",
   "version": "1.0.0",
-  "description": "JobPilot AI Platform Mobile Application",
+  "description": "ApplyForUs AI Platform Mobile Application",
   "main": "index.js",
   "scripts": {
     "android": "react-native run-android",

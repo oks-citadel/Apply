@@ -197,7 +197,7 @@ export class FieldDetector {
 
     // Try placeholder
     if ('placeholder' in element && element.placeholder) {
-      return this.cleanLabel(element.placeholder);
+      return this.cleanLabel(element.getAttribute('name') || '');
     }
 
     // Try name attribute

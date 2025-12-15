@@ -371,7 +371,7 @@ describe('Job Boards Integration', () => {
           q: 'software engineer',
           l: 'San Francisco',
           userip: '0.0.0.0',
-          useragent: 'JobPilot',
+          useragent: 'ApplyForUs',
           format: 'json',
           v: '1',
         };

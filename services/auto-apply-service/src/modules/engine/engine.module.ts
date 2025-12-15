@@ -1,7 +1,9 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { HttpModule } from '@nestjs/axios';
 import { EngineController } from './engine.controller';
 import { EngineService } from './engine.service';
+import { ServiceClientService } from './service-client.service';
 import { Application } from '../applications/entities/application.entity';
 import { ApplicationsModule } from '../applications/applications.module';
 import { BrowserModule } from '../browser/browser.module';
@@ -15,6 +17,7 @@ import { AnswerLibraryModule } from '../answer-library/answer-library.module';
 @Module({
   imports: [
     TypeOrmModule.forFeature([Application]),
+    HttpModule,
     forwardRef(() => ApplicationsModule),
     forwardRef(() => QueueModule),
     BrowserModule,
@@ -25,7 +28,7 @@ import { AnswerLibraryModule } from '../answer-library/answer-library.module';
     AnswerLibraryModule,
   ],
   controllers: [EngineController],
-  providers: [EngineService],
-  exports: [EngineService],
+  providers: [EngineService, ServiceClientService],
+  exports: [EngineService, ServiceClientService],
 })
 export class EngineModule {}

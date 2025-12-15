@@ -169,7 +169,7 @@ export class FormSubmitter {
       return {
         success: false,
         timestamp: new Date(),
-        errors: [error.message],
+        errors: [error instanceof Error ? error.message : 'Unknown error'],
       };
     }
   }

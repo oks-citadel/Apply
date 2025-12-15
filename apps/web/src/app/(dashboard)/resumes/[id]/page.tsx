@@ -1,22 +1,27 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { ArrowLeft, Download, Eye, Sparkles } from 'lucide-react';
+import { ArrowLeft, Download, Eye, Sparkles, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import Link from 'next/link';
-import { useResume, useUpdateResume } from '@/hooks/useResumes';
+import { useResume, useUpdateResume, useExportResume } from '@/hooks/useResumes';
+import { useOptimizeResume } from '@/hooks/useAI';
 import { WorkExperienceForm } from '@/components/forms/WorkExperienceForm';
 import { EducationForm } from '@/components/forms/EducationForm';
 import { SkillsForm } from '@/components/forms/SkillsForm';
 import type { Experience, Education, Skill, PersonalInfo } from '@/types/resume';
 import { useToast } from '@/hooks/useToast';
 import { logger } from '@/lib/logger';
+import { aiApi } from '@/lib/api/ai';
+import { ResumePreview } from '@/app/(dashboard)/ai-tools/resume-builder/components/ResumePreview';
 
 export default function ResumeDetailPage({ params }: { params: { id: string } }) {
   const { data: resume, isLoading: isLoadingResume, error } = useResume(params.id);
   const updateResume = useUpdateResume();
+  const exportResume = useExportResume();
+  const optimizeResume = useOptimizeResume();
   const { toast } = useToast();
 
   const [resumeName, setResumeName] = useState('');
@@ -34,6 +39,8 @@ export default function ResumeDetailPage({ params }: { params: { id: string } })
   const [experiences, setExperiences] = useState<Experience[]>([]);
   const [education, setEducation] = useState<Education[]>([]);
   const [skills, setSkills] = useState<Skill[]>([]);
+  const [showPreview, setShowPreview] = useState(false);
+  const [isLoadingSkillSuggestions, setIsLoadingSkillSuggestions] = useState(false);
 
   // Initialize form data from resume
   useEffect(() => {
@@ -104,36 +111,144 @@ export default function ResumeDetailPage({ params }: { params: { id: string } })
     }
   };
 
-  const handleAISuggestSkills = () => {
-    toast({
-      title: 'AI Suggestions',
-      description: 'AI skill suggestions feature coming soon!',
-      variant: 'info',
-    });
+  const handleAISuggestSkills = async () => {
+    if (!resume) return;
+
+    setIsLoadingSkillSuggestions(true);
+    try {
+      // Use skill gap analysis to get skill suggestions
+      const response = await aiApi.analyzeSkillGaps({
+        resumeId: params.id,
+        targetRole: experiences[0]?.position || 'Software Engineer',
+      });
+
+      // Convert suggested skills to the Skill format
+      const suggestedSkills: Skill[] = response.missingSkills
+        .filter(skillData => skillData.importance === 'critical' || skillData.importance === 'important')
+        .slice(0, 10)
+        .map((skillData, index) => ({
+          id: `suggested-${Date.now()}-${index}`,
+          name: skillData.skill,
+          category: 'technical' as const,
+          level: 'intermediate' as const,
+        }));
+
+      if (suggestedSkills.length === 0) {
+        toast({
+          title: 'No Suggestions',
+          description: 'Your resume already has comprehensive skills coverage!',
+          variant: 'info',
+        });
+        return;
+      }
+
+      // Merge with existing skills (avoid duplicates)
+      const existingSkillNames = new Set(skills.map(s => s.name.toLowerCase()));
+      const newSkills = suggestedSkills.filter(
+        s => !existingSkillNames.has(s.name.toLowerCase())
+      );
+
+      if (newSkills.length > 0) {
+        const updatedSkills = [...skills, ...newSkills];
+        setSkills(updatedSkills);
+
+        await updateResume.mutateAsync({
+          id: params.id,
+          data: { skills: updatedSkills },
+        });
+
+        toast({
+          title: 'Skills Added',
+          description: `Added ${newSkills.length} suggested skill${newSkills.length > 1 ? 's' : ''} to your resume.`,
+          variant: 'success',
+        });
+      } else {
+        toast({
+          title: 'All Skills Present',
+          description: 'All suggested skills are already in your resume!',
+          variant: 'info',
+        });
+      }
+    } catch (error) {
+      logger.error('Failed to suggest skills', error as Error, { resumeId: params.id });
+      toast({
+        title: 'Failed to Suggest Skills',
+        description: error instanceof Error ? error.message : 'An error occurred.',
+        variant: 'error',
+      });
+    } finally {
+      setIsLoadingSkillSuggestions(false);
+    }
   };
 
-  const handleAIOptimize = () => {
-    toast({
-      title: 'AI Optimization',
-      description: 'AI optimization feature coming soon!',
-      variant: 'info',
-    });
+  const handleAIOptimize = async () => {
+    if (!resume) return;
+
+    try {
+      await optimizeResume.mutateAsync({
+        resumeId: params.id,
+        jobDescription: '',
+        focusAreas: ['all'],
+      });
+
+      const optimizedData = optimizeResume.data;
+      if (optimizedData) {
+        let updateData: any = {};
+
+        if (optimizedData.optimizedContent.summary) {
+          setSummary(optimizedData.optimizedContent.summary);
+          updateData.summary = optimizedData.optimizedContent.summary;
+        }
+
+        if (optimizedData.optimizedContent.skills && optimizedData.optimizedContent.skills.length > 0) {
+          const optimizedSkills: Skill[] = optimizedData.optimizedContent.skills.map((skill, idx) => ({
+            id: `optimized-${Date.now()}-${idx}`,
+            name: skill,
+            category: 'technical' as const,
+            level: 'intermediate' as const,
+          }));
+          setSkills(optimizedSkills);
+          updateData.skills = optimizedSkills;
+        }
+
+        if (Object.keys(updateData).length > 0) {
+          await updateResume.mutateAsync({
+            id: params.id,
+            data: updateData,
+          });
+
+          toast({
+            title: 'Resume Optimized',
+            description: `Applied ${optimizedData.suggestions.length} optimization${optimizedData.suggestions.length > 1 ? 's' : ''}.`,
+            variant: 'success',
+          });
+        }
+      }
+    } catch (error) {
+      logger.error('Failed to optimize resume', error as Error, { resumeId: params.id });
+      toast({
+        title: 'Optimization Failed',
+        description: error instanceof Error ? error.message : 'An error occurred.',
+        variant: 'error',
+      });
+    }
   };
 
   const handlePreview = () => {
-    toast({
-      title: 'Preview',
-      description: 'Resume preview feature coming soon!',
-      variant: 'info',
-    });
+    setShowPreview(!showPreview);
   };
 
-  const handleDownload = () => {
-    toast({
-      title: 'Download',
-      description: 'Resume download feature coming soon!',
-      variant: 'info',
-    });
+  const handleDownload = async () => {
+    if (!resume) return;
+
+    try {
+      await exportResume.mutateAsync({
+        id: params.id,
+        format: 'pdf',
+      });
+    } catch (error) {
+      logger.error('Failed to download resume', error as Error, { resumeId: params.id });
+    }
   };
 
   if (isLoadingResume) {
@@ -191,22 +306,47 @@ export default function ResumeDetailPage({ params }: { params: { id: string } })
         <div className="flex items-center space-x-3">
           <Button variant="outline" onClick={handlePreview}>
             <Eye className="w-4 h-4 mr-2" />
-            Preview
+            {showPreview ? 'Hide Preview' : 'Show Preview'}
           </Button>
-          <Button variant="outline" onClick={handleDownload}>
-            <Download className="w-4 h-4 mr-2" />
-            Download PDF
+          <Button
+            variant="outline"
+            onClick={handleDownload}
+            disabled={exportResume.isPending}
+          >
+            {exportResume.isPending ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Downloading...
+              </>
+            ) : (
+              <>
+                <Download className="w-4 h-4 mr-2" />
+                Download PDF
+              </>
+            )}
           </Button>
-          <Button onClick={handleAIOptimize}>
-            <Sparkles className="w-4 h-4 mr-2" />
-            AI Optimize
+          <Button
+            onClick={handleAIOptimize}
+            disabled={optimizeResume.isPending}
+          >
+            {optimizeResume.isPending ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Optimizing...
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-4 h-4 mr-2" />
+                AI Optimize
+              </>
+            )}
           </Button>
         </div>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-6">
+      <div className={`grid ${showPreview ? 'lg:grid-cols-2' : 'lg:grid-cols-3'} gap-6`}>
         {/* Editor */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className={`${showPreview ? 'lg:col-span-1' : 'lg:col-span-2'} space-y-6`}>
           <Card>
             <CardHeader>
               <CardTitle>Resume Information</CardTitle>
@@ -395,9 +535,19 @@ export default function ResumeDetailPage({ params }: { params: { id: string } })
                 variant="outline"
                 className="w-full justify-start"
                 onClick={handleAIOptimize}
+                disabled={optimizeResume.isPending}
               >
-                <Sparkles className="w-4 h-4 mr-2" />
-                Optimize for ATS
+                {optimizeResume.isPending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Optimizing...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    Optimize for ATS
+                  </>
+                )}
               </Button>
               <Button
                 variant="outline"
@@ -417,9 +567,19 @@ export default function ResumeDetailPage({ params }: { params: { id: string } })
                 variant="outline"
                 className="w-full justify-start"
                 onClick={handleAISuggestSkills}
+                disabled={isLoadingSkillSuggestions}
               >
-                <Sparkles className="w-4 h-4 mr-2" />
-                Suggest Skills
+                {isLoadingSkillSuggestions ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Suggesting...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    Suggest Skills
+                  </>
+                )}
               </Button>
             </CardContent>
           </Card>
@@ -519,6 +679,31 @@ export default function ResumeDetailPage({ params }: { params: { id: string } })
             </Card>
           )}
         </div>
+
+        {/* Preview Panel */}
+        {showPreview && (
+          <div className="lg:col-span-1">
+            <Card className="sticky top-6">
+              <CardHeader>
+                <CardTitle>Resume Preview</CardTitle>
+                <CardDescription>Live preview of your resume</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ResumePreview
+                  data={{
+                    name: resumeName,
+                    personalInfo,
+                    summary,
+                    experience: experiences,
+                    education,
+                    skills,
+                    projects: [],
+                  }}
+                />
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -4,14 +4,14 @@ services:
   # Test PostgreSQL Database
   postgres-test:
     image: postgres:15-alpine
-    container_name: jobpilot-postgres-test
+    container_name: applyforus-postgres-test
     restart: unless-stopped
     ports:
       - '5433:5432'
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: jobpilot_test
+      POSTGRES_DB: applyforus_test
       POSTGRES_INITDB_ARGS: '-A md5'
     volumes:
       - postgres_test_data:/var/lib/postgresql/data
@@ -27,7 +27,7 @@ services:
   # Test Redis Cache
   redis-test:
     image: redis:7-alpine
-    container_name: jobpilot-redis-test
+    container_name: applyforus-redis-test
     restart: unless-stopped
     ports:
       - '6380:6379'
@@ -45,7 +45,7 @@ services:
   # Test Elasticsearch
   elasticsearch-test:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
-    container_name: jobpilot-elasticsearch-test
+    container_name: applyforus-elasticsearch-test
     restart: unless-stopped
     ports:
       - '9201:9200'
@@ -69,7 +69,7 @@ services:
     build:
       context: .
       dockerfile: services/auth-service/Dockerfile
-    container_name: jobpilot-auth-service-test
+    container_name: applyforus-auth-service-test
     restart: unless-stopped
     ports:
       - '3001:3001'
@@ -104,7 +104,7 @@ services:
     build:
       context: .
       dockerfile: services/user-service/Dockerfile
-    container_name: jobpilot-user-service-test
+    container_name: applyforus-user-service-test
     restart: unless-stopped
     ports:
       - '8002:8002'
@@ -135,7 +135,7 @@ services:
     build:
       context: .
       dockerfile: services/job-service/Dockerfile
-    container_name: jobpilot-job-service-test
+    container_name: applyforus-job-service-test
     restart: unless-stopped
     ports:
       - '3003:3003'
@@ -170,7 +170,7 @@ services:
     build:
       context: .
       dockerfile: services/resume-service/Dockerfile
-    container_name: jobpilot-resume-service-test
+    container_name: applyforus-resume-service-test
     restart: unless-stopped
     ports:
       - '3004:3004'
@@ -198,7 +198,7 @@ services:
     build:
       context: .
       dockerfile: services/ai-service/Dockerfile
-    container_name: jobpilot-ai-service-test
+    container_name: applyforus-ai-service-test
     restart: unless-stopped
     ports:
       - '8000:8000'
@@ -224,7 +224,7 @@ services:
     build:
       context: .
       dockerfile: services/notification-service/Dockerfile
-    container_name: jobpilot-notification-service-test
+    container_name: applyforus-notification-service-test
     restart: unless-stopped
     ports:
       - '3006:3006'
@@ -258,7 +258,7 @@ services:
     build:
       context: .
       dockerfile: services/auto-apply-service/Dockerfile
-    container_name: jobpilot-auto-apply-service-test
+    container_name: applyforus-auto-apply-service-test
     restart: unless-stopped
     ports:
       - '3007:3007'
@@ -291,7 +291,7 @@ services:
   # Mailhog for testing email notifications
   mailhog-test:
     image: mailhog/mailhog:latest
-    container_name: jobpilot-mailhog-test
+    container_name: applyforus-mailhog-test
     restart: unless-stopped
     ports:
       - '1026:1025' # SMTP

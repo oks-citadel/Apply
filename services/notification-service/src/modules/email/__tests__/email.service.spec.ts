@@ -15,8 +15,8 @@ describe('EmailService', () => {
     get: jest.fn((key: string, defaultValue?: any) => {
       const config = {
         FRONTEND_URL: 'http://localhost:3000',
-        EMAIL_FROM: 'noreply@jobpilot.com',
-        EMAIL_FROM_NAME: 'JobPilot',
+        EMAIL_FROM: 'noreply@applyforus.com',
+        EMAIL_FROM_NAME: 'ApplyForUs',
         SMTP_HOST: 'localhost',
         SMTP_PORT: 1025,
         SMTP_SECURE: false,
@@ -79,7 +79,7 @@ describe('EmailService', () => {
 
       expect(result.messageId).toBe(messageId);
       expect(mockTransporter.sendMail).toHaveBeenCalledWith({
-        from: '"JobPilot" <noreply@jobpilot.com>',
+        from: '"ApplyForUs" <noreply@applyforus.com>',
         to: 'test@example.com',
         subject: 'Test Subject',
         text: 'Test body content',
@@ -100,7 +100,7 @@ describe('EmailService', () => {
 
       expect(result.messageId).toBe(messageId);
       expect(mockTransporter.sendMail).toHaveBeenCalledWith({
-        from: '"JobPilot" <noreply@jobpilot.com>',
+        from: '"ApplyForUs" <noreply@applyforus.com>',
         to: 'test@example.com',
         subject: 'Test HTML Email',
         html: htmlContent,
@@ -474,7 +474,7 @@ describe('EmailService', () => {
       await service.sendEmail('test@example.com', 'Test', 'Body', false);
 
       const callArgs = mockTransporter.sendMail.mock.calls[0][0];
-      expect(callArgs.from).toBe('"JobPilot" <noreply@jobpilot.com>');
+      expect(callArgs.from).toBe('"ApplyForUs" <noreply@applyforus.com>');
     });
   });
 

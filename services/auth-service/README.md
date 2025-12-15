@@ -1,6 +1,6 @@
 # Auth Service
 
-Authentication and authorization microservice for JobPilot AI Platform.
+Authentication and authorization microservice for ApplyForUs AI Platform.
 
 ## Overview
 
@@ -55,10 +55,10 @@ PORT=8001
 NODE_ENV=development
 
 # Database
-DATABASE_URL=postgresql://postgres:postgres@localhost:5434/jobpilot
+DATABASE_URL=postgresql://postgres:postgres@localhost:5434/applyforus
 POSTGRES_HOST=localhost
 POSTGRES_PORT=5434
-POSTGRES_DB=jobpilot
+POSTGRES_DB=applyforus
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=postgres
 
@@ -384,10 +384,10 @@ Logs are structured JSON format:
 
 ```bash
 # Build image
-docker build -t jobpilot/auth-service:latest .
+docker build -t applyforus/auth-service:latest .
 
 # Run container
-docker run -p 8001:8001 --env-file .env jobpilot/auth-service:latest
+docker run -p 8001:8001 --env-file .env applyforus/auth-service:latest
 ```
 
 ### Kubernetes
@@ -409,7 +409,7 @@ kubectl get pods -l app=auth-service
 docker ps | grep postgres
 
 # Test connection
-psql postgresql://postgres:postgres@localhost:5434/jobpilot
+psql postgresql://postgres:postgres@localhost:5434/applyforus
 ```
 
 ### Redis Connection Issues
@@ -439,6 +439,6 @@ Proprietary - All rights reserved
 ## Support
 
 For issues and questions:
-- Email: dev@jobpilot.ai
-- Documentation: https://docs.jobpilot.ai
+- Email: dev@applyforus.ai
+- Documentation: https://docs.applyforus.ai
 - GitHub Issues: https://github.com/your-org/Job-Apply-Platform/issues

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';; // React import for JSX
 import { useExtensionStore } from './store';
 import Header from './components/Header';
 import LoginForm from './components/LoginForm';

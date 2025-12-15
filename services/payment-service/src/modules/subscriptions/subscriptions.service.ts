@@ -229,12 +229,12 @@ export class SubscriptionsService {
         // Create a FREE tier subscription if none exists
         return await this.create({
           userId,
-          tier: SubscriptionTier.FREE,
+          tier: SubscriptionTier.FREEMIUM,
           status: SubscriptionStatus.ACTIVE,
         });
       }
 
-      subscription.tier = SubscriptionTier.FREE;
+      subscription.tier = SubscriptionTier.FREEMIUM;
       subscription.status = SubscriptionStatus.ACTIVE;
       subscription.stripeCustomerId = null;
       subscription.stripeSubscriptionId = null;
@@ -298,7 +298,7 @@ export class SubscriptionsService {
     const subscription = await this.findByUserId(userId);
 
     if (!subscription || !subscription.hasAccess()) {
-      const freeLimits = this.getSubscriptionLimits(SubscriptionTier.FREE);
+      const freeLimits = this.getSubscriptionLimits(SubscriptionTier.FREEMIUM);
       const limit = this.getUsageLimit(freeLimits, usageType);
 
       return {

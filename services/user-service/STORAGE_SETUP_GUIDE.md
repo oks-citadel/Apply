@@ -79,7 +79,7 @@ If you want profile pictures to be publicly accessible:
 1. Go to [IAM Console](https://console.aws.amazon.com/iam/)
 2. Click "Users" → "Add users"
 3. Configure:
-   - **User name**: `jobpilot-s3-user`
+   - **User name**: `applyforus-s3-user`
    - **Access type**: Access key - Programmatic access
 4. Click "Next: Permissions"
 
@@ -118,7 +118,7 @@ Click "Create policy" and use this JSON:
 }
 ```
 
-3. Name the policy: `JobPilotS3Policy`
+3. Name the policy: `ApplyForUsS3Policy`
 4. Attach it to your user
 5. Click "Create user"
 6. **IMPORTANT**: Save the Access Key ID and Secret Access Key
@@ -225,17 +225,17 @@ For security and debugging:
 
 **Development**:
 ```env
-AWS_S3_BUCKET=jobpilot-dev-uploads
+AWS_S3_BUCKET=applyforus-dev-uploads
 ```
 
 **Staging**:
 ```env
-AWS_S3_BUCKET=jobpilot-staging-uploads
+AWS_S3_BUCKET=applyforus-staging-uploads
 ```
 
 **Production**:
 ```env
-AWS_S3_BUCKET=jobpilot-prod-uploads
+AWS_S3_BUCKET=applyforus-prod-uploads
 ```
 
 ### Use AWS Secrets Manager (Recommended)
@@ -251,7 +251,7 @@ import { SecretsManagerClient, GetSecretValueCommand } from "@aws-sdk/client-sec
 async function getAwsCredentials() {
   const client = new SecretsManagerClient({ region: "us-east-1" });
   const response = await client.send(
-    new GetSecretValueCommand({ SecretId: "jobpilot/s3" })
+    new GetSecretValueCommand({ SecretId: "applyforus/s3" })
   );
   return JSON.parse(response.SecretString);
 }

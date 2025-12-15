@@ -13,7 +13,7 @@ export default () => ({
     port: parseInt(process.env.DB_PORT || '5432', 10),
     username: process.env.DB_USERNAME || 'postgres',
     password: process.env.DB_PASSWORD || 'postgres',
-    database: process.env.DB_NAME || 'jobpilot_auth',
+    database: process.env.DB_NAME || 'applyforus_auth',
     synchronize: process.env.DB_SYNCHRONIZE === 'true' || false,
     logging: process.env.DB_LOGGING === 'true' || false,
   },
@@ -23,8 +23,8 @@ export default () => ({
     secret: process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production',
     accessTokenExpiry: process.env.JWT_ACCESS_TOKEN_EXPIRY || '15m',
     refreshTokenExpiry: process.env.JWT_REFRESH_TOKEN_EXPIRY || '7d',
-    issuer: process.env.JWT_ISSUER || 'jobpilot-auth-service',
-    audience: process.env.JWT_AUDIENCE || 'jobpilot-platform',
+    issuer: process.env.JWT_ISSUER || 'applyforus-auth-service',
+    audience: process.env.JWT_AUDIENCE || 'applyforus-platform',
   },
 
   // Redis Configuration
@@ -86,7 +86,7 @@ export default () => ({
   // MFA Configuration
   mfa: {
     enabled: process.env.MFA_ENABLED === 'true' || false,
-    issuer: process.env.MFA_ISSUER || 'JobPilot AI',
+    issuer: process.env.MFA_ISSUER || 'ApplyForUs AI',
     window: parseInt(process.env.MFA_WINDOW || '2', 10),
   },
 

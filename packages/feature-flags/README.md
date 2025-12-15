@@ -1,6 +1,6 @@
 # Feature Flags Package
 
-A comprehensive feature flag system for the JobPilot AI Platform that supports boolean flags, percentage rollouts, and user-specific flags.
+A comprehensive feature flag system for the ApplyForUs AI Platform that supports boolean flags, percentage rollouts, and user-specific flags.
 
 ## Features
 
@@ -17,10 +17,10 @@ A comprehensive feature flag system for the JobPilot AI Platform that supports b
 
 ```bash
 # Install the package
-pnpm add @jobpilot/feature-flags
+pnpm add @applyforus/feature-flags
 
 # Or from workspace
-pnpm add @jobpilot/feature-flags --workspace
+pnpm add @applyforus/feature-flags --workspace
 ```
 
 ## Quick Start
@@ -32,7 +32,7 @@ pnpm add @jobpilot/feature-flags --workspace
 ```typescript
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { FeatureFlagsModule } from '@jobpilot/feature-flags';
+import { FeatureFlagsModule } from '@applyforus/feature-flags';
 import Redis from 'ioredis';
 
 @Module({
@@ -56,7 +56,7 @@ export class AppModule {}
 
 ```typescript
 import { Controller, Get, UseGuards } from '@nestjs/common';
-import { FeatureFlag, FeatureFlagGuard, FEATURE_FLAGS } from '@jobpilot/feature-flags';
+import { FeatureFlag, FeatureFlagGuard, FEATURE_FLAGS } from '@applyforus/feature-flags';
 
 @Controller('auto-apply')
 @UseGuards(FeatureFlagGuard)
@@ -81,7 +81,7 @@ export class AutoApplyController {
 
 ```typescript
 import { Injectable } from '@nestjs/common';
-import { FeatureFlagService } from '@jobpilot/feature-flags';
+import { FeatureFlagService } from '@applyforus/feature-flags';
 
 @Injectable()
 export class MyService {
@@ -313,7 +313,7 @@ GET /api/features/FEATURE_AUTO_APPLY/evaluate
 ### Multiple Flag Requirements
 
 ```typescript
-import { RequireAllFlags, RequireAnyFlag } from '@jobpilot/feature-flags';
+import { RequireAllFlags, RequireAnyFlag } from '@applyforus/feature-flags';
 
 @Controller('premium')
 @UseGuards(FeatureFlagGuard)

@@ -1,6 +1,10 @@
 import { DataSource, DataSourceOptions } from 'typeorm';
 import { config } from 'dotenv';
 import { AnalyticsEvent } from '../modules/analytics/entities/analytics-event.entity';
+import { SLAContract } from '../modules/sla/entities/sla-contract.entity';
+import { SLAProgress } from '../modules/sla/entities/sla-progress.entity';
+import { SLAViolation } from '../modules/sla/entities/sla-violation.entity';
+import { SLARemedy } from '../modules/sla/entities/sla-remedy.entity';
 
 config();
 
@@ -10,8 +14,14 @@ export const dataSourceOptions: DataSourceOptions = {
   port: parseInt(process.env.DB_PORT || '5434', 10),
   username: process.env.DB_USERNAME || 'postgres',
   password: process.env.DB_PASSWORD || 'postgres',
-  database: process.env.DB_DATABASE || 'jobpilot',
-  entities: [AnalyticsEvent],
+  database: process.env.DB_DATABASE || 'applyforus',
+  entities: [
+    AnalyticsEvent,
+    SLAContract,
+    SLAProgress,
+    SLAViolation,
+    SLARemedy,
+  ],
   migrations: ['dist/migrations/*.js'],
   migrationsRun: false,
   synchronize: false,

@@ -11,6 +11,7 @@ import {
   Get,
   Param,
   Query,
+  RawBodyRequest,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiQuery } from '@nestjs/swagger';
 import { Request } from 'express';
@@ -73,14 +74,25 @@ export class PaystackController {
   @ApiResponse({ status: 200, description: 'Webhook processed successfully' })
   @ApiResponse({ status: 400, description: 'Invalid webhook' })
   async handleWebhook(
-    @Req() request: Request,
+    @Req() request: RawBodyRequest<Request>,
     @Headers('x-paystack-signature') signature: string,
     @Body() payload: PaystackWebhookPayload,
   ) {
     this.logger.log(`Received Paystack webhook: ${payload.event}`);
 
-    // Verify webhook signature
-    const rawBody = JSON.stringify(payload);
+    // Verify webhook signature using raw body
+    const rawBody = request.rawBody;
+
+    if (!rawBody) {
+      this.logger.error('No raw body found in request');
+      throw new BadRequestException('Invalid webhook request');
+    }
+
+    if (!signature) {
+      this.logger.error('No signature header found');
+      throw new BadRequestException('Missing webhook signature');
+    }
+
     if (!this.paystackService.verifyWebhookSignature(rawBody, signature)) {
       this.logger.error('Invalid webhook signature');
       throw new BadRequestException('Invalid webhook signature');
@@ -578,11 +590,11 @@ export class PaystackController {
    */
   private mapPlanToTier(planName: string): SubscriptionTier {
     const name = planName.toLowerCase();
-    if (name.includes('enterprise')) return SubscriptionTier.ENTERPRISE;
-    if (name.includes('business')) return SubscriptionTier.BUSINESS;
-    if (name.includes('pro')) return SubscriptionTier.PRO;
+    if (name.includes('executive') || name.includes('enterprise')) return SubscriptionTier.EXECUTIVE_ELITE;
+    if (name.includes('advanced') || name.includes('business')) return SubscriptionTier.ADVANCED_CAREER;
+    if (name.includes('professional') || name.includes('pro')) return SubscriptionTier.PROFESSIONAL;
     if (name.includes('basic')) return SubscriptionTier.BASIC;
     if (name.includes('starter')) return SubscriptionTier.STARTER;
-    return SubscriptionTier.FREE;
+    return SubscriptionTier.FREEMIUM;
   }
 }

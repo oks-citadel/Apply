@@ -1,8 +1,8 @@
 {
-  "name": "@job-apply-platform/resume-service",
+  "name": "@applyforus/resume-service",
   "version": "1.0.0",
-  "description": "Resume Management Microservice for Job Apply Platform",
-  "author": "Job Apply Platform Team",
+  "description": "Resume Management Microservice for ApplyForUs Platform",
+  "author": "ApplyForUs Team",
   "private": true,
   "license": "MIT",
   "scripts": {
@@ -28,9 +28,10 @@
     "schema:drop": "npm run typeorm -- schema:drop -d src/config/database.config.ts"
   },
   "dependencies": {
-    "@jobpilot/telemetry": "workspace:*",
-    "@jobpilot/logging": "workspace:*",
-    "@jobpilot/security": "workspace:*",
+    "@applyforus/telemetry": "workspace:*",
+    "@applyforus/logging": "workspace:*",
+    "@applyforus/security": "workspace:*",
+    "@nestjs/axios": "^3.0.1",
     "@nestjs/common": "^10.3.0",
     "@nestjs/core": "^10.3.0",
     "@nestjs/platform-express": "^10.3.0",

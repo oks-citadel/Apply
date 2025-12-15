@@ -651,7 +651,7 @@ describe('AuthController', () => {
         secret: 'JBSWY3DPEHPK3PXP',
         qrCode: 'data:image/png;base64,iVBORw0KGgoAAAANS...',
         otpauthUrl:
-          'otpauth://totp/JobPilot%20(test@example.com)?secret=JBSWY3DPEHPK3PXP&issuer=JobPilot',
+          'otpauth://totp/ApplyForUs%20(test@example.com)?secret=JBSWY3DPEHPK3PXP&issuer=ApplyForUs',
       };
 
       mockAuthService.setupMfa.mockResolvedValue(mfaSetupResponse);
@@ -670,7 +670,7 @@ describe('AuthController', () => {
       const mfaSetupResponse: MfaSetupResponseDto = {
         secret: 'NEWSECRET123',
         qrCode: 'data:image/png;base64,newqrcode...',
-        otpauthUrl: 'otpauth://totp/JobPilot...',
+        otpauthUrl: 'otpauth://totp/ApplyForUs...',
       };
 
       mockAuthService.setupMfa.mockResolvedValue(mfaSetupResponse);

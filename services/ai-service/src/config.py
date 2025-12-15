@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     )
 
     # Application
-    app_name: str = Field(default="JobPilot AI Service", alias="APP_NAME")
+    app_name: str = Field(default="ApplyForUs AI Service", alias="APP_NAME")
     app_version: str = Field(default="1.0.0", alias="APP_VERSION")
     environment: str = Field(default="development", alias="ENVIRONMENT")
     debug: bool = Field(default=False, alias="DEBUG")
@@ -35,7 +35,7 @@ class Settings(BaseSettings):
     # Vector Database
     pinecone_api_key: str = Field(default="", alias="PINECONE_API_KEY")
     pinecone_environment: str = Field(default="us-west1-gcp", alias="PINECONE_ENVIRONMENT")
-    pinecone_index_name: str = Field(default="jobpilot-vectors", alias="PINECONE_INDEX_NAME")
+    pinecone_index_name: str = Field(default="applyforus-vectors", alias="PINECONE_INDEX_NAME")
 
     # Redis Cache
     redis_host: str = Field(default="localhost", alias="REDIS_HOST")

@@ -1,5 +1,5 @@
 /**
- * OpenTelemetry Telemetry Package for JobPilot Microservices
+ * OpenTelemetry Telemetry Package for ApplyForUs Microservices
  *
  * This package provides distributed tracing capabilities using OpenTelemetry
  * with Azure Application Insights integration.
@@ -42,7 +42,7 @@ let isInitialized = false;
  *
  * @example
  * ```typescript
- * import { initTelemetry } from '@jobpilot/telemetry';
+ * import { initTelemetry } from '@applyforus/telemetry';
  *
  * async function bootstrap() {
  *   // Initialize telemetry FIRST

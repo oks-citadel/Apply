@@ -1,5 +1,5 @@
 /**
- * JobPilot AI - Field-Level Encryption
+ * ApplyForUs AI - Field-Level Encryption
  *
  * AES-256-GCM encryption for sensitive data fields.
  */
@@ -220,7 +220,7 @@ export class FieldEncryption {
     // Use a fixed salt for key derivation (in production, use environment-specific salt)
     const salt = crypto
       .createHash('sha256')
-      .update('jobpilot-ai-encryption-salt')
+      .update('applyforus-ai-encryption-salt')
       .digest();
 
     const derivedKey = crypto.pbkdf2Sync(key, salt, 100000, KEY_LENGTH, 'sha256');

@@ -48,7 +48,7 @@ export function RegistrationSuccess({ email, redirectDelay = 5000 }: Registratio
           Next steps:
         </h3>
         <ol className="text-sm text-blue-800 dark:text-blue-200 space-y-1 list-decimal list-inside">
-          <li>Open the email from JobPilot AI</li>
+          <li>Open the email from ApplyForUs</li>
           <li>Click the verification link</li>
           <li>You'll be redirected back to sign in</li>
         </ol>

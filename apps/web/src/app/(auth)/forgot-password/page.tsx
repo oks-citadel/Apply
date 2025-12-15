@@ -3,8 +3,8 @@ import { ArrowLeft } from 'lucide-react';
 import { ForgotPasswordForm } from '@/components/forms/ForgotPasswordForm';
 
 export const metadata = {
-  title: 'Forgot Password - JobPilot AI',
-  description: 'Reset your JobPilot AI password',
+  title: 'Forgot Password - ApplyForUs',
+  description: 'Reset your ApplyForUs password',
 };
 
 export default function ForgotPasswordPage() {
