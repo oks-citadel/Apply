@@ -7,6 +7,7 @@ import { ExportUtil } from './utils/export.util';
 import { TenantLicenseGuard } from './guards/tenant-license.guard';
 import { TenantIsolationMiddleware } from './middleware/tenant-isolation.middleware';
 import { TenantRateLimitMiddleware } from './middleware/rate-limit.middleware';
+import { AuthModule } from '../auth/auth.module';
 import { Tenant } from './entities/tenant.entity';
 import { TenantUser } from './entities/tenant-user.entity';
 import { TenantLicense } from './entities/tenant-license.entity';
@@ -24,6 +25,7 @@ import { Cohort } from './entities/cohort.entity';
       PlacementTracking,
       Cohort,
     ]),
+    AuthModule,
   ],
   controllers: [TenantController],
   providers: [

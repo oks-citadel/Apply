@@ -30,13 +30,23 @@ export class LoggerContext {
   static setContext(context: Partial<LoggingContext>): void {
     const ns = this.initialize();
 
-    const existingContext = ns.get('context') || {};
-    const updatedContext = {
-      ...existingContext,
-      ...context,
-    };
+    // Check if we have an active context - if not, silently ignore
+    // This happens when requests come in outside of ns.run()
+    if (!ns.active) {
+      return;
+    }
 
-    ns.set('context', updatedContext);
+    try {
+      const existingContext = ns.get('context') || {};
+      const updatedContext = {
+        ...existingContext,
+        ...context,
+      };
+
+      ns.set('context', updatedContext);
+    } catch {
+      // Silently ignore if namespace context is not available
+    }
   }
 
   static getContext(): LoggingContext | undefined {

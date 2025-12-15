@@ -9,17 +9,33 @@ import { SubscriptionTier, SubscriptionStatus } from '../../common/enums/subscri
 
 @Injectable()
 export class SubscriptionService {
-  private stripe: Stripe;
+  private stripe: Stripe | null = null;
   private readonly logger = new Logger(SubscriptionService.name);
+  private readonly stripeEnabled: boolean;
 
   constructor(
     @InjectRepository(Subscription)
     private subscriptionRepository: Repository<Subscription>,
     private configService: ConfigService,
   ) {
-    this.stripe = new Stripe(this.configService.get('STRIPE_SECRET_KEY'), {
-      apiVersion: '2025-02-24.acacia',
-    });
+    const stripeKey = this.configService.get('STRIPE_SECRET_KEY');
+    // Only initialize Stripe if a valid key is provided (starts with sk_)
+    if (stripeKey && stripeKey.startsWith('sk_')) {
+      this.stripe = new Stripe(stripeKey, {
+        apiVersion: '2025-02-24.acacia',
+      });
+      this.stripeEnabled = true;
+      this.logger.log('Stripe initialized successfully');
+    } else {
+      this.stripeEnabled = false;
+      this.logger.warn('Stripe not configured - payment features disabled. Set STRIPE_SECRET_KEY to enable.');
+    }
+  }
+
+  private ensureStripeEnabled(): void {
+    if (!this.stripe || !this.stripeEnabled) {
+      throw new BadRequestException('Payment features are not configured. Please contact support.');
+    }
   }
 
   async getSubscription(userId: string): Promise<Subscription> {
@@ -50,6 +66,8 @@ export class SubscriptionService {
     email: string,
     dto: CreateCheckoutSessionDto,
   ): Promise<{ url: string }> {
+    this.ensureStripeEnabled();
+
     if (dto.tier === SubscriptionTier.FREE) {
       throw new BadRequestException('Cannot create checkout session for free tier');
     }
@@ -59,7 +77,7 @@ export class SubscriptionService {
     // Get or create Stripe customer
     let customerId = subscription.stripe_customer_id;
     if (!customerId) {
-      const customer = await this.stripe.customers.create({
+      const customer = await this.stripe!.customers.create({
         email: email,
         metadata: { userId },
       });
@@ -72,7 +90,7 @@ export class SubscriptionService {
     const priceId = this.getPriceIdForTier(dto.tier);
 
     // Create checkout session
-    const session = await this.stripe.checkout.sessions.create({
+    const session = await this.stripe!.checkout.sessions.create({
       customer: customerId,
       payment_method_types: ['card'],
       line_items: [
@@ -94,13 +112,15 @@ export class SubscriptionService {
   }
 
   async createPortalSession(userId: string): Promise<{ url: string }> {
+    this.ensureStripeEnabled();
+
     const subscription = await this.getSubscription(userId);
 
     if (!subscription.stripe_customer_id) {
       throw new BadRequestException('No Stripe customer found');
     }
 
-    const session = await this.stripe.billingPortal.sessions.create({
+    const session = await this.stripe!.billingPortal.sessions.create({
       customer: subscription.stripe_customer_id,
       return_url: `${this.configService.get('FRONTEND_URL')}/subscription`,
     });
@@ -109,10 +129,12 @@ export class SubscriptionService {
   }
 
   async handleWebhook(payload: Buffer, signature: string): Promise<void> {
+    this.ensureStripeEnabled();
+
     let event: Stripe.Event;
 
     try {
-      event = this.stripe.webhooks.constructEvent(
+      event = this.stripe!.webhooks.constructEvent(
         payload,
         signature,
         this.configService.get('STRIPE_WEBHOOK_SECRET'),

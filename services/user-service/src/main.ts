@@ -59,7 +59,8 @@ async function bootstrap() {
   });
 
   // Compression
-  app.use(compression.default());
+  const compressionMiddleware = compression.default || compression;
+  app.use(compressionMiddleware());
 
   // Global prefix
   const apiPrefix = configService.get('API_PREFIX', 'api/v1');

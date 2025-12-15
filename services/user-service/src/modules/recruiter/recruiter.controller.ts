@@ -18,7 +18,7 @@ import {
   ApiBearerAuth,
   ApiParam,
 } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RecruiterService } from './recruiter.service';
 import { RegisterRecruiterDto } from './dto/register-recruiter.dto';
 import { AssignRecruiterDto } from './dto/assign-recruiter.dto';

@@ -24,7 +24,7 @@ import { CreateDepartmentDto } from './dto/create-department.dto';
 import { CreatePlacementDto } from './dto/create-placement.dto';
 import { UpdateBrandingDto } from './dto/update-branding.dto';
 import { ExportUtil } from './utils/export.util';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { TenantLicenseGuard } from './guards/tenant-license.guard';
 
 @ApiTags('Tenants')
