@@ -2,7 +2,7 @@ import { Logger } from '@nestjs/common';
 
 // TODO: Re-enable workspace package after build
 // Initialize telemetry BEFORE importing other modules for proper auto-instrumentation
-// import { initTelemetry } from '@jobpilot/telemetry';
+// import { initTelemetry } from '@applyforus/telemetry';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
@@ -85,7 +85,8 @@ async function bootstrap() {
       transformOptions: {
         enableImplicitConversion: true,
       },
-      disableErrorMessages: configService.get('NODE_ENV') === 'production',
+      // Always enable detailed error messages for better debugging
+      disableErrorMessages: false,
     }),
   );
 
@@ -99,8 +100,8 @@ async function bootstrap() {
   // Swagger documentation setup
   if (configService.get('NODE_ENV') !== 'production') {
     const config = new DocumentBuilder()
-      .setTitle('JobPilot Auth Service API')
-      .setDescription('Authentication and Authorization Service for JobPilot AI Platform')
+      .setTitle('ApplyForUs Auth Service API')
+      .setDescription('Authentication and Authorization Service for ApplyForUs AI Platform')
       .setVersion('1.0')
       .addBearerAuth(
         {
