@@ -4,10 +4,10 @@ import {
   BadRequestException,
   ForbiddenException,
   ConflictException,
+  Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In, LessThan, MoreThanOrEqual } from 'typeorm';
-import { Logger } from '@applyforus/logging';
 import {
   RecruiterProfile,
   RecruiterStatus,
@@ -51,7 +51,7 @@ export class RecruiterService {
     userId: string,
     dto: RegisterRecruiterDto,
   ): Promise<RecruiterProfile> {
-    this.logger.info('Registering new recruiter', { userId });
+    this.logger.log('Registering new recruiter', { userId });
 
     // Check if user already has a recruiter profile
     const existing = await this.recruiterProfileRepo.findOne({
@@ -85,7 +85,7 @@ export class RecruiterService {
     });
 
     const saved = await this.recruiterProfileRepo.save(profile);
-    this.logger.info('Recruiter registered successfully', {
+    this.logger.log('Recruiter registered successfully', {
       userId,
       recruiterId: saved.id,
     });
@@ -186,7 +186,7 @@ export class RecruiterService {
     userId: string,
     dto: AssignRecruiterDto,
   ): Promise<RecruiterAssignment> {
-    this.logger.info('Assigning recruiter to user', { userId, dto });
+    this.logger.log('Assigning recruiter to user', { userId, dto });
 
     // Validate recruiter
     const recruiter = await this.recruiterProfileRepo.findOne({
@@ -249,7 +249,7 @@ export class RecruiterService {
     recruiter.active_assignments += 1;
     await this.recruiterProfileRepo.save(recruiter);
 
-    this.logger.info('Assignment created', { assignmentId: saved.id });
+    this.logger.log('Assignment created', { assignmentId: saved.id });
 
     return saved;
   }
@@ -258,7 +258,7 @@ export class RecruiterService {
     userId: string,
     dto: EscalateApplicationDto,
   ): Promise<RecruiterAssignment> {
-    this.logger.info('Escalating application to recruiter', { userId, dto });
+    this.logger.log('Escalating application to recruiter', { userId, dto });
 
     let recruiterId = dto.recruiter_id;
 
@@ -287,7 +287,7 @@ export class RecruiterService {
 
     await this.assignmentRepo.save(assignment);
 
-    this.logger.info('Application escalated', {
+    this.logger.log('Application escalated', {
       assignmentId: assignment.id,
       applicationId: dto.application_id,
     });

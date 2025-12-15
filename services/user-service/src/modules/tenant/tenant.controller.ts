@@ -168,7 +168,7 @@ export class TenantController {
   async exportAnalyticsCSV(@Param('id') id: string, @Query() query: AnalyticsQueryDto, @Res() res: Response) {
     this.logger.log(`Exporting analytics to CSV for tenant: ${id}`);
 
-    const analytics = await this.tenantService.getTenantAnalytics(id, query);
+    const analytics = await this.tenantService.getTenantAnalytics(id, query) as any;
 
     let csv: string;
     let filename: string;
@@ -488,7 +488,7 @@ export class TenantController {
       type: 'user_activity' as any,
       limit: limit || 100,
       offset: offset || 0,
-    });
+    }) as any;
 
     return {
       success: true,
@@ -513,7 +513,7 @@ export class TenantController {
     const analytics = await this.tenantService.getTenantAnalytics(id, {
       type: 'user_activity' as any,
       limit: 10000, // Large limit for export
-    });
+    }) as any;
 
     const csv = this.exportUtil.convertUsersToCSV(analytics.users || []);
     const filename = `tenant-users-${id}-${Date.now()}.csv`;
