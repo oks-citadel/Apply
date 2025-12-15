@@ -1,0 +1,458 @@
+# Prometheus Alerting Rules for ApplyForUs AI Platform
+# Service health, performance, and availability alerts
+
+groups:
+  # Service Availability Alerts
+  - name: service_availability
+    interval: 30s
+    rules:
+      - alert: ServiceDown
+        expr: up{job=~".*-service"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          category: availability
+        annotations:
+          summary: "Service {{ $labels.service }} is down"
+          description: "{{ $labels.service }} has been down for more than 1 minute on instance {{ $labels.instance }}"
+          runbook: "https://docs.applyforus.com/runbooks/service-down"
+
+      - alert: ServiceHighRestartRate
+        expr: rate(process_start_time_seconds{job=~".*-service"}[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          category: stability
+        annotations:
+          summary: "Service {{ $labels.service }} is restarting frequently"
+          description: "{{ $labels.service }} has restarted {{ $value }} times in the last 5 minutes"
+
+  # HTTP Performance Alerts
+  - name: http_performance
+    interval: 30s
+    rules:
+      - alert: HighErrorRate
+        expr: |
+          (
+            sum(rate(http_requests_total{status_code=~"5.."}[5m])) by (service)
+            /
+            sum(rate(http_requests_total[5m])) by (service)
+          ) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+          category: performance
+        annotations:
+          summary: "High error rate on {{ $labels.service }}"
+          description: "{{ $labels.service }} has error rate of {{ $value | humanizePercentage }} (threshold: 5%)"
+          runbook: "https://docs.applyforus.com/runbooks/high-error-rate"
+
+      - alert: HighClientErrorRate
+        expr: |
+          (
+            sum(rate(http_requests_total{status_code=~"4.."}[5m])) by (service)
+            /
+            sum(rate(http_requests_total[5m])) by (service)
+          ) > 0.15
+        for: 10m
+        labels:
+          severity: warning
+          category: performance
+        annotations:
+          summary: "High client error rate on {{ $labels.service }}"
+          description: "{{ $labels.service }} has client error rate of {{ $value | humanizePercentage }} (threshold: 15%)"
+
+      - alert: SlowResponseTime
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(http_request_duration_seconds_bucket[5m])) by (le, service)
+          ) > 2
+        for: 5m
+        labels:
+          severity: warning
+          category: performance
+        annotations:
+          summary: "Slow response time on {{ $labels.service }}"
+          description: "{{ $labels.service }} P95 latency is {{ $value }}s (threshold: 2s)"
+          runbook: "https://docs.applyforus.com/runbooks/slow-response-time"
+
+      - alert: VerySlowResponseTime
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(http_request_duration_seconds_bucket[5m])) by (le, service)
+          ) > 5
+        for: 2m
+        labels:
+          severity: critical
+          category: performance
+        annotations:
+          summary: "Very slow response time on {{ $labels.service }}"
+          description: "{{ $labels.service }} P95 latency is {{ $value }}s (threshold: 5s)"
+          runbook: "https://docs.applyforus.com/runbooks/slow-response-time"
+
+      - alert: HighRequestVolume
+        expr: sum(rate(http_requests_total[5m])) by (service) > 1000
+        for: 5m
+        labels:
+          severity: warning
+          category: capacity
+        annotations:
+          summary: "High request volume on {{ $labels.service }}"
+          description: "{{ $labels.service }} is receiving {{ $value }} requests/sec"
+
+  # Database Performance Alerts
+  - name: database_performance
+    interval: 30s
+    rules:
+      - alert: DatabaseConnectionPoolExhausted
+        expr: db_connection_pool_used / db_connection_pool_size > 0.9
+        for: 2m
+        labels:
+          severity: critical
+          category: database
+        annotations:
+          summary: "Database connection pool nearly exhausted for {{ $labels.service }}"
+          description: "{{ $labels.service }} is using {{ $value | humanizePercentage }} of database connections (threshold: 90%)"
+          runbook: "https://docs.applyforus.com/runbooks/db-pool-exhausted"
+
+      - alert: SlowDatabaseQueries
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(db_query_duration_seconds_bucket[5m])) by (le, service)
+          ) > 1
+        for: 5m
+        labels:
+          severity: warning
+          category: database
+        annotations:
+          summary: "Slow database queries on {{ $labels.service }}"
+          description: "{{ $labels.service }} P95 query latency is {{ $value }}s (threshold: 1s)"
+          runbook: "https://docs.applyforus.com/runbooks/slow-db-queries"
+
+      - alert: HighDatabaseErrorRate
+        expr: |
+          (
+            sum(rate(db_queries_total{status="error"}[5m])) by (service)
+            /
+            sum(rate(db_queries_total[5m])) by (service)
+          ) > 0.01
+        for: 5m
+        labels:
+          severity: critical
+          category: database
+        annotations:
+          summary: "High database error rate on {{ $labels.service }}"
+          description: "{{ $labels.service }} database error rate is {{ $value | humanizePercentage }} (threshold: 1%)"
+          runbook: "https://docs.applyforus.com/runbooks/db-errors"
+
+  # Redis/Cache Alerts
+  - name: redis_cache
+    interval: 30s
+    rules:
+      - alert: RedisDown
+        expr: up{job="redis-exporter"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          category: cache
+        annotations:
+          summary: "Redis is down"
+          description: "Redis has been unavailable for more than 1 minute"
+          runbook: "https://docs.applyforus.com/runbooks/redis-down"
+
+      - alert: LowCacheHitRate
+        expr: |
+          (
+            sum(rate(cache_hits_total[5m])) by (service)
+            /
+            (sum(rate(cache_hits_total[5m])) by (service) + sum(rate(cache_misses_total[5m])) by (service))
+          ) < 0.5
+        for: 10m
+        labels:
+          severity: warning
+          category: cache
+        annotations:
+          summary: "Low cache hit rate on {{ $labels.service }}"
+          description: "{{ $labels.service }} cache hit rate is {{ $value | humanizePercentage }} (threshold: 50%)"
+
+      - alert: HighRedisMemoryUsage
+        expr: redis_memory_used_bytes / redis_memory_max_bytes > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          category: cache
+        annotations:
+          summary: "High Redis memory usage"
+          description: "Redis is using {{ $value | humanizePercentage }} of available memory (threshold: 90%)"
+
+  # System Resource Alerts
+  - name: system_resources
+    interval: 30s
+    rules:
+      - alert: HighCPUUsage
+        expr: |
+          (
+            sum(rate(process_cpu_seconds_total[5m])) by (service)
+            /
+            sum(nodejs_cpu_count) by (service)
+          ) > 0.8
+        for: 5m
+        labels:
+          severity: warning
+          category: resources
+        annotations:
+          summary: "High CPU usage on {{ $labels.service }}"
+          description: "{{ $labels.service }} CPU usage is {{ $value | humanizePercentage }} (threshold: 80%)"
+          runbook: "https://docs.applyforus.com/runbooks/high-cpu"
+
+      - alert: HighMemoryUsage
+        expr: |
+          (
+            process_resident_memory_bytes
+            /
+            nodejs_heap_size_total_bytes
+          ) > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          category: resources
+        annotations:
+          summary: "High memory usage on {{ $labels.service }}"
+          description: "{{ $labels.service }} memory usage is {{ $value | humanizePercentage }} (threshold: 90%)"
+          runbook: "https://docs.applyforus.com/runbooks/high-memory"
+
+      - alert: HighDiskUsage
+        expr: |
+          (
+            node_filesystem_avail_bytes{mountpoint="/"}
+            /
+            node_filesystem_size_bytes{mountpoint="/"}
+          ) < 0.1
+        for: 5m
+        labels:
+          severity: critical
+          category: resources
+        annotations:
+          summary: "Low disk space on {{ $labels.instance }}"
+          description: "Disk usage is {{ $value | humanizePercentage }} (threshold: 90%)"
+          runbook: "https://docs.applyforus.com/runbooks/disk-full"
+
+  # Circuit Breaker Alerts
+  - name: circuit_breakers
+    interval: 30s
+    rules:
+      - alert: CircuitBreakerOpen
+        expr: circuit_breaker_state == 1
+        for: 1m
+        labels:
+          severity: critical
+          category: resilience
+        annotations:
+          summary: "Circuit breaker {{ $labels.circuit_name }} is OPEN on {{ $labels.service }}"
+          description: "Circuit breaker {{ $labels.circuit_name }} has been open for more than 1 minute"
+          runbook: "https://docs.applyforus.com/runbooks/circuit-breaker-open"
+
+      - alert: HighCircuitBreakerFailureRate
+        expr: rate(circuit_breaker_trips_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          category: resilience
+        annotations:
+          summary: "High circuit breaker trip rate on {{ $labels.service }}"
+          description: "Circuit breaker {{ $labels.circuit_name }} is tripping at {{ $value }} trips/sec"
+
+      - alert: FrequentCircuitBreakerStateChanges
+        expr: rate(circuit_breaker_state_changes_total[5m]) > 0.5
+        for: 10m
+        labels:
+          severity: warning
+          category: resilience
+        annotations:
+          summary: "Frequent circuit breaker state changes on {{ $labels.service }}"
+          description: "Circuit breaker {{ $labels.circuit_name }} is changing state frequently ({{ $value }} changes/sec)"
+          runbook: "https://docs.applyforus.com/runbooks/circuit-breaker-flapping"
+
+  # Gateway Reliability & Degraded Mode Alerts
+  - name: gateway_reliability
+    interval: 30s
+    rules:
+      - alert: GatewayRateLimitDegradedMode
+        expr: |
+          (
+            sum(rate(gateway_rate_limit_degraded_total[5m])) by (service)
+            /
+            sum(rate(gateway_rate_limit_total[5m])) by (service)
+          ) > 0.01
+        for: 5m
+        labels:
+          severity: critical
+          category: gateway
+        annotations:
+          summary: "Gateway rate limiting in degraded mode on {{ $labels.service }}"
+          description: "{{ $labels.service }} rate limiting is degraded {{ $value | humanizePercentage }} of the time (threshold: 1%)"
+          runbook: "https://docs.applyforus.com/runbooks/gateway-degraded-mode"
+
+      - alert: HighRedisLatency
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(redis_operation_duration_seconds_bucket[5m])) by (le, service)
+          ) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          category: redis
+        annotations:
+          summary: "High Redis latency on {{ $labels.service }}"
+          description: "{{ $labels.service }} Redis P95 latency is {{ $value }}s (threshold: 100ms)"
+          runbook: "https://docs.applyforus.com/runbooks/high-redis-latency"
+
+      - alert: RedisConnectionDown
+        expr: redis_connection_state == 0
+        for: 1m
+        labels:
+          severity: critical
+          category: redis
+        annotations:
+          summary: "Redis connection down for {{ $labels.service }}"
+          description: "{{ $labels.service }} has lost Redis connection to {{ $labels.host }}"
+          runbook: "https://docs.applyforus.com/runbooks/redis-connection-down"
+
+      - alert: HighRedisErrorRate
+        expr: |
+          (
+            sum(rate(redis_errors_total[5m])) by (service)
+            /
+            sum(rate(redis_operations_total[5m])) by (service)
+          ) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          category: redis
+        annotations:
+          summary: "High Redis error rate on {{ $labels.service }}"
+          description: "{{ $labels.service }} Redis error rate is {{ $value | humanizePercentage }} (threshold: 5%)"
+
+      - alert: GatewayP95LatencyRegression
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(http_request_duration_by_route_seconds_bucket[5m])) by (le, route, service)
+          ) > 2
+          and
+          (
+            histogram_quantile(0.95,
+              sum(rate(http_request_duration_by_route_seconds_bucket[5m])) by (le, route, service)
+            )
+            /
+            histogram_quantile(0.95,
+              sum(rate(http_request_duration_by_route_seconds_bucket[1h])) by (le, route, service)
+            )
+          ) > 1.5
+        for: 10m
+        labels:
+          severity: warning
+          category: performance
+        annotations:
+          summary: "P95 latency regression on {{ $labels.route }}"
+          description: "Route {{ $labels.route }} on {{ $labels.service }} has P95 latency {{ $value }}s (50% increase from baseline)"
+          runbook: "https://docs.applyforus.com/runbooks/latency-regression"
+
+      - alert: High5xxSpikeGateway
+        expr: |
+          (
+            sum(rate(http_requests_by_route_total{status_code=~"5.."}[1m])) by (service, route)
+            /
+            sum(rate(http_requests_by_route_total[1m])) by (service, route)
+          ) > 0.10
+        for: 2m
+        labels:
+          severity: critical
+          category: gateway
+        annotations:
+          summary: "High 5xx spike on gateway route {{ $labels.route }}"
+          description: "Route {{ $labels.route }} on {{ $labels.service }} has {{ $value | humanizePercentage }} 5xx error rate (threshold: 10%)"
+          runbook: "https://docs.applyforus.com/runbooks/5xx-spike"
+
+  # Business Metrics Alerts
+  - name: business_metrics
+    interval: 60s
+    rules:
+      - alert: LowJobApplicationRate
+        expr: rate(job_applications_total[10m]) < 0.1
+        for: 30m
+        labels:
+          severity: warning
+          category: business
+        annotations:
+          summary: "Low job application rate"
+          description: "Job application rate is {{ $value }} applications/sec (expected: > 0.1/sec)"
+
+      - alert: HighAIServiceFailureRate
+        expr: |
+          (
+            sum(rate(ai_requests_total{status="error"}[5m]))
+            /
+            sum(rate(ai_requests_total[5m]))
+          ) > 0.1
+        for: 5m
+        labels:
+          severity: critical
+          category: business
+        annotations:
+          summary: "High AI service failure rate"
+          description: "AI service failure rate is {{ $value | humanizePercentage }} (threshold: 10%)"
+          runbook: "https://docs.applyforus.com/runbooks/ai-service-failures"
+
+      - alert: SlowAIRequests
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(ai_request_duration_seconds_bucket[5m])) by (le)
+          ) > 30
+        for: 5m
+        labels:
+          severity: warning
+          category: business
+        annotations:
+          summary: "Slow AI API requests"
+          description: "AI API P95 latency is {{ $value }}s (threshold: 30s)"
+
+  # Queue Health Alerts
+  - name: queue_health
+    interval: 30s
+    rules:
+      - alert: HighQueueBacklog
+        expr: bull_queue_waiting > 1000
+        for: 10m
+        labels:
+          severity: warning
+          category: queue
+        annotations:
+          summary: "High queue backlog on {{ $labels.queue }}"
+          description: "Queue {{ $labels.queue }} has {{ $value }} waiting jobs (threshold: 1000)"
+          runbook: "https://docs.applyforus.com/runbooks/queue-backlog"
+
+      - alert: HighQueueFailureRate
+        expr: |
+          (
+            rate(bull_queue_failed_total[5m])
+            /
+            (rate(bull_queue_completed_total[5m]) + rate(bull_queue_failed_total[5m]))
+          ) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+          category: queue
+        annotations:
+          summary: "High queue failure rate on {{ $labels.queue }}"
+          description: "Queue {{ $labels.queue }} failure rate is {{ $value | humanizePercentage }} (threshold: 5%)"
+
+      - alert: QueueProcessingStalled
+        expr: rate(bull_queue_completed_total[10m]) == 0 and bull_queue_waiting > 0
+        for: 10m
+        labels:
+          severity: critical
+          category: queue
+        annotations:
+          summary: "Queue processing stalled on {{ $labels.queue }}"
+          description: "Queue {{ $labels.queue }} has jobs waiting but no completions in 10 minutes"
+          runbook: "https://docs.applyforus.com/runbooks/queue-stalled"

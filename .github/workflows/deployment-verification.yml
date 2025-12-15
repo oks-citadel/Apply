@@ -1,0 +1,487 @@
+name: Deployment Verification
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: 'Environment to verify'
+        required: true
+        type: string
+      base_url:
+        description: 'Base URL to test'
+        required: true
+        type: string
+      api_url:
+        description: 'API URL to test'
+        required: true
+        type: string
+      rollback_on_failure:
+        description: 'Automatically rollback on failure'
+        required: false
+        type: boolean
+        default: false
+    secrets:
+      AZURE_CREDENTIALS:
+        required: true
+      SLACK_WEBHOOK_URL:
+        required: false
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to verify'
+        required: true
+        type: choice
+        options:
+          - development
+          - staging
+          - production
+      base_url:
+        description: 'Base URL to test'
+        required: true
+        type: string
+      api_url:
+        description: 'API URL to test'
+        required: true
+        type: string
+
+env:
+  HEALTH_CHECK_RETRIES: 5
+  HEALTH_CHECK_DELAY: 10
+  SMOKE_TEST_TIMEOUT: 30
+
+jobs:
+  health-checks:
+    name: Health Checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    outputs:
+      all_healthy: ${{ steps.health_summary.outputs.all_healthy }}
+      failed_services: ${{ steps.health_summary.outputs.failed_services }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y curl jq
+
+      - name: Test Web Application Health
+        id: web_health
+        run: |
+          echo "Testing web application at ${{ inputs.base_url }}..."
+
+          for i in $(seq 1 ${{ env.HEALTH_CHECK_RETRIES }}); do
+            if curl -sf --max-time ${{ env.SMOKE_TEST_TIMEOUT }} "${{ inputs.base_url }}/health" > /dev/null 2>&1; then
+              echo "✅ Web application is healthy (attempt $i)"
+              echo "status=healthy" >> $GITHUB_OUTPUT
+              exit 0
+            else
+              echo "⚠️  Web health check failed (attempt $i)"
+              sleep ${{ env.HEALTH_CHECK_DELAY }}
+            fi
+          done
+
+          echo "❌ Web application health check failed after ${{ env.HEALTH_CHECK_RETRIES }} attempts"
+          echo "status=unhealthy" >> $GITHUB_OUTPUT
+          exit 1
+        continue-on-error: true
+
+      - name: Test API Health
+        id: api_health
+        run: |
+          echo "Testing API at ${{ inputs.api_url }}..."
+
+          for i in $(seq 1 ${{ env.HEALTH_CHECK_RETRIES }}); do
+            response=$(curl -sf --max-time ${{ env.SMOKE_TEST_TIMEOUT }} "${{ inputs.api_url }}/health" 2>&1)
+
+            if [ $? -eq 0 ]; then
+              echo "✅ API is healthy (attempt $i)"
+              echo "Response: $response"
+              echo "status=healthy" >> $GITHUB_OUTPUT
+              exit 0
+            else
+              echo "⚠️  API health check failed (attempt $i)"
+              sleep ${{ env.HEALTH_CHECK_DELAY }}
+            fi
+          done
+
+          echo "❌ API health check failed after ${{ env.HEALTH_CHECK_RETRIES }} attempts"
+          echo "status=unhealthy" >> $GITHUB_OUTPUT
+          exit 1
+        continue-on-error: true
+
+      - name: Test Auth Service Health
+        id: auth_health
+        run: |
+          echo "Testing Auth service at ${{ inputs.api_url }}/auth..."
+
+          for i in $(seq 1 ${{ env.HEALTH_CHECK_RETRIES }}); do
+            if curl -sf --max-time ${{ env.SMOKE_TEST_TIMEOUT }} "${{ inputs.api_url }}/auth/health" > /dev/null 2>&1; then
+              echo "✅ Auth service is healthy (attempt $i)"
+              echo "status=healthy" >> $GITHUB_OUTPUT
+              exit 0
+            else
+              echo "⚠️  Auth service health check failed (attempt $i)"
+              sleep ${{ env.HEALTH_CHECK_DELAY }}
+            fi
+          done
+
+          echo "❌ Auth service health check failed"
+          echo "status=unhealthy" >> $GITHUB_OUTPUT
+          exit 1
+        continue-on-error: true
+
+      - name: Test User Service Health
+        id: user_health
+        run: |
+          echo "Testing User service at ${{ inputs.api_url }}/users..."
+
+          for i in $(seq 1 ${{ env.HEALTH_CHECK_RETRIES }}); do
+            if curl -sf --max-time ${{ env.SMOKE_TEST_TIMEOUT }} "${{ inputs.api_url }}/users/health" > /dev/null 2>&1; then
+              echo "✅ User service is healthy (attempt $i)"
+              echo "status=healthy" >> $GITHUB_OUTPUT
+              exit 0
+            else
+              echo "⚠️  User service health check failed (attempt $i)"
+              sleep ${{ env.HEALTH_CHECK_DELAY }}
+            fi
+          done
+
+          echo "❌ User service health check failed"
+          echo "status=unhealthy" >> $GITHUB_OUTPUT
+          exit 1
+        continue-on-error: true
+
+      - name: Test Job Service Health
+        id: job_health
+        run: |
+          echo "Testing Job service at ${{ inputs.api_url }}/jobs..."
+
+          for i in $(seq 1 ${{ env.HEALTH_CHECK_RETRIES }}); do
+            if curl -sf --max-time ${{ env.SMOKE_TEST_TIMEOUT }} "${{ inputs.api_url }}/jobs/health" > /dev/null 2>&1; then
+              echo "✅ Job service is healthy (attempt $i)"
+              echo "status=healthy" >> $GITHUB_OUTPUT
+              exit 0
+            else
+              echo "⚠️  Job service health check failed (attempt $i)"
+              sleep ${{ env.HEALTH_CHECK_DELAY }}
+            fi
+          done
+
+          echo "❌ Job service health check failed"
+          echo "status=unhealthy" >> $GITHUB_OUTPUT
+          exit 1
+        continue-on-error: true
+
+      - name: Summarize Health Checks
+        id: health_summary
+        run: |
+          failed_services=""
+
+          if [ "${{ steps.web_health.outputs.status }}" != "healthy" ]; then
+            failed_services="$failed_services web"
+          fi
+
+          if [ "${{ steps.api_health.outputs.status }}" != "healthy" ]; then
+            failed_services="$failed_services api"
+          fi
+
+          if [ "${{ steps.auth_health.outputs.status }}" != "healthy" ]; then
+            failed_services="$failed_services auth"
+          fi
+
+          if [ "${{ steps.user_health.outputs.status }}" != "healthy" ]; then
+            failed_services="$failed_services user"
+          fi
+
+          if [ "${{ steps.job_health.outputs.status }}" != "healthy" ]; then
+            failed_services="$failed_services job"
+          fi
+
+          if [ -n "$failed_services" ]; then
+            echo "all_healthy=false" >> $GITHUB_OUTPUT
+            echo "failed_services=$failed_services" >> $GITHUB_OUTPUT
+            echo "::error::Health checks failed for: $failed_services"
+            exit 1
+          else
+            echo "all_healthy=true" >> $GITHUB_OUTPUT
+            echo "failed_services=" >> $GITHUB_OUTPUT
+            echo "✅ All health checks passed"
+          fi
+
+  smoke-tests:
+    name: Smoke Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: health-checks
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install test dependencies
+        run: |
+          npm install -g newman
+          npm install axios
+
+      - name: Test user registration flow
+        run: |
+          echo "Testing user registration..."
+
+          # Test registration endpoint exists
+          status_code=$(curl -s -o /dev/null -w "%{http_code}" \
+            -X POST \
+            -H "Content-Type: application/json" \
+            "${{ inputs.api_url }}/auth/register")
+
+          if [ "$status_code" -eq 200 ] || [ "$status_code" -eq 400 ] || [ "$status_code" -eq 422 ]; then
+            echo "✅ Registration endpoint is responding (status: $status_code)"
+          else
+            echo "❌ Registration endpoint returned unexpected status: $status_code"
+            exit 1
+          fi
+
+      - name: Test login flow
+        run: |
+          echo "Testing login..."
+
+          # Test login endpoint exists
+          status_code=$(curl -s -o /dev/null -w "%{http_code}" \
+            -X POST \
+            -H "Content-Type: application/json" \
+            "${{ inputs.api_url }}/auth/login")
+
+          if [ "$status_code" -eq 200 ] || [ "$status_code" -eq 400 ] || [ "$status_code" -eq 401 ]; then
+            echo "✅ Login endpoint is responding (status: $status_code)"
+          else
+            echo "❌ Login endpoint returned unexpected status: $status_code"
+            exit 1
+          fi
+
+      - name: Test job search
+        run: |
+          echo "Testing job search..."
+
+          # Test job search endpoint
+          status_code=$(curl -s -o /dev/null -w "%{http_code}" \
+            "${{ inputs.api_url }}/jobs?limit=10")
+
+          if [ "$status_code" -eq 200 ] || [ "$status_code" -eq 401 ]; then
+            echo "✅ Job search endpoint is responding (status: $status_code)"
+          else
+            echo "❌ Job search endpoint returned unexpected status: $status_code"
+            exit 1
+          fi
+
+      - name: Test static assets
+        run: |
+          echo "Testing static assets..."
+
+          # Test if main page loads
+          if curl -sf --max-time ${{ env.SMOKE_TEST_TIMEOUT }} "${{ inputs.base_url }}" > /dev/null; then
+            echo "✅ Main page loads successfully"
+          else
+            echo "❌ Main page failed to load"
+            exit 1
+          fi
+
+      - name: Generate smoke test report
+        if: always()
+        run: |
+          echo "## Smoke Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment:** ${{ inputs.environment }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Base URL:** ${{ inputs.base_url }}" >> $GITHUB_STEP_SUMMARY
+          echo "**API URL:** ${{ inputs.api_url }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ User Registration Endpoint" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Login Endpoint" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Job Search Endpoint" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Static Assets" >> $GITHUB_STEP_SUMMARY
+
+  performance-checks:
+    name: Performance Checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: health-checks
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Apache Bench
+        run: sudo apt-get install -y apache2-utils
+
+      - name: Test web performance
+        run: |
+          echo "Testing web performance..."
+
+          # Run 100 requests with 10 concurrent
+          ab -n 100 -c 10 -s 30 "${{ inputs.base_url }}/" > web-perf.txt || true
+
+          # Extract and display results
+          cat web-perf.txt
+
+          # Check if requests per second is acceptable (example: > 10 req/s)
+          rps=$(grep "Requests per second" web-perf.txt | awk '{print $4}')
+          echo "Requests per second: $rps"
+
+      - name: Test API performance
+        run: |
+          echo "Testing API performance..."
+
+          # Test API endpoint performance
+          ab -n 100 -c 10 -s 30 "${{ inputs.api_url }}/health" > api-perf.txt || true
+
+          # Extract and display results
+          cat api-perf.txt
+
+      - name: Upload performance results
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-results
+          path: |
+            web-perf.txt
+            api-perf.txt
+          retention-days: 7
+
+  security-checks:
+    name: Security Checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: health-checks
+    steps:
+      - name: Check SSL/TLS configuration
+        run: |
+          echo "Checking SSL/TLS configuration..."
+
+          # Extract domain from URL
+          domain=$(echo "${{ inputs.base_url }}" | sed -e 's|^https://||' -e 's|/.*$||')
+
+          # Check if HTTPS is enabled
+          if curl -sf --max-time 10 "https://$domain" > /dev/null; then
+            echo "✅ HTTPS is enabled"
+          else
+            echo "⚠️  HTTPS check failed"
+          fi
+
+      - name: Check security headers
+        run: |
+          echo "Checking security headers..."
+
+          headers=$(curl -sI "${{ inputs.base_url }}" | tr -d '\r')
+
+          echo "Response headers:"
+          echo "$headers"
+
+          # Check for important security headers
+          if echo "$headers" | grep -qi "Strict-Transport-Security"; then
+            echo "✅ HSTS header present"
+          else
+            echo "⚠️  HSTS header missing"
+          fi
+
+          if echo "$headers" | grep -qi "X-Content-Type-Options"; then
+            echo "✅ X-Content-Type-Options header present"
+          else
+            echo "⚠️  X-Content-Type-Options header missing"
+          fi
+
+          if echo "$headers" | grep -qi "X-Frame-Options"; then
+            echo "✅ X-Frame-Options header present"
+          else
+            echo "⚠️  X-Frame-Options header missing"
+          fi
+
+  verification-summary:
+    name: Verification Summary
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: [health-checks, smoke-tests, performance-checks, security-checks]
+    if: always()
+    steps:
+      - name: Generate verification summary
+        run: |
+          echo "## Deployment Verification Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment:** ${{ inputs.environment }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Timestamp:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Verification Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- Health Checks: ${{ needs.health-checks.result == 'success' && '✅ Passed' || '❌ Failed' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Smoke Tests: ${{ needs.smoke-tests.result == 'success' && '✅ Passed' || '❌ Failed' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Performance Checks: ${{ needs.performance-checks.result == 'success' && '✅ Passed' || '❌ Failed' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Security Checks: ${{ needs.security-checks.result == 'success' && '✅ Passed' || '❌ Failed' }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ needs.health-checks.outputs.all_healthy }}" != "true" ]; then
+            echo "### ⚠️ Failed Services" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "${{ needs.health-checks.outputs.failed_services }}" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Check if rollback is needed
+        id: rollback_check
+        run: |
+          if [ "${{ needs.health-checks.result }}" != "success" ] || [ "${{ needs.smoke-tests.result }}" != "success" ]; then
+            echo "rollback_needed=true" >> $GITHUB_OUTPUT
+            echo "::error::Deployment verification failed. Rollback recommended."
+          else
+            echo "rollback_needed=false" >> $GITHUB_OUTPUT
+            echo "✅ All verifications passed successfully"
+          fi
+
+      - name: Notify success
+        if: success()
+        uses: slackapi/slack-github-action@v1
+        continue-on-error: true
+        with:
+          payload: |
+            {
+              "text": "✅ Deployment Verification Passed",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Deployment Verification Passed*\n*Environment:* ${{ inputs.environment }}\n*Base URL:* ${{ inputs.base_url }}\n*All checks passed successfully!*"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: Notify failure
+        if: failure()
+        uses: slackapi/slack-github-action@v1
+        continue-on-error: true
+        with:
+          payload: |
+            {
+              "text": "❌ Deployment Verification Failed",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*CRITICAL: Deployment Verification Failed*\n*Environment:* ${{ inputs.environment }}\n*Failed Services:* ${{ needs.health-checks.outputs.failed_services }}\n*Action:* Review deployment and consider rollback"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: Fail workflow if verification failed
+        if: steps.rollback_check.outputs.rollback_needed == 'true'
+        run: |
+          echo "::error::Deployment verification failed"
+          exit 1

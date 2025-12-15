@@ -1,0 +1,21 @@
+{
+  "name": "@applyforus/load-tests",
+  "version": "1.0.0",
+  "description": "Load tests for ApplyForUs AI Platform",
+  "private": true,
+  "scripts": {
+    "test:smoke": "k6 run --vus 1 --duration 1m scenarios/smoke-test.js",
+    "test:load": "k6 run --vus 10 --duration 10m scenarios/load-test.js",
+    "test:stress": "k6 run --vus 50 --duration 15m scenarios/stress-test.js",
+    "test:spike": "k6 run scenarios/spike-test.js",
+    "test:soak": "k6 run --vus 20 --duration 2h scenarios/soak-test.js",
+    "test:breakpoint": "k6 run scenarios/breakpoint-test.js",
+    "test:auth": "k6 run scenarios/auth-service-test.js",
+    "test:jobs": "k6 run scenarios/job-service-test.js",
+    "test:circuit-breaker": "k6 run scenarios/circuit-breaker-test.js",
+    "test:all": "npm run test:smoke && npm run test:load && npm run test:stress"
+  },
+  "devDependencies": {
+    "k6": "^0.0.0"
+  }
+}

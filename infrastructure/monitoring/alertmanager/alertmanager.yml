@@ -1,0 +1,200 @@
+# AlertManager Configuration for ApplyForUs AI Platform
+
+global:
+  resolve_timeout: 5m
+  # Slack webhook URL (set via environment variable)
+  slack_api_url: '${SLACK_WEBHOOK_URL}'
+  # PagerDuty integration key (set via environment variable)
+  pagerduty_url: 'https://events.pagerduty.com/v2/enqueue'
+
+# Templates for notification messages
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'
+
+# Route tree for alert routing
+route:
+  # Default receiver
+  receiver: 'default-receiver'
+
+  # Group alerts by these labels
+  group_by: ['alertname', 'service', 'severity']
+
+  # How long to wait before sending initial notification
+  group_wait: 10s
+
+  # How long to wait before sending notification about new alerts added to group
+  group_interval: 10s
+
+  # How long to wait before re-sending a given alert
+  repeat_interval: 4h
+
+  # Child routes
+  routes:
+    # Critical alerts go to PagerDuty immediately
+    - receiver: 'pagerduty-critical'
+      match:
+        severity: critical
+      group_wait: 0s
+      repeat_interval: 1h
+      continue: true  # Also send to other receivers
+
+    # Critical alerts also go to Slack
+    - receiver: 'slack-critical'
+      match:
+        severity: critical
+      continue: false
+
+    # Warning alerts go to Slack only
+    - receiver: 'slack-warnings'
+      match:
+        severity: warning
+      repeat_interval: 12h
+
+    # Database alerts
+    - receiver: 'database-team'
+      match:
+        category: database
+      repeat_interval: 2h
+
+    # Business metrics alerts
+    - receiver: 'business-team'
+      match:
+        category: business
+      repeat_interval: 6h
+
+    # Performance alerts
+    - receiver: 'performance-team'
+      match:
+        category: performance
+      repeat_interval: 2h
+
+# Inhibition rules - suppress certain alerts when others are firing
+inhibit_rules:
+  # Suppress warnings if critical alert for same service
+  - source_match:
+      severity: critical
+    target_match:
+      severity: warning
+    equal: ['service']
+
+  # If service is down, suppress all other alerts for that service
+  - source_match:
+      alertname: ServiceDown
+    target_match_re:
+      alertname: '.*'
+    equal: ['service']
+
+  # If database is down, suppress slow query alerts
+  - source_match:
+      alertname: DatabaseConnectionPoolExhausted
+    target_match:
+      alertname: SlowDatabaseQueries
+    equal: ['service']
+
+# Receivers - notification destinations
+receivers:
+  # Default receiver
+  - name: 'default-receiver'
+    slack_configs:
+      - channel: '#alerts-general'
+        title: 'ApplyForUs Alert'
+        text: |
+          {{ range .Alerts }}
+          *Alert:* {{ .Annotations.summary }}
+          *Description:* {{ .Annotations.description }}
+          *Severity:* {{ .Labels.severity }}
+          *Service:* {{ .Labels.service }}
+          {{ end }}
+
+  # PagerDuty for critical alerts
+  - name: 'pagerduty-critical'
+    pagerduty_configs:
+      - service_key: '${PAGERDUTY_SERVICE_KEY}'
+        description: '{{ .GroupLabels.alertname }}: {{ .GroupLabels.service }}'
+        severity: 'critical'
+        details:
+          summary: '{{ range .Alerts }}{{ .Annotations.summary }}{{ end }}'
+          description: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
+          service: '{{ .GroupLabels.service }}'
+
+  # Slack for critical alerts
+  - name: 'slack-critical'
+    slack_configs:
+      - channel: '#alerts-critical'
+        username: 'ApplyForUs AlertManager'
+        icon_emoji: ':rotating_light:'
+        title: ':fire: CRITICAL ALERT :fire:'
+        color: 'danger'
+        text: |
+          {{ range .Alerts }}
+          *Alert:* {{ .Annotations.summary }}
+          *Description:* {{ .Annotations.description }}
+          *Service:* {{ .Labels.service }}
+          *Runbook:* {{ .Annotations.runbook }}
+          {{ end }}
+
+  # Slack for warnings
+  - name: 'slack-warnings'
+    slack_configs:
+      - channel: '#alerts-warnings'
+        username: 'ApplyForUs AlertManager'
+        icon_emoji: ':warning:'
+        title: 'Warning Alert'
+        color: 'warning'
+        text: |
+          {{ range .Alerts }}
+          *Alert:* {{ .Annotations.summary }}
+          *Description:* {{ .Annotations.description }}
+          *Service:* {{ .Labels.service }}
+          {{ end }}
+
+  # Database team
+  - name: 'database-team'
+    slack_configs:
+      - channel: '#team-database'
+        username: 'Database Alerts'
+        icon_emoji: ':database:'
+        title: 'Database Alert'
+        text: |
+          {{ range .Alerts }}
+          *Alert:* {{ .Annotations.summary }}
+          *Description:* {{ .Annotations.description }}
+          *Service:* {{ .Labels.service }}
+          *Runbook:* {{ .Annotations.runbook }}
+          {{ end }}
+    email_configs:
+      - to: 'database-team@applyforus.com'
+        from: 'alerts@applyforus.com'
+        smarthost: 'smtp.example.com:587'
+        auth_username: '${SMTP_USERNAME}'
+        auth_password: '${SMTP_PASSWORD}'
+        headers:
+          Subject: '[{{ .Status | toUpper }}] Database Alert: {{ .GroupLabels.alertname }}'
+
+  # Business team
+  - name: 'business-team'
+    slack_configs:
+      - channel: '#team-business'
+        username: 'Business Metrics'
+        icon_emoji: ':chart_with_upwards_trend:'
+        title: 'Business Metrics Alert'
+        text: |
+          {{ range .Alerts }}
+          *Alert:* {{ .Annotations.summary }}
+          *Description:* {{ .Annotations.description }}
+          {{ end }}
+
+  # Performance team
+  - name: 'performance-team'
+    slack_configs:
+      - channel: '#team-performance'
+        username: 'Performance Alerts'
+        icon_emoji: ':rocket:'
+        title: 'Performance Alert'
+        text: |
+          {{ range .Alerts }}
+          *Alert:* {{ .Annotations.summary }}
+          *Description:* {{ .Annotations.description }}
+          *Service:* {{ .Labels.service }}
+          *Runbook:* {{ .Annotations.runbook }}
+          {{ end }}

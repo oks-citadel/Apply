@@ -1,0 +1,472 @@
+name: Terraform CI
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'infrastructure/terraform/**'
+      - 'infrastructure/terraform-applyforus/**'
+      - '.github/workflows/terraform-ci.yml'
+  push:
+    branches: [main, develop]
+    paths:
+      - 'infrastructure/terraform/**'
+      - 'infrastructure/terraform-applyforus/**'
+  workflow_dispatch:
+    inputs:
+      terraform_dir:
+        description: 'Terraform directory to validate'
+        required: false
+        default: 'infrastructure/terraform'
+        type: choice
+        options:
+          - infrastructure/terraform
+          - infrastructure/terraform-applyforus
+
+concurrency:
+  group: terraform-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  TERRAFORM_VERSION: '1.6.0'
+  TFSEC_VERSION: 'latest'
+  CHECKOV_VERSION: 'latest'
+
+jobs:
+  terraform-format:
+    name: Terraform Format Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        terraform_dir:
+          - infrastructure/terraform
+          - infrastructure/terraform-applyforus
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+
+      - name: Terraform Format Check
+        id: fmt
+        run: |
+          echo "Checking Terraform formatting in ${{ matrix.terraform_dir }}..."
+          cd ${{ matrix.terraform_dir }}
+          terraform fmt -check -recursive -diff
+        continue-on-error: false
+
+      - name: Comment PR with format errors
+        if: failure() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '❌ Terraform format check failed in `${{ matrix.terraform_dir }}`.\n\nPlease run `terraform fmt -recursive` to fix formatting issues.'
+            })
+
+  terraform-validate:
+    name: Terraform Validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: terraform-format
+    strategy:
+      matrix:
+        terraform_dir:
+          - infrastructure/terraform
+          - infrastructure/terraform-applyforus
+    defaults:
+      run:
+        working-directory: ${{ matrix.terraform_dir }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+
+      - name: Terraform Init (backend-config=false)
+        run: |
+          echo "Initializing Terraform without backend..."
+          terraform init -backend=false -upgrade
+
+      - name: Terraform Validate
+        id: validate
+        run: |
+          echo "Validating Terraform configuration..."
+          terraform validate -no-color
+        continue-on-error: false
+
+      - name: Upload validation results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-validation-${{ matrix.terraform_dir }}
+          path: |
+            ${{ matrix.terraform_dir }}/.terraform/
+            ${{ matrix.terraform_dir }}/*.log
+          retention-days: 7
+          if-no-files-found: ignore
+
+  terraform-plan:
+    name: Terraform Plan (${{ matrix.environment }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: terraform-validate
+    if: github.event_name == 'pull_request'
+    strategy:
+      matrix:
+        environment: [dev, staging]
+        terraform_dir: [infrastructure/terraform]
+    defaults:
+      run:
+        working-directory: ${{ matrix.terraform_dir }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+          terraform_wrapper: false
+
+      - name: Configure Azure credentials
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Terraform Init
+        run: |
+          echo "Initializing Terraform with backend..."
+          terraform init -upgrade
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+
+      - name: Select or Create Workspace
+        run: |
+          echo "Selecting workspace: ${{ matrix.environment }}"
+          terraform workspace select ${{ matrix.environment }} || terraform workspace new ${{ matrix.environment }}
+
+      - name: Terraform Plan
+        id: plan
+        run: |
+          echo "Running Terraform plan for ${{ matrix.environment }}..."
+          terraform plan \
+            -var-file="environments/${{ matrix.environment }}.tfvars" \
+            -out=tfplan-${{ matrix.environment }}.out \
+            -no-color
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+        continue-on-error: false
+
+      - name: Generate Plan Summary
+        run: |
+          echo "Generating plan summary..."
+          terraform show -no-color tfplan-${{ matrix.environment }}.out > tfplan-${{ matrix.environment }}.txt
+
+      - name: Upload Terraform Plan
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan-${{ matrix.environment }}
+          path: |
+            ${{ matrix.terraform_dir }}/tfplan-${{ matrix.environment }}.out
+            ${{ matrix.terraform_dir }}/tfplan-${{ matrix.environment }}.txt
+          retention-days: 30
+
+      - name: Comment PR with Plan
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const planPath = '${{ matrix.terraform_dir }}/tfplan-${{ matrix.environment }}.txt';
+            let plan = 'No changes detected';
+
+            try {
+              plan = fs.readFileSync(planPath, 'utf8');
+              // Truncate if too long
+              if (plan.length > 60000) {
+                plan = plan.substring(0, 60000) + '\n\n... (truncated)';
+              }
+            } catch (e) {
+              console.log('Error reading plan file:', e);
+            }
+
+            const output = `### Terraform Plan: ${{ matrix.environment }}
+
+            <details><summary>Show Plan</summary>
+
+            \`\`\`terraform
+            ${plan}
+            \`\`\`
+
+            </details>
+
+            *Pushed by: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            })
+
+  tfsec-scan:
+    name: TFSec Security Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: terraform-format
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    strategy:
+      matrix:
+        terraform_dir:
+          - infrastructure/terraform
+          - infrastructure/terraform-applyforus
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run tfsec
+        uses: aquasecurity/tfsec-action@v1.0.3
+        with:
+          working_directory: ${{ matrix.terraform_dir }}
+          format: sarif
+          soft_fail: false
+          additional_args: --minimum-severity MEDIUM
+
+      - name: Upload tfsec results to Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: results.sarif
+          category: tfsec-${{ matrix.terraform_dir }}
+        continue-on-error: true
+
+      - name: Generate tfsec report
+        uses: aquasecurity/tfsec-action@v1.0.3
+        with:
+          working_directory: ${{ matrix.terraform_dir }}
+          format: json
+          soft_fail: true
+          additional_args: --out tfsec-results.json
+
+      - name: Upload tfsec JSON results
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfsec-results-${{ matrix.terraform_dir }}
+          path: tfsec-results.json
+          retention-days: 30
+
+  checkov-scan:
+    name: Checkov Security Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: terraform-format
+    permissions:
+      contents: read
+      security-events: write
+    strategy:
+      matrix:
+        terraform_dir:
+          - infrastructure/terraform
+          - infrastructure/terraform-applyforus
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Checkov
+        run: pip install checkov
+
+      - name: Run Checkov scan
+        id: checkov
+        run: |
+          checkov -d ${{ matrix.terraform_dir }} \
+            --framework terraform \
+            --output sarif \
+            --output-file-path checkov-results.sarif \
+            --soft-fail
+        continue-on-error: true
+
+      - name: Upload Checkov results to Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: checkov-results.sarif
+          category: checkov-${{ matrix.terraform_dir }}
+        continue-on-error: true
+
+      - name: Run Checkov for JSON output
+        run: |
+          checkov -d ${{ matrix.terraform_dir }} \
+            --framework terraform \
+            --output json \
+            --output-file-path checkov-results.json \
+            --soft-fail
+        continue-on-error: true
+
+      - name: Upload Checkov JSON results
+        uses: actions/upload-artifact@v4
+        with:
+          name: checkov-results-${{ matrix.terraform_dir }}
+          path: checkov-results.json
+          retention-days: 30
+
+  terraform-docs:
+    name: Generate Terraform Docs
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: terraform-validate
+    if: github.event_name == 'pull_request'
+    strategy:
+      matrix:
+        terraform_dir:
+          - infrastructure/terraform
+          - infrastructure/terraform-applyforus
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+
+      - name: Generate Terraform docs
+        uses: terraform-docs/gh-actions@v1
+        with:
+          working-dir: ${{ matrix.terraform_dir }}
+          output-file: README.md
+          output-method: inject
+          git-push: false
+
+      - name: Upload generated docs
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-docs-${{ matrix.terraform_dir }}
+          path: ${{ matrix.terraform_dir }}/README.md
+          retention-days: 7
+
+  terraform-cost-estimate:
+    name: Terraform Cost Estimation
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: terraform-plan
+    if: github.event_name == 'pull_request'
+    strategy:
+      matrix:
+        environment: [dev, staging]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download Terraform Plan
+        uses: actions/download-artifact@v4
+        with:
+          name: tfplan-${{ matrix.environment }}
+
+      - name: Setup Infracost
+        uses: infracost/actions/setup@v2
+        with:
+          api-key: ${{ secrets.INFRACOST_API_KEY }}
+        continue-on-error: true
+
+      - name: Generate Infracost estimate
+        if: env.INFRACOST_API_KEY != ''
+        run: |
+          infracost breakdown \
+            --path tfplan-${{ matrix.environment }}.out \
+            --format json \
+            --out-file infracost-${{ matrix.environment }}.json
+        continue-on-error: true
+        env:
+          INFRACOST_API_KEY: ${{ secrets.INFRACOST_API_KEY }}
+
+      - name: Post cost estimate to PR
+        if: env.INFRACOST_API_KEY != '' && github.event_name == 'pull_request'
+        uses: infracost/actions/comment@v1
+        with:
+          path: infracost-${{ matrix.environment }}.json
+          behavior: update
+        continue-on-error: true
+        env:
+          INFRACOST_API_KEY: ${{ secrets.INFRACOST_API_KEY }}
+
+  summary:
+    name: Terraform CI Summary
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs:
+      - terraform-format
+      - terraform-validate
+      - terraform-plan
+      - tfsec-scan
+      - checkov-scan
+    if: always()
+    steps:
+      - name: Generate Summary
+        run: |
+          echo "## Terraform CI Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Job Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- Format Check: ${{ needs.terraform-format.result == 'success' && '✅' || '❌' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Validation: ${{ needs.terraform-validate.result == 'success' && '✅' || '❌' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Plan: ${{ needs.terraform-plan.result == 'success' && '✅' || (needs.terraform-plan.result == 'skipped' && '⏭️' || '❌') }}" >> $GITHUB_STEP_SUMMARY
+          echo "- TFSec Scan: ${{ needs.tfsec-scan.result == 'success' && '✅' || '❌' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Checkov Scan: ${{ needs.checkov-scan.result == 'success' && '✅' || '❌' }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ needs.terraform-format.result }}" != "success" ] || \
+             [ "${{ needs.terraform-validate.result }}" != "success" ] || \
+             [ "${{ needs.tfsec-scan.result }}" != "success" ] || \
+             [ "${{ needs.checkov-scan.result }}" != "success" ]; then
+            echo "### ⚠️ Action Required" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Some Terraform checks have failed. Please review the errors above." >> $GITHUB_STEP_SUMMARY
+            exit 1
+          else
+            echo "### ✅ All Checks Passed" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Terraform configuration is valid and secure!" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Notify on failure
+        if: failure()
+        uses: slackapi/slack-github-action@v1
+        continue-on-error: true
+        with:
+          payload: |
+            {
+              "text": "❌ Terraform CI Failed",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Terraform CI Failed*\n*Repository:* ${{ github.repository }}\n*Branch:* ${{ github.ref_name }}\n*Actor:* ${{ github.actor }}"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
