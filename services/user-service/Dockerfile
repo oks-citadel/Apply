@@ -11,6 +11,13 @@ COPY services/user-service/ ./services/user-service/
 
 RUN pnpm install --no-frozen-lockfile
 
+# Build workspace packages first
+WORKDIR /app
+RUN pnpm --filter @jobpilot/types build || true && \
+    pnpm --filter @jobpilot/security build || true && \
+    pnpm --filter @jobpilot/shared build || true && \
+    pnpm --filter @jobpilot/telemetry build || true
+
 WORKDIR /app/services/user-service
 RUN pnpm run build
 

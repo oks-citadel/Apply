@@ -11,8 +11,15 @@ COPY services/auto-apply-service/ ./services/auto-apply-service/
 
 RUN pnpm install --no-frozen-lockfile
 
+# Build workspace packages first
+WORKDIR /app
+RUN pnpm --filter @jobpilot/types build || true && \
+    pnpm --filter @jobpilot/security build || true && \
+    pnpm --filter @jobpilot/shared build || true && \
+    pnpm --filter @jobpilot/telemetry build || true
+
 WORKDIR /app/services/auto-apply-service
-RUN pnpm exec nest build
+RUN pnpm run build
 
 FROM node:20-alpine AS production
 RUN apk add --no-cache dumb-init curl chromium

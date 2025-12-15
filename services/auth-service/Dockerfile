@@ -14,6 +14,13 @@ COPY services/auth-service/ ./services/auth-service/
 # Install all dependencies (--no-frozen-lockfile needed due to workspace package renames)
 RUN pnpm install --no-frozen-lockfile
 
+# Build workspace packages first (types, security, shared, telemetry)
+WORKDIR /app
+RUN pnpm --filter @jobpilot/types build || true && \
+    pnpm --filter @jobpilot/security build || true && \
+    pnpm --filter @jobpilot/shared build || true && \
+    pnpm --filter @jobpilot/telemetry build || true
+
 # Build the service
 WORKDIR /app/services/auth-service
 RUN pnpm run build

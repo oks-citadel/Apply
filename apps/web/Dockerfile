@@ -15,6 +15,12 @@ COPY apps/web/ ./apps/web/
 # Using --no-frozen-lockfile due to workspace package spec differences
 RUN pnpm install --no-frozen-lockfile
 
+# Build workspace packages first
+RUN pnpm --filter @jobpilot/types build || true && \
+    pnpm --filter @jobpilot/security build || true && \
+    pnpm --filter @jobpilot/shared build || true && \
+    pnpm --filter @jobpilot/telemetry build || true
+
 # Build only the web app
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production

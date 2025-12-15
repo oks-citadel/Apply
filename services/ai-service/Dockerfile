@@ -18,7 +18,8 @@ RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
 # Copy requirements first for better layer caching
-COPY requirements.txt .
+# When built from repo root context, path is services/ai-service/requirements.txt
+COPY services/ai-service/requirements.txt .
 
 # Install Python dependencies with optimizations
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
@@ -43,8 +44,9 @@ COPY --from=builder /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
 # Copy only necessary application files (see .dockerignore)
-COPY src/ ./src/
-COPY requirements.txt .
+# When built from repo root context, paths are services/ai-service/*
+COPY services/ai-service/src/ ./src/
+COPY services/ai-service/requirements.txt .
 
 # Create non-root user with specific UID/GID
 RUN groupadd -r -g 1000 aiservice && \
