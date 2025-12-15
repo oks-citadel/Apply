@@ -13,10 +13,10 @@ RUN pnpm install --no-frozen-lockfile
 
 # Build workspace packages first
 WORKDIR /app
-RUN pnpm --filter @jobpilot/types build || true && \
-    pnpm --filter @jobpilot/security build || true && \
-    pnpm --filter @jobpilot/shared build || true && \
-    pnpm --filter @jobpilot/telemetry build || true
+RUN pnpm --filter @applyforus/types build || true && \
+    pnpm --filter @applyforus/security build || true && \
+    pnpm --filter @applyforus/shared build || true && \
+    pnpm --filter @applyforus/telemetry build || true
 
 WORKDIR /app/services/orchestrator-service
 RUN pnpm run build
