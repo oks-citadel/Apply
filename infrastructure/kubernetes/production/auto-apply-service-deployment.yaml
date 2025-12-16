@@ -6,8 +6,15 @@ metadata:
   labels:
     app: auto-apply-service
     tier: backend
+    version: stable
 spec:
   replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  revisionHistoryLimit: 10
   selector:
     matchLabels:
       app: auto-apply-service
@@ -16,12 +23,20 @@ spec:
       labels:
         app: auto-apply-service
         tier: backend
+        version: stable
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "4003"
+        prometheus.io/path: "/metrics"
     spec:
       containers:
         - name: auto-apply-service
           image: applyforusacr.azurecr.io/applyai-auto-apply-service:latest
+          imagePullPolicy: IfNotPresent
           ports:
-            - containerPort: 4003
+            - name: http
+              containerPort: 4003
+              protocol: TCP
           env:
             - name: NODE_ENV
               value: "production"
@@ -37,18 +52,40 @@ spec:
             limits:
               memory: "512Mi"
               cpu: "500m"
+          startupProbe:
+            httpGet:
+              path: /health/live
+              port: 4003
+              scheme: HTTP
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 18
           readinessProbe:
             httpGet:
-              path: /health
+              path: /health/ready
               port: 4003
-            initialDelaySeconds: 10
+              scheme: HTTP
+            initialDelaySeconds: 5
             periodSeconds: 5
+            timeoutSeconds: 3
+            successThreshold: 1
+            failureThreshold: 3
           livenessProbe:
             httpGet:
-              path: /health
+              path: /health/live
               port: 4003
-            initialDelaySeconds: 30
+              scheme: HTTP
+            initialDelaySeconds: 45
             periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 3
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh", "-c", "sleep 15"]
 ---
 apiVersion: v1
 kind: Service

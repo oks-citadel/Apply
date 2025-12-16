@@ -7,7 +7,7 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
 @ApiTags('Preferences')
 @ApiBearerAuth('JWT-auth')
-@Controller('preferences')
+@Controller('users/preferences')
 @UseGuards(JwtAuthGuard)
 export class PreferencesController {
   constructor(private readonly preferencesService: PreferencesService) {}

@@ -43,15 +43,12 @@ jobs:
 
       - name: Run Prettier check
         run: pnpm run format:check
-        continue-on-error: true
 
       - name: Run ESLint
         run: pnpm run lint
-        continue-on-error: true
 
       - name: Run TypeScript type check
         run: pnpm run type-check
-        continue-on-error: true
 
       - name: Upload lint results
         if: always()
@@ -87,7 +84,6 @@ jobs:
 
       - name: Run unit tests with coverage
         run: pnpm run test --filter=@jobpilot/web
-        continue-on-error: true
         env:
           CI: true
 
@@ -161,7 +157,6 @@ jobs:
 
       - name: Run tests
         run: pnpm run test --filter=@jobpilot/${{ matrix.service }}
-        continue-on-error: true
         env:
           DATABASE_URL: postgresql://test:test@localhost:5432/test
           REDIS_URL: redis://localhost:6379
@@ -202,11 +197,9 @@ jobs:
 
       - name: Build packages
         run: pnpm run build --filter=@jobpilot/types --filter=@jobpilot/security
-        continue-on-error: true
 
       - name: Build web app
         run: pnpm run build --filter=@jobpilot/web
-        continue-on-error: true
         env:
           NEXT_PUBLIC_API_URL: https://api.applyforus.com
 
@@ -253,7 +246,6 @@ jobs:
 
       - name: Run E2E tests
         run: pnpm run test:e2e
-        continue-on-error: true
         env:
           CI: true
 

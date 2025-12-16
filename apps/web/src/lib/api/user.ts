@@ -17,7 +17,7 @@ export const userApi = {
    */
   getProfile: async (): Promise<UserProfile> => {
     try {
-      const response = await apiClient.get<UserProfile>('/user/profile');
+      const response = await apiClient.get<UserProfile>('/users/profile');
       return response.data;
     } catch (error) {
       throw handleApiError(error);
@@ -29,7 +29,7 @@ export const userApi = {
    */
   updateProfile: async (data: UpdateProfileData): Promise<UserProfile> => {
     try {
-      const response = await apiClient.patch<UserProfile>('/user/profile', data);
+      const response = await apiClient.patch<UserProfile>('/users/profile', data);
       return response.data;
     } catch (error) {
       throw handleApiError(error);
@@ -44,7 +44,7 @@ export const userApi = {
       const formData = new FormData();
       formData.append('photo', file);
 
-      const response = await apiClient.post<UploadPhotoResponse>('/user/profile/photo', formData, {
+      const response = await apiClient.post<UploadPhotoResponse>('/users/profile/photo', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -60,7 +60,7 @@ export const userApi = {
    */
   deletePhoto: async (): Promise<{ message: string }> => {
     try {
-      const response = await apiClient.delete<{ message: string }>('/user/profile/photo');
+      const response = await apiClient.delete<{ message: string }>('/users/profile/photo');
       return response.data;
     } catch (error) {
       throw handleApiError(error);
@@ -72,7 +72,7 @@ export const userApi = {
    */
   getPreferences: async (): Promise<UserPreferences> => {
     try {
-      const response = await apiClient.get<UserPreferences>('/user/preferences');
+      const response = await apiClient.get<UserPreferences>('/users/preferences');
       return response.data;
     } catch (error) {
       throw handleApiError(error);
@@ -84,7 +84,7 @@ export const userApi = {
    */
   updatePreferences: async (data: UpdatePreferencesData): Promise<UserPreferences> => {
     try {
-      const response = await apiClient.patch<UserPreferences>('/user/preferences', data);
+      const response = await apiClient.patch<UserPreferences>('/users/preferences', data);
       return response.data;
     } catch (error) {
       throw handleApiError(error);
@@ -96,7 +96,7 @@ export const userApi = {
    */
   getSubscription: async (): Promise<Subscription> => {
     try {
-      const response = await apiClient.get<Subscription>('/user/subscription');
+      const response = await apiClient.get<Subscription>('/users/subscription');
       return response.data;
     } catch (error) {
       throw handleApiError(error);
@@ -108,7 +108,7 @@ export const userApi = {
    */
   getSubscriptionPlans: async (): Promise<SubscriptionPlanDetails[]> => {
     try {
-      const response = await apiClient.get<SubscriptionPlanDetails[]>('/user/subscription/plans');
+      const response = await apiClient.get<SubscriptionPlanDetails[]>('/users/subscription/plans');
       return response.data;
     } catch (error) {
       throw handleApiError(error);
@@ -123,7 +123,7 @@ export const userApi = {
     interval?: 'month' | 'year'
   ): Promise<CheckoutSession> => {
     try {
-      const response = await apiClient.post<CheckoutSession>('/user/subscription/checkout', {
+      const response = await apiClient.post<CheckoutSession>('/users/subscription/checkout', {
         plan,
         interval,
       });
@@ -141,7 +141,7 @@ export const userApi = {
     feedback?: string
   ): Promise<{ message: string }> => {
     try {
-      const response = await apiClient.post<{ message: string }>('/user/subscription/cancel', {
+      const response = await apiClient.post<{ message: string }>('/users/subscription/cancel', {
         reason,
         feedback,
       });
@@ -156,7 +156,7 @@ export const userApi = {
    */
   resumeSubscription: async (): Promise<Subscription> => {
     try {
-      const response = await apiClient.post<Subscription>('/user/subscription/resume');
+      const response = await apiClient.post<Subscription>('/users/subscription/resume');
       return response.data;
     } catch (error) {
       throw handleApiError(error);
@@ -168,7 +168,7 @@ export const userApi = {
    */
   updatePaymentMethod: async (): Promise<{ url: string }> => {
     try {
-      const response = await apiClient.post<{ url: string }>('/user/subscription/payment-method');
+      const response = await apiClient.post<{ url: string }>('/users/subscription/payment-method');
       return response.data;
     } catch (error) {
       throw handleApiError(error);
@@ -190,7 +190,7 @@ export const userApi = {
         total: number;
         page: number;
         limit: number;
-      }>('/user/activity', { params });
+      }>('/users/activity', { params });
       return response.data;
     } catch (error) {
       throw handleApiError(error);
@@ -205,7 +205,7 @@ export const userApi = {
     newPassword: string
   ): Promise<{ message: string }> => {
     try {
-      const response = await apiClient.post<{ message: string }>('/user/change-password', {
+      const response = await apiClient.post<{ message: string }>('/users/change-password', {
         currentPassword,
         newPassword,
       });
@@ -220,7 +220,7 @@ export const userApi = {
    */
   deleteAccount: async (password: string, reason?: string): Promise<{ message: string }> => {
     try {
-      const response = await apiClient.post<{ message: string }>('/user/delete-account', {
+      const response = await apiClient.post<{ message: string }>('/users/delete-account', {
         password,
         reason,
       });
@@ -235,7 +235,7 @@ export const userApi = {
    */
   exportData: async (): Promise<Blob> => {
     try {
-      const response = await apiClient.get('/user/export-data', {
+      const response = await apiClient.get('/users/export-data', {
         responseType: 'blob',
       });
       return response.data;

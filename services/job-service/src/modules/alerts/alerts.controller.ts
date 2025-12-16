@@ -26,7 +26,7 @@ import { JobAlert } from './entities/job-alert.entity';
 const AuthGuard = () => (target: any, propertyKey?: string, descriptor?: PropertyDescriptor) => descriptor;
 
 @ApiTags('Alerts')
-@Controller('alerts')
+@Controller('jobs/alerts')
 @UseGuards(AuthGuard())
 @ApiBearerAuth('JWT-auth')
 export class AlertsController {

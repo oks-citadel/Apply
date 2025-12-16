@@ -31,7 +31,7 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
 @ApiTags('Profile')
 @ApiBearerAuth('JWT-auth')
-@Controller('profile')
+@Controller('users/profile')
 @UseGuards(JwtAuthGuard)
 export class ProfileController {
   constructor(

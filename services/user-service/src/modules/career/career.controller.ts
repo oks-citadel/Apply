@@ -17,7 +17,7 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
 @ApiTags('Career')
 @ApiBearerAuth('JWT-auth')
-@Controller('career')
+@Controller('users/career')
 @UseGuards(JwtAuthGuard)
 export class CareerController {
   constructor(private readonly careerService: CareerService) {}

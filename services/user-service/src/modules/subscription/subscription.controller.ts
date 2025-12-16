@@ -15,7 +15,7 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
 @ApiTags('Subscription')
-@Controller('subscription')
+@Controller('users/subscription')
 export class SubscriptionController {
   constructor(private readonly subscriptionService: SubscriptionService) {}
 

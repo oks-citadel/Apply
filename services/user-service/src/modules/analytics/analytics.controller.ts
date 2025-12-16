@@ -6,7 +6,7 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
 @ApiTags('Analytics')
 @ApiBearerAuth('JWT-auth')
-@Controller('analytics')
+@Controller('users/analytics')
 @UseGuards(JwtAuthGuard)
 export class AnalyticsController {
   constructor(private readonly analyticsService: AnalyticsService) {}
