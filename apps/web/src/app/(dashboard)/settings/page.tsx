@@ -568,8 +568,8 @@ function BillingSettings() {
   const createCheckout = useCreateCheckoutSession();
   const updatePaymentMethod = useUpdatePaymentMethod();
 
-  const handleUpgrade = () => {
-    createCheckout.mutate({ plan: 'pro', interval: 'month' });
+  const handleUpgrade = (tier: string) => {
+    createCheckout.mutate({ plan: tier.toLowerCase(), interval: 'month' });
   };
 
   const handleManageSubscription = () => {
@@ -588,8 +588,24 @@ function BillingSettings() {
     );
   }
 
-  const isPro = subscription?.plan === 'pro';
+  // Map subscription plan to tier display info
+  const tierInfo: Record<string, { name: string; price: number; description: string }> = {
+    free: { name: 'Freemium', price: 0, description: 'Basic features for getting started' },
+    freemium: { name: 'Freemium', price: 0, description: 'Basic features for getting started' },
+    starter: { name: 'Starter', price: 23.99, description: 'For active job seekers' },
+    basic: { name: 'Basic', price: 49.99, description: 'Accelerate your job search' },
+    professional: { name: 'Professional', price: 89.99, description: 'Premium features for serious job seekers' },
+    pro: { name: 'Professional', price: 89.99, description: 'Premium features for serious job seekers' },
+    advanced_career: { name: 'Advanced Career', price: 149.99, description: 'For executive-level job search' },
+    business: { name: 'Advanced Career', price: 149.99, description: 'For executive-level job search' },
+    executive_elite: { name: 'Executive Elite', price: 299.99, description: 'White-glove service for C-suite' },
+    enterprise: { name: 'Executive Elite', price: 299.99, description: 'White-glove service for C-suite' },
+  };
+
+  const currentPlan = subscription?.plan?.toLowerCase() || 'free';
+  const currentTier = tierInfo[currentPlan] || tierInfo.free;
   const isActive = subscription?.status === 'active';
+  const isPaidPlan = currentTier.price > 0;
 
   return (
     <div className="space-y-6">
@@ -602,13 +618,11 @@ function BillingSettings() {
           <div className="mb-6">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className="text-lg font-semibold capitalize">
-                  {subscription?.plan || 'Free'} Plan
+                <h3 className="text-lg font-semibold">
+                  {currentTier.name} Plan
                 </h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  {isPro
-                    ? 'Advanced features for power users'
-                    : 'Basic features for job seekers'}
+                  {currentTier.description}
                 </p>
                 {subscription?.cancelAtPeriodEnd && (
                   <p className="text-sm text-red-600 dark:text-red-400 mt-1">
@@ -619,9 +633,11 @@ function BillingSettings() {
               </div>
               <div className="text-right">
                 <div className="text-2xl font-bold">
-                  ${isPro ? '29' : '0'}
+                  {currentTier.price === 0 ? 'Free' : `$${currentTier.price}`}
                 </div>
-                <div className="text-sm text-gray-600">per month</div>
+                {currentTier.price > 0 && (
+                  <div className="text-sm text-gray-600">per month</div>
+                )}
               </div>
             </div>
 
@@ -644,9 +660,9 @@ function BillingSettings() {
                         width: `${
                           subscription.usage.resumesLimit === -1
                             ? 100
-                            : (subscription.usage.resumesUsed /
+                            : Math.min(100, (subscription.usage.resumesUsed /
                                 subscription.usage.resumesLimit) *
-                              100
+                              100)
                         }%`,
                       }}
                     />
@@ -669,9 +685,9 @@ function BillingSettings() {
                         width: `${
                           subscription.usage.applicationsLimit === -1
                             ? 100
-                            : (subscription.usage.applicationsUsed /
+                            : Math.min(100, (subscription.usage.applicationsUsed /
                                 subscription.usage.applicationsLimit) *
-                              100
+                              100)
                         }%`,
                       }}
                     />
@@ -680,26 +696,92 @@ function BillingSettings() {
               </div>
             )}
 
-            {!isPro && (
-              <Button onClick={handleUpgrade} disabled={createCheckout.isPending}>
-                {createCheckout.isPending ? 'Loading...' : 'Upgrade to Pro'}
-              </Button>
-            )}
-
-            {isPro && isActive && (
-              <Button
-                variant="outline"
-                onClick={handleManageSubscription}
-                disabled={updatePaymentMethod.isPending}
-              >
-                {updatePaymentMethod.isPending ? 'Loading...' : 'Manage Subscription'}
-              </Button>
-            )}
+            <div className="flex gap-3">
+              {isPaidPlan && isActive && (
+                <Button
+                  variant="outline"
+                  onClick={handleManageSubscription}
+                  disabled={updatePaymentMethod.isPending}
+                >
+                  {updatePaymentMethod.isPending ? 'Loading...' : 'Manage Subscription'}
+                </Button>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>
 
-      {isPro && (
+      {/* Available Plans */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Available Plans</CardTitle>
+          <CardDescription>Upgrade to unlock more features</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[
+              { id: 'starter', name: 'Starter', price: 23.99, apps: 30, highlight: '30 apps/month' },
+              { id: 'basic', name: 'Basic', price: 49.99, apps: 75, highlight: 'Auto-apply enabled' },
+              { id: 'professional', name: 'Professional', price: 89.99, apps: 200, highlight: 'Interview prep', popular: true },
+              { id: 'advanced_career', name: 'Advanced Career', price: 149.99, apps: 500, highlight: 'API access' },
+              { id: 'executive_elite', name: 'Executive Elite', price: 299.99, apps: -1, highlight: 'Dedicated manager' },
+            ]
+              .filter((plan) => {
+                // Don't show plans at or below current tier
+                const tierOrder = ['free', 'freemium', 'starter', 'basic', 'professional', 'pro', 'advanced_career', 'business', 'executive_elite', 'enterprise'];
+                const currentIndex = tierOrder.indexOf(currentPlan);
+                const planIndex = tierOrder.indexOf(plan.id);
+                return planIndex > currentIndex;
+              })
+              .slice(0, 3)
+              .map((plan) => (
+                <div
+                  key={plan.id}
+                  className={`p-4 rounded-lg border ${
+                    plan.popular
+                      ? 'border-yellow-400 bg-yellow-50 dark:bg-yellow-900/20'
+                      : 'border-gray-200 dark:border-gray-700'
+                  }`}
+                >
+                  {plan.popular && (
+                    <span className="text-xs font-medium text-yellow-600 dark:text-yellow-400 mb-2 block">
+                      Most Popular
+                    </span>
+                  )}
+                  <h4 className="font-semibold text-gray-900 dark:text-white">{plan.name}</h4>
+                  <div className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+                    ${plan.price}<span className="text-sm font-normal text-gray-500">/mo</span>
+                  </div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                    {plan.apps === -1 ? 'Unlimited' : plan.apps} applications/month
+                  </p>
+                  <p className="text-xs text-primary-600 dark:text-primary-400 mt-1">
+                    {plan.highlight}
+                  </p>
+                  <Button
+                    size="sm"
+                    className="w-full mt-3"
+                    variant={plan.popular ? 'default' : 'outline'}
+                    onClick={() => handleUpgrade(plan.id)}
+                    disabled={createCheckout.isPending}
+                  >
+                    {createCheckout.isPending ? 'Loading...' : `Upgrade to ${plan.name}`}
+                  </Button>
+                </div>
+              ))}
+          </div>
+          <div className="mt-4 text-center">
+            <a
+              href="/pricing"
+              className="text-sm text-primary-600 hover:text-primary-700 dark:text-primary-400"
+            >
+              View all plans and features →
+            </a>
+          </div>
+        </CardContent>
+      </Card>
+
+      {isPaidPlan && (
         <Card>
           <CardHeader>
             <CardTitle>Payment Method</CardTitle>

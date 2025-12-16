@@ -119,9 +119,9 @@ function Navigation() {
             <a href="#features" className="text-gray-400 hover:text-neonYellow transition-colors">
               Features
             </a>
-            <a href="#pricing" className="text-gray-400 hover:text-neonYellow transition-colors">
+            <Link href="/pricing" className="text-gray-400 hover:text-neonYellow transition-colors">
               Pricing
-            </a>
+            </Link>
             <Link href="/login" className="text-gray-400 hover:text-white transition-colors">
               Sign In
             </Link>
@@ -860,6 +860,19 @@ function PricingPreviewSection() {
               </Button>
             </Link>
           </div>
+        </div>
+
+        {/* View All Plans Button */}
+        <div className="mt-10 text-center">
+          <p className="text-gray-400 mb-4">
+            Need more options? We have <span className="text-neonYellow font-semibold">6 subscription tiers</span> to fit every career stage.
+          </p>
+          <Link href="/pricing">
+            <Button variant="outline" className="border-neonYellow/50 text-neonYellow hover:bg-neonYellow/10">
+              View All Plans & Compare Features
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+          </Link>
         </div>
       </div>
     </section>
