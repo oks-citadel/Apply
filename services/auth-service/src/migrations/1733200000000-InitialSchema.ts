@@ -264,25 +264,25 @@ export class InitialSchema1733200000000 implements MigrationInterface {
       })
     );
 
-    // Add comments
+    // Add comments (using quoted identifiers for camelCase columns)
     await queryRunner.query(`
-      COMMENT ON TABLE users IS 'Authentication and user account management';
+      COMMENT ON TABLE "users" IS 'Authentication and user account management';
     `);
 
     await queryRunner.query(`
-      COMMENT ON COLUMN users.password IS 'Bcrypt hashed password';
+      COMMENT ON COLUMN "users"."password" IS 'Bcrypt hashed password';
     `);
 
     await queryRunner.query(`
-      COMMENT ON COLUMN users.mfaSecret IS 'TOTP secret for multi-factor authentication';
+      COMMENT ON COLUMN "users"."mfaSecret" IS 'TOTP secret for multi-factor authentication';
     `);
 
     await queryRunner.query(`
-      COMMENT ON COLUMN users.loginAttempts IS 'Failed login attempt counter';
+      COMMENT ON COLUMN "users"."loginAttempts" IS 'Failed login attempt counter';
     `);
 
     await queryRunner.query(`
-      COMMENT ON COLUMN users.lockedUntil IS 'Account lock expiration timestamp';
+      COMMENT ON COLUMN "users"."lockedUntil" IS 'Account lock expiration timestamp';
     `);
   }
 

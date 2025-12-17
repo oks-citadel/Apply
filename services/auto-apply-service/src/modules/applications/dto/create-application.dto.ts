@@ -1,4 +1,5 @@
-import { IsString, IsUUID, IsOptional, IsNumber, IsBoolean, IsObject } from 'class-validator';
+import { IsString, IsUUID, IsOptional, IsNumber, IsBoolean, IsObject, IsEnum } from 'class-validator';
+import { ApplicationSource } from '../entities/application.entity';
 
 export class CreateApplicationDto {
   @IsUUID()
@@ -6,6 +7,10 @@ export class CreateApplicationDto {
 
   @IsUUID()
   job_id: string;
+
+  @IsEnum(ApplicationSource)
+  @IsOptional()
+  source?: ApplicationSource;
 
   @IsUUID()
   @IsOptional()

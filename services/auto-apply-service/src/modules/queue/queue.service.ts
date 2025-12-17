@@ -42,6 +42,14 @@ export class QueueService {
     this.logger.log(`Job ${job.id} added to queue with priority ${priority}`);
     return job;
   }
+  
+  // Alias for backward compatibility
+  async addApplicationJob(
+    applicationData: ApplicationData,
+    priority: number = 0,
+  ): Promise<Job> {
+    return this.addApplicationToQueue(applicationData, priority);
+  }
 
   async addBulkApplications(applications: ApplicationData[]): Promise<Job[]> {
     this.logger.log(`Adding ${applications.length} applications to queue`);

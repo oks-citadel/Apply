@@ -1,10 +1,12 @@
-import { initTelemetry } from '@applyforus/telemetry';
+// import { initTelemetry } from '@applyforus/telemetry';
 import { Logger } from '@nestjs/common';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
 
   // Initialize OpenTelemetry tracing with Azure Application Insights
+  // TODO: Uncomment when @applyforus/telemetry package is available
+  /*
   try {
     await initTelemetry({
       serviceName: 'payment-service',
@@ -16,6 +18,7 @@ async function bootstrap() {
   } catch (error) {
     logger.warn('Failed to initialize telemetry, continuing without tracing', error);
   }
+  */
 
   // Import NestJS modules AFTER telemetry initialization
   const { NestFactory } = await import('@nestjs/core');

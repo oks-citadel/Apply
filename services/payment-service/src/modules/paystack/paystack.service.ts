@@ -4,14 +4,14 @@ import axios, { AxiosInstance } from 'axios';
 import * as crypto from 'crypto';
 import { SubscriptionTier, SUBSCRIPTION_TIER_PRICES } from '../../common/enums/subscription-tier.enum';
 
-interface PaystackCustomer {
+export interface PaystackCustomer {
   email: string;
   first_name?: string;
   last_name?: string;
   phone?: string;
 }
 
-interface PaystackTransaction {
+export interface PaystackTransaction {
   id: number;
   reference: string;
   amount: number;
@@ -22,7 +22,7 @@ interface PaystackTransaction {
   paid_at?: string;
 }
 
-interface PaystackPlan {
+export interface PaystackPlan {
   id: number;
   name: string;
   plan_code: string;
@@ -31,7 +31,7 @@ interface PaystackPlan {
   currency: string;
 }
 
-interface PaystackSubscription {
+export interface PaystackSubscription {
   id: number;
   status: string;
   subscription_code: string;
@@ -40,7 +40,7 @@ interface PaystackSubscription {
   plan: PaystackPlan;
 }
 
-interface PaystackCard {
+export interface PaystackCard {
   authorization_code: string;
   bin: string;
   last4: string;

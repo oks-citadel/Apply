@@ -96,8 +96,8 @@ describe('OrchestratorService', () => {
       task_type: TaskType.DISCOVER,
       priority: Priority.HIGH,
       parameters: {
-        keywords: 'software engineer',
-        location: 'San Francisco',
+        keywords: ['software engineer'],
+        locations: ['San Francisco'],
       },
       timeout_seconds: 300,
     };
@@ -109,9 +109,8 @@ describe('OrchestratorService', () => {
         userId: 'user-123',
         status: WorkflowStatus.PROCESSING,
         steps: [],
-        currentStep: 0,
         startedAt: new Date(),
-        parameters: mockRequest.parameters,
+        metadata: { parameters: mockRequest.parameters },
       };
 
       mockCircuitBreaker.getAllStats.mockReturnValue({});
@@ -138,9 +137,8 @@ describe('OrchestratorService', () => {
         userId: 'user-123',
         status: WorkflowStatus.PROCESSING,
         steps: [],
-        currentStep: 0,
         startedAt: new Date(),
-        parameters: mockRequest.parameters,
+        metadata: { parameters: mockRequest.parameters },
       };
 
       mockCircuitBreaker.getAllStats.mockReturnValue({});
@@ -163,9 +161,8 @@ describe('OrchestratorService', () => {
         userId: 'user-123',
         status: WorkflowStatus.PROCESSING,
         steps: [],
-        currentStep: 0,
         startedAt: new Date(),
-        parameters: mockRequest.parameters,
+        metadata: { parameters: mockRequest.parameters },
       };
 
       mockCircuitBreaker.getAllStats.mockReturnValue({});
@@ -188,9 +185,8 @@ describe('OrchestratorService', () => {
         userId: 'user-123',
         status: WorkflowStatus.PROCESSING,
         steps: [],
-        currentStep: 0,
         startedAt: new Date(),
-        parameters: mockRequest.parameters,
+        metadata: { parameters: mockRequest.parameters },
       };
 
       mockCircuitBreaker.getAllStats.mockReturnValue({});
@@ -239,7 +235,7 @@ describe('OrchestratorService', () => {
       expect(result.status).toBe('failed');
       expect(result.results?.errors).toBeDefined();
       expect(result.results?.errors).toHaveLength(1);
-      expect(result.results?.errors[0].agent).toBe('orchestrator');
+      expect(result.results?.errors?.[0]?.agent).toBe('orchestrator');
     });
 
     it('should include agent states in response', async () => {
@@ -261,15 +257,15 @@ describe('OrchestratorService', () => {
         userId: 'user-123',
         status: WorkflowStatus.PROCESSING,
         steps: [],
-        currentStep: 0,
         startedAt: new Date(),
+        metadata: {},
       });
 
       const result = await service.orchestrate(mockRequest);
 
       expect(result.agent_states).toBeDefined();
-      expect(result.agent_states[AgentType.JOB_DISCOVERY]).toBeDefined();
-      expect(result.agent_states[AgentType.AUTO_APPLY]).toBeDefined();
+      expect(result.agent_states?.[AgentType.JOB_DISCOVERY]).toBeDefined();
+      expect(result.agent_states?.[AgentType.AUTO_APPLY]).toBeDefined();
     });
 
     it('should queue task when no workflow mapping exists', async () => {
@@ -462,18 +458,22 @@ describe('OrchestratorService', () => {
     it('should return health status for all agents', async () => {
       const mockHealthStatuses: AgentHealth[] = [
         {
-          agentType: AgentType.JOB_DISCOVERY,
+          agent: AgentType.JOB_DISCOVERY,
           status: AgentStatus.HEALTHY,
           responseTime: 120,
-          lastCheck: new Date(),
-          uptime: 99.9,
+          lastChecked: new Date(),
+          errorCount: 0,
+          successRate: 99.9,
+          circuitOpen: false,
         },
         {
-          agentType: AgentType.AUTO_APPLY,
+          agent: AgentType.AUTO_APPLY,
           status: AgentStatus.HEALTHY,
           responseTime: 150,
-          lastCheck: new Date(),
-          uptime: 99.8,
+          lastChecked: new Date(),
+          errorCount: 0,
+          successRate: 99.8,
+          circuitOpen: false,
         },
       ];
 
@@ -498,11 +498,13 @@ describe('OrchestratorService', () => {
   describe('getAgentHealth', () => {
     it('should return health status for specific agent', async () => {
       const mockHealth: AgentHealth = {
-        agentType: AgentType.JOB_DISCOVERY,
+        agent: AgentType.JOB_DISCOVERY,
         status: AgentStatus.HEALTHY,
         responseTime: 120,
-        lastCheck: new Date(),
-        uptime: 99.9,
+        lastChecked: new Date(),
+        errorCount: 0,
+        successRate: 99.9,
+        circuitOpen: false,
       };
 
       mockAgentClient.checkHealth.mockResolvedValue(mockHealth);
@@ -515,12 +517,13 @@ describe('OrchestratorService', () => {
 
     it('should return unhealthy status for degraded agent', async () => {
       const mockHealth: AgentHealth = {
-        agentType: AgentType.AUTO_APPLY,
+        agent: AgentType.AUTO_APPLY,
         status: AgentStatus.DEGRADED,
         responseTime: 500,
-        lastCheck: new Date(),
-        uptime: 95.0,
-        error: 'High latency detected',
+        lastChecked: new Date(),
+        errorCount: 5,
+        successRate: 95.0,
+        circuitOpen: false,
       };
 
       mockAgentClient.checkHealth.mockResolvedValue(mockHealth);
@@ -528,7 +531,6 @@ describe('OrchestratorService', () => {
       const result = await service.getAgentHealth(AgentType.AUTO_APPLY);
 
       expect(result.status).toBe(AgentStatus.DEGRADED);
-      expect(result.error).toBeDefined();
     });
   });
 

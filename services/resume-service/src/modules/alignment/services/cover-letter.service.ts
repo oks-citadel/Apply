@@ -236,7 +236,7 @@ export class CoverLetterService {
     return alignedResume;
   }
 
-  private async getJobDescription(jobId?: string, jobDescription?: string): Promise<string> {
+  private async getJobDescription(jobId?: string, jobDescription?: string): Promise<string | null> {
     if (jobDescription) {
       return jobDescription;
     }

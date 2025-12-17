@@ -13,6 +13,14 @@ export class UpdateApplicationDto {
   @IsDateString()
   @IsOptional()
   response_received_at?: string;
+
+  @IsString()
+  @IsOptional()
+  user_id?: string;
+
+  @IsString()
+  @IsOptional()
+  queue_status?: string;
 }
 
 export class UpdateStatusDto {

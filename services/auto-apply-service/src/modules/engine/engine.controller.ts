@@ -133,7 +133,7 @@ export class EngineController {
       });
 
       // Update application with queue status
-      await this.applicationsService.update(application.id, {
+      await this.applicationsService.update(application.id, userId, {
         user_id: userId,
         queue_status: 'waiting',
       });
@@ -254,7 +254,7 @@ export class EngineController {
         });
 
         // Update application with queue status
-        await this.applicationsService.update(application.id, {
+        await this.applicationsService.update(application.id, userId, {
           user_id: userId,
           queue_status: 'waiting',
         });
@@ -330,7 +330,7 @@ export class EngineController {
 
     try {
       // Get application
-      const application = await this.applicationsService.findOne(applicationId);
+      const application = await this.applicationsService.findOne(applicationId, userId);
 
       if (!application) {
         throw new NotFoundException(`Application ${applicationId} not found`);
@@ -385,7 +385,7 @@ export class EngineController {
       });
 
       // Update application status
-      await this.applicationsService.update(application.id, {
+      await this.applicationsService.update(application.id, userId, {
         user_id: userId,
         queue_status: 'waiting',
       });

@@ -4,18 +4,18 @@ import axios, { AxiosInstance } from 'axios';
 import * as crypto from 'crypto';
 import { SubscriptionTier, SUBSCRIPTION_TIER_PRICES } from '../../common/enums/subscription-tier.enum';
 
-interface FlutterwaveCustomer {
+export interface FlutterwaveCustomer {
   email: string;
   phonenumber?: string;
   name?: string;
 }
 
-interface FlutterwavePaymentLink {
+export interface FlutterwavePaymentLink {
   link: string;
   tx_ref: string;
 }
 
-interface FlutterwaveTransaction {
+export interface FlutterwaveTransaction {
   id: number;
   tx_ref: string;
   flw_ref: string;
@@ -26,7 +26,7 @@ interface FlutterwaveTransaction {
   created_at: string;
 }
 
-interface FlutterwaveSubscriptionPlan {
+export interface FlutterwaveSubscriptionPlan {
   id: number;
   name: string;
   amount: number;

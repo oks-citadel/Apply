@@ -13,7 +13,7 @@ export class UpdateSubscriptionDto {
   @ApiPropertyOptional({
     description: 'Subscription tier',
     enum: SubscriptionTier,
-    example: SubscriptionTier.PRO,
+    example: SubscriptionTier.PROFESSIONAL,
   })
   @IsEnum(SubscriptionTier)
   @IsOptional()

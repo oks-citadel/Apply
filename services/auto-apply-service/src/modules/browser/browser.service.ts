@@ -68,6 +68,11 @@ export class BrowserService implements OnModuleDestroy {
     return page;
   }
 
+  // Alias for backward compatibility
+  async getPage(userId: string = 'default'): Promise<Page> {
+    return this.createPage(userId);
+  }
+
   async navigateTo(page: Page, url: string): Promise<void> {
     this.logger.log(`Navigating to: ${url}`);
     await page.goto(url, navigationConfig);

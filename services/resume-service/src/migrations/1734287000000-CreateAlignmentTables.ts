@@ -522,37 +522,43 @@ export class CreateAlignmentTables1734287000000 implements MigrationInterface {
     const coverLettersTable = await queryRunner.getTable('generated_cover_letters');
     const analysesTable = await queryRunner.getTable('alignment_analyses');
 
-    const alignedResumesFk = alignedResumesTable.foreignKeys.find(
-      (fk) => fk.columnNames.indexOf('base_resume_id') !== -1,
-    );
-    if (alignedResumesFk) {
-      await queryRunner.dropForeignKey('aligned_resumes', alignedResumesFk);
+    if (alignedResumesTable) {
+      const alignedResumesFk = alignedResumesTable.foreignKeys.find(
+        (fk) => fk.columnNames.indexOf('base_resume_id') !== -1,
+      );
+      if (alignedResumesFk) {
+        await queryRunner.dropForeignKey('aligned_resumes', alignedResumesFk);
+      }
     }
 
-    const coverLettersAlignedFk = coverLettersTable.foreignKeys.find(
-      (fk) => fk.columnNames.indexOf('aligned_resume_id') !== -1,
-    );
-    if (coverLettersAlignedFk) {
-      await queryRunner.dropForeignKey('generated_cover_letters', coverLettersAlignedFk);
+    if (coverLettersTable) {
+      const coverLettersAlignedFk = coverLettersTable.foreignKeys.find(
+        (fk) => fk.columnNames.indexOf('aligned_resume_id') !== -1,
+      );
+      if (coverLettersAlignedFk) {
+        await queryRunner.dropForeignKey('generated_cover_letters', coverLettersAlignedFk);
+      }
+
+      const coverLettersBaseFk = coverLettersTable.foreignKeys.find(
+        (fk) => fk.columnNames.indexOf('base_resume_id') !== -1,
+      );
+      if (coverLettersBaseFk) {
+        await queryRunner.dropForeignKey('generated_cover_letters', coverLettersBaseFk);
+      }
     }
 
-    const coverLettersBaseFk = coverLettersTable.foreignKeys.find(
-      (fk) => fk.columnNames.indexOf('base_resume_id') !== -1,
-    );
-    if (coverLettersBaseFk) {
-      await queryRunner.dropForeignKey('generated_cover_letters', coverLettersBaseFk);
-    }
+    if (analysesTable) {
+      const analysesBaseFk = analysesTable.foreignKeys.find((fk) => fk.columnNames.indexOf('base_resume_id') !== -1);
+      if (analysesBaseFk) {
+        await queryRunner.dropForeignKey('alignment_analyses', analysesBaseFk);
+      }
 
-    const analysesBaseFk = analysesTable.foreignKeys.find((fk) => fk.columnNames.indexOf('base_resume_id') !== -1);
-    if (analysesBaseFk) {
-      await queryRunner.dropForeignKey('alignment_analyses', analysesBaseFk);
-    }
-
-    const analysesAlignedFk = analysesTable.foreignKeys.find(
-      (fk) => fk.columnNames.indexOf('aligned_resume_id') !== -1,
-    );
-    if (analysesAlignedFk) {
-      await queryRunner.dropForeignKey('alignment_analyses', analysesAlignedFk);
+      const analysesAlignedFk = analysesTable.foreignKeys.find(
+        (fk) => fk.columnNames.indexOf('aligned_resume_id') !== -1,
+      );
+      if (analysesAlignedFk) {
+        await queryRunner.dropForeignKey('alignment_analyses', analysesAlignedFk);
+      }
     }
 
     // Drop tables

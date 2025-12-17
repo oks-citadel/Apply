@@ -28,7 +28,7 @@ describe('RateLimiterService', () => {
 
   const mockConfigService = {
     get: jest.fn((key: string, defaultValue?: any) => {
-      const config = {
+      const config: Record<string, any> = {
         REDIS_HOST: 'localhost',
         REDIS_PORT: 6379,
         REDIS_PASSWORD: undefined,

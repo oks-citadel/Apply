@@ -251,7 +251,7 @@ export class ResumeAlignmentService {
     return resume;
   }
 
-  private async getJobDescription(jobId?: string, jobDescription?: string): Promise<string> {
+  private async getJobDescription(jobId?: string, jobDescription?: string): Promise<string | null> {
     if (jobDescription) {
       return jobDescription;
     }
@@ -380,7 +380,7 @@ export class ResumeAlignmentService {
     return (skillScore * 0.4 + experienceScore * 0.4 + keywordScore * 0.2);
   }
 
-  private determineRecommendation(score: number): string {
+  private determineRecommendation(score: number): 'strong-fit' | 'good-fit' | 'moderate-fit' | 'weak-fit' | 'poor-fit' {
     if (score >= 85) return 'strong-fit';
     if (score >= 70) return 'good-fit';
     if (score >= 50) return 'moderate-fit';

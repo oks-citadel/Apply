@@ -67,7 +67,7 @@ class CircuitBreaker {
     } catch (error) {
       this.onFailure();
       // If fallback is provided and circuit just opened, return fallback
-      if (fallback !== undefined && this.state === CircuitState.OPEN) {
+      if (fallback !== undefined) {
         return fallback;
       }
       throw error;

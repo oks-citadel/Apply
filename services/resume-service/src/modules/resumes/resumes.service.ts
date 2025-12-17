@@ -348,7 +348,17 @@ export class ResumesService {
         resumeId: resume.id,
         originalContent: resume.content,
         optimizedContent: aiResponse.optimized_content || resume.content,
-        suggestions: aiResponse.suggestions || [],
+        suggestions: (aiResponse.suggestions || []).map((suggestion: string | any) =>
+          typeof suggestion === 'string'
+            ? {
+                section: 'general',
+                type: 'improvement' as const,
+                suggestedContent: suggestion,
+                reason: 'AI-generated suggestion',
+                priority: 'medium' as const,
+              }
+            : suggestion
+        ),
         originalScore: originalScore,
         projectedScore: aiResponse.projected_score || originalScore,
         summary: aiResponse.summary || 'Resume optimization completed successfully.',

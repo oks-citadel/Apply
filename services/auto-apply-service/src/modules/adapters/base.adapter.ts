@@ -5,10 +5,17 @@ import { FormMappingService } from '../form-mapping/form-mapping.service';
 
 export interface ApplicationData {
   userId: string;
-  jobUrl: string;
-  resumePath: string;
+  applicationId?: string;
+  jobId?: string;
+  jobData?: any;
+  applicationData?: any;
+  priority?: number;
+  metadata?: any;
+  delay?: number;
+  jobUrl?: string;
+  resumePath?: string;
   coverLetterPath?: string;
-  personalInfo: {
+  personalInfo?: {
     firstName: string;
     lastName: string;
     email: string;

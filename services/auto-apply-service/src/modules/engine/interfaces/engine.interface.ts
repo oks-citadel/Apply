@@ -1,3 +1,5 @@
+import { ApplicationStatusEnum, QueueStatusEnum } from '../dto/application-status.dto';
+
 export interface JobData {
   id: string;
   title: string;
@@ -200,8 +202,8 @@ export interface ApplicationStatusInfo {
   applicationId: string;
   jobId: string;
   userId: string;
-  status: 'pending' | 'queued' | 'processing' | 'submitted' | 'failed' | 'cancelled';
-  queueStatus?: 'waiting' | 'active' | 'completed' | 'failed' | 'delayed';
+  status: ApplicationStatusEnum;
+  queueStatus?: QueueStatusEnum;
   progress?: {
     step: string;
     percentage: number;

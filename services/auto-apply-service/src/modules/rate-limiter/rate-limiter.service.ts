@@ -451,6 +451,26 @@ export class RateLimiterService {
     return Math.max(baseDelayMs + randomOffset, cooldownMs);
   }
 
+  
+  // Backward compatibility aliases
+  async checkLimit(
+    key: string,
+    maxRequests: number,
+    windowSeconds: number,
+  ): Promise<boolean> {
+    const parts = key.split(':');
+    const userId = parts.length > 1 ? parts[1] : 'default';
+    const platform = parts.length > 2 ? parts[2] : 'default';
+    const result = await this.checkRateLimit(userId, platform);
+    return result.allowed;
+  }
+
+  async increment(key: string): Promise<void> {
+    const parts = key.split(':');
+    const userId = parts.length > 1 ? parts[1] : 'default';
+    const platform = parts.length > 2 ? parts[2] : 'default';
+    await this.recordRequest(userId, platform);
+  }
   /**
    * Close Redis connection
    */

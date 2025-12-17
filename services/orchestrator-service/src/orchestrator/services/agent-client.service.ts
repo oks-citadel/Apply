@@ -367,6 +367,17 @@ export class AgentClientService {
       [AgentType.COMPLIANCE]: {
         check: '/compliance/check',
       },
+      [AgentType.AUTO_APPLY]: {
+        apply: '/applications/auto-apply',
+        status: '/applications/status',
+      },
+      [AgentType.RESUME_PARSER]: {
+        parse: '/resumes/parse',
+        analyze: '/resumes/analyze',
+      },
+      [AgentType.UNKNOWN]: {
+        default: '/health',
+      },
     };
 
     const agentEndpoints = endpointMap[request.agentType];
