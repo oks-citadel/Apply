@@ -133,7 +133,7 @@ jobs:
 
       - name: Build and push ${{ matrix.service }} (immutable tags only)
         id: build
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ${{ steps.dockerfile.outputs.path }}
