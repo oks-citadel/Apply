@@ -607,7 +607,7 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Set AKS context
-        uses: azure/aks-set-context@v3
+        uses: azure/aks-set-context@v4
         with:
           resource-group: ${{ env.AKS_RESOURCE_GROUP_DEV }}
           cluster-name: ${{ env.AKS_CLUSTER_NAME_DEV }}
@@ -718,7 +718,7 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Set AKS context
-        uses: azure/aks-set-context@v3
+        uses: azure/aks-set-context@v4
         with:
           resource-group: ${{ env.AKS_RESOURCE_GROUP_STAGING }}
           cluster-name: ${{ env.AKS_CLUSTER_NAME_STAGING }}
@@ -831,7 +831,7 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Set AKS context
-        uses: azure/aks-set-context@v3
+        uses: azure/aks-set-context@v4
         with:
           resource-group: ${{ env.AKS_RESOURCE_GROUP_PROD }}
           cluster-name: ${{ env.AKS_CLUSTER_NAME_PROD }}

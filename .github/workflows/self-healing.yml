@@ -137,7 +137,7 @@ jobs:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Set AKS context
-        uses: azure/aks-set-context@v3
+        uses: azure/aks-set-context@v4
         with:
           resource-group: applyforus-${{ matrix.environment }}-rg
           cluster-name: applyforus-${{ matrix.environment }}-aks
@@ -194,7 +194,7 @@ jobs:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Set AKS context
-        uses: azure/aks-set-context@v3
+        uses: azure/aks-set-context@v4
         with:
           resource-group: applyforus-${{ matrix.environment }}-rg
           cluster-name: applyforus-${{ matrix.environment }}-aks
@@ -300,7 +300,7 @@ jobs:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Set AKS context (Production)
-        uses: azure/aks-set-context@v3
+        uses: azure/aks-set-context@v4
         with:
           resource-group: applyforus-prod-rg
           cluster-name: applyforus-prod-aks

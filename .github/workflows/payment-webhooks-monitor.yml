@@ -38,7 +38,7 @@ jobs:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Set AKS Context
-        uses: azure/aks-set-context@v3
+        uses: azure/aks-set-context@v4
         with:
           resource-group: applyforus-${{ matrix.environment }}-rg
           cluster-name: applyforus-${{ matrix.environment }}-aks
