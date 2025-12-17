@@ -50,13 +50,7 @@ export interface PaginationInfo {
 export interface FetchResult {
   jobs: NormalizedJob[];
   pagination: PaginationInfo;
-  metadata?: {
-    responseTime?: number;
-    apiVersion?: string;
-    rateLimitRemaining?: number;
-    rateLimitReset?: Date;
-    custom?: Record<string, any>;
-  };
+  metadata?: Record<string, any>;
 }
 
 /**

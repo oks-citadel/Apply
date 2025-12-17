@@ -31,6 +31,27 @@ export class GreenhouseAdapter extends BaseJobAdapter {
     const pageSize = options?.pageSize || 100;
 
     try {
+      // Return mock data if using mock board token
+      if (this.source.credentials?.api_key?.startsWith('mock_')) {
+        const { mockGreenhouseJobs } = await import('./mock-data');
+        const jobs = mockGreenhouseJobs.jobs.map((job) => this.normalizeJob(job));
+
+        return {
+          jobs,
+          pagination: {
+            currentPage: page,
+            totalResults: jobs.length,
+            totalPages: 1,
+            hasMore: false,
+          },
+          metadata: {
+            apiVersion: 'v1',
+            boardToken: this.source.credentials?.api_key,
+            source: 'mock',
+          },
+        };
+      }
+
       // Use Job Board API for public listings
       const boardToken = this.source.credentials?.api_key;
       const url = `${this.API_BASE_URL}/boards/${boardToken}/jobs`;
@@ -101,8 +122,6 @@ export class GreenhouseAdapter extends BaseJobAdapter {
       remoteType: this.detectRemoteType(rawJob.location?.name || ''),
       description: rawJob.content || rawJob.description || '',
       requirements: this.extractRequirements(rawJob.content || ''),
-      departments: rawJob.departments?.map((d: any) => d.name) || [],
-      offices: rawJob.offices?.map((o: any) => o.name) || [],
       postedAt: rawJob.updated_at ? new Date(rawJob.updated_at) : undefined,
       applicationUrl: rawJob.absolute_url,
       atsPlatform: 'greenhouse',

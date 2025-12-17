@@ -1,0 +1,115 @@
+# =============================================================================
+# STANDARDIZED NODE.JS SERVICE DOCKERFILE - ApplyForUs Platform
+# =============================================================================
+# Security Hardened Multi-Stage Build Template
+# - Pinned base images with SHA256 digests
+# - Non-root runtime user
+# - Minimal layers
+# - Multi-stage optimization
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Stage 1: Builder - Dependencies and Build
+# -----------------------------------------------------------------------------
+# Pinned Node.js 20 Alpine with SHA256 digest
+# Update digest regularly: docker pull node:20-alpine && docker inspect node:20-alpine | jq -r '.[0].RepoDigests[0]'
+FROM node:20-alpine@sha256:2d5e8a8a51bc341fd5f2eed6d91455c3a3d147e91a14298fc564b5dc519c1666 AS builder
+
+# Install build dependencies
+RUN apk add --no-cache \
+    libc6-compat=1.2.5-r0 \
+    && rm -rf /var/cache/apk/*
+
+WORKDIR /app
+
+# Install pnpm - pinned version
+RUN corepack enable && corepack prepare pnpm@8.15.0 --activate
+
+# Copy workspace configuration
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY packages/ ./packages/
+
+# ARG SERVICE_NAME is passed during build (e.g., auth-service, user-service)
+ARG SERVICE_NAME
+COPY services/${SERVICE_NAME}/ ./services/${SERVICE_NAME}/
+
+# Install all dependencies
+RUN pnpm install --no-frozen-lockfile
+
+# Build workspace packages first (types, security, shared, telemetry)
+WORKDIR /app
+RUN pnpm --filter @applyforus/types build || true && \
+    pnpm --filter @applyforus/security build || true && \
+    pnpm --filter @applyforus/shared build || true && \
+    pnpm --filter @applyforus/telemetry build || true
+
+# Build the service
+WORKDIR /app/services/${SERVICE_NAME}
+RUN pnpm run build
+
+# -----------------------------------------------------------------------------
+# Stage 2: Production Runtime - Minimal and Secure
+# -----------------------------------------------------------------------------
+# Pinned Node.js 20 Alpine with SHA256 digest (same as builder)
+FROM node:20-alpine@sha256:2d5e8a8a51bc341fd5f2eed6d91455c3a3d147e91a14298fc564b5dc519c1666 AS production
+
+# Install only runtime dependencies
+RUN apk add --no-cache \
+    dumb-init=1.2.5-r3 \
+    curl=8.9.1-r2 \
+    && rm -rf /var/cache/apk/*
+
+# Create non-root user with specific UID/GID for security
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001 -G nodejs
+
+WORKDIR /app
+
+ARG SERVICE_NAME
+
+# Copy built artifacts from builder stage
+COPY --from=builder --chown=nodejs:nodejs /app/node_modules ./node_modules
+COPY --from=builder --chown=nodejs:nodejs /app/packages ./packages
+COPY --from=builder --chown=nodejs:nodejs /app/services/${SERVICE_NAME}/dist ./services/${SERVICE_NAME}/dist
+COPY --from=builder --chown=nodejs:nodejs /app/services/${SERVICE_NAME}/node_modules ./services/${SERVICE_NAME}/node_modules
+COPY --from=builder --chown=nodejs:nodejs /app/services/${SERVICE_NAME}/package.json ./services/${SERVICE_NAME}/
+
+# Switch to non-root user
+USER nodejs
+
+# Set production environment
+ENV NODE_ENV=production
+
+# Service-specific port (override in actual Dockerfile if needed)
+ARG PORT=8000
+ENV PORT=${PORT}
+EXPOSE ${PORT}
+
+WORKDIR /app/services/${SERVICE_NAME}
+
+# Health check - adjust path per service
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+    CMD curl -f http://localhost:${PORT}/health || exit 1
+
+# Use dumb-init for proper signal handling
+ENTRYPOINT ["dumb-init", "--"]
+
+# Start the application
+CMD ["node", "dist/services/${SERVICE_NAME}/src/main.js"]
+
+# =============================================================================
+# Build metadata labels (OCI standard)
+# =============================================================================
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION
+
+LABEL org.opencontainers.image.created="${BUILD_DATE}" \
+      org.opencontainers.image.authors="ApplyForUs Platform Team" \
+      org.opencontainers.image.url="https://applyforus.com" \
+      org.opencontainers.image.source="https://github.com/applyforus/platform" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.vendor="ApplyForUs" \
+      org.opencontainers.image.title="ApplyForUs ${SERVICE_NAME}" \
+      org.opencontainers.image.description="Production-hardened microservice for ApplyForUs platform"

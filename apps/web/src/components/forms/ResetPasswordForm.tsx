@@ -33,7 +33,8 @@ interface ResetPasswordFormProps {
   token: string;
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+// API Base URL - Backend handles routing internally (no /api/v1 needed)
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 // Password strength indicator
 function getPasswordStrength(password: string): {

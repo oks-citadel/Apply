@@ -1,0 +1,419 @@
+# Auth Service Canary
+apiVersion: flagger.app/v1beta1
+kind: Canary
+metadata:
+  name: auth-service
+  namespace: applyforus
+  labels:
+    app: auth-service
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: auth-service
+  progressDeadlineSeconds: 600
+  service:
+    port: 4000
+    targetPort: 4000
+  analysis:
+    interval: 1m
+    threshold: 5
+    maxWeight: 50
+    stepWeight: 10
+    metrics:
+    - name: request-success-rate
+      thresholdRange:
+        min: 99
+      interval: 1m
+    - name: request-duration
+      thresholdRange:
+        max: 500
+      interval: 1m
+    webhooks:
+    - name: load-test
+      url: http://flagger-loadtester.applyforus/
+      timeout: 5s
+      metadata:
+        type: cmd
+        cmd: "hey -z 1m -q 10 -c 2 http://auth-service-canary:4000/api/v1/health"
+    - name: rollback-on-health-check-failure
+      type: rollback
+      url: http://auth-service-canary:4000/api/v1/health/ready
+---
+# User Service Canary
+apiVersion: flagger.app/v1beta1
+kind: Canary
+metadata:
+  name: user-service
+  namespace: applyforus
+  labels:
+    app: user-service
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: user-service
+  progressDeadlineSeconds: 600
+  service:
+    port: 4004
+    targetPort: 4004
+  analysis:
+    interval: 1m
+    threshold: 5
+    maxWeight: 50
+    stepWeight: 10
+    metrics:
+    - name: request-success-rate
+      thresholdRange:
+        min: 99
+      interval: 1m
+    - name: request-duration
+      thresholdRange:
+        max: 500
+      interval: 1m
+    webhooks:
+    - name: load-test
+      url: http://flagger-loadtester.applyforus/
+      timeout: 5s
+      metadata:
+        type: cmd
+        cmd: "hey -z 1m -q 10 -c 2 http://user-service-canary:4004/api/v1/health"
+    - name: rollback-on-health-check-failure
+      type: rollback
+      url: http://user-service-canary:4004/api/v1/health/ready
+---
+# Job Service Canary
+apiVersion: flagger.app/v1beta1
+kind: Canary
+metadata:
+  name: job-service
+  namespace: applyforus
+  labels:
+    app: job-service
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: job-service
+  progressDeadlineSeconds: 600
+  service:
+    port: 4002
+    targetPort: 4002
+  analysis:
+    interval: 1m
+    threshold: 5
+    maxWeight: 50
+    stepWeight: 10
+    metrics:
+    - name: request-success-rate
+      thresholdRange:
+        min: 99
+      interval: 1m
+    - name: request-duration
+      thresholdRange:
+        max: 500
+      interval: 1m
+    webhooks:
+    - name: load-test
+      url: http://flagger-loadtester.applyforus/
+      timeout: 5s
+      metadata:
+        type: cmd
+        cmd: "hey -z 1m -q 10 -c 2 http://job-service-canary:4002/api/v1/health"
+    - name: rollback-on-health-check-failure
+      type: rollback
+      url: http://job-service-canary:4002/api/v1/health/ready
+---
+# AI Service Canary (slower rollout due to resource intensity)
+apiVersion: flagger.app/v1beta1
+kind: Canary
+metadata:
+  name: ai-service
+  namespace: applyforus
+  labels:
+    app: ai-service
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: ai-service
+  progressDeadlineSeconds: 900
+  service:
+    port: 5000
+    targetPort: 5000
+  analysis:
+    interval: 2m
+    threshold: 5
+    maxWeight: 30
+    stepWeight: 5
+    metrics:
+    - name: request-success-rate
+      thresholdRange:
+        min: 98
+      interval: 2m
+    - name: request-duration
+      thresholdRange:
+        max: 2000
+      interval: 2m
+    webhooks:
+    - name: load-test
+      url: http://flagger-loadtester.applyforus/
+      timeout: 10s
+      metadata:
+        type: cmd
+        cmd: "hey -z 2m -q 5 -c 2 http://ai-service-canary:5000/api/v1/health"
+    - name: rollback-on-health-check-failure
+      type: rollback
+      url: http://ai-service-canary:5000/api/v1/health/ready
+---
+# Resume Service Canary
+apiVersion: flagger.app/v1beta1
+kind: Canary
+metadata:
+  name: resume-service
+  namespace: applyforus
+  labels:
+    app: resume-service
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: resume-service
+  progressDeadlineSeconds: 600
+  service:
+    port: 4001
+    targetPort: 4001
+  analysis:
+    interval: 1m
+    threshold: 5
+    maxWeight: 50
+    stepWeight: 10
+    metrics:
+    - name: request-success-rate
+      thresholdRange:
+        min: 99
+      interval: 1m
+    - name: request-duration
+      thresholdRange:
+        max: 500
+      interval: 1m
+    webhooks:
+    - name: load-test
+      url: http://flagger-loadtester.applyforus/
+      timeout: 5s
+      metadata:
+        type: cmd
+        cmd: "hey -z 1m -q 10 -c 2 http://resume-service-canary:4001/api/v1/health"
+    - name: rollback-on-health-check-failure
+      type: rollback
+      url: http://resume-service-canary:4001/api/v1/health/ready
+---
+# Auto Apply Service Canary
+apiVersion: flagger.app/v1beta1
+kind: Canary
+metadata:
+  name: auto-apply-service
+  namespace: applyforus
+  labels:
+    app: auto-apply-service
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: auto-apply-service
+  progressDeadlineSeconds: 900
+  service:
+    port: 4003
+    targetPort: 4003
+  analysis:
+    interval: 2m
+    threshold: 5
+    maxWeight: 40
+    stepWeight: 10
+    metrics:
+    - name: request-success-rate
+      thresholdRange:
+        min: 99
+      interval: 2m
+    - name: request-duration
+      thresholdRange:
+        max: 1000
+      interval: 2m
+    webhooks:
+    - name: load-test
+      url: http://flagger-loadtester.applyforus/
+      timeout: 5s
+      metadata:
+        type: cmd
+        cmd: "hey -z 2m -q 10 -c 2 http://auto-apply-service-canary:4003/api/v1/health"
+    - name: rollback-on-health-check-failure
+      type: rollback
+      url: http://auto-apply-service-canary:4003/api/v1/health/ready
+---
+# Orchestrator Service Canary
+apiVersion: flagger.app/v1beta1
+kind: Canary
+metadata:
+  name: orchestrator-service
+  namespace: applyforus
+  labels:
+    app: orchestrator-service
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: orchestrator-service
+  progressDeadlineSeconds: 900
+  service:
+    port: 3009
+    targetPort: 3009
+  analysis:
+    interval: 2m
+    threshold: 5
+    maxWeight: 40
+    stepWeight: 10
+    metrics:
+    - name: request-success-rate
+      thresholdRange:
+        min: 99
+      interval: 2m
+    - name: request-duration
+      thresholdRange:
+        max: 1000
+      interval: 2m
+    webhooks:
+    - name: load-test
+      url: http://flagger-loadtester.applyforus/
+      timeout: 5s
+      metadata:
+        type: cmd
+        cmd: "hey -z 2m -q 10 -c 2 http://orchestrator-service-canary:3009/api/v1/health"
+    - name: rollback-on-health-check-failure
+      type: rollback
+      url: http://orchestrator-service-canary:3009/api/v1/health/ready
+---
+# Notification Service Canary
+apiVersion: flagger.app/v1beta1
+kind: Canary
+metadata:
+  name: notification-service
+  namespace: applyforus
+  labels:
+    app: notification-service
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: notification-service
+  progressDeadlineSeconds: 600
+  service:
+    port: 4005
+    targetPort: 4005
+  analysis:
+    interval: 1m
+    threshold: 5
+    maxWeight: 50
+    stepWeight: 10
+    metrics:
+    - name: request-success-rate
+      thresholdRange:
+        min: 99
+      interval: 1m
+    - name: request-duration
+      thresholdRange:
+        max: 500
+      interval: 1m
+    webhooks:
+    - name: load-test
+      url: http://flagger-loadtester.applyforus/
+      timeout: 5s
+      metadata:
+        type: cmd
+        cmd: "hey -z 1m -q 10 -c 2 http://notification-service-canary:4005/api/v1/health"
+    - name: rollback-on-health-check-failure
+      type: rollback
+      url: http://notification-service-canary:4005/api/v1/health/ready
+---
+# Analytics Service Canary
+apiVersion: flagger.app/v1beta1
+kind: Canary
+metadata:
+  name: analytics-service
+  namespace: applyforus
+  labels:
+    app: analytics-service
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: analytics-service
+  progressDeadlineSeconds: 600
+  service:
+    port: 3007
+    targetPort: 3007
+  analysis:
+    interval: 1m
+    threshold: 5
+    maxWeight: 50
+    stepWeight: 10
+    metrics:
+    - name: request-success-rate
+      thresholdRange:
+        min: 99
+      interval: 1m
+    - name: request-duration
+      thresholdRange:
+        max: 500
+      interval: 1m
+    webhooks:
+    - name: load-test
+      url: http://flagger-loadtester.applyforus/
+      timeout: 5s
+      metadata:
+        type: cmd
+        cmd: "hey -z 1m -q 10 -c 2 http://analytics-service-canary:3007/api/v1/health"
+    - name: rollback-on-health-check-failure
+      type: rollback
+      url: http://analytics-service-canary:3007/api/v1/health/ready
+---
+# Web App Canary
+apiVersion: flagger.app/v1beta1
+kind: Canary
+metadata:
+  name: web-app
+  namespace: applyforus
+  labels:
+    app: web-app
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: web-app
+  progressDeadlineSeconds: 600
+  service:
+    port: 80
+    targetPort: 3000
+  analysis:
+    interval: 1m
+    threshold: 5
+    maxWeight: 50
+    stepWeight: 10
+    metrics:
+    - name: request-success-rate
+      thresholdRange:
+        min: 99
+      interval: 1m
+    - name: request-duration
+      thresholdRange:
+        max: 1000
+      interval: 1m
+    webhooks:
+    - name: load-test
+      url: http://flagger-loadtester.applyforus/
+      timeout: 5s
+      metadata:
+        type: cmd
+        cmd: "hey -z 1m -q 10 -c 2 http://web-app-canary:3000/"
+    - name: rollback-on-health-check-failure
+      type: rollback
+      url: http://web-app-canary:3000/

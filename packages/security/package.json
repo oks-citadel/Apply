@@ -10,6 +10,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "tslib": "^2.6.2",
     "bcrypt": "^5.1.1",
     "jsonwebtoken": "^9.0.2",
     "validator": "^13.11.0",

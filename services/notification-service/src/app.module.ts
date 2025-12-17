@@ -50,7 +50,9 @@ import { HealthModule } from './health/health.module';
         password: configService.get('DB_PASSWORD', 'postgres'),
         database: configService.get('DB_DATABASE', 'notification_service'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        synchronize: configService.get('NODE_ENV') !== 'production',
+        // SECURITY: Never use synchronize in production - it can modify schema unexpectedly
+        // Always use migrations instead
+        synchronize: false,
         logging: configService.get('NODE_ENV') === 'development',
         ssl: configService.get('NODE_ENV') === 'production' ? {
           rejectUnauthorized: true,

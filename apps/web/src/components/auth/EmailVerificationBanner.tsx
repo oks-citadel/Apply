@@ -7,7 +7,8 @@ import { AlertCircle, X, Mail, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { useAuthStore } from '@/stores/authStore';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+// API Base URL - Backend handles routing internally (no /api/v1 needed)
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 export function EmailVerificationBanner() {
   const [isVisible, setIsVisible] = useState(true);

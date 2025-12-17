@@ -26,6 +26,7 @@ import { EmailService } from '../email/email.service';
 @Injectable()
 export class NotificationsService {
   private readonly logger = new Logger(NotificationsService.name);
+  private gateway: any; // Reference to WebSocket gateway
 
   constructor(
     @InjectRepository(Notification)
@@ -36,6 +37,10 @@ export class NotificationsService {
     @InjectQueue('notifications') private readonly notificationQueue: Queue,
     private readonly emailService: EmailService,
   ) {}
+
+  setGateway(gateway: any): void {
+    this.gateway = gateway;
+  }
 
   async create(
     createNotificationDto: CreateNotificationDto,

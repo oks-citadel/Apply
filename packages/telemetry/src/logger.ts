@@ -154,7 +154,7 @@ export class StructuredLogger {
   /**
    * Log with trace context
    */
-  private logWithContext(level: string, message: string, ...args: any[]): void {
+  private logWithContext(level: pino.Level, message: string, ...args: any[]): void {
     const span = trace.getActiveSpan();
     const traceContext: LogContext = {};
 
@@ -165,12 +165,11 @@ export class StructuredLogger {
     }
 
     const mergedContext = { ...this.context, ...traceContext };
-    const logFn = (this.logger as any)[level];
 
     if (args.length > 0 && typeof args[0] === 'object') {
-      logFn.call(this.logger, { ...mergedContext, ...args[0] }, message);
+      this.logger[level]({ ...mergedContext, ...args[0] }, message);
     } else {
-      logFn.call(this.logger, mergedContext, message, ...args);
+      this.logger[level](mergedContext, message, ...args);
     }
   }
 

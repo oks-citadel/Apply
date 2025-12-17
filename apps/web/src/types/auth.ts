@@ -47,3 +47,21 @@ export interface AuthState {
   isLoading: boolean;
   error: string | null;
 }
+
+export type OAuthProvider = 'google' | 'linkedin' | 'github';
+
+export interface OAuthCallbackParams {
+  success?: string;
+  error?: string;
+  error_description?: string;
+}
+
+export interface OAuthUrlResponse {
+  url: string;
+}
+
+export interface ConnectedAccount {
+  provider: OAuthProvider;
+  email: string;
+  connectedAt: string;
+}

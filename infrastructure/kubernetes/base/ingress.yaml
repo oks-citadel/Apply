@@ -55,6 +55,8 @@ spec:
     - applyforus.com
     - www.applyforus.com
     - api.applyforus.com
+    - admin.applyforus.com
+    - employer.applyforus.com
     secretName: applyforus-tls-cert
 
   rules:
@@ -80,6 +82,30 @@ spec:
             name: web-app
             port:
               number: 3000
+
+  # Admin Portal
+  - host: admin.applyforus.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: admin-app-service
+            port:
+              number: 3001
+
+  # Employer Portal
+  - host: employer.applyforus.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: employer-app-service
+            port:
+              number: 3002
 
   # API Gateway
   - host: api.applyforus.com

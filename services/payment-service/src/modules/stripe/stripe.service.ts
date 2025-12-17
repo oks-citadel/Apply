@@ -16,7 +16,7 @@ export class StripeService {
     }
 
     this.stripe = new Stripe(stripeSecretKey || 'sk_test_dummy', {
-      apiVersion: '2024-11-20.acacia',
+      apiVersion: '2023-10-16',
       typescript: true,
     });
   }
@@ -106,7 +106,7 @@ export class StripeService {
         },
         product_data: {
           name: `${tier} Subscription`,
-          description: `${tier} tier subscription (${billingPeriod})`,
+          statement_descriptor: `${tier} tier subscription (${billingPeriod})`,
         },
       });
 
@@ -228,7 +228,7 @@ export class StripeService {
         },
         product_data: {
           name: `${newTier} Subscription`,
-          description: `${newTier} tier subscription (${billingPeriod})`,
+          statement_descriptor: `${newTier} tier subscription (${billingPeriod})`,
         },
       });
 

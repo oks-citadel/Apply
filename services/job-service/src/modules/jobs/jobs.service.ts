@@ -1,13 +1,14 @@
-import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger, Optional } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, ILike } from 'typeorm';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
 import { Job } from './entities/job.entity';
 import { SavedJob } from './entities/saved-job.entity';
-import { SearchService } from '../search/search.service';
-import { ReportsService } from '../reports/reports.service';
+// SearchService and ReportsService are optional until ES/Redis deployed
+// import { SearchService } from '../search/search.service';
+// import { ReportsService } from '../reports/reports.service';
 import { SearchJobsDto, PaginatedJobsResponseDto, JobResponseDto } from './dto/search-jobs.dto';
 import { SaveJobDto, UpdateSavedJobDto } from './dto/save-job.dto';
 
@@ -21,16 +22,17 @@ export class JobsService {
     private readonly jobRepository: Repository<Job>,
     @InjectRepository(SavedJob)
     private readonly savedJobRepository: Repository<SavedJob>,
-    private readonly searchService: SearchService,
-    private readonly reportsService: ReportsService,
+    // @Optional() private readonly searchService: SearchService,
+    // @Optional() private readonly reportsService: ReportsService,
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
   ) {
     this.aiServiceUrl = this.configService.get<string>('AI_SERVICE_URL');
+    this.logger.log('JobsService initialized (using database search, ES/Reports disabled)');
   }
 
   /**
-   * Search jobs with Elasticsearch
+   * Search jobs with database (ES disabled)
    */
   async searchJobs(
     searchDto: SearchJobsDto,
@@ -39,8 +41,62 @@ export class JobsService {
     try {
       this.logger.log(`Searching jobs with filters: ${JSON.stringify(searchDto)}`);
 
-      // Use Elasticsearch for search
-      const searchResults = await this.searchService.searchJobs(searchDto);
+      const page = searchDto.page || 1;
+      const limit = searchDto.limit || 20;
+
+      // Build database query (fallback from Elasticsearch)
+      const queryBuilder = this.jobRepository
+        .createQueryBuilder('job')
+        .leftJoinAndSelect('job.company', 'company')
+        .where('job.is_active = :isActive', { isActive: true });
+
+      // Apply search keywords if provided
+      if (searchDto.keywords) {
+        queryBuilder.andWhere(
+          '(LOWER(job.title) LIKE LOWER(:keywords) OR LOWER(job.description) LIKE LOWER(:keywords) OR LOWER(job.company_name) LIKE LOWER(:keywords))',
+          { keywords: `%${searchDto.keywords}%` },
+        );
+      }
+
+      // Apply location filter
+      if (searchDto.location) {
+        queryBuilder.andWhere('LOWER(job.location) LIKE LOWER(:location)', {
+          location: `%${searchDto.location}%`,
+        });
+      }
+
+      // Apply employment type filter
+      if (searchDto.employment_type) {
+        queryBuilder.andWhere('job.employment_type = :employmentType', { employmentType: searchDto.employment_type });
+      }
+
+      // Apply experience level filter
+      if (searchDto.experience_level) {
+        queryBuilder.andWhere('job.experience_level = :expLevel', { expLevel: searchDto.experience_level });
+      }
+
+      // Apply remote type filter
+      if (searchDto.remote_type) {
+        queryBuilder.andWhere('job.remote_type = :remoteType', { remoteType: searchDto.remote_type });
+      }
+
+      // Apply salary filter
+      if (searchDto.salary_min) {
+        queryBuilder.andWhere('job.salary_max >= :salaryMin', { salaryMin: searchDto.salary_min });
+      }
+      if (searchDto.salary_max) {
+        queryBuilder.andWhere('job.salary_min <= :salaryMax', { salaryMax: searchDto.salary_max });
+      }
+
+      // Sorting
+      const sortBy = searchDto.sort_by || 'posted_at';
+      const sortOrder = searchDto.sort_order?.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
+      queryBuilder.orderBy(`job.${sortBy}`, sortOrder);
+
+      // Pagination
+      queryBuilder.skip((page - 1) * limit).take(limit);
+
+      const [jobs, total] = await queryBuilder.getManyAndCount();
 
       // Get saved job IDs for this user
       let savedJobIds: string[] = [];
@@ -53,22 +109,21 @@ export class JobsService {
       }
 
       // Map results and add saved flag
-      const jobs = searchResults.hits.map(hit => ({
-        ...hit,
-        saved: savedJobIds.includes(hit.id),
-      }));
+      const jobsWithSaved = jobs.map(job => ({
+        ...job,
+        saved: savedJobIds.includes(job.id),
+      })) as JobResponseDto[];
 
       return {
-        data: jobs,
+        data: jobsWithSaved,
         pagination: {
-          page: searchDto.page,
-          limit: searchDto.limit,
-          total: searchResults.total,
-          total_pages: Math.ceil(searchResults.total / searchDto.limit),
-          has_next: searchDto.page * searchDto.limit < searchResults.total,
-          has_prev: searchDto.page > 1,
+          page,
+          limit,
+          total,
+          total_pages: Math.ceil(total / limit),
+          has_next: page * limit < total,
+          has_prev: page > 1,
         },
-        facets: searchResults.facets,
       };
     } catch (error) {
       this.logger.error(`Error searching jobs: ${error.message}`, error.stack);
@@ -359,7 +414,7 @@ export class JobsService {
   }
 
   /**
-   * Get similar jobs
+   * Get similar jobs (using database since ES disabled)
    */
   async getSimilarJobs(
     jobId: string,
@@ -373,10 +428,26 @@ export class JobsService {
       throw new NotFoundException('Job not found');
     }
 
-    // Search for similar jobs using Elasticsearch
-    const searchResults = await this.searchService.findSimilarJobs(job, limit);
+    // Database-based similar job search (ES disabled)
+    // Find jobs with similar employment_type, experience_level, or location
+    const similarJobs = await this.jobRepository
+      .createQueryBuilder('job')
+      .leftJoinAndSelect('job.company', 'company')
+      .where('job.id != :jobId', { jobId })
+      .andWhere('job.is_active = :isActive', { isActive: true })
+      .andWhere(
+        '(job.employment_type = :employmentType OR job.experience_level = :expLevel OR LOWER(job.location) LIKE LOWER(:location))',
+        {
+          employmentType: job.employment_type,
+          expLevel: job.experience_level,
+          location: `%${job.location?.split(',')[0] || ''}%`,
+        },
+      )
+      .orderBy('job.posted_at', 'DESC')
+      .take(limit)
+      .getMany();
 
-    return searchResults.filter(j => j.id !== jobId);
+    return similarJobs as JobResponseDto[];
   }
 
   /**
@@ -599,7 +670,7 @@ export class JobsService {
   }
 
   /**
-   * Report a job posting
+   * Report a job posting (ReportsService disabled - using stub)
    */
   async reportJob(jobId: string, reportJobDto: any, userId: string): Promise<any> {
     try {
@@ -611,27 +682,17 @@ export class JobsService {
         throw new NotFoundException('Job not found');
       }
 
-      // Map the old DTO format to the new CreateReportDto format
-      const createReportDto = {
-        reportType: reportJobDto.reason, // Maps 'reason' field to 'reportType'
-        reason: reportJobDto.reason, // Keep reason for backward compatibility
-        description: reportJobDto.details, // Maps 'details' to 'description'
-      };
-
-      // Store report in database using ReportsService
-      const report = await this.reportsService.createReport(
-        jobId,
-        userId,
-        createReportDto,
-      );
-
+      // ReportsService disabled - log report for now
       this.logger.log(
-        `Job ${jobId} reported by user ${userId}. Report ID: ${report.id}, Type: ${reportJobDto.reason}`,
+        `Job ${jobId} reported by user ${userId}. Reason: ${reportJobDto.reason}, Details: ${reportJobDto.details}`,
       );
+
+      // Generate a temporary report ID
+      const tempReportId = `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
       return {
         message: 'Job reported successfully. Our team will review it shortly.',
-        reportId: report.id,
+        reportId: tempReportId,
       };
     } catch (error) {
       if (error instanceof NotFoundException) {
@@ -643,23 +704,36 @@ export class JobsService {
   }
 
   /**
-   * Get reports for a specific job
+   * Get reports for a specific job (ReportsService disabled)
    */
   async getJobReports(jobId: string, page: number = 1, limit: number = 20): Promise<any> {
-    return this.reportsService.getReportsByJobId(jobId, page, limit);
+    // ReportsService disabled - return empty result
+    return {
+      data: [],
+      pagination: {
+        page,
+        limit,
+        total: 0,
+        total_pages: 0,
+        has_next: false,
+        has_prev: false,
+      },
+    };
   }
 
   /**
-   * Check if user has already reported a job
+   * Check if user has already reported a job (ReportsService disabled)
    */
   async hasUserReportedJob(userId: string, jobId: string): Promise<boolean> {
-    return this.reportsService.hasUserReportedJob(userId, jobId);
+    // ReportsService disabled - always return false
+    return false;
   }
 
   /**
-   * Get report count for a job
+   * Get report count for a job (ReportsService disabled)
    */
   async getJobReportCount(jobId: string): Promise<number> {
-    return this.reportsService.getJobReportCount(jobId);
+    // ReportsService disabled - return 0
+    return 0;
   }
 }

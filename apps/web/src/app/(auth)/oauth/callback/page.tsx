@@ -5,11 +5,12 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/stores/authStore';
 import { OAuthErrorHandler, clearOAuthSession } from '@/lib/oauth-utils';
 import { Loader2, AlertCircle, CheckCircle } from 'lucide-react';
+import { AUTH_API_URL } from '@/lib/api/config';
 
 function OAuthCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { setUser, setTokens } = useAuthStore();
+  const { setUser, checkAuth } = useAuthStore();
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [message, setMessage] = useState<string>('Processing authentication...');
 
@@ -22,31 +23,30 @@ function OAuthCallbackContent() {
       const provider = sessionStorage.getItem('oauth_provider') || undefined;
 
       try {
-        // Get tokens from URL query parameters
-        const accessToken = searchParams.get('access_token');
-        const refreshToken = searchParams.get('refresh_token');
+        // Check for errors in URL params
         const error = searchParams.get('error');
         const errorDescription = searchParams.get('error_description');
+        const success = searchParams.get('success');
 
         if (error) {
           const friendlyMessage = OAuthErrorHandler.getUserFriendlyMessage(
-            error,
+            errorDescription || error,
             provider
           );
           throw new Error(friendlyMessage);
         }
 
-        if (!accessToken || !refreshToken) {
-          throw new Error('Authentication tokens not found. Please try signing in again.');
+        if (!success || success !== 'true') {
+          throw new Error('Authentication was not successful. Please try again.');
         }
 
-        // Store tokens
-        setTokens(accessToken, refreshToken);
-
-        // Fetch user profile
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001/api/v1'}/auth/me`, {
+        // Tokens are in HttpOnly cookies set by the backend
+        // Fetch user profile with credentials to include cookies
+        const response = await fetch(`${AUTH_API_URL}/auth/me`, {
+          method: 'GET',
+          credentials: 'include', // Include cookies in the request
           headers: {
-            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
           },
         });
 
@@ -56,8 +56,11 @@ function OAuthCallbackContent() {
 
         const userData = await response.json();
         if (!isMounted) return;
+        
+        // Update auth store with user data
+        // Tokens are already in cookies, just update user and authentication state
         setUser(userData);
-
+        
         setStatus('success');
         setMessage('Authentication successful! Redirecting...');
 
@@ -101,7 +104,7 @@ function OAuthCallbackContent() {
       if (successTimeout) clearTimeout(successTimeout);
       if (errorTimeout) clearTimeout(errorTimeout);
     };
-  }, [searchParams, router, setUser, setTokens]);
+  }, [searchParams, router, setUser, checkAuth]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">

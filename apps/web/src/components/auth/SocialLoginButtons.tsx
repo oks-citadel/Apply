@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/ui/Button';
 import { Github, Linkedin } from 'lucide-react';
+import { AUTH_API_URL } from '@/lib/api/config';
 
 interface SocialLoginButtonsProps {
   isLoading?: boolean;
@@ -12,17 +13,21 @@ export function SocialLoginButtons({
   isLoading = false,
   showDivider = true
 }: SocialLoginButtonsProps) {
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001/api/v1';
-
   const handleSocialLogin = (provider: 'google' | 'linkedin' | 'github') => {
     // Store the current URL and provider to redirect back after OAuth
+    // Default to dashboard if on login/register page
     if (typeof window !== 'undefined') {
-      sessionStorage.setItem('oauth_redirect', window.location.pathname);
+      const currentPath = window.location.pathname;
+      const redirectPath = currentPath === '/login' || currentPath === '/register'
+        ? '/dashboard'
+        : currentPath;
+
+      sessionStorage.setItem('oauth_redirect', redirectPath);
       sessionStorage.setItem('oauth_provider', provider);
     }
 
     // Redirect to OAuth provider
-    window.location.href = `${API_URL}/auth/${provider}`;
+    window.location.href = `${AUTH_API_URL}/auth/${provider}`;
   };
 
   return (

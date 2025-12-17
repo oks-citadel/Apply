@@ -34,7 +34,7 @@ export class JobAdapterFactory implements IJobAdapterFactory {
   }
 
   private initializeAdapterMap(): void {
-    this.adapterMap = new Map([
+    this.adapterMap = new Map<SourceProvider, new (httpService: HttpService) => IJobAdapter>([
       // Job Boards
       [SourceProvider.LINKEDIN, LinkedInAdapter],
       [SourceProvider.INDEED, IndeedAdapter],

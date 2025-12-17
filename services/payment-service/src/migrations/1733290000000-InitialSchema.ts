@@ -1,7 +1,7 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class InitialSchema1234567890123 implements MigrationInterface {
-  name = 'InitialSchema1234567890123';
+export class InitialSchema1733290000000 implements MigrationInterface {
+  name = 'InitialSchema1733290000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     // Create subscriptions table

@@ -16,7 +16,8 @@ const forgotPasswordSchema = z.object({
 
 type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+// API Base URL - Backend handles routing internally (no /api/v1 needed)
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 export function ForgotPasswordForm() {
   const [isLoading, setIsLoading] = useState(false);

@@ -21,13 +21,11 @@ import {
 import { AlertsService } from './alerts.service';
 import { CreateAlertDto, UpdateAlertDto } from './dto/create-alert.dto';
 import { JobAlert } from './entities/job-alert.entity';
-
-// Mock auth guard - replace with actual implementation
-const AuthGuard = () => (target: any, propertyKey?: string, descriptor?: PropertyDescriptor) => descriptor;
+import { JwtAuthGuard } from '../../common/guards';
 
 @ApiTags('Alerts')
 @Controller('jobs/alerts')
-@UseGuards(AuthGuard())
+@UseGuards(JwtAuthGuard)
 @ApiBearerAuth('JWT-auth')
 export class AlertsController {
   constructor(private readonly alertsService: AlertsService) {}
@@ -43,7 +41,7 @@ export class AlertsController {
     @Body() createDto: CreateAlertDto,
     @Request() req: any,
   ): Promise<JobAlert> {
-    return this.alertsService.createAlert(req.user.id, createDto);
+    return this.alertsService.createAlert(req.user.sub, createDto);
   }
 
   @Get()
@@ -54,7 +52,7 @@ export class AlertsController {
     type: [JobAlert],
   })
   async getUserAlerts(@Request() req: any): Promise<JobAlert[]> {
-    return this.alertsService.getUserAlerts(req.user.id);
+    return this.alertsService.getUserAlerts(req.user.sub);
   }
 
   @Get(':id')
@@ -70,7 +68,7 @@ export class AlertsController {
     @Param('id') id: string,
     @Request() req: any,
   ): Promise<JobAlert> {
-    return this.alertsService.getAlertById(id, req.user.id);
+    return this.alertsService.getAlertById(id, req.user.sub);
   }
 
   @Put(':id')
@@ -87,7 +85,7 @@ export class AlertsController {
     @Body() updateDto: UpdateAlertDto,
     @Request() req: any,
   ): Promise<JobAlert> {
-    return this.alertsService.updateAlert(id, req.user.id, updateDto);
+    return this.alertsService.updateAlert(id, req.user.sub, updateDto);
   }
 
   @Delete(':id')
@@ -100,7 +98,7 @@ export class AlertsController {
     @Param('id') id: string,
     @Request() req: any,
   ): Promise<void> {
-    return this.alertsService.deleteAlert(id, req.user.id);
+    return this.alertsService.deleteAlert(id, req.user.sub);
   }
 
   @Get(':id/test')
@@ -112,6 +110,6 @@ export class AlertsController {
   })
   @ApiResponse({ status: 404, description: 'Alert not found' })
   async testAlert(@Param('id') id: string, @Request() req: any) {
-    return this.alertsService.testAlert(id, req.user.id);
+    return this.alertsService.testAlert(id, req.user.sub);
   }
 }

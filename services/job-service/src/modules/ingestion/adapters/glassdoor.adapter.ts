@@ -29,6 +29,25 @@ export class GlassdoorAdapter extends BaseJobAdapter {
     const pageSize = options?.pageSize || 20;
 
     try {
+      // Return mock data if using mock API key
+      if (this.source.credentials?.api_key?.startsWith('mock_')) {
+        const { mockGlassdoorJobs } = await import('./mock-data');
+        const jobs = mockGlassdoorJobs.map((job) => this.normalizeJob(job));
+
+        return {
+          jobs,
+          pagination: {
+            currentPage: page,
+            totalResults: jobs.length,
+            hasMore: false,
+          },
+          metadata: {
+            apiVersion: '1',
+            source: 'mock',
+          },
+        };
+      }
+
       const params: any = {
         't.p': this.source.credentials?.api_key,
         't.k': this.source.credentials?.client_id,

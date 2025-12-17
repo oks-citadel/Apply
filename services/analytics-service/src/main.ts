@@ -4,15 +4,20 @@ import { initTelemetry } from '@applyforus/telemetry';
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
 
-  // Initialize distributed tracing with Azure Application Insights
-  await initTelemetry({
-    serviceName: 'analytics-service',
-    serviceVersion: '1.0.0',
-    environment: process.env.NODE_ENV || 'development',
-    azureMonitorConnectionString: process.env.APPLICATIONINSIGHTS_CONNECTION_STRING,
-  });
+  // Initialize OpenTelemetry tracing with Azure Application Insights
+  try {
+    await initTelemetry({
+      serviceName: 'analytics-service',
+      serviceVersion: '1.0.0',
+      environment: process.env.NODE_ENV || 'development',
+      azureMonitorConnectionString: process.env.APPLICATIONINSIGHTS_CONNECTION_STRING,
+    });
+    logger.log('Telemetry initialized successfully');
+  } catch (error) {
+    logger.warn('Failed to initialize telemetry, continuing without tracing', error);
+  }
 
-  // Import NestJS modules AFTER telemetry initialization
+  // Import NestJS modules
   const { NestFactory } = await import('@nestjs/core');
   const { ValidationPipe } = await import('@nestjs/common');
   const { SwaggerModule, DocumentBuilder } = await import('@nestjs/swagger');
@@ -28,8 +33,8 @@ async function bootstrap() {
 
   const configService = app.get(ConfigService);
 
-  // Global prefix
-  app.setGlobalPrefix('api/v1');
+  // No global prefix - ingress routes /analytics to this service directly
+  // app.setGlobalPrefix('api/v1');
 
   // CORS configuration
   app.enableCors({
@@ -79,7 +84,7 @@ async function bootstrap() {
         'JWT-auth',
       )
       .addTag('analytics', 'Analytics endpoints')
-      .addServer(`http://localhost:${configService.get('port', 8006)}`, 'Local server')
+      .addServer(`http://localhost:${configService.get('port', 3007)}`, 'Local server')
       .addServer(configService.get('apiBaseUrl', 'http://localhost:8006'), 'API server')
       .build();
 
@@ -90,13 +95,13 @@ async function bootstrap() {
       },
     });
 
-    logger.log(`Swagger documentation available at: http://localhost:${configService.get('port', 8006)}/api/docs`);
+    logger.log(`Swagger documentation available at: http://localhost:${configService.get('port', 3007)}/api/docs`);
   }
 
   // Graceful shutdown handling
   app.enableShutdownHooks();
 
-  const port = configService.get('port', 8006);
+  const port = configService.get('port', 3007);
   await app.listen(port);
 
   logger.log(`Analytics Service is running on: http://localhost:${port}`);

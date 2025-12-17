@@ -1,0 +1,126 @@
+---
+# Ratify - A framework to verify artifacts and enforce policies
+# https://github.com/deislabs/ratify
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ratify-system
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ratify
+  namespace: ratify-system
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ratify
+  namespace: ratify-system
+  labels:
+    app: ratify
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ratify
+  template:
+    metadata:
+      labels:
+        app: ratify
+    spec:
+      serviceAccountName: ratify
+      containers:
+      - name: ratify
+        image: ghcr.io/deislabs/ratify:v1.1.0
+        imagePullPolicy: IfNotPresent
+        args:
+          - serve
+          - --config
+          - /etc/ratify/config.yaml
+        ports:
+        - containerPort: 6001
+          protocol: TCP
+        volumeMounts:
+        - name: config
+          mountPath: /etc/ratify
+          readOnly: true
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 65532
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+      volumes:
+      - name: config
+        configMap:
+          name: ratify-config
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ratify-config
+  namespace: ratify-system
+data:
+  config.yaml: |
+    server:
+      port: 6001
+    store:
+      version: "1.0.0"
+      plugins:
+        - name: oci
+          type: oci
+    policy:
+      version: "1.0.0"
+      plugin:
+        name: configPolicy
+        artifactVerificationPolicies:
+          application/vnd.dev.cosign.simplesigning.v1+json:
+            name: cosign-verification
+    verifier:
+      version: "1.0.0"
+      plugins:
+        - name: cosign
+          artifactTypes: application/vnd.dev.cosign.simplesigning.v1+json
+          type: cosign
+          # Cosign verification configuration
+          # For keyless verification with OIDC
+          verifySignature: true
+          cosignOptions:
+            # Enable keyless verification
+            insecure: false
+            # OIDC issuer for GitHub Actions
+            certificateIdentity: "https://github.com/your-org/Job-Apply-Platform"
+            certificateOIDCIssuer: "https://token.actions.githubusercontent.com"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ratify
+  namespace: ratify-system
+spec:
+  type: ClusterIP
+  ports:
+  - port: 6001
+    targetPort: 6001
+    protocol: TCP
+  selector:
+    app: ratify
+---
+# External Data Provider for Gatekeeper to call Ratify
+apiVersion: externaldata.gatekeeper.sh/v1alpha1
+kind: Provider
+metadata:
+  name: ratify-provider
+spec:
+  url: http://ratify.ratify-system.svc.cluster.local:6001/verify
+  timeout: 5

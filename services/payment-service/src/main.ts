@@ -1,11 +1,28 @@
-import { NestFactory } from '@nestjs/core';
-import { ValidationPipe, Logger } from '@nestjs/common';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { AppModule } from './app.module';
-import { ConfigService } from '@nestjs/config';
+import { initTelemetry } from '@applyforus/telemetry';
+import { Logger } from '@nestjs/common';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
+
+  // Initialize OpenTelemetry tracing with Azure Application Insights
+  try {
+    await initTelemetry({
+      serviceName: 'payment-service',
+      serviceVersion: '1.0.0',
+      environment: process.env.NODE_ENV || 'development',
+      azureMonitorConnectionString: process.env.APPLICATIONINSIGHTS_CONNECTION_STRING,
+    });
+    logger.log('Telemetry initialized successfully');
+  } catch (error) {
+    logger.warn('Failed to initialize telemetry, continuing without tracing', error);
+  }
+
+  // Import NestJS modules AFTER telemetry initialization
+  const { NestFactory } = await import('@nestjs/core');
+  const { ValidationPipe } = await import('@nestjs/common');
+  const { DocumentBuilder, SwaggerModule } = await import('@nestjs/swagger');
+  const { ConfigService } = await import('@nestjs/config');
+  const { AppModule } = await import('./app.module');
 
   const app = await NestFactory.create(AppModule, {
     logger: ['error', 'warn', 'log', 'debug', 'verbose'],
@@ -33,8 +50,8 @@ async function bootstrap() {
     }),
   );
 
-  // Global prefix
-  app.setGlobalPrefix('api/v1');
+  // No global prefix - ingress routes /payments to this service directly
+  // app.setGlobalPrefix('api/v1');
 
   // Swagger documentation
   const config = new DocumentBuilder()

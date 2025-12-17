@@ -101,8 +101,7 @@ export class ProfileController {
   @ApiOperation({ summary: 'Get all work experiences' })
   @ApiResponse({ status: 200, description: 'Work experiences retrieved successfully' })
   async getWorkExperiences(@CurrentUser('userId') userId: string) {
-    const profile = await this.profileService.getProfile(userId);
-    return this.profileSectionsService.getWorkExperiences(profile.id);
+    return this.profileSectionsService.getWorkExperiences(userId);
   }
 
   @Post('work-experience')
@@ -112,8 +111,7 @@ export class ProfileController {
     @CurrentUser('userId') userId: string,
     @Body() createDto: CreateWorkExperienceDto,
   ) {
-    const profile = await this.profileService.getProfile(userId);
-    return this.profileSectionsService.createWorkExperience(profile.id, createDto);
+    return this.profileSectionsService.createWorkExperience(userId, createDto);
   }
 
   @Put('work-experience/:id')
@@ -124,8 +122,7 @@ export class ProfileController {
     @Param('id') id: string,
     @Body() updateDto: UpdateWorkExperienceDto,
   ) {
-    const profile = await this.profileService.getProfile(userId);
-    return this.profileSectionsService.updateWorkExperience(id, profile.id, updateDto);
+    return this.profileSectionsService.updateWorkExperience(id, userId, updateDto);
   }
 
   @Delete('work-experience/:id')
@@ -135,8 +132,7 @@ export class ProfileController {
     @CurrentUser('userId') userId: string,
     @Param('id') id: string,
   ) {
-    const profile = await this.profileService.getProfile(userId);
-    await this.profileSectionsService.deleteWorkExperience(id, profile.id);
+    await this.profileSectionsService.deleteWorkExperience(id, userId);
     return { message: 'Work experience deleted successfully' };
   }
 
@@ -145,8 +141,7 @@ export class ProfileController {
   @ApiOperation({ summary: 'Get all education entries' })
   @ApiResponse({ status: 200, description: 'Education entries retrieved successfully' })
   async getEducation(@CurrentUser('userId') userId: string) {
-    const profile = await this.profileService.getProfile(userId);
-    return this.profileSectionsService.getEducation(profile.id);
+    return this.profileSectionsService.getEducation(userId);
   }
 
   @Post('education')
@@ -156,8 +151,7 @@ export class ProfileController {
     @CurrentUser('userId') userId: string,
     @Body() createDto: CreateEducationDto,
   ) {
-    const profile = await this.profileService.getProfile(userId);
-    return this.profileSectionsService.createEducation(profile.id, createDto);
+    return this.profileSectionsService.createEducation(userId, createDto);
   }
 
   @Put('education/:id')
@@ -168,8 +162,7 @@ export class ProfileController {
     @Param('id') id: string,
     @Body() updateDto: UpdateEducationDto,
   ) {
-    const profile = await this.profileService.getProfile(userId);
-    return this.profileSectionsService.updateEducation(id, profile.id, updateDto);
+    return this.profileSectionsService.updateEducation(id, userId, updateDto);
   }
 
   @Delete('education/:id')
@@ -179,8 +172,7 @@ export class ProfileController {
     @CurrentUser('userId') userId: string,
     @Param('id') id: string,
   ) {
-    const profile = await this.profileService.getProfile(userId);
-    await this.profileSectionsService.deleteEducation(id, profile.id);
+    await this.profileSectionsService.deleteEducation(id, userId);
     return { message: 'Education entry deleted successfully' };
   }
 
@@ -189,8 +181,7 @@ export class ProfileController {
   @ApiOperation({ summary: 'Get all skills' })
   @ApiResponse({ status: 200, description: 'Skills retrieved successfully' })
   async getSkills(@CurrentUser('userId') userId: string) {
-    const profile = await this.profileService.getProfile(userId);
-    return this.profileSectionsService.getSkills(profile.id);
+    return this.profileSectionsService.getSkills(userId);
   }
 
   @Post('skills')
@@ -200,8 +191,7 @@ export class ProfileController {
     @CurrentUser('userId') userId: string,
     @Body() createDto: CreateSkillDto,
   ) {
-    const profile = await this.profileService.getProfile(userId);
-    return this.profileSectionsService.createSkill(profile.id, createDto);
+    return this.profileSectionsService.createSkill(userId, createDto);
   }
 
   @Put('skills/:id')
@@ -212,8 +202,7 @@ export class ProfileController {
     @Param('id') id: string,
     @Body() updateDto: UpdateSkillDto,
   ) {
-    const profile = await this.profileService.getProfile(userId);
-    return this.profileSectionsService.updateSkill(id, profile.id, updateDto);
+    return this.profileSectionsService.updateSkill(id, userId, updateDto);
   }
 
   @Delete('skills/:id')
@@ -223,8 +212,7 @@ export class ProfileController {
     @CurrentUser('userId') userId: string,
     @Param('id') id: string,
   ) {
-    const profile = await this.profileService.getProfile(userId);
-    await this.profileSectionsService.deleteSkill(id, profile.id);
+    await this.profileSectionsService.deleteSkill(id, userId);
     return { message: 'Skill deleted successfully' };
   }
 
@@ -233,8 +221,7 @@ export class ProfileController {
   @ApiOperation({ summary: 'Get all certifications' })
   @ApiResponse({ status: 200, description: 'Certifications retrieved successfully' })
   async getCertifications(@CurrentUser('userId') userId: string) {
-    const profile = await this.profileService.getProfile(userId);
-    return this.profileSectionsService.getCertifications(profile.id);
+    return this.profileSectionsService.getCertifications(userId);
   }
 
   @Post('certifications')
@@ -244,8 +231,7 @@ export class ProfileController {
     @CurrentUser('userId') userId: string,
     @Body() createDto: CreateCertificationDto,
   ) {
-    const profile = await this.profileService.getProfile(userId);
-    return this.profileSectionsService.createCertification(profile.id, createDto);
+    return this.profileSectionsService.createCertification(userId, createDto);
   }
 
   @Put('certifications/:id')
@@ -256,8 +242,7 @@ export class ProfileController {
     @Param('id') id: string,
     @Body() updateDto: UpdateCertificationDto,
   ) {
-    const profile = await this.profileService.getProfile(userId);
-    return this.profileSectionsService.updateCertification(id, profile.id, updateDto);
+    return this.profileSectionsService.updateCertification(id, userId, updateDto);
   }
 
   @Delete('certifications/:id')
@@ -267,8 +252,7 @@ export class ProfileController {
     @CurrentUser('userId') userId: string,
     @Param('id') id: string,
   ) {
-    const profile = await this.profileService.getProfile(userId);
-    await this.profileSectionsService.deleteCertification(id, profile.id);
+    await this.profileSectionsService.deleteCertification(id, userId);
     return { message: 'Certification deleted successfully' };
   }
 }

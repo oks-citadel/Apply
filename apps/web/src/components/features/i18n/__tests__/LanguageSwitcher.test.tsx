@@ -286,7 +286,7 @@ describe('LanguageSwitcher', () => {
 
       await waitFor(() => {
         expect(fetchSpy).toHaveBeenCalledWith(
-          expect.stringContaining('/api/v1/users/locale'),
+          expect.stringContaining('/users/locale'),
           expect.objectContaining({
             method: 'PUT',
             body: expect.stringContaining('es'),

@@ -14,7 +14,9 @@ export default () => ({
     username: process.env.DB_USERNAME || 'postgres',
     password: process.env.DB_PASSWORD || 'postgres',
     database: process.env.DB_NAME || 'applyforus_auth',
-    synchronize: process.env.DB_SYNCHRONIZE === 'true' || false,
+    // NEVER use synchronize in production - it can modify schema unexpectedly
+    // Always use migrations instead
+    synchronize: false,
     logging: process.env.DB_LOGGING === 'true' || false,
   },
 

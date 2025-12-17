@@ -113,6 +113,15 @@ export class HealthService {
     // Check Redis connection
     if (this.redisClient) {
       checks.redis = await checkRedisConnection(this.redisClient);
+
+      // Check queue health (Bull uses Redis)
+      checks.emailQueue = checks.redis.status === 'up'
+        ? { status: 'up', message: 'Email queue ready' }
+        : { status: 'down', message: 'Email queue unavailable (Redis down)' };
+
+      checks.pushQueue = checks.redis.status === 'up'
+        ? { status: 'up', message: 'Push notification queue ready' }
+        : { status: 'down', message: 'Push notification queue unavailable (Redis down)' };
     }
 
     const response = createHealthResponse('notification-service', '1.0.0', checks);

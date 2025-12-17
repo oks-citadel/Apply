@@ -1,0 +1,120 @@
+# =============================================================================
+# STANDARDIZED PYTHON SERVICE DOCKERFILE - ApplyForUs Platform (AI Service)
+# =============================================================================
+# Security Hardened Multi-Stage Build Template
+# - Pinned base images with SHA256 digests
+# - Non-root runtime user
+# - Minimal layers
+# - Multi-stage optimization
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Stage 1: Builder - Install dependencies
+# -----------------------------------------------------------------------------
+# Pinned Python 3.11 Slim with SHA256 digest
+# Update digest: docker pull python:3.11-slim && docker inspect python:3.11-slim | jq -r '.[0].RepoDigests[0]'
+FROM python:3.11-slim@sha256:ad4db0df957c2f83f87f5babc957e1d7c2ab821b6fcc1bbef4b8ff8cf1f2e13f AS builder
+
+WORKDIR /app
+
+# Install build dependencies with pinned versions where possible
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc=4:12.2.0-3 \
+    g++=4:12.2.0-3 \
+    make=4.3-4.1 \
+    libpq-dev=15.8-0+deb12u1 \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# Create virtual environment for cleaner dependency management
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Copy requirements first for better layer caching
+ARG SERVICE_NAME=ai-service
+COPY services/${SERVICE_NAME}/requirements.txt .
+
+# Install Python dependencies with optimizations
+RUN pip install --no-cache-dir --upgrade pip==24.0 setuptools==69.5.1 wheel==0.43.0 && \
+    pip install --no-cache-dir -r requirements.txt && \
+    pip cache purge
+
+# -----------------------------------------------------------------------------
+# Stage 2: Production Runtime - Minimal and Secure
+# -----------------------------------------------------------------------------
+# Pinned Python 3.11 Slim with SHA256 digest (same as builder)
+FROM python:3.11-slim@sha256:ad4db0df957c2f83f87f5babc957e1d7c2ab821b6fcc1bbef4b8ff8cf1f2e13f AS production
+
+WORKDIR /app
+
+# Install only runtime dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpq5=15.8-0+deb12u1 \
+    curl=7.88.1-10+deb12u8 \
+    ca-certificates=20230311 \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# Copy virtual environment from builder
+COPY --from=builder /opt/venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Copy only necessary application files
+ARG SERVICE_NAME=ai-service
+COPY services/${SERVICE_NAME}/src/ ./src/
+COPY services/${SERVICE_NAME}/requirements.txt .
+
+# Create non-root user with specific UID/GID
+RUN groupadd -r -g 1000 aiservice && \
+    useradd -r -u 1000 -g aiservice -m -d /home/aiservice aiservice && \
+    chown -R aiservice:aiservice /app && \
+    mkdir -p /app/cache /app/models && \
+    chown -R aiservice:aiservice /app/cache /app/models
+
+# Switch to non-root user
+USER aiservice
+
+# Environment variables for optimization
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONHASHSEED=random \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PORT=8008 \
+    OMP_NUM_THREADS=4 \
+    MKL_NUM_THREADS=4 \
+    TRANSFORMERS_CACHE=/app/cache/transformers \
+    HF_HOME=/app/cache/huggingface
+
+# Expose port
+EXPOSE 8008
+
+# Health check with reduced frequency to save resources
+HEALTHCHECK --interval=60s --timeout=10s --start-period=30s --retries=3 \
+    CMD curl -f http://localhost:8008/health || exit 1
+
+# Use exec form for proper signal handling
+CMD ["uvicorn", "src.main:app", \
+     "--host", "0.0.0.0", \
+     "--port", "8008", \
+     "--workers", "2", \
+     "--loop", "uvloop", \
+     "--http", "httptools", \
+     "--no-access-log"]
+
+# =============================================================================
+# Build metadata labels (OCI standard)
+# =============================================================================
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION
+
+LABEL org.opencontainers.image.created="${BUILD_DATE}" \
+      org.opencontainers.image.authors="ApplyForUs Platform Team" \
+      org.opencontainers.image.url="https://applyforus.com" \
+      org.opencontainers.image.source="https://github.com/applyforus/platform" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.vendor="ApplyForUs" \
+      org.opencontainers.image.title="ApplyForUs AI Service" \
+      org.opencontainers.image.description="Production-hardened AI service for ApplyForUs platform"

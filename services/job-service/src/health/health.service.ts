@@ -1,12 +1,11 @@
-import { Injectable, HttpStatus, Inject, Optional, Logger } from '@nestjs/common';
+import { Injectable, HttpStatus, Logger } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
-import { Client } from '@elastic/elasticsearch';
 import Redis from 'ioredis';
 
-// Inline health check utilities (replacing @applyforus/utils)
-const checkDatabaseConnection = async (dataSource: any) => {
+// Inline health check utilities
+const checkDatabaseConnection = async (dataSource: DataSource) => {
   try {
     await dataSource.query('SELECT 1');
     return { status: 'up', message: 'Database connection successful' };
@@ -24,17 +23,8 @@ const checkRedisConnection = async (redis: Redis) => {
   }
 };
 
-const checkElasticsearchConnection = async (client: Client) => {
-  try {
-    await client.ping();
-    return { status: 'up', message: 'Elasticsearch connection successful' };
-  } catch (error) {
-    return { status: 'down', message: error.message };
-  }
-};
-
-const createHealthResponse = (serviceName: string, version: string, checks: any) => {
-  const allUp = Object.values(checks).every((check: any) => check.status === 'up');
+const createHealthResponse = (serviceName: string, version: string, checks: Record<string, unknown>) => {
+  const allUp = Object.values(checks).every((check: { status?: string }) => check.status === 'up');
   return {
     status: allUp ? 'healthy' : 'degraded',
     service: serviceName,
@@ -47,12 +37,11 @@ const createHealthResponse = (serviceName: string, version: string, checks: any)
 /**
  * Health Service for Job Service
  * Handles health check logic and dependency verification
- * Checks Database, Redis, and Elasticsearch connectivity
+ * Checks Database and Redis/Bull queue connectivity
  */
 @Injectable()
 export class HealthService {
   private readonly logger = new Logger(HealthService.name);
-  private elasticsearchClient: Client;
   private redisClient: Redis;
 
   constructor(
@@ -60,28 +49,18 @@ export class HealthService {
     private readonly dataSource: DataSource,
     private readonly configService: ConfigService,
   ) {
-    // Initialize Elasticsearch client
-    const esNode = this.configService.get('elasticsearch.node');
-    const esAuth = this.configService.get('elasticsearch.auth');
-
-    this.elasticsearchClient = new Client({
-      node: esNode,
-      auth: esAuth?.password ? esAuth : undefined,
-      maxRetries: 3,
-      requestTimeout: 30000,
-    });
-
-    // Initialize Redis client
+    // Initialize Redis client for health checks
     const redisHost = this.configService.get('redis.host');
     const redisPort = this.configService.get('redis.port');
     const redisPassword = this.configService.get('redis.password');
-    const redisDb = this.configService.get('redis.db');
+    const redisTls = this.configService.get('REDIS_TLS') === 'true';
 
     this.redisClient = new Redis({
       host: redisHost,
       port: redisPort,
       password: redisPassword || undefined,
-      db: redisDb || 0,
+      db: this.configService.get('redis.db', 0),
+      tls: redisTls ? {} : undefined,
       lazyConnect: true,
       retryStrategy: (times) => {
         if (times > 3) return null;
@@ -93,6 +72,8 @@ export class HealthService {
     this.redisClient.connect().catch((err) => {
       this.logger.error('Failed to connect to Redis for health checks', err);
     });
+
+    this.logger.log('HealthService initialized with Redis queue health checks');
   }
 
   /**
@@ -132,13 +113,20 @@ export class HealthService {
 
   /**
    * Readiness check - verify all critical dependencies
+   * Checks Database and Redis/Bull queue connectivity
    */
   async getReadiness() {
-    const checks = {
+    const checks: Record<string, { status: string; message?: string }> = {
       database: await checkDatabaseConnection(this.dataSource),
-      redis: await checkRedisConnection(this.redisClient),
-      elasticsearch: await checkElasticsearchConnection(this.elasticsearchClient),
     };
+
+    // Check Redis connection (used by Bull queues)
+    if (this.redisClient) {
+      checks.redis = await checkRedisConnection(this.redisClient);
+      checks.queue = checks.redis.status === 'up'
+        ? { status: 'up', message: 'Bull queue ready' }
+        : { status: 'down', message: 'Bull queue unavailable (Redis down)' };
+    }
 
     const response = createHealthResponse('job-service', '1.0.0', checks);
 
@@ -159,9 +147,6 @@ export class HealthService {
   async onModuleDestroy() {
     if (this.redisClient) {
       await this.redisClient.quit();
-    }
-    if (this.elasticsearchClient) {
-      await this.elasticsearchClient.close();
     }
   }
 }

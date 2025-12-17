@@ -1,34 +1,85 @@
-name: Build and Scan Container Images
+name: Build and Security Scan
 
 on:
-  workflow_call:
-    inputs:
-      service-name:
-        required: true
-        type: string
-      version:
-        required: true
-        type: string
-    secrets:
-      ACR_USERNAME:
-        required: true
-      ACR_PASSWORD:
-        required: true
-      SNYK_TOKEN:
-        required: false
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+  id-token: write # Required for OIDC
+  packages: write
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
-  REGISTRY: jobpilotacr.azurecr.io
+  ACR_LOGIN_SERVER: applyforusacr.azurecr.io
+  IMAGE_PREFIX: applyai
+  NODE_VERSION: '20'
+  PNPM_VERSION: '8.15.0'
 
 jobs:
-  build-scan-push:
-    name: Build, Scan, and Push ${{ inputs.service-name }}
+  generate-metadata:
+    name: Generate Build Metadata
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+      image_tag: ${{ steps.meta.outputs.image_tag }}
+      short_sha: ${{ steps.meta.outputs.short_sha }}
+      build_date: ${{ steps.meta.outputs.build_date }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate metadata
+        id: meta
+        run: |
+          VERSION="1.0.$(git rev-list --count HEAD)"
+          SHORT_SHA="${GITHUB_SHA:0:8}"
+          IMAGE_TAG="${VERSION}-${SHORT_SHA}"
+          BUILD_DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "image_tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
+          echo "short_sha=$SHORT_SHA" >> $GITHUB_OUTPUT
+          echo "build_date=$BUILD_DATE" >> $GITHUB_OUTPUT
+
+          echo "Generated metadata:"
+          echo "  Version: $VERSION"
+          echo "  Image Tag: $IMAGE_TAG"
+          echo "  Short SHA: $SHORT_SHA"
+          echo "  Build Date: $BUILD_DATE"
+
+  build-and-push:
+    name: Build ${{ matrix.service }}
+    runs-on: ubuntu-latest
+    needs: generate-metadata
     permissions:
       contents: read
+      id-token: write
       security-events: write
-      packages: write
-
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - web
+          - auth-service
+          - user-service
+          - job-service
+          - resume-service
+          - notification-service
+          - auto-apply-service
+          - analytics-service
+          - ai-service
+          - orchestrator-service
+          - payment-service
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -36,127 +87,255 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Log in to Azure Container Registry
+      - name: Azure Login with OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Get ACR token
+        id: acr-token
+        run: |
+          TOKEN=$(az acr login --name applyforusacr --expose-token --output tsv --query accessToken)
+          echo "::add-mask::$TOKEN"
+          echo "token=$TOKEN" >> $GITHUB_OUTPUT
+
+      - name: Log in to ACR
         uses: docker/login-action@v3
         with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ secrets.ACR_USERNAME }}
-          password: ${{ secrets.ACR_PASSWORD }}
+          registry: ${{ env.ACR_LOGIN_SERVER }}
+          username: 00000000-0000-0000-0000-000000000000
+          password: ${{ steps.acr-token.outputs.token }}
 
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ inputs.service-name }}
-          tags: |
-            type=semver,pattern={{version}},value=${{ inputs.version }}
-            type=semver,pattern={{major}}.{{minor}},value=${{ inputs.version }}
-            type=semver,pattern={{major}},value=${{ inputs.version }}
-            type=sha,prefix={{branch}}-
-            type=ref,event=branch
-            type=ref,event=pr
-
-      - name: Determine service path
-        id: service-path
+      - name: Determine Dockerfile path
+        id: dockerfile
         run: |
-          # Check if service exists in apps or services directory
-          if [ -d "apps/${{ inputs.service-name }}" ]; then
-            echo "context=apps/${{ inputs.service-name }}" >> $GITHUB_OUTPUT
-            echo "dockerfile=apps/${{ inputs.service-name }}/Dockerfile" >> $GITHUB_OUTPUT
-          elif [ -d "services/${{ inputs.service-name }}" ]; then
-            echo "context=services/${{ inputs.service-name }}" >> $GITHUB_OUTPUT
-            echo "dockerfile=services/${{ inputs.service-name }}/Dockerfile" >> $GITHUB_OUTPUT
+          if [ "${{ matrix.service }}" = "web" ]; then
+            echo "path=apps/web/Dockerfile" >> $GITHUB_OUTPUT
+            echo "context=." >> $GITHUB_OUTPUT
           else
-            echo "Error: Service ${{ inputs.service-name }} not found"
-            exit 1
+            echo "path=services/${{ matrix.service }}/Dockerfile" >> $GITHUB_OUTPUT
+            echo "context=." >> $GITHUB_OUTPUT
           fi
 
-      - name: Build Docker image (no push for scanning)
+      - name: Build and push image
+        id: build
         uses: docker/build-push-action@v5
         with:
-          context: ${{ steps.service-path.outputs.context }}
-          file: ${{ steps.service-path.outputs.dockerfile }}
-          push: false
-          load: true
-          tags: ${{ env.REGISTRY }}/${{ inputs.service-name }}:scan
+          context: ${{ steps.dockerfile.outputs.context }}
+          file: ${{ steps.dockerfile.outputs.path }}
+          push: true
+          tags: |
+            ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_PREFIX }}-${{ matrix.service }}:${{ needs.generate-metadata.outputs.image_tag }}
+            ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_PREFIX }}-${{ matrix.service }}:${{ github.ref_name }}-latest
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.created=${{ needs.generate-metadata.outputs.build_date }}
+            org.opencontainers.image.version=${{ needs.generate-metadata.outputs.version }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          labels: ${{ steps.meta.outputs.labels }}
+          provenance: true
+          sbom: true
           build-args: |
-            BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+            BUILD_DATE=${{ needs.generate-metadata.outputs.build_date }}
             VCS_REF=${{ github.sha }}
-            VERSION=${{ inputs.version }}
+            VERSION=${{ needs.generate-metadata.outputs.version }}
+
+      - name: Export image digest
+        id: export
+        run: |
+          DIGEST="${{ steps.build.outputs.digest }}"
+          echo "digest=$DIGEST" >> $GITHUB_OUTPUT
+          echo "Image digest for ${{ matrix.service }}: $DIGEST"
+
+          # Save digest to artifact
+          mkdir -p digests
+          echo "$DIGEST" > digests/${{ matrix.service }}.txt
+          echo "${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_PREFIX }}-${{ matrix.service }}@$DIGEST" > digests/${{ matrix.service }}-full.txt
+
+      - name: Upload digest artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: digest-${{ matrix.service }}
+          path: digests/
+          retention-days: 90
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ env.REGISTRY }}/${{ inputs.service-name }}:scan
+          image-ref: ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_PREFIX }}-${{ matrix.service }}@${{ steps.build.outputs.digest }}
           format: 'sarif'
-          output: 'trivy-results.sarif'
+          output: 'trivy-results-${{ matrix.service }}.sarif'
           severity: 'CRITICAL,HIGH,MEDIUM'
           vuln-type: 'os,library'
           scanners: 'vuln,secret,config'
+          ignore-unfixed: false
 
-      - name: Upload Trivy results to GitHub Security tab
+      - name: Upload Trivy results to GitHub Security
         uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
-          sarif_file: 'trivy-results.sarif'
-          category: trivy-${{ inputs.service-name }}
+          sarif_file: trivy-results-${{ matrix.service }}.sarif
+          category: trivy-${{ matrix.service }}
 
-      - name: Run Trivy vulnerability scanner (Fail on HIGH/CRITICAL)
+      - name: Run Trivy scan (Table format) - Fail on HIGH/CRITICAL
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ env.REGISTRY }}/${{ inputs.service-name }}:scan
+          image-ref: ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_PREFIX }}-${{ matrix.service }}@${{ steps.build.outputs.digest }}
           format: 'table'
           severity: 'CRITICAL,HIGH'
           exit-code: '1'
-          ignore-unfixed: true
+          ignore-unfixed: false
+          timeout: '10m'
 
-      - name: Run Snyk container scan
-        if: env.SNYK_TOKEN != ''
-        continue-on-error: true
-        uses: snyk/actions/docker@master
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      - name: Generate SBOM
+        uses: aquasecurity/trivy-action@master
         with:
-          image: ${{ env.REGISTRY }}/${{ inputs.service-name }}:scan
-          args: --severity-threshold=high
+          image-ref: ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_PREFIX }}-${{ matrix.service }}@${{ steps.build.outputs.digest }}
+          format: 'cyclonedx'
+          output: 'sbom-${{ matrix.service }}.json'
 
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: ${{ steps.service-path.outputs.context }}
-          file: ${{ steps.service-path.outputs.dockerfile }}
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          sbom: true
-          provenance: true
-          build-args: |
-            BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
-            VCS_REF=${{ github.sha }}
-            VERSION=${{ inputs.version }}
-
-      - name: Generate SBOM with Syft
-        uses: anchore/sbom-action@v0
-        with:
-          image: ${{ env.REGISTRY }}/${{ inputs.service-name }}:${{ inputs.version }}
-          format: spdx-json
-          output-file: sbom-${{ inputs.service-name }}.spdx.json
-
-      - name: Upload SBOM as artifact
+      - name: Upload SBOM artifact
         uses: actions/upload-artifact@v4
         with:
-          name: sbom-${{ inputs.service-name }}
-          path: sbom-${{ inputs.service-name }}.spdx.json
+          name: sbom-${{ matrix.service }}
+          path: sbom-${{ matrix.service }}.json
           retention-days: 90
 
-      - name: Sign container image
-        if: github.event_name != 'pull_request'
-        uses: sigstore/cosign-installer@v3
+  collect-digests:
+    name: Collect All Image Digests
+    runs-on: ubuntu-latest
+    needs: [generate-metadata, build-and-push]
+    outputs:
+      manifest: ${{ steps.create-manifest.outputs.manifest }}
+    steps:
+      - name: Download all digest artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: digest-*
+          path: all-digests
+          merge-multiple: true
 
-      - name: Image digest
-        run: echo "Image pushed with tags - ${{ steps.meta.outputs.tags }}"
+      - name: Create deployment manifest
+        id: create-manifest
+        run: |
+          echo "Creating deployment manifest with all image digests..."
+
+          cat > deployment-manifest.json <<'MANIFEST_EOF'
+          {
+            "version": "${{ needs.generate-metadata.outputs.version }}",
+            "image_tag": "${{ needs.generate-metadata.outputs.image_tag }}",
+            "short_sha": "${{ needs.generate-metadata.outputs.short_sha }}",
+            "build_date": "${{ needs.generate-metadata.outputs.build_date }}",
+            "git_ref": "${{ github.ref }}",
+            "git_sha": "${{ github.sha }}",
+            "images": {
+          MANIFEST_EOF
+
+          FIRST=true
+          for service in web auth-service user-service job-service resume-service notification-service auto-apply-service analytics-service ai-service orchestrator-service payment-service; do
+            if [ -f "all-digests/${service}.txt" ]; then
+              DIGEST=$(cat "all-digests/${service}.txt")
+              IMAGE_REF=$(cat "all-digests/${service}-full.txt")
+
+              if [ "$FIRST" = true ]; then
+                FIRST=false
+              else
+                echo "," >> deployment-manifest.json
+              fi
+
+              cat >> deployment-manifest.json <<MANIFEST_EOF
+                "${service}": {
+                  "digest": "${DIGEST}",
+                  "image": "${IMAGE_REF}"
+                }
+          MANIFEST_EOF
+            fi
+          done
+
+          cat >> deployment-manifest.json <<'MANIFEST_EOF'
+
+            }
+          }
+          MANIFEST_EOF
+
+          echo "Deployment manifest created:"
+          cat deployment-manifest.json
+
+          # Convert to single line for output
+          MANIFEST=$(cat deployment-manifest.json | jq -c . || cat deployment-manifest.json)
+          echo "manifest=$MANIFEST" >> $GITHUB_OUTPUT
+
+      - name: Upload deployment manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment-manifest-${{ needs.generate-metadata.outputs.image_tag }}
+          path: deployment-manifest.json
+          retention-days: 90
+
+      - name: Create GitHub Release (on tags)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            deployment-manifest.json
+            all-digests/*.txt
+          body: |
+            ## Deployment Manifest
+
+            Version: ${{ needs.generate-metadata.outputs.version }}
+            Build Date: ${{ needs.generate-metadata.outputs.build_date }}
+
+            All images built with digest-based references for secure promotion across environments.
+
+            See attached `deployment-manifest.json` for complete image digests.
+
+  security-summary:
+    name: Security Scan Summary
+    runs-on: ubuntu-latest
+    needs: [generate-metadata, build-and-push, collect-digests]
+    if: always()
+    steps:
+      - name: Check build results
+        run: |
+          echo "## Build and Security Scan Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ needs.build-and-push.result }}" == "success" ]; then
+            echo "✅ All images built successfully and passed security scans" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Version:** ${{ needs.generate-metadata.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+            echo "**Image Tag:** ${{ needs.generate-metadata.outputs.image_tag }}" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Images are ready for promotion to environments using digest references." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Build or security scan failed" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Critical or High vulnerabilities detected. Deployment blocked.**" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Review the Security tab and fix vulnerabilities before proceeding." >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
+
+      - name: Comment on PR (if applicable)
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const summary = `## Security Scan Results
+
+            Build Status: ${{ needs.build-and-push.result == 'success' && '✅ Passed' || '❌ Failed' }}
+
+            ${{ needs.build-and-push.result == 'success' && 'All images passed security scans (no HIGH/CRITICAL vulnerabilities).' || '⚠️ **Security vulnerabilities detected.** Review the Security tab before merging.' }}
+
+            Version: \`${{ needs.generate-metadata.outputs.version }}\`
+            `;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: summary
+            });

@@ -53,6 +53,38 @@ export class AuthController {
   }
 
   /**
+   * Set authentication tokens in secure HttpOnly cookies
+   * @param res Express Response object
+   * @param accessToken JWT access token
+   * @param refreshToken JWT refresh token
+   */
+  private setAuthCookies(res: Response, accessToken: string, refreshToken: string): void {
+    const isProduction = this.configService.get<string>('nodeEnv') === 'production';
+
+    // Cookie options with security flags
+    const cookieOptions = {
+      httpOnly: true,
+      secure: isProduction, // Only use secure flag in production (requires HTTPS)
+      sameSite: 'strict' as const,
+      path: '/',
+    };
+
+    // Set access token cookie (15 minutes)
+    res.cookie('access_token', accessToken, {
+      ...cookieOptions,
+      maxAge: 15 * 60 * 1000, // 15 minutes in milliseconds
+    });
+
+    // Set refresh token cookie (7 days)
+    res.cookie('refresh_token', refreshToken, {
+      ...cookieOptions,
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
+    });
+
+    this.logger.log('Authentication cookies set successfully');
+  }
+
+  /**
    * Register a new user
    */
   @Public()
@@ -285,6 +317,7 @@ export class AuthController {
   @Public()
   @Get('google')
   @UseGuards(AuthGuard('google'))
+  @Throttle({ default: { limit: 10, ttl: 60000 } }) // 10 requests per minute
   @ApiOperation({ summary: 'Initiate Google OAuth login' })
   @ApiResponse({
     status: HttpStatus.FOUND,
@@ -301,10 +334,11 @@ export class AuthController {
   @Public()
   @Get('google/callback')
   @UseGuards(AuthGuard('google'))
+  @Throttle({ default: { limit: 10, ttl: 60000 } }) // 10 requests per minute
   @ApiOperation({ summary: 'Google OAuth callback' })
   @ApiResponse({
     status: HttpStatus.FOUND,
-    description: 'Redirects to frontend with authentication tokens',
+    description: 'Redirects to frontend with authentication tokens in secure cookies',
   })
   async googleCallback(@Req() req: Request, @Res() res: Response): Promise<void> {
     try {
@@ -318,8 +352,11 @@ export class AuthController {
 
       const tokenResponse = await this.authService.googleLogin(user);
 
-      // Redirect to frontend with tokens in URL
-      const redirectUrl = `${this.frontendUrl}/oauth/callback?access_token=${tokenResponse.accessToken}&refresh_token=${tokenResponse.refreshToken}`;
+      // Set tokens in secure HttpOnly cookies
+      this.setAuthCookies(res, tokenResponse.accessToken, tokenResponse.refreshToken);
+
+      // Redirect to frontend without tokens in URL
+      const redirectUrl = `${this.frontendUrl}/oauth/callback?success=true`;
       res.redirect(redirectUrl);
     } catch (error: any) {
       this.logger.error(`Google OAuth callback error: ${error.message}`, error.stack);
@@ -336,6 +373,7 @@ export class AuthController {
   @Public()
   @Get('linkedin')
   @UseGuards(AuthGuard('linkedin'))
+  @Throttle({ default: { limit: 10, ttl: 60000 } }) // 10 requests per minute
   @ApiOperation({ summary: 'Initiate LinkedIn OAuth login' })
   @ApiResponse({
     status: HttpStatus.FOUND,
@@ -352,10 +390,11 @@ export class AuthController {
   @Public()
   @Get('linkedin/callback')
   @UseGuards(AuthGuard('linkedin'))
+  @Throttle({ default: { limit: 10, ttl: 60000 } }) // 10 requests per minute
   @ApiOperation({ summary: 'LinkedIn OAuth callback' })
   @ApiResponse({
     status: HttpStatus.FOUND,
-    description: 'Redirects to frontend with authentication tokens',
+    description: 'Redirects to frontend with authentication tokens in secure cookies',
   })
   async linkedinCallback(@Req() req: Request, @Res() res: Response): Promise<void> {
     try {
@@ -369,8 +408,11 @@ export class AuthController {
 
       const tokenResponse = await this.authService.oauthLogin(user);
 
-      // Redirect to frontend with tokens in URL
-      const redirectUrl = `${this.frontendUrl}/oauth/callback?access_token=${tokenResponse.accessToken}&refresh_token=${tokenResponse.refreshToken}`;
+      // Set tokens in secure HttpOnly cookies
+      this.setAuthCookies(res, tokenResponse.accessToken, tokenResponse.refreshToken);
+
+      // Redirect to frontend without tokens in URL
+      const redirectUrl = `${this.frontendUrl}/oauth/callback?success=true`;
       res.redirect(redirectUrl);
     } catch (error: any) {
       this.logger.error(`LinkedIn OAuth callback error: ${error.message}`, error.stack);
@@ -387,6 +429,7 @@ export class AuthController {
   @Public()
   @Get('github')
   @UseGuards(AuthGuard('github'))
+  @Throttle({ default: { limit: 10, ttl: 60000 } }) // 10 requests per minute
   @ApiOperation({ summary: 'Initiate GitHub OAuth login' })
   @ApiResponse({
     status: HttpStatus.FOUND,
@@ -403,10 +446,11 @@ export class AuthController {
   @Public()
   @Get('github/callback')
   @UseGuards(AuthGuard('github'))
+  @Throttle({ default: { limit: 10, ttl: 60000 } }) // 10 requests per minute
   @ApiOperation({ summary: 'GitHub OAuth callback' })
   @ApiResponse({
     status: HttpStatus.FOUND,
-    description: 'Redirects to frontend with authentication tokens',
+    description: 'Redirects to frontend with authentication tokens in secure cookies',
   })
   async githubCallback(@Req() req: Request, @Res() res: Response): Promise<void> {
     try {
@@ -420,8 +464,11 @@ export class AuthController {
 
       const tokenResponse = await this.authService.oauthLogin(user);
 
-      // Redirect to frontend with tokens in URL
-      const redirectUrl = `${this.frontendUrl}/oauth/callback?access_token=${tokenResponse.accessToken}&refresh_token=${tokenResponse.refreshToken}`;
+      // Set tokens in secure HttpOnly cookies
+      this.setAuthCookies(res, tokenResponse.accessToken, tokenResponse.refreshToken);
+
+      // Redirect to frontend without tokens in URL
+      const redirectUrl = `${this.frontendUrl}/oauth/callback?success=true`;
       res.redirect(redirectUrl);
     } catch (error: any) {
       this.logger.error(`GitHub OAuth callback error: ${error.message}`, error.stack);

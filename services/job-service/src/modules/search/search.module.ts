@@ -1,8 +1,23 @@
 import { Module } from '@nestjs/common';
+import { JwtModule } from '@nestjs/jwt';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { SearchController } from './search.controller';
 import { SearchService } from './search.service';
+import { JwtAuthGuard } from '../../common/guards';
 
 @Module({
-  providers: [SearchService],
+  imports: [
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => ({
+        secret: configService.get<string>('jwt.secret'),
+        signOptions: { expiresIn: '24h' },
+      }),
+      inject: [ConfigService],
+    }),
+  ],
+  controllers: [SearchController],
+  providers: [SearchService, JwtAuthGuard],
   exports: [SearchService],
 })
 export class SearchModule {}

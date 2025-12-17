@@ -1,5 +1,5 @@
 # Monorepo-aware Dockerfile for payment-service
-FROM node:20-alpine AS builder
+FROM node:20-alpine@sha256:2d5e8a8a51bc341fd5f2eed6d91455c3a3d147e91a14298fc564b5dc519c1666 AS builder
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
@@ -21,7 +21,7 @@ RUN pnpm --filter @applyforus/types build || true && \
 WORKDIR /app/services/payment-service
 RUN pnpm run build
 
-FROM node:20-alpine AS production
+FROM node:20-alpine@sha256:2d5e8a8a51bc341fd5f2eed6d91455c3a3d147e91a14298fc564b5dc519c1666 AS production
 RUN apk add --no-cache dumb-init curl
 RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001
 WORKDIR /app

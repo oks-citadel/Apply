@@ -1,5 +1,5 @@
 # Monorepo-aware Dockerfile for analytics-service
-FROM node:20-alpine AS builder
+FROM node:20-alpine@sha256:2d5e8a8a51bc341fd5f2eed6d91455c3a3d147e91a14298fc564b5dc519c1666 AS builder
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
@@ -19,14 +19,15 @@ WORKDIR /app
 RUN pnpm --filter @applyforus/types build || true && \
     pnpm --filter @applyforus/security build || true && \
     pnpm --filter @applyforus/shared build || true && \
-    pnpm --filter @applyforus/telemetry build || true
+    pnpm --filter @applyforus/telemetry build || true && \
+    pnpm --filter @applyforus/logging build || true
 
 # Build the service
 WORKDIR /app/services/analytics-service
 RUN pnpm run build
 
 # Stage 2: Production - preserve monorepo structure for pnpm symlinks
-FROM node:20-alpine AS production
+FROM node:20-alpine@sha256:2d5e8a8a51bc341fd5f2eed6d91455c3a3d147e91a14298fc564b5dc519c1666 AS production
 
 RUN apk add --no-cache dumb-init curl
 
@@ -49,14 +50,14 @@ COPY --from=builder --chown=nodejs:nodejs /app/services/analytics-service/packag
 USER nodejs
 
 ENV NODE_ENV=production
-ENV PORT=8007
+ENV PORT=3007
 
-EXPOSE 8007
+EXPOSE 3007
 
 WORKDIR /app/services/analytics-service
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-    CMD curl -f http://localhost:8007/health || exit 1
+    CMD curl -f http://localhost:3007/health || exit 1
 
 ENTRYPOINT ["dumb-init", "--"]
-CMD ["node", "dist/services/analytics-service/src/main.js"]
+CMD ["node", "dist/main.js"]

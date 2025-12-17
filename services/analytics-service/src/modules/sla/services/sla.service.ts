@@ -114,7 +114,7 @@ export class SLAService {
         stripePaymentIntentId: dto.stripePaymentIntentId,
         stripeSubscriptionId: dto.stripeSubscriptionId,
         isPaid: !!dto.stripePaymentIntentId,
-        paidAt: dto.stripePaymentIntentId ? new Date() : null,
+        paidAt: dto.stripePaymentIntentId ? new Date() : undefined,
         isEligible: true,
         eligibilityCheckResult: eligibilityResult.checkResult as any,
         metadata: dto.metadata as any,
@@ -369,12 +369,16 @@ export class SLAService {
   async bulkTrackProgress(
     dto: BulkTrackProgressDto,
   ): Promise<BulkTrackResponseDto> {
-    const results = {
+    const results: {
+      applications: TrackProgressResponseDto[];
+      responses: TrackProgressResponseDto[];
+      interviews: TrackProgressResponseDto[];
+    } = {
       applications: [],
       responses: [],
       interviews: [],
     };
-    const errors = [];
+    const errors: Array<{ type: string; data: any; error: string }> = [];
     let processed = 0;
     let failed = 0;
 

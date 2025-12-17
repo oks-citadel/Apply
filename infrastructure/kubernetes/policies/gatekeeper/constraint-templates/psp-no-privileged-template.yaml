@@ -1,0 +1,63 @@
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: k8spspnoprivileged
+  annotations:
+    description: >-
+      Controls the ability of any container to enable privileged mode.
+      Corresponds to the `privileged` field in a PodSecurityPolicy.
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sPSPNoPrivileged
+      validation:
+        openAPIV3Schema:
+          type: object
+          properties:
+            exemptImages:
+              description: Any container that uses an image that matches an entry in this list will be excluded from enforcement.
+              type: array
+              items:
+                type: string
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package k8spspnoprivileged
+
+        import future.keywords.in
+
+        violation[{"msg": msg, "details": {}}] {
+          c := input_containers[_]
+          not is_exempt(c.image)
+          c.securityContext.privileged
+          msg := sprintf("Privileged container is not allowed: %v, securityContext: %v", [c.name, c.securityContext])
+        }
+
+        input_containers[c] {
+          c := input.review.object.spec.containers[_]
+        }
+
+        input_containers[c] {
+          c := input.review.object.spec.initContainers[_]
+        }
+
+        input_containers[c] {
+          c := input.review.object.spec.ephemeralContainers[_]
+        }
+
+        is_exempt(image) {
+          exempt_image := object.get(input, "parameters", {}).exemptImages[_]
+          _matches_exempt(image, exempt_image)
+        }
+
+        _matches_exempt(image, exempt_image) {
+          not endswith(exempt_image, "*")
+          exempt_image == image
+        }
+
+        _matches_exempt(image, exempt_image) {
+          endswith(exempt_image, "*")
+          prefix := trim_suffix(exempt_image, "*")
+          startswith(image, prefix)
+        }

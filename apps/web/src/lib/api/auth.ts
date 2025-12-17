@@ -189,4 +189,40 @@ export const authApi = {
       throw handleApiError(error);
     }
   },
+
+  /**
+   * Get Google OAuth URL - redirects to Google OAuth flow
+   */
+  getGoogleAuthUrl: (): string => {
+    const authUrl = process.env.NEXT_PUBLIC_AUTH_API_URL || 'http://localhost:3001';
+    return `${authUrl}/auth/google`;
+  },
+
+  /**
+   * Get LinkedIn OAuth URL - redirects to LinkedIn OAuth flow
+   */
+  getLinkedInAuthUrl: (): string => {
+    const authUrl = process.env.NEXT_PUBLIC_AUTH_API_URL || 'http://localhost:3001';
+    return `${authUrl}/auth/linkedin`;
+  },
+
+  /**
+   * Get GitHub OAuth URL - redirects to GitHub OAuth flow
+   */
+  getGithubAuthUrl: (): string => {
+    const authUrl = process.env.NEXT_PUBLIC_AUTH_API_URL || 'http://localhost:3001';
+    return `${authUrl}/auth/github`;
+  },
+
+  /**
+   * Disconnect OAuth provider from account
+   */
+  disconnectOAuth: async (): Promise<{ message: string }> => {
+    try {
+      const response = await apiClient.post<{ message: string }>('/auth/oauth/disconnect');
+      return response.data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
 };

@@ -15,8 +15,7 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { SearchService } from './search.service';
-
-const AuthGuard = () => (target: any, propertyKey?: string, descriptor?: PropertyDescriptor) => descriptor;
+import { JwtAuthGuard } from '../../common/guards';
 
 @ApiTags('Search')
 @Controller('search')
@@ -62,7 +61,7 @@ export class SearchController {
   }
 
   @Get('recent')
-  @UseGuards(AuthGuard())
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Get recent searches for user' })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -70,16 +69,16 @@ export class SearchController {
     @Request() req: any,
     @Query('limit') limit: number = 10,
   ) {
-    const searches = await this.searchService.getRecentSearches(req.user.id, limit);
+    const searches = await this.searchService.getRecentSearches(req.user.sub, limit);
     return { searches };
   }
 
   @Delete('recent/:id')
-  @UseGuards(AuthGuard())
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Delete a recent search' })
   async deleteRecentSearch(@Param('id') id: string, @Request() req: any) {
-    await this.searchService.deleteRecentSearch(req.user.id, id);
+    await this.searchService.deleteRecentSearch(req.user.sub, id);
     return { message: 'Search deleted successfully' };
   }
 }

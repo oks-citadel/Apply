@@ -4,13 +4,18 @@ import { initTelemetry } from '@applyforus/telemetry';
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
 
-  // Initialize distributed tracing with Azure Application Insights
-  await initTelemetry({
-    serviceName: 'user-service',
-    serviceVersion: '1.0.0',
-    environment: process.env.NODE_ENV || 'development',
-    azureMonitorConnectionString: process.env.APPLICATIONINSIGHTS_CONNECTION_STRING,
-  });
+  // Initialize OpenTelemetry tracing with Azure Application Insights
+  try {
+    await initTelemetry({
+      serviceName: 'user-service',
+      serviceVersion: '1.0.0',
+      environment: process.env.NODE_ENV || 'development',
+      azureMonitorConnectionString: process.env.APPLICATIONINSIGHTS_CONNECTION_STRING,
+    });
+    logger.log('Telemetry initialized successfully');
+  } catch (error) {
+    logger.warn('Failed to initialize telemetry, continuing without tracing', error);
+  }
 
   // Import NestJS modules AFTER telemetry initialization
   const { NestFactory } = await import('@nestjs/core');
@@ -48,10 +53,31 @@ async function bootstrap() {
     },
   }));
 
-  // CORS
-  const corsOrigins = process.env.CORS_ORIGINS || process.env.ALLOWED_ORIGINS || 'http://localhost:3000';
+  // CORS configuration - secure origins only
+  const corsOrigins = process.env.CORS_ORIGINS || process.env.ALLOWED_ORIGINS || '';
+  const allowedOrigins = corsOrigins
+    ? corsOrigins.split(',').map(o => o.trim())
+    : [
+        'https://applyforus.com',
+        'https://dev.applyforus.com',
+        'http://localhost:3000', // For local development
+      ];
+
   app.enableCors({
-    origin: corsOrigins === '*' ? true : corsOrigins.split(',').map(o => o.trim()),
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps, Postman, or server-to-server)
+      if (!origin) {
+        return callback(null, true);
+      }
+
+      // Check if origin is in allowed list
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        logger.warn(`CORS request from unauthorized origin: ${origin}`);
+        callback(new Error(`Origin ${origin} not allowed by CORS policy`));
+      }
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-CSRF-Token'],
@@ -59,12 +85,10 @@ async function bootstrap() {
   });
 
   // Compression
-  const compressionMiddleware = compression.default || compression;
-  app.use(compressionMiddleware());
+  app.use(compression.default());
 
-  // Global prefix
-  const apiPrefix = configService.get('API_PREFIX', 'api/v1');
-  app.setGlobalPrefix(apiPrefix);
+  // No global prefix - ingress routes /users to this service directly
+  // app.setGlobalPrefix('api/v1');
 
   // Validation
   app.useGlobalPipes(
@@ -105,7 +129,7 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
 
-  const port = configService.get('PORT', 8002);
+  const port = configService.get('PORT', 4004);
   await app.listen(port);
 
   logger.log(`User Service is running on: http://localhost:${port}`);

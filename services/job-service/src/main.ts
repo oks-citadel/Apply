@@ -1,48 +1,84 @@
-// Initialize telemetry BEFORE importing other modules for proper auto-instrumentation
 import { initTelemetry } from '@applyforus/telemetry';
+import { Logger } from '@nestjs/common';
 
 async function bootstrap() {
-  // Initialize distributed tracing with Azure Application Insights
-  await initTelemetry({
-    serviceName: 'job-service',
-    serviceVersion: '1.0.0',
-    environment: process.env.NODE_ENV || 'development',
-    azureMonitorConnectionString: process.env.APPLICATIONINSIGHTS_CONNECTION_STRING,
-  });
+  const logger = new Logger('Bootstrap');
 
-  // Import NestJS modules
+  // Initialize OpenTelemetry tracing with Azure Application Insights
+  try {
+    await initTelemetry({
+      serviceName: 'job-service',
+      serviceVersion: '1.0.0',
+      environment: process.env.NODE_ENV || 'development',
+      azureMonitorConnectionString: process.env.APPLICATIONINSIGHTS_CONNECTION_STRING,
+    });
+    logger.log('Telemetry initialized successfully');
+  } catch (error) {
+    logger.warn('Failed to initialize telemetry, continuing without tracing', error);
+  }
+
+  // Import NestJS modules AFTER telemetry initialization
   const { NestFactory } = await import('@nestjs/core');
-  const { ValidationPipe, Logger } = await import('@nestjs/common');
+  const { ValidationPipe } = await import('@nestjs/common');
   const { SwaggerModule, DocumentBuilder } = await import('@nestjs/swagger');
   const { ConfigService } = await import('@nestjs/config');
-  const compression = await import('compression');
-  const helmet = await import('helmet');
   const { AppModule } = await import('./app.module');
+
+  // Use require for CommonJS modules
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const helmet = require('helmet');
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const compression = require('compression');
 
   const app = await NestFactory.create(AppModule, {
     logger: ['error', 'warn', 'log', 'debug', 'verbose'],
   });
 
   const configService = app.get(ConfigService);
-  const port = configService.get<number>('PORT', 8004);
-  const apiPrefix = configService.get<string>('API_PREFIX', 'api/v1');
+  const port = configService.get<number>('PORT', 4002);
+  // Remove global prefix - ingress routes /jobs to this service directly
+  const apiPrefix = configService.get<string>('API_PREFIX', '');
 
   // Security middleware
-  app.use(helmet.default());
+  app.use(helmet());
 
   // Compression middleware
-  app.use(compression.default());
+  app.use(compression());
 
-  // CORS configuration
+  // CORS configuration - secure origins only
+  const corsOrigins = configService.get<string>('CORS_ORIGINS', '');
+  const allowedOrigins = corsOrigins
+    ? corsOrigins.split(',').map(o => o.trim())
+    : [
+        'https://applyforus.com',
+        'https://dev.applyforus.com',
+        'http://localhost:3000', // For local development
+      ];
+
   app.enableCors({
-    origin: true,
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps, Postman, or server-to-server)
+      if (!origin) {
+        return callback(null, true);
+      }
+
+      // Check if origin is in allowed list
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        logger.warn(`CORS request from unauthorized origin: ${origin}`);
+        callback(new Error(`Origin ${origin} not allowed by CORS policy`));
+      }
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   });
 
-  // Global prefix
-  app.setGlobalPrefix(apiPrefix);
+  // Global prefix - only set if not empty
+  if (apiPrefix) {
+    app.setGlobalPrefix(apiPrefix);
+  }
 
   // Global validation pipe
   app.useGlobalPipes(
@@ -79,7 +115,8 @@ async function bootstrap() {
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup(`${apiPrefix}/docs`, app, document, {
+  const docsPath = apiPrefix ? `${apiPrefix}/docs` : 'docs';
+  SwaggerModule.setup(docsPath, app, document, {
     customSiteTitle: 'Job Service API Docs',
     customCss: '.swagger-ui .topbar { display: none }',
     swaggerOptions: {
@@ -92,11 +129,10 @@ async function bootstrap() {
 
   await app.listen(port);
 
-  const logger = new Logger('Bootstrap');
   logger.log('=====================================================');
   logger.log('Job Service is running!');
-  logger.log(`API: http://localhost:${port}/${apiPrefix}`);
-  logger.log(`Swagger Docs: http://localhost:${port}/${apiPrefix}/docs`);
+  logger.log(`API: http://localhost:${port}/jobs`);
+  logger.log(`Swagger Docs: http://localhost:${port}/${docsPath}`);
   logger.log(`Environment: ${configService.get('NODE_ENV', 'development')}`);
   logger.log('=====================================================');
 }

@@ -467,7 +467,7 @@ describe('Frontend Performance Tests', () => {
 
       const startTime = performance.now();
 
-      const response = await fetch('/api/v1/jobs');
+      const response = await fetch('/jobs');
       const data = await response.json();
 
       const apiTime = performance.now() - startTime;
@@ -482,10 +482,10 @@ describe('Frontend Performance Tests', () => {
 
     it('should batch multiple API requests efficiently', async () => {
       const endpoints = [
-        '/api/v1/jobs',
-        '/api/v1/applications',
-        '/api/v1/resumes',
-        '/api/v1/profile',
+        '/jobs',
+        '/applications',
+        '/resumes',
+        '/profile',
       ];
 
       const mockFetch = jest.fn().mockResolvedValue({

@@ -1,5 +1,5 @@
 # Monorepo-aware Dockerfile for Next.js web app
-FROM node:20-alpine AS builder
+FROM node:20-alpine@sha256:2d5e8a8a51bc341fd5f2eed6d91455c3a3d147e91a14298fc564b5dc519c1666 AS builder
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
@@ -27,9 +27,10 @@ ENV NODE_ENV=production
 ENV SKIP_ENV_VALIDATION=1
 
 # Production API URLs - these are embedded at build time by Next.js
-# Note: NEXT_PUBLIC_API_URL must include the full path with /api/v1
-ARG NEXT_PUBLIC_API_URL=https://api.applyforus.com/api/v1
-ARG NEXT_PUBLIC_AUTH_API_URL=https://api.applyforus.com/api/v1
+# Note: Backend services handle /api/v1 routing internally. Do NOT include /api/v1 here.
+# The API gateway routes to services like: auth/, jobs/, users/, etc.
+ARG NEXT_PUBLIC_API_URL=https://api.applyforus.com
+ARG NEXT_PUBLIC_AUTH_API_URL=https://api.applyforus.com
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_AUTH_API_URL=$NEXT_PUBLIC_AUTH_API_URL
 
@@ -37,7 +38,7 @@ ENV NEXT_PUBLIC_AUTH_API_URL=$NEXT_PUBLIC_AUTH_API_URL
 RUN pnpm turbo run build --filter=@applyforus/web
 
 # Stage 3: Runner
-FROM node:20-alpine AS runner
+FROM node:20-alpine@sha256:2d5e8a8a51bc341fd5f2eed6d91455c3a3d147e91a14298fc564b5dc519c1666 AS runner
 
 RUN apk add --no-cache dumb-init && rm -rf /var/cache/apk/*
 

@@ -1,0 +1,76 @@
+{
+  "properties": {
+    "displayName": "AKS - Require Resource Requests and Limits",
+    "policyType": "Custom",
+    "mode": "Microsoft.Kubernetes.Data",
+    "description": "This policy requires that all containers specify CPU and memory resource requests and limits to prevent resource exhaustion and ensure proper scheduling.",
+    "metadata": {
+      "version": "1.0.0",
+      "category": "Kubernetes",
+      "source": "ApplyForUs Security Team"
+    },
+    "parameters": {
+      "effect": {
+        "type": "String",
+        "metadata": {
+          "displayName": "Effect",
+          "description": "Enable or disable the execution of the policy"
+        },
+        "allowedValues": [
+          "audit",
+          "deny",
+          "disabled"
+        ],
+        "defaultValue": "deny"
+      },
+      "excludedNamespaces": {
+        "type": "Array",
+        "metadata": {
+          "displayName": "Namespace exclusions",
+          "description": "List of Kubernetes namespaces to exclude from policy evaluation."
+        },
+        "defaultValue": [
+          "kube-system",
+          "gatekeeper-system",
+          "azure-arc"
+        ]
+      },
+      "cpuLimit": {
+        "type": "String",
+        "metadata": {
+          "displayName": "Max allowed CPU",
+          "description": "Maximum allowed CPU limit. Example: 2000m"
+        },
+        "defaultValue": "2000m"
+      },
+      "memoryLimit": {
+        "type": "String",
+        "metadata": {
+          "displayName": "Max allowed memory",
+          "description": "Maximum allowed memory limit. Example: 2Gi"
+        },
+        "defaultValue": "2Gi"
+      }
+    },
+    "policyRule": {
+      "if": {
+        "field": "type",
+        "in": [
+          "Microsoft.ContainerService/managedClusters"
+        ]
+      },
+      "then": {
+        "effect": "[parameters('effect')]",
+        "details": {
+          "constraintTemplate": "https://raw.githubusercontent.com/Azure/azure-policy/master/built-in-references/Kubernetes/container-resource-limits/template.yaml",
+          "constraint": "https://raw.githubusercontent.com/Azure/azure-policy/master/built-in-references/Kubernetes/container-resource-limits/constraint.yaml",
+          "values": {
+            "excludedNamespaces": "[parameters('excludedNamespaces')]",
+            "cpuLimit": "[parameters('cpuLimit')]",
+            "memoryLimit": "[parameters('memoryLimit')]"
+          }
+        }
+      }
+    }
+  }
+}

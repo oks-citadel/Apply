@@ -2,11 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/stores/authStore';
+import { authApi } from '@/lib/api/auth';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Github, Linkedin, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/useToast';
 
+import { AUTH_API_URL } from '@/lib/api/config';
 interface ConnectedAccount {
   provider: string;
   isConnected: boolean;
@@ -21,7 +23,6 @@ export default function ConnectedAccountsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [disconnectingProvider, setDisconnectingProvider] = useState<string | null>(null);
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001/api/v1';
 
   const accounts: ConnectedAccount[] = [
     {
@@ -69,11 +70,12 @@ export default function ConnectedAccountsPage() {
   const handleConnect = (provider: string) => {
     // Store the current URL to redirect back after OAuth
     if (typeof window !== 'undefined') {
+      sessionStorage.setItem('oauth_provider', provider);
       sessionStorage.setItem('oauth_redirect', '/settings/connected-accounts');
     }
 
     // Redirect to OAuth provider
-    window.location.href = `${API_URL}/auth/${provider}`;
+    window.location.href = `${AUTH_API_URL}/auth/${provider}`;
   };
 
   const handleDisconnect = async (provider: string) => {
@@ -82,23 +84,7 @@ export default function ConnectedAccountsPage() {
     try {
       setDisconnectingProvider(provider);
 
-      const token = localStorage.getItem('access_token');
-      if (!token) {
-        throw new Error('Not authenticated');
-      }
-
-      const response = await fetch(`${API_URL}/auth/oauth/disconnect`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to disconnect account');
-      }
+      await authApi.disconnectOAuth();
 
       toast({
         title: 'Account Disconnected',

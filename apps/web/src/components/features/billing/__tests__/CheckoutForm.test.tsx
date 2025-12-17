@@ -47,7 +47,7 @@ const CheckoutForm = ({
 
     try {
       // Simulate Stripe payment intent creation
-      const response = await fetch('/api/v1/subscriptions', {
+      const response = await fetch('/subscriptions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ planId }),
@@ -265,7 +265,7 @@ describe('CheckoutForm Component', () => {
       fireEvent.click(submitButton);
 
       await waitFor(() => {
-        expect(global.fetch).toHaveBeenCalledWith('/api/v1/subscriptions', {
+        expect(global.fetch).toHaveBeenCalledWith('/subscriptions', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ planId: 'pro' }),
@@ -366,7 +366,7 @@ describe('CheckoutForm Component', () => {
 
       await waitFor(() => {
         expect(global.fetch).toHaveBeenCalledWith(
-          '/api/v1/subscriptions',
+          '/subscriptions',
           expect.objectContaining({
             body: JSON.stringify({ planId: 'basic' }),
           })
@@ -393,7 +393,7 @@ describe('CheckoutForm Component', () => {
 
       await waitFor(() => {
         expect(global.fetch).toHaveBeenCalledWith(
-          '/api/v1/subscriptions',
+          '/subscriptions',
           expect.objectContaining({
             body: JSON.stringify({ planId: 'enterprise' }),
           })

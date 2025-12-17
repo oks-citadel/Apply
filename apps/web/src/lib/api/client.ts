@@ -1,14 +1,24 @@
 import axios, { AxiosError, AxiosRequestConfig, InternalAxiosRequestConfig } from 'axios';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+// API Base URL - Backend services handle /api/v1 routing internally
+// Production: https://api.applyforus.com (gateway routes to /auth/*, /jobs/*, etc.)
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
+// Configuration
+const DEFAULT_TIMEOUT = 30000;
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 1000; // 1 second
+const RETRYABLE_STATUS_CODES = [408, 429, 500, 502, 503, 504];
+const RETRYABLE_ERROR_CODES = ['ECONNABORTED', 'ENOTFOUND', 'ECONNRESET', 'ETIMEDOUT'];
 
 // Create axios instance
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 30000,
+  timeout: DEFAULT_TIMEOUT,
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true, // Enable cookies for OAuth authentication
 });
 
 // Token storage helpers
@@ -20,14 +30,45 @@ let refreshSubscribers: ((token: string) => void)[] = [];
 export const setTokens = (access: string | null, refresh: string | null) => {
   accessToken = access;
   refreshToken = refresh;
+
+  // Optionally store in localStorage for persistence across page reloads
+  if (typeof window !== 'undefined') {
+    if (access) {
+      localStorage.setItem('accessToken', access);
+    } else {
+      localStorage.removeItem('accessToken');
+    }
+
+    if (refresh) {
+      localStorage.setItem('refreshToken', refresh);
+    } else {
+      localStorage.removeItem('refreshToken');
+    }
+  }
 };
 
-export const getAccessToken = () => accessToken;
-export const getRefreshToken = () => refreshToken;
+export const getAccessToken = () => {
+  if (!accessToken && typeof window !== 'undefined') {
+    accessToken = localStorage.getItem('accessToken');
+  }
+  return accessToken;
+};
+
+export const getRefreshToken = () => {
+  if (!refreshToken && typeof window !== 'undefined') {
+    refreshToken = localStorage.getItem('refreshToken');
+  }
+  return refreshToken;
+};
 
 export const clearTokens = () => {
   accessToken = null;
   refreshToken = null;
+
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+  }
 };
 
 // Subscribe to token refresh
@@ -41,7 +82,26 @@ const onTokenRefreshed = (token: string) => {
   refreshSubscribers = [];
 };
 
-// Request interceptor to add JWT token
+// Retry helper function
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+const shouldRetry = (error: AxiosError, retryCount: number): boolean => {
+  if (retryCount >= MAX_RETRIES) return false;
+
+  // Retry on network errors
+  if (!error.response && error.code && RETRYABLE_ERROR_CODES.includes(error.code)) {
+    return true;
+  }
+
+  // Retry on specific status codes
+  if (error.response && RETRYABLE_STATUS_CODES.includes(error.response.status)) {
+    return true;
+  }
+
+  return false;
+};
+
+// Request interceptor to add JWT token and logging
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     const token = getAccessToken();
@@ -50,20 +110,80 @@ apiClient.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
 
+    // Add request timestamp for performance tracking
+    (config as any).metadata = { startTime: new Date().getTime() };
+
+    // Log requests in development
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[API Request] ${config.method?.toUpperCase()} ${config.url}`, {
+        params: config.params,
+        data: config.data,
+      });
+    }
+
+    // Initialize retry count
+    (config as any).retryCount = (config as any).retryCount || 0;
+
     return config;
   },
   (error: AxiosError) => {
+    if (process.env.NODE_ENV === 'development') {
+      console.error('[API Request Error]', error);
+    }
     return Promise.reject(error);
   }
 );
 
-// Response interceptor for token refresh
+// Response interceptor for token refresh, retry logic, and logging
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Log response in development
+    if (process.env.NODE_ENV === 'development') {
+      const duration = new Date().getTime() - (response.config as any).metadata?.startTime;
+      console.log(`[API Response] ${response.config.method?.toUpperCase()} ${response.config.url}`, {
+        status: response.status,
+        duration: `${duration}ms`,
+        data: response.data,
+      });
+    }
+    return response;
+  },
   async (error: AxiosError) => {
-    const originalRequest = error.config as AxiosRequestConfig & { _retry?: boolean };
+    const originalRequest = error.config as AxiosRequestConfig & {
+      _retry?: boolean;
+      retryCount?: number;
+    };
 
-    // Handle 401 errors (unauthorized)
+    if (!originalRequest) {
+      return Promise.reject(error);
+    }
+
+    // Log error in development
+    if (process.env.NODE_ENV === 'development') {
+      console.error(`[API Error] ${originalRequest.method?.toUpperCase()} ${originalRequest.url}`, {
+        status: error.response?.status,
+        message: error.message,
+        data: error.response?.data,
+      });
+    }
+
+    // Handle retry logic for transient errors
+    const retryCount = originalRequest.retryCount || 0;
+    if (shouldRetry(error, retryCount)) {
+      originalRequest.retryCount = retryCount + 1;
+
+      // Exponential backoff: 1s, 2s, 4s
+      const delay = RETRY_DELAY * Math.pow(2, retryCount);
+
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`[API Retry] Attempt ${retryCount + 1}/${MAX_RETRIES} after ${delay}ms`);
+      }
+
+      await sleep(delay);
+      return apiClient(originalRequest);
+    }
+
+    // Handle 401 errors (unauthorized) - Token refresh logic
     if (error.response?.status === 401 && !originalRequest._retry) {
       if (isRefreshing) {
         // Wait for token refresh to complete
@@ -122,31 +242,136 @@ apiClient.interceptors.response.use(
   }
 );
 
-// API Error class
+// API Error class with enhanced categorization
 export class ApiError extends Error {
+  public readonly isApiError = true;
+
   constructor(
     public message: string,
     public status?: number,
-    public errors?: Record<string, string[]>
+    public errors?: Record<string, string[]>,
+    public code?: string,
+    public type?: ErrorType
   ) {
     super(message);
     this.name = 'ApiError';
+    Object.setPrototypeOf(this, ApiError.prototype);
   }
 }
 
-// Error handler utility
+// Error types for better categorization
+export enum ErrorType {
+  NETWORK = 'NETWORK',
+  AUTHENTICATION = 'AUTHENTICATION',
+  AUTHORIZATION = 'AUTHORIZATION',
+  VALIDATION = 'VALIDATION',
+  NOT_FOUND = 'NOT_FOUND',
+  SERVER = 'SERVER',
+  TIMEOUT = 'TIMEOUT',
+  RATE_LIMIT = 'RATE_LIMIT',
+  UNKNOWN = 'UNKNOWN',
+}
+
+// User-friendly error messages
+const getUserFriendlyMessage = (error: AxiosError, type: ErrorType): string => {
+  const status = error.response?.status;
+  const defaultMessage = (error.response?.data as any)?.message || error.message;
+
+  switch (type) {
+    case ErrorType.NETWORK:
+      return 'Unable to connect to the server. Please check your internet connection and try again.';
+    case ErrorType.AUTHENTICATION:
+      return 'Your session has expired. Please log in again.';
+    case ErrorType.AUTHORIZATION:
+      return 'You do not have permission to perform this action.';
+    case ErrorType.VALIDATION:
+      return defaultMessage || 'The information provided is invalid. Please check your input and try again.';
+    case ErrorType.NOT_FOUND:
+      return 'The requested resource was not found.';
+    case ErrorType.TIMEOUT:
+      return 'The request took too long to complete. Please try again.';
+    case ErrorType.RATE_LIMIT:
+      return 'Too many requests. Please wait a moment and try again.';
+    case ErrorType.SERVER:
+      return 'A server error occurred. Our team has been notified. Please try again later.';
+    default:
+      return defaultMessage || 'An unexpected error occurred. Please try again.';
+  }
+};
+
+// Determine error type from response
+const getErrorType = (error: AxiosError): ErrorType => {
+  const status = error.response?.status;
+  const code = error.code;
+
+  // Network errors
+  if (!error.response) {
+    if (code === 'ECONNABORTED' || code === 'ETIMEDOUT') {
+      return ErrorType.TIMEOUT;
+    }
+    return ErrorType.NETWORK;
+  }
+
+  // HTTP status-based categorization
+  switch (status) {
+    case 401:
+      return ErrorType.AUTHENTICATION;
+    case 403:
+      return ErrorType.AUTHORIZATION;
+    case 404:
+      return ErrorType.NOT_FOUND;
+    case 422:
+    case 400:
+      return ErrorType.VALIDATION;
+    case 429:
+      return ErrorType.RATE_LIMIT;
+    case 500:
+    case 502:
+    case 503:
+    case 504:
+      return ErrorType.SERVER;
+    default:
+      return ErrorType.UNKNOWN;
+  }
+};
+
+// Enhanced error handler utility
 export const handleApiError = (error: unknown): ApiError => {
   if (axios.isAxiosError(error)) {
     const status = error.response?.status;
-    const message = error.response?.data?.message || error.message;
     const errors = error.response?.data?.errors;
+    const code = error.code;
+    const type = getErrorType(error);
+    const message = getUserFriendlyMessage(error, type);
 
-    return new ApiError(message, status, errors);
+    return new ApiError(message, status, errors, code, type);
   }
 
   if (error instanceof Error) {
-    return new ApiError(error.message);
+    return new ApiError(error.message, undefined, undefined, undefined, ErrorType.UNKNOWN);
   }
 
-  return new ApiError('An unexpected error occurred');
+  return new ApiError('An unexpected error occurred', undefined, undefined, undefined, ErrorType.UNKNOWN);
 };
+
+// Helper to check if error is of specific type
+export const isErrorType = (error: unknown, type: ErrorType): boolean => {
+  return error instanceof ApiError && error.type === type;
+};
+
+// Network status detection
+export const isOnline = (): boolean => {
+  if (typeof window === 'undefined') return true;
+  return navigator.onLine;
+};
+
+// Add network status listeners
+if (typeof window !== 'undefined') {
+  window.addEventListener('online', () => {
+    console.log('[Network] Connection restored');
+  });
+
+  window.addEventListener('offline', () => {
+    console.warn('[Network] Connection lost');
+  });
+}

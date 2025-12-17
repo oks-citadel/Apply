@@ -36,6 +36,22 @@ export class DashboardMetricsDto {
     description: 'Application status distribution',
   })
   statusDistribution: Record<string, number>;
+
+  @ApiPropertyOptional({
+    example: {
+      activeContracts: 15,
+      totalInterviews: 45,
+      averageProgress: 65.5,
+      contractsAtRisk: 3,
+    },
+    description: 'SLA metrics summary',
+  })
+  slaMetrics?: {
+    activeContracts: number;
+    totalInterviews: number;
+    averageProgress: number;
+    contractsAtRisk: number;
+  };
 }
 
 export class ApplicationFunnelDto {

@@ -30,7 +30,8 @@ interface AuthStore {
   setTokens: (accessToken: string, refreshToken: string) => void;
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+// API Base URL - Backend handles routing internally (no /api/v1 needed)
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 export const useAuthStore = create<AuthStore>()(
   persist(

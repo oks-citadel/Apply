@@ -1,0 +1,29 @@
+# Temporary files
+*.tmp
+*.log
+*.swp
+*.swo
+*~
+
+# Test artifacts
+/tmp/
+test-*.yaml
+
+# Backup files
+*.bak
+*.backup
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+.vscode/
+.idea/
+*.iml
+
+# Generated reports
+*-report.json
+*-report.md
+violations-*.json
+compliance-*.json

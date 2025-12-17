@@ -1,0 +1,480 @@
+# ============================================================================
+# Kubernetes Scale-to-Zero and Shutdown Schedules
+# ============================================================================
+# This configuration implements automated scaling schedules for non-production
+# environments to reduce costs during off-hours.
+#
+# Uses CronJobs to scale deployments down during nights/weekends
+# and scale them back up during business hours.
+
+---
+# ============================================================================
+# ServiceAccount for Scale Operations
+# ============================================================================
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: scaler-service-account
+  namespace: applyforus-dev
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: scaler-service-account
+  namespace: applyforus-staging
+---
+# ============================================================================
+# RBAC for Scale Operations
+# ============================================================================
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: scaler-role
+  namespace: applyforus-dev
+rules:
+- apiGroups: ["apps"]
+  resources: ["deployments", "deployments/scale", "statefulsets", "statefulsets/scale"]
+  verbs: ["get", "list", "patch", "update"]
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: scaler-role
+  namespace: applyforus-staging
+rules:
+- apiGroups: ["apps"]
+  resources: ["deployments", "deployments/scale", "statefulsets", "statefulsets/scale"]
+  verbs: ["get", "list", "patch", "update"]
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: scaler-rolebinding
+  namespace: applyforus-dev
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: scaler-role
+subjects:
+- kind: ServiceAccount
+  name: scaler-service-account
+  namespace: applyforus-dev
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: scaler-rolebinding
+  namespace: applyforus-staging
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: scaler-role
+subjects:
+- kind: ServiceAccount
+  name: scaler-service-account
+  namespace: applyforus-staging
+
+---
+# ============================================================================
+# ConfigMap with Scaling Script
+# ============================================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: scale-script
+  namespace: applyforus-dev
+data:
+  scale-down.sh: |
+    #!/bin/bash
+    set -e
+
+    echo "=== Scale Down Script Started at $(date) ==="
+    echo "Namespace: $NAMESPACE"
+
+    # Get all deployments and scale to minimum replicas
+    for deployment in $(kubectl get deployments -n $NAMESPACE -o jsonpath='{.items[*].metadata.name}'); do
+      current_replicas=$(kubectl get deployment $deployment -n $NAMESPACE -o jsonpath='{.spec.replicas}')
+
+      # Store current replica count as annotation for scale-up
+      kubectl annotate deployment $deployment -n $NAMESPACE \
+        "autoscaling.applyforus.com/original-replicas=$current_replicas" --overwrite
+
+      # Scale to minimum (0 for non-critical, 1 for critical)
+      if [[ $deployment == *"critical"* ]]; then
+        echo "Scaling $deployment to 1 (critical service)"
+        kubectl scale deployment $deployment -n $NAMESPACE --replicas=1
+      else
+        echo "Scaling $deployment to 0"
+        kubectl scale deployment $deployment -n $NAMESPACE --replicas=0
+      fi
+    done
+
+    echo "=== Scale Down Complete at $(date) ==="
+
+  scale-up.sh: |
+    #!/bin/bash
+    set -e
+
+    echo "=== Scale Up Script Started at $(date) ==="
+    echo "Namespace: $NAMESPACE"
+
+    # Get all deployments and restore original replica count
+    for deployment in $(kubectl get deployments -n $NAMESPACE -o jsonpath='{.items[*].metadata.name}'); do
+      original_replicas=$(kubectl get deployment $deployment -n $NAMESPACE \
+        -o jsonpath='{.metadata.annotations.autoscaling\.applyforus\.com/original-replicas}')
+
+      if [ -z "$original_replicas" ]; then
+        # Default to 1 if no annotation found
+        original_replicas=1
+      fi
+
+      echo "Scaling $deployment to $original_replicas"
+      kubectl scale deployment $deployment -n $NAMESPACE --replicas=$original_replicas
+    done
+
+    echo "=== Scale Up Complete at $(date) ==="
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: scale-script
+  namespace: applyforus-staging
+data:
+  scale-down.sh: |
+    #!/bin/bash
+    set -e
+
+    echo "=== Scale Down Script Started at $(date) ==="
+    echo "Namespace: $NAMESPACE"
+
+    # Get all deployments and scale to minimum replicas (1 for staging)
+    for deployment in $(kubectl get deployments -n $NAMESPACE -o jsonpath='{.items[*].metadata.name}'); do
+      current_replicas=$(kubectl get deployment $deployment -n $NAMESPACE -o jsonpath='{.spec.replicas}')
+
+      # Store current replica count as annotation for scale-up
+      kubectl annotate deployment $deployment -n $NAMESPACE \
+        "autoscaling.applyforus.com/original-replicas=$current_replicas" --overwrite
+
+      # Scale to 1 for staging (keep services running but minimal)
+      echo "Scaling $deployment to 1"
+      kubectl scale deployment $deployment -n $NAMESPACE --replicas=1
+    done
+
+    echo "=== Scale Down Complete at $(date) ==="
+
+  scale-up.sh: |
+    #!/bin/bash
+    set -e
+
+    echo "=== Scale Up Script Started at $(date) ==="
+    echo "Namespace: $NAMESPACE"
+
+    # Get all deployments and restore original replica count
+    for deployment in $(kubectl get deployments -n $NAMESPACE -o jsonpath='{.items[*].metadata.name}'); do
+      original_replicas=$(kubectl get deployment $deployment -n $NAMESPACE \
+        -o jsonpath='{.metadata.annotations.autoscaling\.applyforus\.com/original-replicas}')
+
+      if [ -z "$original_replicas" ]; then
+        # Default to 2 for staging if no annotation found
+        original_replicas=2
+      fi
+
+      echo "Scaling $deployment to $original_replicas"
+      kubectl scale deployment $deployment -n $NAMESPACE --replicas=$original_replicas
+    done
+
+    echo "=== Scale Up Complete at $(date) ==="
+
+---
+# ============================================================================
+# DEV Environment - Scale Down (Weeknights at 8 PM UTC)
+# ============================================================================
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: scale-down-weeknight
+  namespace: applyforus-dev
+  labels:
+    app: cost-optimizer
+    action: scale-down
+spec:
+  # Run at 8 PM UTC (8:00 PM) Monday-Friday
+  schedule: "0 20 * * 1-5"
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: cost-optimizer
+        spec:
+          serviceAccountName: scaler-service-account
+          restartPolicy: OnFailure
+          containers:
+          - name: scaler
+            image: bitnami/kubectl:latest
+            command: ["/bin/bash", "/scripts/scale-down.sh"]
+            env:
+            - name: NAMESPACE
+              value: "applyforus-dev"
+            volumeMounts:
+            - name: script
+              mountPath: /scripts
+          volumes:
+          - name: script
+            configMap:
+              name: scale-script
+              defaultMode: 0755
+
+---
+# ============================================================================
+# DEV Environment - Scale Up (Business Hours at 6 AM UTC)
+# ============================================================================
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: scale-up-morning
+  namespace: applyforus-dev
+  labels:
+    app: cost-optimizer
+    action: scale-up
+spec:
+  # Run at 6 AM UTC (6:00 AM) Monday-Friday
+  schedule: "0 6 * * 1-5"
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: cost-optimizer
+        spec:
+          serviceAccountName: scaler-service-account
+          restartPolicy: OnFailure
+          containers:
+          - name: scaler
+            image: bitnami/kubectl:latest
+            command: ["/bin/bash", "/scripts/scale-up.sh"]
+            env:
+            - name: NAMESPACE
+              value: "applyforus-dev"
+            volumeMounts:
+            - name: script
+              mountPath: /scripts
+          volumes:
+          - name: script
+            configMap:
+              name: scale-script
+              defaultMode: 0755
+
+---
+# ============================================================================
+# DEV Environment - Scale Down Weekends (Friday 8 PM)
+# ============================================================================
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: scale-down-weekend
+  namespace: applyforus-dev
+  labels:
+    app: cost-optimizer
+    action: scale-down
+spec:
+  # Run at 8 PM UTC on Friday
+  schedule: "0 20 * * 5"
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: cost-optimizer
+        spec:
+          serviceAccountName: scaler-service-account
+          restartPolicy: OnFailure
+          containers:
+          - name: scaler
+            image: bitnami/kubectl:latest
+            command: ["/bin/bash", "/scripts/scale-down.sh"]
+            env:
+            - name: NAMESPACE
+              value: "applyforus-dev"
+            volumeMounts:
+            - name: script
+              mountPath: /scripts
+          volumes:
+          - name: script
+            configMap:
+              name: scale-script
+              defaultMode: 0755
+
+---
+# ============================================================================
+# DEV Environment - Scale Up Monday Morning (6 AM)
+# ============================================================================
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: scale-up-monday
+  namespace: applyforus-dev
+  labels:
+    app: cost-optimizer
+    action: scale-up
+spec:
+  # Run at 6 AM UTC on Monday
+  schedule: "0 6 * * 1"
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: cost-optimizer
+        spec:
+          serviceAccountName: scaler-service-account
+          restartPolicy: OnFailure
+          containers:
+          - name: scaler
+            image: bitnami/kubectl:latest
+            command: ["/bin/bash", "/scripts/scale-up.sh"]
+            env:
+            - name: NAMESPACE
+              value: "applyforus-dev"
+            volumeMounts:
+            - name: script
+              mountPath: /scripts
+          volumes:
+          - name: script
+            configMap:
+              name: scale-script
+              defaultMode: 0755
+
+---
+# ============================================================================
+# STAGING Environment - Scale Down (Weeknights at 10 PM UTC)
+# ============================================================================
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: scale-down-weeknight
+  namespace: applyforus-staging
+  labels:
+    app: cost-optimizer
+    action: scale-down
+spec:
+  # Run at 10 PM UTC Monday-Friday (later than dev)
+  schedule: "0 22 * * 1-5"
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: cost-optimizer
+        spec:
+          serviceAccountName: scaler-service-account
+          restartPolicy: OnFailure
+          containers:
+          - name: scaler
+            image: bitnami/kubectl:latest
+            command: ["/bin/bash", "/scripts/scale-down.sh"]
+            env:
+            - name: NAMESPACE
+              value: "applyforus-staging"
+            volumeMounts:
+            - name: script
+              mountPath: /scripts
+          volumes:
+          - name: script
+            configMap:
+              name: scale-script
+              defaultMode: 0755
+
+---
+# ============================================================================
+# STAGING Environment - Scale Up (5 AM UTC)
+# ============================================================================
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: scale-up-morning
+  namespace: applyforus-staging
+  labels:
+    app: cost-optimizer
+    action: scale-up
+spec:
+  # Run at 5 AM UTC Monday-Friday (earlier than dev)
+  schedule: "0 5 * * 1-5"
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: cost-optimizer
+        spec:
+          serviceAccountName: scaler-service-account
+          restartPolicy: OnFailure
+          containers:
+          - name: scaler
+            image: bitnami/kubectl:latest
+            command: ["/bin/bash", "/scripts/scale-up.sh"]
+            env:
+            - name: NAMESPACE
+              value: "applyforus-staging"
+            volumeMounts:
+            - name: script
+              mountPath: /scripts
+          volumes:
+          - name: script
+            configMap:
+              name: scale-script
+              defaultMode: 0755
+
+---
+# ============================================================================
+# Cost Savings Estimate ConfigMap
+# ============================================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cost-savings-estimate
+  namespace: kube-system
+data:
+  savings.yaml: |
+    # Estimated monthly cost savings from scale-to-zero schedules
+
+    dev_environment:
+      # Scale down 14 hours/day weekdays + 48 hours weekends = 118 hours/week
+      # 118/168 = 70% downtime
+      hours_down_per_week: 118
+      percentage_downtime: 70
+      estimated_monthly_savings_usd: 350  # 70% of $500 budget
+
+    staging_environment:
+      # Scale down to 1 replica: 12 hours/day weekdays = 60 hours/week
+      # Assuming 50% cost reduction (not zero, but minimal)
+      hours_scaled_down_per_week: 60
+      percentage_cost_reduction: 30
+      estimated_monthly_savings_usd: 300  # 30% of $1000 budget
+
+    total_estimated_monthly_savings_usd: 650
+    annual_savings_usd: 7800

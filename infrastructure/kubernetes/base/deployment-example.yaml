@@ -1,0 +1,132 @@
+# ============================================================================
+# Example Service Deployment with External Secrets
+# ============================================================================
+# This file demonstrates how to configure a service deployment to use:
+# 1. Azure Key Vault secrets via CSI Driver
+# 2. Environment-specific ConfigMaps for non-sensitive config
+# 3. NO hardcoded secrets in the deployment file
+# ============================================================================
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-service
+  namespace: applyforus
+  labels:
+    app: auth-service
+    tier: backend
+    version: stable
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: auth-service
+  template:
+    metadata:
+      labels:
+        app: auth-service
+        tier: backend
+        version: stable
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "4000"
+        prometheus.io/path: "/metrics"
+    spec:
+      # ========================================================================
+      # Service Account (with Workload Identity enabled)
+      # ========================================================================
+      serviceAccountName: applyforus-workload-identity
+
+      containers:
+        - name: auth-service
+          image: applyforusacr.azurecr.io/applyai-auth-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 4000
+              protocol: TCP
+
+          # ====================================================================
+          # Environment Variables from ConfigMap (Non-Sensitive)
+          # ====================================================================
+          envFrom:
+            - configMapRef:
+                name: applyforus-config
+            - secretRef:
+                name: applyforus-secrets
+
+          # ====================================================================
+          # Volume Mounts for CSI Driver
+          # ====================================================================
+          volumeMounts:
+            - name: secrets-store
+              mountPath: "/mnt/secrets-store"
+              readOnly: true
+
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+
+          # Health checks
+          startupProbe:
+            httpGet:
+              path: /api/v1/health/live
+              port: 4000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 12
+
+          readinessProbe:
+            httpGet:
+              path: /api/v1/health/ready
+              port: 4000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+
+          livenessProbe:
+            httpGet:
+              path: /api/v1/health/live
+              port: 4000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh", "-c", "sleep 15"]
+
+      # ========================================================================
+      # Volumes - Mount Azure Key Vault via CSI Driver
+      # ========================================================================
+      volumes:
+        - name: secrets-store
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: "applyforus-azure-keyvault"
+
+---
+# ============================================================================
+# Service Account with Workload Identity
+# ============================================================================
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: applyforus-workload-identity
+  namespace: applyforus
+  labels:
+    app: applyforus-platform
+  annotations:
+    # Link to Azure Managed Identity
+    azure.workload.identity/client-id: "${WORKLOAD_IDENTITY_CLIENT_ID}"
+    azure.workload.identity/tenant-id: "${AZURE_TENANT_ID}"

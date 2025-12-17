@@ -117,3 +117,31 @@ variable "retention_policy_days" {
     error_message = "Retention policy days must be between 0 and 365."
   }
 }
+
+# ============================================================================
+# ACR Cleanup and Retention Variables
+# ============================================================================
+
+variable "enable_initial_cleanup" {
+  description = "Enable initial cleanup run when ACR is created"
+  type        = bool
+  default     = false
+}
+
+variable "enable_cleanup_notifications" {
+  description = "Enable webhook notifications for cleanup events"
+  type        = bool
+  default     = false
+}
+
+variable "cleanup_webhook_url" {
+  description = "Webhook URL for cleanup notifications"
+  type        = string
+  default     = ""
+}
+
+variable "enable_cache_rules" {
+  description = "Enable cache rules for frequently used base images"
+  type        = bool
+  default     = true
+}

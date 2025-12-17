@@ -1,5 +1,5 @@
 # Monorepo-aware Dockerfile for auto-apply-service
-FROM node:20-alpine AS builder
+FROM node:20-alpine@sha256:2d5e8a8a51bc341fd5f2eed6d91455c3a3d147e91a14298fc564b5dc519c1666 AS builder
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
@@ -16,12 +16,13 @@ WORKDIR /app
 RUN pnpm --filter @applyforus/types build || true && \
     pnpm --filter @applyforus/security build || true && \
     pnpm --filter @applyforus/shared build || true && \
-    pnpm --filter @applyforus/telemetry build || true
+    pnpm --filter @applyforus/telemetry build || true && \
+    pnpm --filter @applyforus/logging build || true
 
 WORKDIR /app/services/auto-apply-service
 RUN pnpm run build
 
-FROM node:20-alpine AS production
+FROM node:20-alpine@sha256:2d5e8a8a51bc341fd5f2eed6d91455c3a3d147e91a14298fc564b5dc519c1666 AS production
 RUN apk add --no-cache dumb-init curl chromium
 RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001
 WORKDIR /app
@@ -34,15 +35,15 @@ COPY --from=builder --chown=nodejs:nodejs /app/services/auto-apply-service/packa
 
 USER nodejs
 ENV NODE_ENV=production
-ENV PORT=8006
+ENV PORT=4003
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
-EXPOSE 8006
+EXPOSE 4003
 
 WORKDIR /app/services/auto-apply-service
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-    CMD curl -f http://localhost:8006/health || exit 1
+    CMD curl -f http://localhost:4003/health || exit 1
 
 ENTRYPOINT ["dumb-init", "--"]
 CMD ["node", "dist/services/auto-apply-service/src/main.js"]

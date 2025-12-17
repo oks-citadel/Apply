@@ -1,0 +1,29 @@
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sPSPRequireRunAsNonRoot
+metadata:
+  name: require-run-as-nonroot
+  annotations:
+    description: "Require all containers to run as non-root user"
+spec:
+  enforcementAction: deny
+  match:
+    kinds:
+      - apiGroups: [""]
+        kinds: ["Pod"]
+      - apiGroups: ["apps"]
+        kinds: ["Deployment", "StatefulSet", "DaemonSet"]
+      - apiGroups: ["batch"]
+        kinds: ["Job", "CronJob"]
+    namespaces:
+      - applyforus
+      - applyforus-staging
+      - applyforus-dev
+    excludedNamespaces:
+      - kube-system
+      - kube-public
+      - kube-node-lease
+      - gatekeeper-system
+      - cert-manager
+      - ingress-nginx
+  parameters:
+    exemptImages: []

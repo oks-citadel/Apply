@@ -1,0 +1,269 @@
+name: SBOM Validation and Compliance
+
+on:
+  workflow_run:
+    workflows: ["Container Build, Sign & Scan (Security Gates)"]
+    types:
+      - completed
+  schedule:
+    # Run weekly SBOM audit
+    - cron: '0 2 * * 0'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+  id-token: write
+
+env:
+  ACR_LOGIN_SERVER: applyforusacr.azurecr.io
+  IMAGE_PREFIX: applyai
+
+jobs:
+  validate-sbom:
+    name: Validate SBOM - ${{ matrix.service }}
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - web
+          - auth-service
+          - user-service
+          - job-service
+          - resume-service
+          - notification-service
+          - auto-apply-service
+          - analytics-service
+          - ai-service
+          - orchestrator-service
+          - payment-service
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure Login with OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Get ACR token
+        id: acr-token
+        run: |
+          TOKEN=$(az acr login --name applyforusacr --expose-token --output tsv --query accessToken)
+          echo "::add-mask::$TOKEN"
+          echo "token=$TOKEN" >> $GITHUB_OUTPUT
+
+      - name: Log in to ACR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.ACR_LOGIN_SERVER }}
+          username: 00000000-0000-0000-0000-000000000000
+          password: ${{ steps.acr-token.outputs.token }}
+
+      - name: Get latest image digest
+        id: get-image
+        run: |
+          # Get the latest image tag
+          LATEST_TAG=$(az acr repository show-tags \
+            --name applyforusacr \
+            --repository ${{ env.IMAGE_PREFIX }}-${{ matrix.service }} \
+            --orderby time_desc \
+            --top 1 \
+            --output tsv)
+
+          echo "latest_tag=$LATEST_TAG" >> $GITHUB_OUTPUT
+          echo "Latest tag for ${{ matrix.service }}: $LATEST_TAG"
+
+      - name: Generate SBOM with Syft (SPDX)
+        uses: anchore/sbom-action@v0
+        with:
+          image: ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_PREFIX }}-${{ matrix.service }}:${{ steps.get-image.outputs.latest_tag }}
+          format: spdx-json
+          output-file: sbom-${{ matrix.service }}.spdx.json
+          upload-artifact: true
+          upload-release-assets: false
+
+      - name: Generate SBOM with Syft (CycloneDX)
+        uses: anchore/sbom-action@v0
+        with:
+          image: ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_PREFIX }}-${{ matrix.service }}:${{ steps.get-image.outputs.latest_tag }}
+          format: cyclonedx-json
+          output-file: sbom-${{ matrix.service }}.cyclonedx.json
+          upload-artifact: true
+          upload-release-assets: false
+
+      - name: Validate SBOM with NTIA checker
+        run: |
+          # Install NTIA SBOM checker
+          curl -sL https://github.com/spdx/ntia-conformance-checker/releases/download/v0.3.0/ntia-checker-linux-amd64 -o ntia-checker
+          chmod +x ntia-checker
+
+          echo "Validating SPDX SBOM..."
+          ./ntia-checker sbom-${{ matrix.service }}.spdx.json
+
+      - name: Scan SBOM for vulnerabilities with Grype
+        run: |
+          # Install Grype
+          curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh -s -- -b /usr/local/bin
+
+          echo "Scanning SBOM for vulnerabilities..."
+          grype sbom:sbom-${{ matrix.service }}.spdx.json \
+            --output table \
+            --fail-on high
+
+      - name: Analyze SBOM for license compliance
+        run: |
+          # Install scancode-toolkit
+          pip install scancode-toolkit
+
+          echo "Analyzing licenses in SBOM..."
+          # Extract package information and analyze
+          jq -r '.packages[] | "\(.name) - \(.licenseConcluded)"' sbom-${{ matrix.service }}.spdx.json | sort | uniq
+
+      - name: Check for prohibited licenses
+        run: |
+          # Define prohibited licenses (adjust as needed)
+          PROHIBITED_LICENSES="GPL-3.0 AGPL-3.0"
+
+          echo "Checking for prohibited licenses..."
+          for license in $PROHIBITED_LICENSES; do
+            if jq -e ".packages[] | select(.licenseConcluded == \"$license\")" sbom-${{ matrix.service }}.spdx.json > /dev/null; then
+              echo "❌ ERROR: Prohibited license detected: $license"
+              exit 1
+            fi
+          done
+
+          echo "✅ No prohibited licenses found"
+
+      - name: Upload validated SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: validated-sbom-${{ matrix.service }}
+          path: |
+            sbom-${{ matrix.service }}.spdx.json
+            sbom-${{ matrix.service }}.cyclonedx.json
+          retention-days: 365  # Keep for compliance/audit
+
+  sbom-compliance-report:
+    name: Generate SBOM Compliance Report
+    runs-on: ubuntu-latest
+    needs: validate-sbom
+    if: always()
+    steps:
+      - name: Download all validated SBOMs
+        uses: actions/download-artifact@v4
+        with:
+          pattern: validated-sbom-*
+          path: all-sboms
+          merge-multiple: true
+
+      - name: Generate compliance report
+        run: |
+          cat > sbom-compliance-report.md <<'EOF'
+          # SBOM Compliance Report
+
+          **Generated:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          **Workflow Run:** ${{ github.run_number }}
+
+          ## Executive Summary
+
+          This report validates that all container images have:
+          - ✅ NTIA-compliant SBOMs (SPDX format)
+          - ✅ No HIGH/CRITICAL vulnerabilities in dependencies
+          - ✅ No prohibited licenses
+          - ✅ Complete software bill of materials
+
+          ## Services Validated
+
+          EOF
+
+          # Count services
+          TOTAL_SERVICES=$(find all-sboms -name "*.spdx.json" | wc -l)
+          echo "Total services with validated SBOMs: $TOTAL_SERVICES" >> sbom-compliance-report.md
+          echo "" >> sbom-compliance-report.md
+
+          # List all services
+          for sbom in all-sboms/*.spdx.json; do
+            if [ -f "$sbom" ]; then
+              service=$(basename "$sbom" | sed 's/sbom-//' | sed 's/.spdx.json//')
+              package_count=$(jq '.packages | length' "$sbom")
+              echo "- **$service**: $package_count packages" >> sbom-compliance-report.md
+            fi
+          done
+
+          echo "" >> sbom-compliance-report.md
+          echo "## Compliance Status" >> sbom-compliance-report.md
+          echo "" >> sbom-compliance-report.md
+
+          if [ "${{ needs.validate-sbom.result }}" == "success" ]; then
+            echo "✅ **ALL SERVICES COMPLIANT**" >> sbom-compliance-report.md
+            echo "" >> sbom-compliance-report.md
+            echo "All services have valid, NTIA-compliant SBOMs with no critical issues." >> sbom-compliance-report.md
+          else
+            echo "❌ **COMPLIANCE ISSUES DETECTED**" >> sbom-compliance-report.md
+            echo "" >> sbom-compliance-report.md
+            echo "Some services failed SBOM validation. Review individual service logs." >> sbom-compliance-report.md
+          fi
+
+          cat sbom-compliance-report.md
+
+      - name: Upload compliance report
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-compliance-report
+          path: sbom-compliance-report.md
+          retention-days: 365
+
+      - name: Post summary
+        run: |
+          cat sbom-compliance-report.md >> $GITHUB_STEP_SUMMARY
+
+  # Export SBOMs to Azure for centralized tracking
+  export-sbom-to-azure:
+    name: Export SBOMs to Azure Storage
+    runs-on: ubuntu-latest
+    needs: validate-sbom
+    if: needs.validate-sbom.result == 'success'
+    steps:
+      - name: Download all validated SBOMs
+        uses: actions/download-artifact@v4
+        with:
+          pattern: validated-sbom-*
+          path: all-sboms
+          merge-multiple: true
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Upload SBOMs to Azure Blob Storage
+        run: |
+          # Create SBOM archive with timestamp
+          TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+          ARCHIVE_NAME="sboms-${TIMESTAMP}.tar.gz"
+
+          tar -czf "$ARCHIVE_NAME" -C all-sboms .
+
+          # Upload to Azure Storage (create container if needed)
+          az storage container create \
+            --name sboms \
+            --account-name "${{ secrets.STORAGE_ACCOUNT_NAME }}" \
+            --auth-mode login \
+            || true
+
+          az storage blob upload \
+            --account-name "${{ secrets.STORAGE_ACCOUNT_NAME }}" \
+            --container-name sboms \
+            --name "$ARCHIVE_NAME" \
+            --file "$ARCHIVE_NAME" \
+            --auth-mode login \
+            --overwrite
+
+          echo "✅ SBOMs uploaded to Azure Storage: sboms/$ARCHIVE_NAME"

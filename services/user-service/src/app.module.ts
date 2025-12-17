@@ -50,7 +50,9 @@ import { TenantModule } from './modules/tenant/tenant.module';
         password: configService.get('DB_PASSWORD'),
         database: configService.get('DB_DATABASE'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        synchronize: configService.get('NODE_ENV') === 'development',
+        // SECURITY: Never use synchronize in production - it can modify schema unexpectedly
+        // Always use migrations instead
+        synchronize: false,
         logging: configService.get('NODE_ENV') === 'development',
         ssl: configService.get('NODE_ENV') === 'production' ? {
           rejectUnauthorized: true,

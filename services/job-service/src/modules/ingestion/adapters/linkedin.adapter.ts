@@ -32,6 +32,27 @@ export class LinkedInAdapter extends BaseJobAdapter {
     const start = (page - 1) * pageSize;
 
     try {
+      // Return mock data if using mock access token
+      if (this.source.credentials?.access_token?.startsWith('mock_')) {
+        const { mockLinkedInJobs } = await import('./mock-data');
+        const jobs = mockLinkedInJobs.map((job) => this.normalizeJob(job));
+
+        return {
+          jobs,
+          pagination: {
+            currentPage: page,
+            totalResults: jobs.length,
+            totalPages: 1,
+            hasMore: false,
+          },
+          metadata: {
+            responseTime: 100,
+            apiVersion: '202401',
+            source: 'mock',
+          },
+        };
+      }
+
       // Using LinkedIn Job Search API (requires authentication)
       const params: any = {
         start,

@@ -4,7 +4,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 export const handlers = [
   // Auth endpoints
-  http.post(`${API_URL}/api/auth/login`, async ({ request }) => {
+  http.post(`${API_URL}/auth/login`, async ({ request }) => {
     const body = await request.json() as { email: string; password: string };
 
     if (body.email === 'test@example.com' && body.password === 'password123') {
@@ -26,7 +26,7 @@ export const handlers = [
     );
   }),
 
-  http.post(`${API_URL}/api/auth/register`, async () => {
+  http.post(`${API_URL}/auth/register`, async () => {
     return HttpResponse.json({
       id: '1',
       email: 'test@example.com',
@@ -35,12 +35,12 @@ export const handlers = [
     });
   }),
 
-  http.post(`${API_URL}/api/auth/logout`, async () => {
+  http.post(`${API_URL}/auth/logout`, async () => {
     return HttpResponse.json({ success: true });
   }),
 
   // User endpoints
-  http.get(`${API_URL}/api/users/me`, async () => {
+  http.get(`${API_URL}/users/me`, async () => {
     return HttpResponse.json({
       id: '1',
       email: 'test@example.com',
@@ -51,7 +51,7 @@ export const handlers = [
     });
   }),
 
-  http.patch(`${API_URL}/api/users/me`, async () => {
+  http.patch(`${API_URL}/users/me`, async () => {
     return HttpResponse.json({
       id: '1',
       email: 'test@example.com',
@@ -61,7 +61,7 @@ export const handlers = [
   }),
 
   // Jobs endpoints
-  http.get(`${API_URL}/api/jobs`, async ({ request }) => {
+  http.get(`${API_URL}/jobs`, async ({ request }) => {
     const url = new URL(request.url);
     const page = url.searchParams.get('page') || '1';
     const limit = url.searchParams.get('limit') || '10';
@@ -94,7 +94,7 @@ export const handlers = [
     });
   }),
 
-  http.get(`${API_URL}/api/jobs/:id`, async ({ params }) => {
+  http.get(`${API_URL}/jobs/:id`, async ({ params }) => {
     return HttpResponse.json({
       id: params.id,
       title: 'Senior Developer',
@@ -108,7 +108,7 @@ export const handlers = [
   }),
 
   // Applications endpoints
-  http.get(`${API_URL}/api/applications`, async () => {
+  http.get(`${API_URL}/applications`, async () => {
     return HttpResponse.json({
       data: [
         {
@@ -131,7 +131,7 @@ export const handlers = [
     });
   }),
 
-  http.post(`${API_URL}/api/applications`, async () => {
+  http.post(`${API_URL}/applications`, async () => {
     return HttpResponse.json({
       id: '2',
       jobId: '2',
@@ -141,7 +141,7 @@ export const handlers = [
   }),
 
   // Resumes endpoints
-  http.get(`${API_URL}/api/resumes`, async () => {
+  http.get(`${API_URL}/resumes`, async () => {
     return HttpResponse.json({
       data: [
         {
@@ -155,7 +155,7 @@ export const handlers = [
     });
   }),
 
-  http.post(`${API_URL}/api/resumes/upload`, async () => {
+  http.post(`${API_URL}/resumes/upload`, async () => {
     return HttpResponse.json({
       id: '2',
       title: 'New Resume',
@@ -165,7 +165,7 @@ export const handlers = [
   }),
 
   // Analytics endpoints
-  http.get(`${API_URL}/api/analytics`, async () => {
+  http.get(`${API_URL}/analytics`, async () => {
     return HttpResponse.json({
       totalApplications: 156,
       responseRate: 42,

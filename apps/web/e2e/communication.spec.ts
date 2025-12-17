@@ -15,7 +15,7 @@ async function setupAuthenticatedUser(page: Page) {
 // Mock API responses
 async function mockApiResponses(page: Page) {
   // Mock notifications endpoint
-  await page.route('**/api/v1/notifications*', async (route) => {
+  await page.route('**/notifications*', async (route) => {
     if (route.request().method() === 'GET') {
       await route.fulfill({
         status: 200,
@@ -47,7 +47,7 @@ async function mockApiResponses(page: Page) {
   });
 
   // Mock messages endpoint
-  await page.route('**/api/v1/messages*', async (route) => {
+  await page.route('**/messages*', async (route) => {
     if (route.request().method() === 'GET') {
       await route.fulfill({
         status: 200,
@@ -85,7 +85,7 @@ async function mockApiResponses(page: Page) {
   });
 
   // Mock notification settings endpoint
-  await page.route('**/api/v1/notifications/settings*', async (route) => {
+  await page.route('**/notifications/settings*', async (route) => {
     if (route.request().method() === 'GET') {
       await route.fulfill({
         status: 200,
@@ -116,7 +116,7 @@ async function mockApiResponses(page: Page) {
   });
 
   // Mock push subscription endpoint
-  await page.route('**/api/v1/notifications/subscribe', async (route) => {
+  await page.route('**/notifications/subscribe', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -128,7 +128,7 @@ async function mockApiResponses(page: Page) {
   });
 
   // Mock interview scheduling endpoint
-  await page.route('**/api/v1/interviews/schedule', async (route) => {
+  await page.route('**/interviews/schedule', async (route) => {
     await route.fulfill({
       status: 201,
       contentType: 'application/json',
@@ -519,7 +519,7 @@ test.describe('Communication Features', () => {
 
   test.describe('Error Handling', () => {
     test('should display error when notifications fail to load', async ({ page }) => {
-      await page.route('**/api/v1/notifications*', (route) => {
+      await page.route('**/notifications*', (route) => {
         route.fulfill({
           status: 500,
           contentType: 'application/json',
@@ -534,7 +534,7 @@ test.describe('Communication Features', () => {
 
     test('should retry loading notifications', async ({ page }) => {
       let callCount = 0;
-      await page.route('**/api/v1/notifications*', (route) => {
+      await page.route('**/notifications*', (route) => {
         if (callCount === 0) {
           callCount++;
           route.fulfill({
@@ -558,7 +558,7 @@ test.describe('Communication Features', () => {
     });
 
     test('should handle message send failure', async ({ page }) => {
-      await page.route('**/api/v1/messages', (route) => {
+      await page.route('**/messages', (route) => {
         if (route.request().method() === 'POST') {
           route.fulfill({
             status: 500,

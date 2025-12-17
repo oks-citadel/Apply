@@ -4,13 +4,18 @@ import { initTelemetry } from '@applyforus/telemetry';
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
 
-  // Initialize distributed tracing with Azure Application Insights
-  await initTelemetry({
-    serviceName: 'resume-service',
-    serviceVersion: '1.0.0',
-    environment: process.env.NODE_ENV || 'development',
-    azureMonitorConnectionString: process.env.APPLICATIONINSIGHTS_CONNECTION_STRING,
-  });
+  // Initialize OpenTelemetry tracing with Azure Application Insights
+  try {
+    await initTelemetry({
+      serviceName: 'resume-service',
+      serviceVersion: '1.0.0',
+      environment: process.env.NODE_ENV || 'development',
+      azureMonitorConnectionString: process.env.APPLICATIONINSIGHTS_CONNECTION_STRING,
+    });
+    logger.log('Telemetry initialized successfully');
+  } catch (error) {
+    logger.warn('Failed to initialize telemetry, continuing without tracing', error);
+  }
 
   // Import NestJS modules AFTER telemetry initialization
   const { NestFactory } = await import('@nestjs/core');
@@ -29,7 +34,7 @@ async function bootstrap() {
   });
 
   const configService = app.get(ConfigService);
-  const port = configService.get<number>('port', 8003);
+  const port = configService.get<number>('port', 4001);
   const apiPrefix = configService.get<string>('apiPrefix', 'api/v1');
   const swaggerEnabled = configService.get<boolean>('swagger.enabled', true);
 
@@ -60,8 +65,8 @@ async function bootstrap() {
   // Compression
   app.use(compression.default());
 
-  // Global prefix
-  app.setGlobalPrefix(apiPrefix);
+  // No global prefix - ingress routes /resumes to this service directly
+  // app.setGlobalPrefix(apiPrefix);
 
   // CORS
   const corsOrigins = configService.get<string>('CORS_ORIGINS', '*');

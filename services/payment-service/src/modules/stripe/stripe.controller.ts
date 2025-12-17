@@ -284,8 +284,8 @@ export class StripeController {
       paidAt: invoice.status_transitions?.paid_at
         ? new Date(invoice.status_transitions.paid_at * 1000)
         : new Date(),
-      invoiceUrl: invoice.hosted_invoice_url,
-      invoicePdfUrl: invoice.invoice_pdf,
+      invoiceUrl: invoice.hosted_invoice_url || undefined,
+      invoicePdfUrl: invoice.invoice_pdf || undefined,
     });
 
     this.logger.log(`Updated invoice in database: ${invoice.id}`);
@@ -330,8 +330,8 @@ export class StripeController {
       amount: invoice.amount_due / 100,
       currency: invoice.currency,
       status: InvoiceStatus.OPEN,
-      invoiceUrl: invoice.hosted_invoice_url,
-      invoicePdfUrl: invoice.invoice_pdf,
+      invoiceUrl: invoice.hosted_invoice_url || undefined,
+      invoicePdfUrl: invoice.invoice_pdf || undefined,
     });
 
     this.logger.log(
@@ -373,8 +373,8 @@ export class StripeController {
       amount: invoice.amount_due / 100,
       currency: invoice.currency,
       status: invoice.status === 'paid' ? InvoiceStatus.PAID : InvoiceStatus.OPEN,
-      invoiceUrl: invoice.hosted_invoice_url,
-      invoicePdfUrl: invoice.invoice_pdf,
+      invoiceUrl: invoice.hosted_invoice_url || undefined,
+      invoicePdfUrl: invoice.invoice_pdf || undefined,
     });
 
     this.logger.log(`Created invoice in database: ${invoice.id}`);

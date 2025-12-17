@@ -31,6 +31,26 @@ export class IndeedAdapter extends BaseJobAdapter {
     const start = (page - 1) * pageSize;
 
     try {
+      // Return mock data if using mock API key
+      if (this.source.credentials?.api_key?.startsWith('mock_')) {
+        const { mockIndeedJobs } = await import('./mock-data');
+        const jobs = mockIndeedJobs.map((job) => this.normalizeJob(job));
+
+        return {
+          jobs,
+          pagination: {
+            currentPage: page,
+            totalResults: jobs.length,
+            hasMore: false,
+          },
+          metadata: {
+            responseTime: 100,
+            apiVersion: '2',
+            source: 'mock',
+          },
+        };
+      }
+
       const params: any = {
         publisher: this.source.credentials?.api_key,
         v: '2',

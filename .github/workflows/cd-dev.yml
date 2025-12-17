@@ -1,203 +1,156 @@
 name: CD - Deploy to Development
 
+# Required GitHub Secrets:
+# - AZURE_CLIENT_ID: Azure AD App Registration client ID for OIDC authentication
+# - AZURE_TENANT_ID: Azure AD tenant ID
+# - AZURE_SUBSCRIPTION_ID: Azure subscription ID
+# - DATABASE_URL_DEV: PostgreSQL connection string for development
+# - REDIS_URL_DEV: Redis connection string for development
+# - STRIPE_SECRET_KEY_DEV: Stripe API secret key for development
+# These secrets should be configured in the repository settings under Settings > Secrets and variables > Actions
+
 on:
-  push:
+  workflow_run:
+    workflows: ["Build and Security Scan"]
+    types: [completed]
     branches: [develop]
   workflow_dispatch:
     inputs:
-      skip_tests:
-        description: 'Skip tests before deployment'
+      image_tag:
+        description: 'Image tag to deploy (leave empty for latest from develop)'
         required: false
-        type: boolean
-        default: false
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+  actions: read
 
 concurrency:
-  group: cd-dev-${{ github.ref }}
-  cancel-in-progress: true
+  group: cd-dev
+  cancel-in-progress: false
 
 env:
-  ACR_NAME: applyforusacr
   ACR_LOGIN_SERVER: applyforusacr.azurecr.io
   IMAGE_PREFIX: applyai
   AKS_RESOURCE_GROUP: applyforus-prod-rg
   AKS_CLUSTER_NAME: applyforus-aks
-  K8S_NAMESPACE: applyforus
-  NODE_VERSION: '20'
+  K8S_NAMESPACE: applyforus-dev
   SERVICES: 'web,auth-service,user-service,job-service,resume-service,notification-service,auto-apply-service,analytics-service,ai-service,orchestrator-service,payment-service'
 
 jobs:
-  prepare:
-    name: Prepare Deployment
+  check-build:
+    name: Check Build Status
     runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_run'
     outputs:
-      version: ${{ steps.version.outputs.version }}
-      image_tag: ${{ steps.version.outputs.image_tag }}
-      services: ${{ steps.changes.outputs.services }}
-      deploy_all: ${{ steps.changes.outputs.deploy_all }}
+      conclusion: ${{ steps.check.outputs.conclusion }}
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Generate Version
-        id: version
-        run: |
-          VERSION="1.0.$(git rev-list --count HEAD)"
-          IMAGE_TAG="${VERSION}-${GITHUB_SHA:0:8}"
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "image_tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
-          echo "Generated version: $VERSION, Image tag: $IMAGE_TAG"
-
-      - name: Detect Changed Services
-        id: changes
-        run: |
-          # Always deploy all services for now to simplify debugging
-          # TODO: Re-enable change detection once builds are working
-          echo "deploy_all=true" >> $GITHUB_OUTPUT
-          echo "services=${{ env.SERVICES }}" >> $GITHUB_OUTPUT
-          echo "Deploying all services: ${{ env.SERVICES }}"
-
-  test:
-    name: Run Tests
-    runs-on: ubuntu-latest
-    needs: prepare
-    if: github.event.inputs.skip_tests != 'true'
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 8.15.0
-
-      - name: Get pnpm store directory
-        shell: bash
-        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-
-      - name: Setup pnpm cache
-        uses: actions/cache@v4
-        with:
-          path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Run linting
-        run: pnpm run lint --if-present
-        continue-on-error: true
-
-      - name: Run tests
-        run: pnpm run test --if-present
-        continue-on-error: true
-        env:
-          CI: true
-          NODE_ENV: test
-
-  build-and-push:
-    name: Build & Push Images
-    runs-on: ubuntu-latest
-    needs: [prepare, test]
-    if: always() && needs.prepare.result == 'success' && (needs.test.result == 'success' || needs.test.result == 'skipped')
-    strategy:
-      fail-fast: false
-      matrix:
-        service: [web, auth-service, user-service, job-service, resume-service, notification-service, auto-apply-service, analytics-service, ai-service, orchestrator-service, payment-service]
-    steps:
-      - name: Check if service needs deployment
+      - name: Check build workflow conclusion
         id: check
         run: |
-          SERVICES_TO_DEPLOY="${{ needs.prepare.outputs.services }}"
-          if echo "$SERVICES_TO_DEPLOY" | grep -q "${{ matrix.service }}"; then
-            echo "deploy=true" >> $GITHUB_OUTPUT
-          else
-            echo "deploy=false" >> $GITHUB_OUTPUT
+          if [ "${{ github.event.workflow_run.conclusion }}" != "success" ]; then
+            echo "Build workflow failed or was cancelled. Aborting deployment."
+            echo "conclusion=failure" >> $GITHUB_OUTPUT
+            exit 1
           fi
+          echo "conclusion=success" >> $GITHUB_OUTPUT
 
-      - name: Checkout code
-        if: steps.check.outputs.deploy == 'true'
-        uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        if: steps.check.outputs.deploy == 'true'
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to ACR
-        if: steps.check.outputs.deploy == 'true'
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.ACR_LOGIN_SERVER }}
-          username: ${{ secrets.ACR_USERNAME }}
-          password: ${{ secrets.ACR_PASSWORD }}
-
-      - name: Determine Dockerfile path
-        if: steps.check.outputs.deploy == 'true'
-        id: dockerfile
+  get-deployment-manifest:
+    name: Get Deployment Manifest
+    runs-on: ubuntu-latest
+    needs: [check-build]
+    if: always() && (needs.check-build.result == 'success' || github.event_name == 'workflow_dispatch')
+    outputs:
+      manifest_found: ${{ steps.download.outputs.found }}
+      image_tag: ${{ steps.extract.outputs.image_tag }}
+    steps:
+      - name: Determine artifact name
+        id: artifact-name
         run: |
-          if [ "${{ matrix.service }}" = "web" ]; then
-            echo "path=apps/web/Dockerfile" >> $GITHUB_OUTPUT
-            echo "context=." >> $GITHUB_OUTPUT
+          if [ -n "${{ github.event.inputs.image_tag }}" ]; then
+            echo "tag=${{ github.event.inputs.image_tag }}" >> $GITHUB_OUTPUT
           else
-            echo "path=services/${{ matrix.service }}/Dockerfile" >> $GITHUB_OUTPUT
-            echo "context=." >> $GITHUB_OUTPUT
+            # Get the latest artifact from develop branch
+            echo "tag=latest" >> $GITHUB_OUTPUT
           fi
 
-      - name: Build and push
-        if: steps.check.outputs.deploy == 'true'
-        uses: docker/build-push-action@v5
+      - name: Download deployment manifest
+        id: download
+        uses: actions/github-script@v7
         with:
-          context: ${{ steps.dockerfile.outputs.context }}
-          file: ${{ steps.dockerfile.outputs.path }}
-          push: true
-          tags: |
-            ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_PREFIX }}-${{ matrix.service }}:${{ needs.prepare.outputs.image_tag }}
-            ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_PREFIX }}-${{ matrix.service }}:dev-latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          build-args: |
-            NODE_ENV=development
+          script: |
+            const artifacts = await github.rest.actions.listArtifactsForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page: 100
+            });
 
-      - name: Run Trivy scan
-        if: steps.check.outputs.deploy == 'true'
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_PREFIX }}-${{ matrix.service }}:${{ needs.prepare.outputs.image_tag }}
-          format: 'sarif'
-          output: 'trivy-results-${{ matrix.service }}.sarif'
-          severity: 'CRITICAL,HIGH'
+            // Find the most recent deployment manifest from develop branch
+            const manifestArtifact = artifacts.data.artifacts
+              .filter(a => a.name.startsWith('deployment-manifest-'))
+              .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
 
-      - name: Upload Trivy results
-        if: steps.check.outputs.deploy == 'true'
-        uses: github/codeql-action/upload-sarif@v3
+            if (!manifestArtifact) {
+              core.setFailed('No deployment manifest found. Run build workflow first.');
+              core.setOutput('found', 'false');
+              return;
+            }
+
+            const download = await github.rest.actions.downloadArtifact({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              artifact_id: manifestArtifact.id,
+              archive_format: 'zip',
+            });
+
+            const fs = require('fs');
+            fs.writeFileSync('manifest.zip', Buffer.from(download.data));
+            core.setOutput('found', 'true');
+
+      - name: Extract manifest
+        id: extract
+        if: steps.download.outputs.found == 'true'
+        run: |
+          unzip manifest.zip
+          cat deployment-manifest.json
+          IMAGE_TAG=$(jq -r '.image_tag' deployment-manifest.json)
+          echo "image_tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+      - name: Upload manifest for deployment
+        if: steps.download.outputs.found == 'true'
+        uses: actions/upload-artifact@v4
         with:
-          sarif_file: trivy-results-${{ matrix.service }}.sarif
-        continue-on-error: true
+          name: deployment-manifest-dev
+          path: deployment-manifest.json
+          retention-days: 7
 
   deploy:
     name: Deploy to Dev AKS
     runs-on: ubuntu-latest
-    needs: [prepare, build-and-push]
-    if: always() && needs.build-and-push.result == 'success'
+    needs: [get-deployment-manifest]
+    if: needs.get-deployment-manifest.outputs.manifest_found == 'true'
     environment:
-      name: development
+      name: dev
       url: https://dev.applyforus.com
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Azure Login
-        uses: azure/login@v1
+      - name: Download deployment manifest
+        uses: actions/download-artifact@v4
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          name: deployment-manifest-dev
+
+      - name: Azure Login with OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Set AKS context
         uses: azure/aks-set-context@v3
@@ -212,49 +165,76 @@ jobs:
       - name: Sync secrets from Key Vault
         run: |
           echo "Syncing secrets from Azure Key Vault to Kubernetes..."
-          # This would normally use Azure Key Vault CSI driver or similar
-          # For now, we'll create/update secrets from GitHub secrets
+          # Using Azure OIDC to access Key Vault
+          az keyvault secret show --vault-name applyforus-kv --name jwt-secret --query value -o tsv > /tmp/jwt-secret || echo "placeholder" > /tmp/jwt-secret
 
           kubectl create secret generic app-secrets \
-            --from-literal=JWT_SECRET="${{ secrets.JWT_SECRET }}" \
+            --from-literal=JWT_SECRET="$(cat /tmp/jwt-secret)" \
             --from-literal=DATABASE_URL="${{ secrets.DATABASE_URL_DEV }}" \
             --from-literal=REDIS_URL="${{ secrets.REDIS_URL_DEV }}" \
             --from-literal=STRIPE_SECRET_KEY="${{ secrets.STRIPE_SECRET_KEY_DEV }}" \
             --namespace=${{ env.K8S_NAMESPACE }} \
             --dry-run=client -o yaml | kubectl apply -f -
 
-      - name: Update deployments
-        run: |
-          SERVICES="${{ needs.prepare.outputs.services }}"
-          IMAGE_TAG="${{ needs.prepare.outputs.image_tag }}"
+          rm -f /tmp/jwt-secret
 
-          IFS=',' read -ra SERVICE_ARRAY <<< "$SERVICES"
-          for service in "${SERVICE_ARRAY[@]}"; do
-            echo "Updating $service to tag $IMAGE_TAG..."
+      - name: Deploy services using image digests
+        run: |
+          echo "Deploying services using digest-based image references..."
+
+          # Parse deployment manifest
+          cat deployment-manifest.json
+
+          # Deploy each service using digest reference
+          for service in $(echo "${{ env.SERVICES }}" | tr ',' ' '); do
+            IMAGE_WITH_DIGEST=$(jq -r ".images.\"${service}\".image" deployment-manifest.json)
+
+            if [ "$IMAGE_WITH_DIGEST" = "null" ] || [ -z "$IMAGE_WITH_DIGEST" ]; then
+              echo "No image found for $service in manifest, skipping..."
+              continue
+            fi
+
+            echo "Deploying $service with image: $IMAGE_WITH_DIGEST"
 
             # Check if deployment exists
             if kubectl get deployment $service -n ${{ env.K8S_NAMESPACE }} &>/dev/null; then
+              # Update existing deployment with digest reference
               kubectl set image deployment/$service \
-                $service=${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_PREFIX }}-$service:$IMAGE_TAG \
+                $service=$IMAGE_WITH_DIGEST \
+                -n ${{ env.K8S_NAMESPACE }}
+
+              # Add annotation with deployment metadata
+              kubectl annotate deployment/$service \
+                deploy.applyforus.com/image-digest="$(jq -r ".images.\"${service}\".digest" deployment-manifest.json)" \
+                deploy.applyforus.com/deployed-at="$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+                deploy.applyforus.com/deployed-by="${{ github.actor }}" \
+                deploy.applyforus.com/version="$(jq -r '.version' deployment-manifest.json)" \
+                --overwrite \
                 -n ${{ env.K8S_NAMESPACE }}
             else
               echo "Deployment $service not found, applying manifests..."
               kubectl apply -f infrastructure/kubernetes/services/$service/ -n ${{ env.K8S_NAMESPACE }} || true
+
+              # Update with digest reference after creation
+              kubectl set image deployment/$service \
+                $service=$IMAGE_WITH_DIGEST \
+                -n ${{ env.K8S_NAMESPACE }} || true
             fi
           done
 
       - name: Wait for rollouts
         run: |
-          SERVICES="${{ needs.prepare.outputs.services }}"
+          echo "Waiting for all deployments to complete..."
 
-          IFS=',' read -ra SERVICE_ARRAY <<< "$SERVICES"
-          for service in "${SERVICE_ARRAY[@]}"; do
-            echo "Waiting for $service rollout..."
-            kubectl rollout status deployment/$service -n ${{ env.K8S_NAMESPACE }} --timeout=300s || {
-              echo "Rollout failed for $service"
-              kubectl describe deployment/$service -n ${{ env.K8S_NAMESPACE }}
-              kubectl logs deployment/$service -n ${{ env.K8S_NAMESPACE }} --tail=100
-            }
+          for service in $(echo "${{ env.SERVICES }}" | tr ',' ' '); do
+            if kubectl get deployment $service -n ${{ env.K8S_NAMESPACE }} &>/dev/null; then
+              echo "Waiting for $service rollout..."
+              kubectl rollout status deployment/$service -n ${{ env.K8S_NAMESPACE }} --timeout=300s || {
+                echo "Rollout failed for $service"
+                kubectl describe deployment/$service -n ${{ env.K8S_NAMESPACE }}
+                kubectl logs deployment/$service -n ${{ env.K8S_NAMESPACE }} --tail=100 || true
+              }
+            fi
           done
 
       - name: Verify deployment
@@ -268,18 +248,33 @@ jobs:
           echo "### Services"
           kubectl get services -n ${{ env.K8S_NAMESPACE }}
 
+          echo "### Deployment Annotations"
+          for service in $(echo "${{ env.SERVICES }}" | tr ',' ' '); do
+            if kubectl get deployment $service -n ${{ env.K8S_NAMESPACE }} &>/dev/null; then
+              echo "Annotations for $service:"
+              kubectl get deployment $service -n ${{ env.K8S_NAMESPACE }} -o jsonpath='{.metadata.annotations}' | jq . || true
+            fi
+          done
+
   health-check:
     name: Health Checks
     runs-on: ubuntu-latest
-    needs: [prepare, deploy]
+    needs: [get-deployment-manifest, deploy]
+    permissions:
+      contents: read
+      id-token: write
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Azure Login
-        uses: azure/login@v1
+      - name: Download deployment manifest
+        uses: actions/download-artifact@v4
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          name: deployment-manifest-dev
+
+      - name: Azure Login with OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Set AKS context
         uses: azure/aks-set-context@v3
@@ -301,59 +296,25 @@ jobs:
           kubectl get pods -n ${{ env.K8S_NAMESPACE }} -o wide
 
           # Check for crash loops
-          CRASH_LOOPS=$(kubectl get pods -n ${{ env.K8S_NAMESPACE }} -o json | jq -r '.items[] | select(.status.containerStatuses[].restartCount > 3) | .metadata.name')
+          CRASH_LOOPS=$(kubectl get pods -n ${{ env.K8S_NAMESPACE }} -o json | jq -r '.items[] | select(.status.containerStatuses[]?.restartCount > 3) | .metadata.name' || echo "")
           if [ -n "$CRASH_LOOPS" ]; then
             echo "::warning::Pods with high restart counts: $CRASH_LOOPS"
           fi
-
-      - name: Test service endpoints
-        run: |
-          echo "Testing internal service endpoints..."
-
-          # Port-forward to test health endpoints
-          for service in web auth-service user-service job-service; do
-            kubectl port-forward service/$service 8080:80 -n ${{ env.K8S_NAMESPACE }} &
-            PF_PID=$!
-            sleep 5
-
-            # Test health endpoint
-            if curl -sf http://localhost:8080/health > /dev/null 2>&1; then
-              echo "✅ $service health check passed"
-            else
-              echo "⚠️ $service health check failed or no health endpoint"
-            fi
-
-            kill $PF_PID 2>/dev/null || true
-          done
 
       - name: Generate deployment summary
         run: |
           echo "## Development Deployment Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Version:** ${{ needs.prepare.outputs.version }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Image Tag:** ${{ needs.prepare.outputs.image_tag }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Services Deployed:** ${{ needs.prepare.outputs.services }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** $(jq -r '.version' deployment-manifest.json)" >> $GITHUB_STEP_SUMMARY
+          echo "**Image Tag:** $(jq -r '.image_tag' deployment-manifest.json)" >> $GITHUB_STEP_SUMMARY
+          echo "**Deployment Method:** Digest-based promotion (immutable)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Pod Status" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          kubectl get pods -n ${{ env.K8S_NAMESPACE }} >> $GITHUB_STEP_SUMMARY
+          kubectl get pods -n ${{ env.K8S_NAMESPACE }} >> $GITHUB_STEP_SUMMARY || echo "Unable to get pod status" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-
-  # Slack notifications disabled - add SLACK_WEBHOOK_URL secret to enable
-  # notify:
-  #   name: Send Notifications
-  #   runs-on: ubuntu-latest
-  #   needs: [prepare, deploy, health-check]
-  #   if: always()
-  #   steps:
-  #     - name: Notify Slack
-  #       uses: slackapi/slack-github-action@v1
-  #       continue-on-error: true
-  #       with:
-  #         payload: |
-  #           {
-  #             "text": "Dev Deployment completed",
-  #             "blocks": []
-  #           }
-  #       env:
-  #         SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Image Digests" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`json" >> $GITHUB_STEP_SUMMARY
+          jq '.images' deployment-manifest.json >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY

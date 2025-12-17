@@ -1,0 +1,94 @@
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: k8spsprequirerunasnonroot
+  annotations:
+    description: >-
+      Requires that containers must run as non-root users. Corresponds to the
+      `runAsUser` field in a PodSecurityPolicy.
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sPSPRequireRunAsNonRoot
+      validation:
+        openAPIV3Schema:
+          type: object
+          properties:
+            exemptImages:
+              description: Any container that uses an image that matches an entry in this list will be excluded from enforcement.
+              type: array
+              items:
+                type: string
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package k8spsprequirerunasnonroot
+
+        import future.keywords.in
+
+        violation[{"msg": msg, "details": {}}] {
+          c := input_containers[_]
+          not is_exempt(c.image)
+          not container_run_as_nonroot(c)
+          msg := sprintf("Container %v must run as non-root user. Set runAsNonRoot to true or runAsUser to a non-zero value.", [c.name])
+        }
+
+        violation[{"msg": msg, "details": {}}] {
+          c := input_containers[_]
+          not is_exempt(c.image)
+          c.securityContext.runAsUser == 0
+          msg := sprintf("Container %v is running as root (runAsUser: 0), which is not allowed", [c.name])
+        }
+
+        input_containers[c] {
+          c := input.review.object.spec.containers[_]
+        }
+
+        input_containers[c] {
+          c := input.review.object.spec.initContainers[_]
+        }
+
+        input_containers[c] {
+          c := input.review.object.spec.ephemeralContainers[_]
+        }
+
+        # Check if container has runAsNonRoot set to true OR runAsUser set to non-zero
+        container_run_as_nonroot(container) {
+          container.securityContext.runAsNonRoot
+        }
+
+        container_run_as_nonroot(container) {
+          container.securityContext.runAsUser > 0
+        }
+
+        # Check pod-level security context if container doesn't have it
+        container_run_as_nonroot(container) {
+          not has_container_security_context(container)
+          input.review.object.spec.securityContext.runAsNonRoot
+        }
+
+        container_run_as_nonroot(container) {
+          not has_container_security_context(container)
+          input.review.object.spec.securityContext.runAsUser > 0
+        }
+
+        has_container_security_context(container) {
+          container.securityContext
+        }
+
+        is_exempt(image) {
+          exempt_image := object.get(input, "parameters", {}).exemptImages[_]
+          _matches_exempt(image, exempt_image)
+        }
+
+        _matches_exempt(image, exempt_image) {
+          not endswith(exempt_image, "*")
+          exempt_image == image
+        }
+
+        _matches_exempt(image, exempt_image) {
+          endswith(exempt_image, "*")
+          prefix := trim_suffix(exempt_image, "*")
+          startswith(image, prefix)
+        }

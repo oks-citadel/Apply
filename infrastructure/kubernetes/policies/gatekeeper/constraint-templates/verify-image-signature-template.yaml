@@ -1,0 +1,73 @@
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: k8sverifyimagesignature
+  annotations:
+    description: >-
+      Verifies that container images are signed using Cosign.
+      This template integrates with external data providers or annotations
+      to verify image signatures.
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sVerifyImageSignature
+      validation:
+        openAPIV3Schema:
+          type: object
+          properties:
+            requireSignature:
+              description: Whether to require signature verification
+              type: boolean
+              default: true
+            exemptImages:
+              description: List of images exempt from signature verification
+              type: array
+              items:
+                type: string
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package k8sverifyimagesignature
+
+        import future.keywords.in
+
+        violation[{"msg": msg}] {
+          container := input_containers[_]
+          not is_exempt(container.image)
+          input.parameters.requireSignature
+          not has_signature_annotation
+          msg := sprintf("container <%v> image <%v> must be signed with Cosign. Add annotation 'cosign.sigstore.dev/signature: verified' after verification", [container.name, container.image])
+        }
+
+        input_containers[c] {
+          c := input.review.object.spec.containers[_]
+        }
+
+        input_containers[c] {
+          c := input.review.object.spec.initContainers[_]
+        }
+
+        input_containers[c] {
+          c := input.review.object.spec.ephemeralContainers[_]
+        }
+
+        has_signature_annotation {
+          input.review.object.metadata.annotations["cosign.sigstore.dev/signature"] == "verified"
+        }
+
+        is_exempt(image) {
+          exempt_image := object.get(input, "parameters", {}).exemptImages[_]
+          _matches_exempt(image, exempt_image)
+        }
+
+        _matches_exempt(image, exempt_image) {
+          not endswith(exempt_image, "*")
+          exempt_image == image
+        }
+
+        _matches_exempt(image, exempt_image) {
+          endswith(exempt_image, "*")
+          prefix := trim_suffix(exempt_image, "*")
+          startswith(image, prefix)
+        }

@@ -171,20 +171,6 @@ export class IcimsAdapter extends BaseAdapter {
     return password;
   }
 
-  /**
-   * Handle LinkedIn profile import
-   */
-  private async handleLinkedInImport(): Promise<void> {
-    const linkedInButton = document.querySelector<HTMLButtonElement>(
-      'button[class*="linkedin"], a[href*="linkedin/import"]'
-    );
-
-    if (linkedInButton && this.resumeData.personalInfo.linkedin) {
-      // Note: Actual LinkedIn OAuth would happen in a popup
-      // For now, we'll just note that it's available
-      console.log('LinkedIn import available but requires OAuth');
-    }
-  }
 
   /**
    * Handle multi-step wizard navigation
@@ -238,9 +224,9 @@ export class IcimsAdapter extends BaseAdapter {
       const container = field.element.closest('[class*="date"]');
 
       if (container) {
-        const monthField = container.querySelector<HTMLSelectElement>('select[name*="month"]');
-        const dayField = container.querySelector<HTMLInputElement>('input[name*="day"]');
-        const yearField = container.querySelector<HTMLInputElement>('input[name*="year"]');
+        const monthField = container.querySelector('select[name*="month"]') as HTMLSelectElement | null;
+        const dayField = container.querySelector('input[name*="day"]') as HTMLInputElement | null;
+        const yearField = container.querySelector('input[name*="year"]') as HTMLInputElement | null;
 
         if (monthField && dayField && yearField) {
           const date = new Date(value);

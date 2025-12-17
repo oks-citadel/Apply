@@ -1,5 +1,6 @@
 # Monorepo-aware Dockerfile for user-service
-FROM node:20-alpine AS builder
+# Pinned Node.js 20 Alpine with SHA256 digest for supply chain security
+FROM node:20-alpine@sha256:2d5e8a8a51bc341fd5f2eed6d91455c3a3d147e91a14298fc564b5dc519c1666 AS builder
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
@@ -16,12 +17,14 @@ WORKDIR /app
 RUN pnpm --filter @applyforus/types build || true && \
     pnpm --filter @applyforus/security build || true && \
     pnpm --filter @applyforus/shared build || true && \
-    pnpm --filter @applyforus/telemetry build || true
+    pnpm --filter @applyforus/telemetry build || true && \
+    pnpm --filter @applyforus/logging build || true
 
 WORKDIR /app/services/user-service
 RUN pnpm run build
 
-FROM node:20-alpine AS production
+# Pinned Node.js 20 Alpine with SHA256 digest (must match builder stage)
+FROM node:20-alpine@sha256:2d5e8a8a51bc341fd5f2eed6d91455c3a3d147e91a14298fc564b5dc519c1666 AS production
 RUN apk add --no-cache dumb-init curl
 RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001
 WORKDIR /app
@@ -34,13 +37,23 @@ COPY --from=builder --chown=nodejs:nodejs /app/services/user-service/package.jso
 
 USER nodejs
 ENV NODE_ENV=production
-ENV PORT=8002
-EXPOSE 8002
+ENV PORT=4004
+EXPOSE 4004
 
 WORKDIR /app/services/user-service
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-    CMD curl -f http://localhost:8002/health || exit 1
+    CMD curl -f http://localhost:4004/health || exit 1
 
 ENTRYPOINT ["dumb-init", "--"]
 CMD ["node", "dist/services/user-service/src/main.js"]
+
+# Build metadata labels (OCI standard)
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION
+
+LABEL org.opencontainers.image.created="${BUILD_DATE}" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.title="ApplyForUs User Service"

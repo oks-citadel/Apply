@@ -1,14 +1,21 @@
-// Initialize telemetry BEFORE importing other modules for proper auto-instrumentation
 import { initTelemetry } from '@applyforus/telemetry';
+import { Logger } from '@nestjs/common';
 
 async function bootstrap() {
-  // Initialize distributed tracing with Azure Application Insights
-  await initTelemetry({
-    serviceName: 'auto-apply-service',
-    serviceVersion: '1.0.0',
-    environment: process.env.NODE_ENV || 'development',
-    azureMonitorConnectionString: process.env.APPLICATIONINSIGHTS_CONNECTION_STRING,
-  });
+  const logger = new Logger('Bootstrap');
+
+  // Initialize OpenTelemetry tracing with Azure Application Insights
+  try {
+    await initTelemetry({
+      serviceName: 'auto-apply-service',
+      serviceVersion: '1.0.0',
+      environment: process.env.NODE_ENV || 'development',
+      azureMonitorConnectionString: process.env.APPLICATIONINSIGHTS_CONNECTION_STRING,
+    });
+    logger.log('Telemetry initialized successfully');
+  } catch (error) {
+    logger.warn('Failed to initialize telemetry, continuing without tracing', error);
+  }
 
   // Import NestJS modules AFTER telemetry initialization
   const { NestFactory } = await import('@nestjs/core');
@@ -49,10 +56,10 @@ async function bootstrap() {
     }),
   );
 
-  // Global prefix
-  app.setGlobalPrefix('api/v1');
+  // No global prefix - ingress routes /auto-apply to this service directly
+  // app.setGlobalPrefix('api/v1');
 
-  const port = process.env.PORT || 8005;
+  const port = process.env.PORT || 4003;
   await app.listen(port);
 
   const logger = new Logger('Bootstrap');

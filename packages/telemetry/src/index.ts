@@ -287,4 +287,5 @@ export * from './prometheus.controller';
 export * from './prometheus.interceptor';
 export * from './prometheus-metrics.service';
 export * from './gateway-metrics';
+export * from './http-client';
 // Note: nestjs-metrics.ts is excluded due to incompatible API with current metrics.ts

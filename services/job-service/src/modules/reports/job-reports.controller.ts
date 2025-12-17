@@ -23,11 +23,7 @@ import {
   ReportResponseDto,
   PaginatedReportsResponseDto,
 } from './dto/report-response.dto';
-
-// Placeholder guards - replace with actual implementations
-const AuthGuard = () => (target: any, propertyKey?: string, descriptor?: PropertyDescriptor) => descriptor;
-const AdminGuard = () => (target: any, propertyKey?: string, descriptor?: PropertyDescriptor) => descriptor;
-const RateLimitGuard = () => (target: any, propertyKey?: string, descriptor?: PropertyDescriptor) => descriptor;
+import { JwtAuthGuard, AdminGuard, RateLimitGuard } from '../../common/guards';
 
 @ApiTags('Jobs')
 @Controller('jobs')
@@ -35,7 +31,7 @@ export class JobReportsController {
   constructor(private readonly reportsService: ReportsService) {}
 
   @Post(':id/report')
-  @UseGuards(AuthGuard(), RateLimitGuard())
+  @UseGuards(JwtAuthGuard, RateLimitGuard)
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Report a job posting' })
   @ApiParam({ name: 'id', description: 'Job ID' })
@@ -48,11 +44,11 @@ export class JobReportsController {
     @Body() createReportDto: CreateReportDto,
     @Request() req: any,
   ): Promise<ReportResponseDto> {
-    return this.reportsService.createReport(jobId, req.user.id, createReportDto);
+    return this.reportsService.createReport(jobId, req.user.sub, createReportDto);
   }
 
   @Get(':id/reports')
-  @UseGuards(AuthGuard(), AdminGuard())
+  @UseGuards(JwtAuthGuard, AdminGuard)
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Get all reports for a specific job (admin only)' })
   @ApiParam({ name: 'id', description: 'Job ID' })
@@ -69,7 +65,7 @@ export class JobReportsController {
   }
 
   @Get(':id/reports/count')
-  @UseGuards(AuthGuard(), AdminGuard())
+  @UseGuards(JwtAuthGuard, AdminGuard)
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Get report count for a job (admin only)' })
   @ApiParam({ name: 'id', description: 'Job ID' })

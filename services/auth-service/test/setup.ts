@@ -1,6 +1,38 @@
 // Global test setup
 import { ConfigService } from '@nestjs/config';
 
+// Mock localStorage first before any other imports
+const localStorageMock = {
+  getItem: jest.fn(),
+  setItem: jest.fn(),
+  removeItem: jest.fn(),
+  clear: jest.fn(),
+  length: 0,
+  key: jest.fn(),
+};
+
+Object.defineProperty(global, 'localStorage', {
+  value: localStorageMock,
+  writable: true,
+  configurable: true,
+});
+
+// Mock Azure Monitor to prevent localStorage issues
+jest.mock('@azure/monitor-opentelemetry-exporter', () => ({
+  AzureMonitorTraceExporter: jest.fn().mockImplementation(() => ({
+    export: jest.fn(),
+    shutdown: jest.fn(),
+  })),
+}));
+
+// Mock OpenTelemetry SDK
+jest.mock('@opentelemetry/sdk-node', () => ({
+  NodeSDK: jest.fn().mockImplementation(() => ({
+    start: jest.fn().mockResolvedValue(undefined),
+    shutdown: jest.fn().mockResolvedValue(undefined),
+  })),
+}));
+
 // Mock external dependencies globally
 jest.mock('nodemailer', () => ({
   createTransport: jest.fn().mockReturnValue({

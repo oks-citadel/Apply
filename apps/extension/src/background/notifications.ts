@@ -107,10 +107,17 @@ export class NotificationManager {
    * Clear all notifications
    */
   async clearAll(): Promise<void> {
-    const allNotifs = await chrome.notifications.getAll()|| {} ;
-    await Promise.all(
-      Object.keys(allNotifs || {}).map((id) => this.clear(id))
-    );
+    return new Promise((resolve) => {
+      chrome.notifications.getAll((allNotifs) => {
+        if (allNotifs) {
+          Promise.all(
+            Object.keys(allNotifs).map((id) => this.clear(id))
+          ).then(() => resolve()).catch(() => resolve());
+        } else {
+          resolve();
+        }
+      });
+    });
   }
 
   /**
@@ -150,7 +157,7 @@ export class NotificationManager {
    * Handle notification button clicks
    */
   private async handleButtonClick(
-    notificationId: string,
+    _notificationId: string,
     _buttonIndex: number
   ): Promise<void> {
     // Implement specific button actions here

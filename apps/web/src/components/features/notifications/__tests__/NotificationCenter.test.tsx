@@ -59,7 +59,7 @@ const mockNotificationSettings = {
 
 // Setup MSW server
 const server = setupServer(
-  rest.get('/api/v1/notifications', (req, res, ctx) => {
+  rest.get('/notifications', (req, res, ctx) => {
     const isRead = req.url.searchParams.get('isRead');
     let filteredNotifications = mockNotifications;
 
@@ -74,15 +74,15 @@ const server = setupServer(
     }));
   }),
 
-  rest.get('/api/v1/notifications/settings', (req, res, ctx) => {
+  rest.get('/notifications/settings', (req, res, ctx) => {
     return res(ctx.json({ data: mockNotificationSettings, success: true }));
   }),
 
-  rest.put('/api/v1/notifications/settings', (req, res, ctx) => {
+  rest.put('/notifications/settings', (req, res, ctx) => {
     return res(ctx.json({ data: mockNotificationSettings, success: true }));
   }),
 
-  rest.put('/api/v1/notifications/:id/read', (req, res, ctx) => {
+  rest.put('/notifications/:id/read', (req, res, ctx) => {
     const { id } = req.params;
     const notification = mockNotifications.find(n => n.id === id);
     if (notification) {
@@ -94,11 +94,11 @@ const server = setupServer(
     return res(ctx.status(404));
   }),
 
-  rest.post('/api/v1/notifications/mark-all-read', (req, res, ctx) => {
+  rest.post('/notifications/mark-all-read', (req, res, ctx) => {
     return res(ctx.json({ success: true, updated: 2 }));
   }),
 
-  rest.delete('/api/v1/notifications/:id', (req, res, ctx) => {
+  rest.delete('/notifications/:id', (req, res, ctx) => {
     return res(ctx.json({ success: true }));
   }),
 );
@@ -322,7 +322,7 @@ describe('NotificationCenter Component', () => {
 
     it('should disable mark all button when no unread notifications', async () => {
       server.use(
-        rest.get('/api/v1/notifications', (req, res, ctx) => {
+        rest.get('/notifications', (req, res, ctx) => {
           const readNotifications = mockNotifications.map(n => ({ ...n, isRead: true }));
           return res(ctx.json({
             data: readNotifications,
@@ -552,7 +552,7 @@ describe('NotificationCenter Component', () => {
   describe('Empty State', () => {
     it('should display empty state when no notifications', async () => {
       server.use(
-        rest.get('/api/v1/notifications', (req, res, ctx) => {
+        rest.get('/notifications', (req, res, ctx) => {
           return res(ctx.json({ data: [], total: 0, success: true }));
         }),
       );
@@ -566,7 +566,7 @@ describe('NotificationCenter Component', () => {
 
     it('should display helpful message in empty state', async () => {
       server.use(
-        rest.get('/api/v1/notifications', (req, res, ctx) => {
+        rest.get('/notifications', (req, res, ctx) => {
           return res(ctx.json({ data: [], total: 0, success: true }));
         }),
       );
@@ -582,7 +582,7 @@ describe('NotificationCenter Component', () => {
   describe('Error Handling', () => {
     it('should display error message when loading fails', async () => {
       server.use(
-        rest.get('/api/v1/notifications', (req, res, ctx) => {
+        rest.get('/notifications', (req, res, ctx) => {
           return res(ctx.status(500), ctx.json({ error: 'Server error' }));
         }),
       );
@@ -596,7 +596,7 @@ describe('NotificationCenter Component', () => {
 
     it('should display retry button on error', async () => {
       server.use(
-        rest.get('/api/v1/notifications', (req, res, ctx) => {
+        rest.get('/notifications', (req, res, ctx) => {
           return res(ctx.status(500), ctx.json({ error: 'Server error' }));
         }),
       );

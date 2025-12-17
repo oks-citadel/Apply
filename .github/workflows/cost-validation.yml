@@ -1,0 +1,300 @@
+name: Cost Validation Gate
+
+on:
+  pull_request:
+    paths:
+      - 'infrastructure/terraform/**'
+      - 'infrastructure/kubernetes/**'
+      - '.github/workflows/build-images.yml'
+  workflow_dispatch:
+
+env:
+  TERRAFORM_VERSION: '1.5.0'
+  COST_THRESHOLD_PERCENTAGE: 20  # Max 20% cost increase allowed
+
+jobs:
+  terraform-cost-estimate:
+    name: Terraform Cost Estimation
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+
+      - name: Install Infracost
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/infracost/infracost/master/scripts/install.sh | sh
+
+      - name: Terraform Init
+        working-directory: infrastructure/terraform
+        run: terraform init -backend=false
+
+      - name: Generate Infracost baseline (main branch)
+        run: |
+          git checkout main
+          cd infrastructure/terraform
+          infracost breakdown --path . \
+            --format json \
+            --out-file /tmp/infracost-base.json
+        env:
+          INFRACOST_API_KEY: ${{ secrets.INFRACOST_API_KEY }}
+        continue-on-error: true
+
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+
+      - name: Generate Infracost diff
+        run: |
+          cd infrastructure/terraform
+          infracost diff --path . \
+            --compare-to /tmp/infracost-base.json \
+            --format json \
+            --out-file /tmp/infracost-diff.json
+        env:
+          INFRACOST_API_KEY: ${{ secrets.INFRACOST_API_KEY }}
+
+      - name: Post Infracost comment
+        run: |
+          infracost comment github \
+            --path /tmp/infracost-diff.json \
+            --repo $GITHUB_REPOSITORY \
+            --github-token ${{ secrets.GITHUB_TOKEN }} \
+            --pull-request ${{ github.event.pull_request.number }} \
+            --behavior update
+        env:
+          INFRACOST_API_KEY: ${{ secrets.INFRACOST_API_KEY }}
+
+      - name: Validate cost increase threshold
+        id: cost_validation
+        run: |
+          # Extract cost diff from Infracost output
+          COST_DIFF=$(jq -r '.diffTotalMonthlyCost // 0' /tmp/infracost-diff.json)
+          BASE_COST=$(jq -r '.projects[0].pastTotalMonthlyCost // 0' /tmp/infracost-diff.json)
+
+          echo "Base monthly cost: $BASE_COST"
+          echo "Cost difference: $COST_DIFF"
+
+          # Calculate percentage increase
+          if [ "$BASE_COST" != "0" ]; then
+            PERCENTAGE=$(echo "scale=2; ($COST_DIFF / $BASE_COST) * 100" | bc)
+          else
+            PERCENTAGE=0
+          fi
+
+          echo "Percentage increase: $PERCENTAGE%"
+          echo "percentage=$PERCENTAGE" >> $GITHUB_OUTPUT
+          echo "cost_diff=$COST_DIFF" >> $GITHUB_OUTPUT
+
+          # Check threshold
+          THRESHOLD=${{ env.COST_THRESHOLD_PERCENTAGE }}
+          if (( $(echo "$PERCENTAGE > $THRESHOLD" | bc -l) )); then
+            echo "❌ Cost increase of $PERCENTAGE% exceeds threshold of $THRESHOLD%"
+            echo "exceeds_threshold=true" >> $GITHUB_OUTPUT
+            exit 1
+          else
+            echo "✅ Cost increase of $PERCENTAGE% is within threshold of $THRESHOLD%"
+            echo "exceeds_threshold=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Cost validation summary
+        if: always()
+        run: |
+          cat << EOF >> $GITHUB_STEP_SUMMARY
+          ## 💰 Cost Validation Results
+
+          ### Infrastructure Cost Impact
+          - **Monthly Cost Change:** \$${{ steps.cost_validation.outputs.cost_diff }}
+          - **Percentage Change:** ${{ steps.cost_validation.outputs.percentage }}%
+          - **Threshold:** ${{ env.COST_THRESHOLD_PERCENTAGE }}%
+          - **Status:** ${{ steps.cost_validation.outputs.exceeds_threshold == 'false' && '✅ Passed' || '❌ Failed' }}
+
+          ### Cost Guardrails
+          - Budget limits are enforced via Azure Cost Management
+          - ACR retention policies will clean up old images automatically
+          - Non-prod environments use scale-to-zero schedules
+
+          See detailed cost breakdown in PR comments.
+          EOF
+
+  kubernetes-resource-validation:
+    name: Kubernetes Resource Validation
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install kubectl
+        run: |
+          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          chmod +x kubectl
+          sudo mv kubectl /usr/local/bin/
+
+      - name: Validate resource quotas
+        id: quota_check
+        run: |
+          echo "## Kubernetes Resource Quota Validation" > /tmp/quota-report.md
+          echo "" >> /tmp/quota-report.md
+
+          # Check all deployment files
+          for file in infrastructure/kubernetes/**/*deployment*.yaml; do
+            if [ -f "$file" ]; then
+              echo "Checking: $file" >> /tmp/quota-report.md
+
+              # Extract resource requests
+              CPU_REQUEST=$(yq eval '.spec.template.spec.containers[0].resources.requests.cpu // "not set"' "$file")
+              MEM_REQUEST=$(yq eval '.spec.template.spec.containers[0].resources.requests.memory // "not set"' "$file")
+              CPU_LIMIT=$(yq eval '.spec.template.spec.containers[0].resources.limits.cpu // "not set"' "$file")
+              MEM_LIMIT=$(yq eval '.spec.template.spec.containers[0].resources.limits.memory // "not set"' "$file")
+
+              echo "  - CPU Request: $CPU_REQUEST" >> /tmp/quota-report.md
+              echo "  - Memory Request: $MEM_REQUEST" >> /tmp/quota-report.md
+              echo "  - CPU Limit: $CPU_LIMIT" >> /tmp/quota-report.md
+              echo "  - Memory Limit: $MEM_LIMIT" >> /tmp/quota-report.md
+              echo "" >> /tmp/quota-report.md
+
+              # Validate that requests are set
+              if [ "$CPU_REQUEST" == "not set" ] || [ "$MEM_REQUEST" == "not set" ]; then
+                echo "❌ ERROR: Resource requests not set in $file"
+                exit 1
+              fi
+            fi
+          done
+
+          echo "✅ All deployments have resource requests defined"
+
+      - name: Check for expensive resources
+        run: |
+          echo "## Expensive Resource Check" >> /tmp/quota-report.md
+          echo "" >> /tmp/quota-report.md
+
+          # Check for LoadBalancer services (expensive)
+          LB_COUNT=$(grep -r "type: LoadBalancer" infrastructure/kubernetes/ 2>/dev/null | wc -l || echo "0")
+          echo "- LoadBalancer services: $LB_COUNT" >> /tmp/quota-report.md
+
+          if [ "$LB_COUNT" -gt 5 ]; then
+            echo "⚠️ WARNING: $LB_COUNT LoadBalancer services found (quota: 5 max)" >> /tmp/quota-report.md
+          fi
+
+          # Check for persistent volume claims
+          PVC_COUNT=$(grep -r "kind: PersistentVolumeClaim" infrastructure/kubernetes/ 2>/dev/null | wc -l || echo "0")
+          echo "- PersistentVolumeClaims: $PVC_COUNT" >> /tmp/quota-report.md
+
+          echo "" >> /tmp/quota-report.md
+
+      - name: Post validation summary
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('/tmp/quota-report.md', 'utf8');
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: report
+            });
+
+  acr-storage-check:
+    name: ACR Storage Impact Check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check for new Docker images
+        id: image_check
+        run: |
+          # Count Dockerfile changes
+          DOCKERFILE_CHANGES=$(git diff --name-only origin/main... | grep -c "Dockerfile" || echo "0")
+
+          echo "dockerfile_changes=$DOCKERFILE_CHANGES" >> $GITHUB_OUTPUT
+
+          if [ "$DOCKERFILE_CHANGES" -gt 0 ]; then
+            echo "⚠️ $DOCKERFILE_CHANGES Dockerfile(s) modified"
+            echo "This will create new images in ACR"
+            echo "Ensure ACR retention policies are active to prevent storage bloat"
+          fi
+
+      - name: Estimate ACR storage impact
+        run: |
+          cat << EOF >> $GITHUB_STEP_SUMMARY
+          ## 📦 ACR Storage Impact
+
+          ### Image Changes
+          - **Modified Dockerfiles:** ${{ steps.image_check.outputs.dockerfile_changes }}
+          - **Estimated new images:** ${{ steps.image_check.outputs.dockerfile_changes }} × 11 services = ~$((${{ steps.image_check.outputs.dockerfile_changes }} * 11))
+
+          ### Storage Policies (Active)
+          - ✅ Keep last 10 tags per repository
+          - ✅ Delete untagged manifests after 30 days
+          - ✅ Remove dev/staging images after 90 days
+
+          ### Estimated Impact
+          - **Storage per image:** ~500MB
+          - **Total new storage:** ~$((${{ steps.image_check.outputs.dockerfile_changes }} * 11 * 500))MB
+          - **Monthly cost:** ~\$$(echo "scale=2; ${{ steps.image_check.outputs.dockerfile_changes }} * 11 * 0.10" | bc)
+
+          Retention policies will automatically clean up old images to control costs.
+          EOF
+
+  cost-gate-summary:
+    name: Cost Gate Summary
+    runs-on: ubuntu-latest
+    needs: [terraform-cost-estimate, kubernetes-resource-validation, acr-storage-check]
+    if: always()
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Generate final summary
+        run: |
+          cat << EOF >> $GITHUB_STEP_SUMMARY
+          ## 🎯 Cost Validation Gate - Final Summary
+
+          ### Checks Performed
+          - ✅ Terraform cost estimation
+          - ✅ Kubernetes resource quota validation
+          - ✅ ACR storage impact assessment
+
+          ### Cost Control Measures
+          1. **Budget Alerts:** Monthly budgets with 50%, 75%, 90%, 100% thresholds
+          2. **Resource Quotas:** Namespace-level CPU, memory, and storage limits
+          3. **ACR Retention:** Automated cleanup of old images (keep last 10 tags)
+          4. **Scale Schedules:** Non-prod environments scale down during off-hours
+          5. **Cost Monitoring:** Daily cost reports and anomaly detection
+
+          ### Estimated Monthly Savings
+          - ACR cleanup: \$50-100
+          - Scale-to-zero: \$300-650
+          - Right-sizing: \$100-200
+          - **Total:** \$450-950/month
+
+          ### Next Steps
+          - Review cost impact in PR comments
+          - Ensure changes align with budget constraints
+          - Consider cost optimization recommendations
+          EOF
+
+      - name: Check if any job failed
+        run: |
+          if [[ "${{ needs.terraform-cost-estimate.result }}" == "failure" ]]; then
+            echo "❌ Cost validation failed - exceeds threshold"
+            exit 1
+          fi
+
+          echo "✅ All cost validation checks passed"

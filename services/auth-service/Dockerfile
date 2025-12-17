@@ -1,5 +1,7 @@
 # Monorepo-aware Dockerfile for auth-service
-FROM node:20-alpine AS builder
+# Pinned Node.js 20 Alpine with SHA256 digest for supply chain security
+# Update digest: docker pull node:20-alpine && docker inspect node:20-alpine | jq -r '.[0].RepoDigests[0]'
+FROM node:20-alpine@sha256:2d5e8a8a51bc341fd5f2eed6d91455c3a3d147e91a14298fc564b5dc519c1666 AS builder
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
@@ -14,19 +16,21 @@ COPY services/auth-service/ ./services/auth-service/
 # Install all dependencies (--no-frozen-lockfile needed due to workspace package renames)
 RUN pnpm install --no-frozen-lockfile
 
-# Build workspace packages first (types, security, shared, telemetry)
+# Build workspace packages first (types, security, shared, telemetry, logging)
 WORKDIR /app
 RUN pnpm --filter @applyforus/types build || true && \
     pnpm --filter @applyforus/security build || true && \
     pnpm --filter @applyforus/shared build || true && \
-    pnpm --filter @applyforus/telemetry build || true
+    pnpm --filter @applyforus/telemetry build || true && \
+    pnpm --filter @applyforus/logging build || true
 
 # Build the service
 WORKDIR /app/services/auth-service
 RUN pnpm run build
 
 # Stage 2: Production - preserve monorepo structure for pnpm symlinks
-FROM node:20-alpine AS production
+# Pinned Node.js 20 Alpine with SHA256 digest (must match builder stage)
+FROM node:20-alpine@sha256:2d5e8a8a51bc341fd5f2eed6d91455c3a3d147e91a14298fc564b5dc519c1666 AS production
 
 RUN apk add --no-cache dumb-init curl
 
@@ -56,7 +60,22 @@ EXPOSE 4000
 WORKDIR /app/services/auth-service
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-    CMD curl -f http://localhost:4000/api/v1/health || exit 1
+    CMD curl -f http://localhost:4000/health || exit 1
 
 ENTRYPOINT ["dumb-init", "--"]
-CMD ["node", "dist/services/auth-service/src/main.js"]
+CMD ["node", "dist/main.js"]
+
+# Build metadata labels (OCI standard)
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION
+
+LABEL org.opencontainers.image.created="${BUILD_DATE}" \
+      org.opencontainers.image.authors="ApplyForUs Platform Team" \
+      org.opencontainers.image.url="https://applyforus.com" \
+      org.opencontainers.image.source="https://github.com/applyforus/platform" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.vendor="ApplyForUs" \
+      org.opencontainers.image.title="ApplyForUs Auth Service" \
+      org.opencontainers.image.description="Production-hardened authentication service"

@@ -6,7 +6,7 @@ export class TestFactory {
    * Create a test user with default values
    */
   static createUser(overrides?: Partial<User>): User {
-    const defaultUser: User = {
+    const defaultUser = {
       id: 'test-user-id',
       email: 'test@example.com',
       username: 'testuser',
@@ -33,13 +33,12 @@ export class TestFactory {
       lastLoginAt: null,
       lastLoginIp: null,
       createdAt: new Date(),
+      metadata: {},
       updatedAt: new Date(),
-      subscriptions: [],
-      aiGenerations: [],
       ...overrides,
     };
 
-    return defaultUser;
+    return defaultUser as User;
   }
 
   /**

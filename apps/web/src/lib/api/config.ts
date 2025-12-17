@@ -2,14 +2,23 @@
  * Centralized API Configuration
  * Single source of truth for all API URLs across the application
  *
- * SECURITY FIX: Standardizes API URLs to prevent inconsistent endpoint usage
+ * IMPORTANT: Backend services handle /api/v1 routing internally.
+ * The API gateway (api.applyforus.com) routes directly to services:
+ * - /auth/* -> auth-service
+ * - /jobs/* -> job-service
+ * - /users/* -> user-service
+ * - etc.
+ *
+ * Do NOT add /api/v1 prefix here or in environment variables.
  */
 
 // Main API for general services (job-service, user-service, etc.)
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+// Production: https://api.applyforus.com
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 // Auth API for authentication services (auth-service)
-export const AUTH_API_URL = process.env.NEXT_PUBLIC_AUTH_API_URL || 'http://localhost:8001/api/v1';
+// Production: https://api.applyforus.com (same as main API, gateway handles routing)
+export const AUTH_API_URL = process.env.NEXT_PUBLIC_AUTH_API_URL || 'http://localhost:3001';
 
 // Feature flags service
 export const FEATURE_FLAGS_URL = process.env.NEXT_PUBLIC_FEATURE_FLAGS_URL || 'http://localhost:8000';

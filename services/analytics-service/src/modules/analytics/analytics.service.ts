@@ -12,6 +12,8 @@ import {
   EventResponseDto,
 } from './dto/analytics-response.dto';
 import { subDays, startOfDay, endOfDay, format } from 'date-fns';
+import { SLAContract } from '../sla/entities/sla-contract.entity';
+import { SLAStatus } from '../sla/enums/sla.enums';
 
 @Injectable()
 export class AnalyticsService {
@@ -20,6 +22,8 @@ export class AnalyticsService {
   constructor(
     @InjectRepository(AnalyticsEvent)
     private readonly analyticsRepository: Repository<AnalyticsEvent>,
+    @InjectRepository(SLAContract)
+    private readonly slaContractRepository: Repository<SLAContract>,
   ) {}
 
   async trackEvent(
@@ -126,6 +130,9 @@ export class AnalyticsService {
       // Status distribution
       const statusDistribution = await this.getStatusDistribution(startDate, endDate);
 
+      // SLA metrics
+      const slaMetrics = await this.getSLAMetrics(query.userId);
+
       return {
         totalUsers: parseInt(totalUsersQuery.count) || 0,
         totalApplications: totalApplicationsQuery,
@@ -136,6 +143,7 @@ export class AnalyticsService {
         avgSessionDuration: parseFloat(avgSessionDuration.toFixed(2)),
         applicationTrend,
         statusDistribution,
+        slaMetrics,
       };
     } catch (error) {
       this.logger.error('Failed to get dashboard metrics', error.stack);
@@ -438,5 +446,56 @@ export class AnalyticsService {
     ].join('\n');
 
     return csvContent;
+  }
+
+  private async getSLAMetrics(userId?: string): Promise<{
+    activeContracts: number;
+    totalInterviews: number;
+    averageProgress: number;
+    contractsAtRisk: number;
+  } | undefined> {
+    try {
+      const queryBuilder = this.slaContractRepository
+        .createQueryBuilder('contract')
+        .where('contract.status = :status', { status: SLAStatus.ACTIVE });
+
+      if (userId) {
+        queryBuilder.andWhere('contract.userId = :userId', { userId });
+      }
+
+      const activeContracts = await queryBuilder.getMany();
+
+      if (activeContracts.length === 0) {
+        return undefined;
+      }
+
+      const totalInterviews = activeContracts.reduce(
+        (sum, contract) => sum + contract.totalInterviewsScheduled,
+        0,
+      );
+
+      const totalProgress = activeContracts.reduce(
+        (sum, contract) => sum + contract.getProgressPercentage(),
+        0,
+      );
+
+      const averageProgress = totalProgress / activeContracts.length;
+
+      const contractsAtRisk = activeContracts.filter(contract => {
+        const daysRemaining = contract.getDaysRemaining();
+        const progressPercentage = contract.getProgressPercentage();
+        return daysRemaining < 14 && progressPercentage < 50;
+      }).length;
+
+      return {
+        activeContracts: activeContracts.length,
+        totalInterviews,
+        averageProgress: parseFloat(averageProgress.toFixed(2)),
+        contractsAtRisk,
+      };
+    } catch (error) {
+      this.logger.error('Failed to get SLA metrics', error.stack);
+      return undefined;
+    }
   }
 }

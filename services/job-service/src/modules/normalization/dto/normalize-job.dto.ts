@@ -98,12 +98,12 @@ export class QualityScoreResponseDto {
 
   @ApiProperty({ description: 'Quality signals breakdown' })
   quality_signals: {
-    has_salary: boolean;
-    has_detailed_description: boolean;
-    has_clear_requirements: boolean;
-    has_company_info: boolean;
-    description_length: number;
-    readability_score: number;
+    has_salary?: boolean;
+    has_detailed_description?: boolean;
+    has_clear_requirements?: boolean;
+    has_company_info?: boolean;
+    description_length?: number;
+    readability_score?: number;
   };
 
   @ApiProperty({ description: 'Whether this is a duplicate' })
@@ -134,12 +134,12 @@ export class EmployerCredibilityResponseDto {
 
   @ApiProperty({ description: 'Credibility breakdown' })
   credibility_breakdown: {
-    company_age: number;
-    online_presence: number;
-    review_quality: number;
-    job_history: number;
-    response_rate: number;
-    transparency: number;
+    company_age?: number;
+    online_presence?: number;
+    review_quality?: number;
+    job_history?: number;
+    response_rate?: number;
+    transparency?: number;
   };
 
   @ApiProperty({ description: 'Review data' })

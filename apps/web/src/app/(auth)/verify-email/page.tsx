@@ -7,7 +7,8 @@ import axios from 'axios';
 import { Button } from '@/components/ui/Button';
 import { CheckCircle, XCircle, Loader2, Mail } from 'lucide-react';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+// API Base URL - Backend handles routing internally (no /api/v1 needed)
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 function VerifyEmailContent() {
   const searchParams = useSearchParams();

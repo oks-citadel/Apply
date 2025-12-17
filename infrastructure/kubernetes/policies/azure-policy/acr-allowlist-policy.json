@@ -1,0 +1,69 @@
+{
+  "properties": {
+    "displayName": "AKS - Only Allow Images from Approved ACR",
+    "policyType": "Custom",
+    "mode": "Microsoft.Kubernetes.Data",
+    "description": "This policy ensures that only container images from the approved Azure Container Registry (applyforusacr.azurecr.io) can be deployed to the AKS cluster.",
+    "metadata": {
+      "version": "1.0.0",
+      "category": "Kubernetes",
+      "source": "ApplyForUs Security Team"
+    },
+    "parameters": {
+      "effect": {
+        "type": "String",
+        "metadata": {
+          "displayName": "Effect",
+          "description": "Enable or disable the execution of the policy"
+        },
+        "allowedValues": [
+          "audit",
+          "deny",
+          "disabled"
+        ],
+        "defaultValue": "deny"
+      },
+      "excludedNamespaces": {
+        "type": "Array",
+        "metadata": {
+          "displayName": "Namespace exclusions",
+          "description": "List of Kubernetes namespaces to exclude from policy evaluation."
+        },
+        "defaultValue": [
+          "kube-system",
+          "gatekeeper-system",
+          "azure-arc"
+        ]
+      },
+      "allowedRegistries": {
+        "type": "Array",
+        "metadata": {
+          "displayName": "Allowed Container Registries",
+          "description": "The list of allowed container registries. Example: applyforusacr.azurecr.io"
+        },
+        "defaultValue": [
+          "applyforusacr.azurecr.io"
+        ]
+      }
+    },
+    "policyRule": {
+      "if": {
+        "field": "type",
+        "in": [
+          "Microsoft.ContainerService/managedClusters"
+        ]
+      },
+      "then": {
+        "effect": "[parameters('effect')]",
+        "details": {
+          "constraintTemplate": "https://raw.githubusercontent.com/Azure/azure-policy/master/built-in-references/Kubernetes/container-allowed-images/template.yaml",
+          "constraint": "https://raw.githubusercontent.com/Azure/azure-policy/master/built-in-references/Kubernetes/container-allowed-images/constraint.yaml",
+          "values": {
+            "excludedNamespaces": "[parameters('excludedNamespaces')]",
+            "allowedContainerImagesRegex": "[concat('^(', join(parameters('allowedRegistries'), '|'), ')/.*$')]"
+          }
+        }
+      }
+    }
+  }
+}

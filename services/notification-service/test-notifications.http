@@ -1,0 +1,139 @@
+### Notification Service API Tests
+### Base URL
+@baseUrl = http://localhost:8007
+@userId = test-user-123
+
+### Health Check
+GET {{baseUrl}}/health
+
+### 1. Create a notification
+POST {{baseUrl}}/notifications
+Content-Type: application/json
+
+{
+  "userId": "{{userId}}",
+  "type": "IN_APP",
+  "title": "Test Notification",
+  "message": "This is a test notification message",
+  "category": "test",
+  "data": {
+    "testKey": "testValue"
+  }
+}
+
+### 2. Get all notifications
+GET {{baseUrl}}/notifications?userId={{userId}}
+
+### 3. Get notifications by user ID
+GET {{baseUrl}}/notifications/user/{{userId}}
+
+### 4. Get unread count
+GET {{baseUrl}}/notifications/user/{{userId}}/unread-count
+
+### 5. Get user preferences
+GET {{baseUrl}}/notifications/preferences/{{userId}}
+
+### 6. Update user preferences
+PUT {{baseUrl}}/notifications/preferences/{{userId}}
+Content-Type: application/json
+
+{
+  "emailEnabled": true,
+  "pushEnabled": true,
+  "emailApplicationStatus": true,
+  "emailJobAlerts": true,
+  "emailWeeklyDigest": true,
+  "emailWelcome": true,
+  "emailVerification": true,
+  "emailPasswordReset": true,
+  "pushApplicationStatus": true,
+  "pushJobAlerts": false,
+  "pushMessages": true
+}
+
+### 7. Send email notification
+POST {{baseUrl}}/notifications/email
+Content-Type: application/json
+
+{
+  "to": "test@example.com",
+  "subject": "Test Email",
+  "body": "<h1>Hello!</h1><p>This is a test email.</p>",
+  "userId": "{{userId}}"
+}
+
+### 8. Send push notification
+POST {{baseUrl}}/notifications/push
+Content-Type: application/json
+
+{
+  "userId": "{{userId}}",
+  "title": "Test Push Notification",
+  "message": "This is a test push notification",
+  "data": {
+    "action": "view",
+    "resourceId": "123"
+  }
+}
+
+### 9. Mark notification as read
+# Replace {notificationId} with actual ID
+PATCH {{baseUrl}}/notifications/{notificationId}/read
+
+### 10. Mark all user notifications as read
+PATCH {{baseUrl}}/notifications/user/{{userId}}/read-all
+
+### 11. Delete notification
+# Replace {notificationId} with actual ID
+DELETE {{baseUrl}}/notifications/{notificationId}}
+
+### 12. Delete old notifications
+DELETE {{baseUrl}}/notifications/cleanup/old?days=30
+
+### Push Service Tests
+
+### 13. Register device for push notifications
+POST {{baseUrl}}/push/register
+Content-Type: application/json
+
+{
+  "userId": "{{userId}}",
+  "token": "test-fcm-token-12345",
+  "platform": "web",
+  "deviceName": "Chrome Browser",
+  "deviceModel": "Desktop",
+  "osVersion": "Windows 11",
+  "appVersion": "1.0.0",
+  "language": "en",
+  "timezone": "America/New_York"
+}
+
+### 14. Get user devices
+GET {{baseUrl}}/push/devices/{{userId}}
+
+### 15. Unregister device
+DELETE {{baseUrl}}/push/unregister
+Content-Type: application/json
+
+{
+  "userId": "{{userId}}",
+  "token": "test-fcm-token-12345"
+}
+
+### 16. Send push to specific devices
+POST {{baseUrl}}/push/send
+Content-Type: application/json
+
+{
+  "userIds": ["{{userId}}"],
+  "notification": {
+    "title": "New Job Match!",
+    "body": "We found 5 new jobs matching your preferences",
+    "icon": "/icon.png",
+    "badge": 5,
+    "sound": "default",
+    "clickAction": "https://app.example.com/jobs"
+  },
+  "category": "job-alert",
+  "priority": "high"
+}

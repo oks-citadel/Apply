@@ -5,7 +5,7 @@
 
 import { AdapterFactory } from './autofill/adapter-factory';
 import { BaseAdapter } from './autofill/base-adapter';
-import { ResumeData } from './autofill/types';
+import { ResumeData, ATSPlatform } from './autofill/types';
 
 export class FormFiller {
   private adapter: BaseAdapter | null = null;

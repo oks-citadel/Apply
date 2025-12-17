@@ -561,7 +561,9 @@ export class ViolationHandlerService {
     remedy.isApproved = true;
     remedy.approvedAt = new Date();
     remedy.approvedBy = approvedBy;
-    remedy.approvalNotes = notes;
+    if (notes) {
+      remedy.approvalNotes = notes;
+    }
     remedy.addExecutionLogEntry('approve', 'success', {
       approvedBy,
       notes,

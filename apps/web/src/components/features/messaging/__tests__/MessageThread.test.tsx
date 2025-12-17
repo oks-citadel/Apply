@@ -52,11 +52,11 @@ const mockConversation = {
 
 // Setup MSW server
 const server = setupServer(
-  rest.get('/api/v1/messages/:conversationId', (req, res, ctx) => {
+  rest.get('/messages/:conversationId', (req, res, ctx) => {
     return res(ctx.json({ data: mockMessages, success: true }));
   }),
 
-  rest.post('/api/v1/messages', (req, res, ctx) => {
+  rest.post('/messages', (req, res, ctx) => {
     const newMessage = {
       id: '4',
       conversationId: 'conv-123',
@@ -69,7 +69,7 @@ const server = setupServer(
     return res(ctx.json({ data: newMessage, success: true }));
   }),
 
-  rest.put('/api/v1/messages/:conversationId/read', (req, res, ctx) => {
+  rest.put('/messages/:conversationId/read', (req, res, ctx) => {
     return res(ctx.json({ success: true }));
   }),
 );
@@ -372,7 +372,7 @@ describe('MessageThread Component', () => {
   describe('Error Handling', () => {
     it('should display error message when loading fails', async () => {
       server.use(
-        rest.get('/api/v1/messages/:conversationId', (req, res, ctx) => {
+        rest.get('/messages/:conversationId', (req, res, ctx) => {
           return res(ctx.status(500), ctx.json({ error: 'Server error' }));
         }),
       );
@@ -386,7 +386,7 @@ describe('MessageThread Component', () => {
 
     it('should display error when sending message fails', async () => {
       server.use(
-        rest.post('/api/v1/messages', (req, res, ctx) => {
+        rest.post('/messages', (req, res, ctx) => {
           return res(ctx.status(500), ctx.json({ error: 'Failed to send' }));
         }),
       );
@@ -408,7 +408,7 @@ describe('MessageThread Component', () => {
 
     it('should retry loading messages on error', async () => {
       server.use(
-        rest.get('/api/v1/messages/:conversationId', (req, res, ctx) => {
+        rest.get('/messages/:conversationId', (req, res, ctx) => {
           return res(ctx.status(500), ctx.json({ error: 'Server error' }));
         }),
       );
@@ -427,7 +427,7 @@ describe('MessageThread Component', () => {
   describe('Empty State', () => {
     it('should display empty state when no messages', async () => {
       server.use(
-        rest.get('/api/v1/messages/:conversationId', (req, res, ctx) => {
+        rest.get('/messages/:conversationId', (req, res, ctx) => {
           return res(ctx.json({ data: [], success: true }));
         }),
       );
@@ -441,7 +441,7 @@ describe('MessageThread Component', () => {
 
     it('should display prompt to start conversation', async () => {
       server.use(
-        rest.get('/api/v1/messages/:conversationId', (req, res, ctx) => {
+        rest.get('/messages/:conversationId', (req, res, ctx) => {
           return res(ctx.json({ data: [], success: true }));
         }),
       );

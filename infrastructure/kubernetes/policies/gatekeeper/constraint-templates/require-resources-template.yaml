@@ -1,0 +1,101 @@
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: k8srequireresources
+  annotations:
+    description: >-
+      Requires containers to have resource requests and limits defined.
+      Optionally can enforce minimum and maximum values.
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sRequireResources
+      validation:
+        openAPIV3Schema:
+          type: object
+          properties:
+            exemptImages:
+              description: Any container that uses an image that matches an entry in this list will be excluded from enforcement.
+              type: array
+              items:
+                type: string
+            limits:
+              type: object
+              properties:
+                cpu:
+                  type: string
+                memory:
+                  type: string
+            requests:
+              type: object
+              properties:
+                cpu:
+                  type: string
+                memory:
+                  type: string
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package k8srequireresources
+
+        import future.keywords.in
+
+        violation[{"msg": msg}] {
+          container := input_containers[_]
+          not is_exempt(container.image)
+          not container.resources.requests.cpu
+          msg := sprintf("container <%v> does not have CPU requests defined", [container.name])
+        }
+
+        violation[{"msg": msg}] {
+          container := input_containers[_]
+          not is_exempt(container.image)
+          not container.resources.requests.memory
+          msg := sprintf("container <%v> does not have memory requests defined", [container.name])
+        }
+
+        violation[{"msg": msg}] {
+          container := input_containers[_]
+          not is_exempt(container.image)
+          not container.resources.limits.cpu
+          msg := sprintf("container <%v> does not have CPU limits defined", [container.name])
+        }
+
+        violation[{"msg": msg}] {
+          container := input_containers[_]
+          not is_exempt(container.image)
+          not container.resources.limits.memory
+          msg := sprintf("container <%v> does not have memory limits defined", [container.name])
+        }
+
+        violation[{"msg": msg}] {
+          container := input_containers[_]
+          not is_exempt(container.image)
+          not container.resources
+          msg := sprintf("container <%v> does not have resources defined", [container.name])
+        }
+
+        input_containers[c] {
+          c := input.review.object.spec.containers[_]
+        }
+
+        input_containers[c] {
+          c := input.review.object.spec.initContainers[_]
+        }
+
+        is_exempt(image) {
+          exempt_image := object.get(input, "parameters", {}).exemptImages[_]
+          _matches_exempt(image, exempt_image)
+        }
+
+        _matches_exempt(image, exempt_image) {
+          not endswith(exempt_image, "*")
+          exempt_image == image
+        }
+
+        _matches_exempt(image, exempt_image) {
+          endswith(exempt_image, "*")
+          prefix := trim_suffix(exempt_image, "*")
+          startswith(image, prefix)
+        }

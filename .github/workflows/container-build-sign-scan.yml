@@ -1,0 +1,523 @@
+name: Container Build, Sign & Scan (Security Gates)
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'apps/**'
+      - 'services/**'
+      - '.github/workflows/container-build-sign-scan.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'apps/**'
+      - 'services/**'
+  workflow_dispatch:
+    inputs:
+      service:
+        description: 'Specific service to build (leave empty for all)'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  security-events: write
+  id-token: write  # Required for OIDC and keyless signing
+  packages: write
+  attestations: write
+
+concurrency:
+  group: secure-build-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  ACR_LOGIN_SERVER: applyforusacr.azurecr.io
+  IMAGE_PREFIX: applyai
+  COSIGN_EXPERIMENTAL: 1  # Enable keyless signing
+
+jobs:
+  generate-metadata:
+    name: Generate Build Metadata
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+      image_tag: ${{ steps.meta.outputs.image_tag }}
+      short_sha: ${{ steps.meta.outputs.short_sha }}
+      build_date: ${{ steps.meta.outputs.build_date }}
+      should_sign: ${{ steps.meta.outputs.should_sign }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate metadata
+        id: meta
+        run: |
+          VERSION="1.0.$(git rev-list --count HEAD)"
+          SHORT_SHA="${GITHUB_SHA:0:8}"
+          # Immutable tag strategy: sha-<fullsha> as primary reference
+          IMAGE_TAG_SHA="sha-${GITHUB_SHA}"
+          # Semantic version tag as alias: vX.Y.Z-<shortsha>
+          IMAGE_TAG_VERSION="${VERSION}-${SHORT_SHA}"
+          BUILD_DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+          # Only sign images from main branch
+          SHOULD_SIGN="false"
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            SHOULD_SIGN="true"
+          fi
+
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "image_tag_sha=$IMAGE_TAG_SHA" >> $GITHUB_OUTPUT
+          echo "image_tag_version=$IMAGE_TAG_VERSION" >> $GITHUB_OUTPUT
+          echo "short_sha=$SHORT_SHA" >> $GITHUB_OUTPUT
+          echo "build_date=$BUILD_DATE" >> $GITHUB_OUTPUT
+          echo "should_sign=$SHOULD_SIGN" >> $GITHUB_OUTPUT
+
+          echo "Generated metadata (IMMUTABLE TAGS ONLY):"
+          echo "  Version: $VERSION"
+          echo "  SHA Tag: $IMAGE_TAG_SHA"
+          echo "  Version Tag: $IMAGE_TAG_VERSION"
+          echo "  Short SHA: $SHORT_SHA"
+          echo "  Build Date: $BUILD_DATE"
+          echo "  Should Sign: $SHOULD_SIGN"
+
+  # SECURITY GATE 1: Build and Vulnerability Scan
+  build-scan-push:
+    name: Build & Scan - ${{ matrix.service }}
+    runs-on: ubuntu-latest
+    needs: generate-metadata
+    permissions:
+      contents: read
+      id-token: write
+      security-events: write
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - web
+          - auth-service
+          - user-service
+          - job-service
+          - resume-service
+          - notification-service
+          - auto-apply-service
+          - analytics-service
+          - ai-service
+          - orchestrator-service
+          - payment-service
+    outputs:
+      web-digest: ${{ steps.export.outputs.digest }}
+      auth-service-digest: ${{ steps.export.outputs.digest }}
+      user-service-digest: ${{ steps.export.outputs.digest }}
+      job-service-digest: ${{ steps.export.outputs.digest }}
+      resume-service-digest: ${{ steps.export.outputs.digest }}
+      notification-service-digest: ${{ steps.export.outputs.digest }}
+      auto-apply-service-digest: ${{ steps.export.outputs.digest }}
+      analytics-service-digest: ${{ steps.export.outputs.digest }}
+      ai-service-digest: ${{ steps.export.outputs.digest }}
+      orchestrator-service-digest: ${{ steps.export.outputs.digest }}
+      payment-service-digest: ${{ steps.export.outputs.digest }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Azure Login with OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Get ACR token
+        id: acr-token
+        run: |
+          TOKEN=$(az acr login --name applyforusacr --expose-token --output tsv --query accessToken)
+          echo "::add-mask::$TOKEN"
+          echo "token=$TOKEN" >> $GITHUB_OUTPUT
+
+      - name: Log in to ACR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.ACR_LOGIN_SERVER }}
+          username: 00000000-0000-0000-0000-000000000000
+          password: ${{ steps.acr-token.outputs.token }}
+
+      - name: Determine Dockerfile path
+        id: dockerfile
+        run: |
+          if [ "${{ matrix.service }}" = "web" ]; then
+            echo "path=apps/web/Dockerfile" >> $GITHUB_OUTPUT
+            echo "context=." >> $GITHUB_OUTPUT
+          else
+            echo "path=services/${{ matrix.service }}/Dockerfile" >> $GITHUB_OUTPUT
+            echo "context=." >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build and push image (immutable tags only)
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ steps.dockerfile.outputs.context }}
+          file: ${{ steps.dockerfile.outputs.path }}
+          push: true
+          tags: |
+            ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_PREFIX }}-${{ matrix.service }}:${{ needs.generate-metadata.outputs.image_tag_sha }}
+            ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_PREFIX }}-${{ matrix.service }}:${{ needs.generate-metadata.outputs.image_tag_version }}
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.created=${{ needs.generate-metadata.outputs.build_date }}
+            org.opencontainers.image.version=${{ needs.generate-metadata.outputs.version }}
+            org.opencontainers.image.title=ApplyForUs ${{ matrix.service }}
+            org.opencontainers.image.vendor=ApplyForUs
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: true
+          sbom: true
+          build-args: |
+            BUILD_DATE=${{ needs.generate-metadata.outputs.build_date }}
+            VCS_REF=${{ github.sha }}
+            VERSION=${{ needs.generate-metadata.outputs.version }}
+
+      - name: Export image digest
+        id: export
+        run: |
+          DIGEST="${{ steps.build.outputs.digest }}"
+          echo "digest=$DIGEST" >> $GITHUB_OUTPUT
+          echo "Image digest for ${{ matrix.service }}: $DIGEST"
+
+          mkdir -p artifacts
+          echo "$DIGEST" > artifacts/digest.txt
+          echo "${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_PREFIX }}-${{ matrix.service }}@$DIGEST" > artifacts/image-ref.txt
+
+      # SECURITY GATE: Trivy vulnerability scan (SARIF for Security tab)
+      - name: Run Trivy vulnerability scanner (SARIF)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_PREFIX }}-${{ matrix.service }}@${{ steps.build.outputs.digest }}
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH,MEDIUM,LOW'
+          vuln-type: 'os,library'
+          scanners: 'vuln,secret,config,misconfig'
+          ignore-unfixed: false
+
+      - name: Upload Trivy SARIF to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-results.sarif
+          category: trivy-${{ matrix.service }}
+
+      # SECURITY GATE: Fail on HIGH/CRITICAL vulnerabilities
+      - name: Run Trivy scan - FAIL on HIGH/CRITICAL
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_PREFIX }}-${{ matrix.service }}@${{ steps.build.outputs.digest }}
+          format: 'table'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '1'
+          ignore-unfixed: false
+          timeout: '10m'
+
+      # SECURITY GATE: Generate SBOM (SPDX format)
+      - name: Generate SBOM (SPDX)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_PREFIX }}-${{ matrix.service }}@${{ steps.build.outputs.digest }}
+          format: 'spdx-json'
+          output: 'sbom-spdx.json'
+
+      # SECURITY GATE: Generate SBOM (CycloneDX format)
+      - name: Generate SBOM (CycloneDX)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_PREFIX }}-${{ matrix.service }}@${{ steps.build.outputs.digest }}
+          format: 'cyclonedx'
+          output: 'sbom-cyclonedx.json'
+
+      - name: Upload SBOM artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-${{ matrix.service }}
+          path: |
+            sbom-spdx.json
+            sbom-cyclonedx.json
+          retention-days: 90
+
+      # Additional security check: Grype scanner
+      - name: Install Grype
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh -s -- -b /usr/local/bin
+
+      - name: Run Grype vulnerability scan
+        run: |
+          grype ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_PREFIX }}-${{ matrix.service }}@${{ steps.build.outputs.digest }} \
+            --fail-on high \
+            --output table
+
+      - name: Upload digest and image ref
+        uses: actions/upload-artifact@v4
+        with:
+          name: digest-${{ matrix.service }}
+          path: artifacts/
+          retention-days: 90
+
+  # SECURITY GATE 2: Sign images with Cosign (keyless)
+  sign-images:
+    name: Sign Image - ${{ matrix.service }}
+    runs-on: ubuntu-latest
+    needs: [generate-metadata, build-scan-push]
+    if: needs.generate-metadata.outputs.should_sign == 'true'
+    permissions:
+      contents: read
+      id-token: write  # Required for keyless signing
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - web
+          - auth-service
+          - user-service
+          - job-service
+          - resume-service
+          - notification-service
+          - auto-apply-service
+          - analytics-service
+          - ai-service
+          - orchestrator-service
+          - payment-service
+    steps:
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v3
+        with:
+          cosign-release: 'v2.2.2'
+
+      - name: Azure Login with OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Get ACR token
+        id: acr-token
+        run: |
+          TOKEN=$(az acr login --name applyforusacr --expose-token --output tsv --query accessToken)
+          echo "::add-mask::$TOKEN"
+          echo "token=$TOKEN" >> $GITHUB_OUTPUT
+
+      - name: Log in to ACR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.ACR_LOGIN_SERVER }}
+          username: 00000000-0000-0000-0000-000000000000
+          password: ${{ steps.acr-token.outputs.token }}
+
+      - name: Download digest artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: digest-${{ matrix.service }}
+          path: artifacts
+
+      - name: Sign container image with Cosign (keyless)
+        run: |
+          DIGEST=$(cat artifacts/digest.txt)
+          IMAGE_REF="${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_PREFIX }}-${{ matrix.service }}@${DIGEST}"
+
+          echo "Signing image: ${IMAGE_REF}"
+
+          # Sign with keyless (OIDC)
+          cosign sign --yes \
+            --oidc-issuer=https://token.actions.githubusercontent.com \
+            "${IMAGE_REF}"
+
+          echo "✅ Image signed successfully"
+
+      - name: Verify signature
+        run: |
+          DIGEST=$(cat artifacts/digest.txt)
+          IMAGE_REF="${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_PREFIX }}-${{ matrix.service }}@${DIGEST}"
+
+          echo "Verifying signature for: ${IMAGE_REF}"
+
+          # Verify signature
+          cosign verify \
+            --certificate-identity-regexp="https://github.com/${{ github.repository }}/*" \
+            --certificate-oidc-issuer=https://token.actions.githubusercontent.com \
+            "${IMAGE_REF}"
+
+          echo "✅ Signature verified successfully"
+
+      - name: Generate signature attestation
+        run: |
+          DIGEST=$(cat artifacts/digest.txt)
+          IMAGE_REF="${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_PREFIX }}-${{ matrix.service }}@${DIGEST}"
+
+          # Create attestation
+          echo "Creating signature attestation..."
+          mkdir -p attestations
+
+          cat > attestations/signature.json <<EOF
+          {
+            "image": "${IMAGE_REF}",
+            "digest": "${DIGEST}",
+            "signed_by": "GitHub Actions",
+            "repository": "${{ github.repository }}",
+            "workflow": "${{ github.workflow }}",
+            "run_id": "${{ github.run_id }}",
+            "sha": "${{ github.sha }}",
+            "ref": "${{ github.ref }}",
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "certificate_identity": "https://github.com/${{ github.repository }}/.github/workflows/container-build-sign-scan.yml@${{ github.ref }}"
+          }
+          EOF
+
+          cat attestations/signature.json
+
+      - name: Upload signature attestation
+        uses: actions/upload-artifact@v4
+        with:
+          name: signature-${{ matrix.service }}
+          path: attestations/
+          retention-days: 90
+
+  # SECURITY GATE 3: Verify all security requirements
+  security-verification:
+    name: Security Gate Verification
+    runs-on: ubuntu-latest
+    needs: [generate-metadata, build-scan-push, sign-images]
+    if: always()
+    steps:
+      - name: Download all SBOM artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: sbom-*
+          path: all-sboms
+          merge-multiple: true
+
+      - name: Download all signature attestations
+        if: needs.generate-metadata.outputs.should_sign == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          pattern: signature-*
+          path: all-signatures
+          merge-multiple: true
+
+      - name: Verify security gates
+        id: verify
+        run: |
+          echo "## Security Gates Verification" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Check build status
+          if [ "${{ needs.build-scan-push.result }}" == "success" ]; then
+            echo "✅ **GATE 1: Vulnerability Scanning** - PASSED" >> $GITHUB_STEP_SUMMARY
+            echo "   - All images scanned with Trivy and Grype" >> $GITHUB_STEP_SUMMARY
+            echo "   - No HIGH/CRITICAL vulnerabilities found" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **GATE 1: Vulnerability Scanning** - FAILED" >> $GITHUB_STEP_SUMMARY
+            echo "   - HIGH/CRITICAL vulnerabilities detected" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Check SBOM generation
+          SBOM_COUNT=$(find all-sboms -name "sbom-*.json" | wc -l)
+          if [ "$SBOM_COUNT" -gt 0 ]; then
+            echo "✅ **GATE 2: SBOM Generation** - PASSED" >> $GITHUB_STEP_SUMMARY
+            echo "   - Generated $SBOM_COUNT SBOM files (SPDX and CycloneDX)" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **GATE 2: SBOM Generation** - FAILED" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Check image signing
+          if [ "${{ needs.generate-metadata.outputs.should_sign }}" == "true" ]; then
+            if [ "${{ needs.sign-images.result }}" == "success" ]; then
+              SIG_COUNT=$(find all-signatures -name "signature.json" 2>/dev/null | wc -l)
+              echo "✅ **GATE 3: Image Signing** - PASSED" >> $GITHUB_STEP_SUMMARY
+              echo "   - All images signed with Cosign (keyless)" >> $GITHUB_STEP_SUMMARY
+              echo "   - Generated $SIG_COUNT signature attestations" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "❌ **GATE 3: Image Signing** - FAILED" >> $GITHUB_STEP_SUMMARY
+              exit 1
+            fi
+          else
+            echo "⏭️  **GATE 3: Image Signing** - SKIPPED (not main branch)" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Build Information" >> $GITHUB_STEP_SUMMARY
+          echo "- **Version:** ${{ needs.generate-metadata.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **SHA Image Tag:** ${{ needs.generate-metadata.outputs.image_tag_sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Version Image Tag:** ${{ needs.generate-metadata.outputs.image_tag_version }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Build Date:** ${{ needs.generate-metadata.outputs.build_date }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Git SHA:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Immutable Deployment Strategy" >> $GITHUB_STEP_SUMMARY
+          echo "✅ All images built with immutable tags (sha-based)" >> $GITHUB_STEP_SUMMARY
+          echo "✅ No mutable 'latest' tags used" >> $GITHUB_STEP_SUMMARY
+          echo "✅ One build = One digest = One release across all environments" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "🎉 **All security gates passed! Images are ready for deployment.**" >> $GITHUB_STEP_SUMMARY
+
+      - name: Create security report
+        run: |
+          cat > security-report.md <<'EOF'
+          # Security Scan Report
+
+          **Build:** ${{ github.run_number }}
+          **Date:** ${{ needs.generate-metadata.outputs.build_date }}
+          **Version:** ${{ needs.generate-metadata.outputs.version }}
+
+          ## Security Gates Status
+
+          | Gate | Status | Description |
+          |------|--------|-------------|
+          | Vulnerability Scanning | ${{ needs.build-scan-push.result == 'success' && '✅ PASS' || '❌ FAIL' }} | Trivy + Grype scans |
+          | SBOM Generation | ✅ PASS | SPDX + CycloneDX formats |
+          | Image Signing | ${{ needs.sign-images.result == 'success' && '✅ PASS' || '⏭️ SKIP' }} | Cosign keyless signing |
+
+          ## Compliance
+
+          - ✅ No HIGH/CRITICAL vulnerabilities
+          - ✅ SBOM generated for all images
+          - ${{ needs.generate-metadata.outputs.should_sign == 'true' && '✅' || '⏭️' }} Images cryptographically signed
+          - ✅ Supply chain security enforced
+
+          ## Next Steps
+
+          Images are approved for deployment to:
+          - Development: Automatic
+          - Staging: Requires approval
+          - Production: Requires approval + signature verification
+          EOF
+
+          cat security-report.md
+
+      - name: Upload security report
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-report
+          path: security-report.md
+          retention-days: 90
+
+      - name: Fail if security gates not met
+        if: needs.build-scan-push.result != 'success' || (needs.generate-metadata.outputs.should_sign == 'true' && needs.sign-images.result != 'success')
+        run: |
+          echo "❌ Security gates not met. Deployment blocked."
+          exit 1

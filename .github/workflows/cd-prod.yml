@@ -1,5 +1,12 @@
 name: CD - Deploy to Production
 
+# Required GitHub Secrets:
+# - AZURE_CREDENTIALS: Azure service principal credentials (JSON format)
+# - ACR_USERNAME: Azure Container Registry service principal username
+# - ACR_PASSWORD: Azure Container Registry service principal password
+# - SLACK_WEBHOOK_URL: Slack webhook URL for deployment notifications (optional)
+# These secrets should be configured in the repository settings under Settings > Secrets and variables > Actions
+
 on:
   push:
     tags:
@@ -261,20 +268,17 @@ jobs:
           # Check current pod status
           kubectl get pods -n ${{ env.K8S_NAMESPACE }}
 
-      - name: Sync production secrets
+      - name: Verify Azure Key Vault CSI Driver
         run: |
-          kubectl create secret generic app-secrets \
-            --from-literal=JWT_SECRET="${{ secrets.JWT_SECRET }}" \
-            --from-literal=JWT_REFRESH_SECRET="${{ secrets.JWT_REFRESH_SECRET }}" \
-            --from-literal=DATABASE_URL="${{ secrets.DATABASE_URL_PROD }}" \
-            --from-literal=REDIS_URL="${{ secrets.REDIS_URL_PROD }}" \
-            --from-literal=STRIPE_SECRET_KEY="${{ secrets.STRIPE_SECRET_KEY_PROD }}" \
-            --from-literal=STRIPE_WEBHOOK_SECRET="${{ secrets.STRIPE_WEBHOOK_SECRET }}" \
-            --from-literal=OPENAI_API_KEY="${{ secrets.OPENAI_API_KEY }}" \
-            --from-literal=SENDGRID_API_KEY="${{ secrets.SENDGRID_API_KEY }}" \
-            --from-literal=APPLICATIONINSIGHTS_CONNECTION_STRING="${{ secrets.APPLICATIONINSIGHTS_CONNECTION_STRING }}" \
-            --namespace=${{ env.K8S_NAMESPACE }} \
-            --dry-run=client -o yaml | kubectl apply -f -
+          echo "Verifying Azure Key Vault CSI Driver is installed..."
+          kubectl get pods -n kube-system -l app=secrets-store-csi-driver || echo "⚠️ CSI Driver not found"
+
+          echo "Verifying SecretProviderClass exists..."
+          kubectl get secretproviderclass -n ${{ env.K8S_NAMESPACE }} applyforus-azure-keyvault || \
+            echo "⚠️ SecretProviderClass not found - secrets will not sync"
+
+          echo "Note: All secrets are managed in Azure Key Vault, not in GitHub Actions secrets"
+          echo "Services will automatically sync secrets via CSI Driver on pod startup"
 
       - name: Deploy backend services (rolling update)
         id: deploy-backend

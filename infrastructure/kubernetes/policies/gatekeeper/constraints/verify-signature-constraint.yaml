@@ -1,0 +1,30 @@
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sVerifyImageSignature
+metadata:
+  name: verify-image-signatures
+  annotations:
+    description: "Require all production images to be signed with Cosign"
+spec:
+  enforcementAction: dryrun  # Start with dryrun, change to deny after validation
+  match:
+    kinds:
+      - apiGroups: [""]
+        kinds: ["Pod"]
+      - apiGroups: ["apps"]
+        kinds: ["Deployment", "StatefulSet", "DaemonSet"]
+      - apiGroups: ["batch"]
+        kinds: ["Job", "CronJob"]
+    namespaces:
+      - applyforus  # Only enforce in production
+    excludedNamespaces:
+      - kube-system
+      - kube-public
+      - kube-node-lease
+      - gatekeeper-system
+      - cert-manager
+      - ingress-nginx
+  parameters:
+    requireSignature: true
+    exemptImages:
+      - "mcr.microsoft.com/*"  # Exempt Microsoft images
+      - "quay.io/*"  # Exempt trusted third-party registries if needed

@@ -25,49 +25,7 @@ import { MatchScoreDto, MatchScoreResponseDto } from './dto/match-score.dto';
 import { InterviewQuestionsResponseDto } from './dto/interview-questions.dto';
 import { SalaryPredictionDto, SalaryPredictionResponseDto } from './dto/salary-prediction.dto';
 import { ReportJobDto, ReportJobResponseDto } from './dto/report-job.dto';
-import { Injectable, CanActivate, ExecutionContext, UnauthorizedException } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import { ConfigService } from '@nestjs/config';
-
-/**
- * JWT Authentication Guard - Validates Bearer tokens on protected endpoints
- * SECURITY FIX: Replaced mock AuthGuard that provided NO protection
- */
-@Injectable()
-class JwtAuthGuard implements CanActivate {
-  constructor(
-    private jwtService: JwtService,
-    private configService: ConfigService,
-  ) {}
-
-  async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest();
-    const token = this.extractTokenFromHeader(request);
-
-    if (!token) {
-      throw new UnauthorizedException('Missing authentication token');
-    }
-
-    try {
-      const payload = await this.jwtService.verifyAsync(token, {
-        secret: this.configService.get<string>('JWT_SECRET'),
-      });
-      request['user'] = payload;
-    } catch {
-      throw new UnauthorizedException('Invalid or expired token');
-    }
-
-    return true;
-  }
-
-  private extractTokenFromHeader(request: any): string | undefined {
-    const [type, token] = request.headers.authorization?.split(' ') ?? [];
-    return type === 'Bearer' ? token : undefined;
-  }
-}
-
-// Factory function for @UseGuards decorator compatibility
-const AuthGuard = () => JwtAuthGuard;
+import { JwtAuthGuard } from '../../common/guards';
 
 @ApiTags('Jobs')
 @Controller('jobs')
@@ -78,61 +36,61 @@ export class JobsController {
   @ApiOperation({ summary: 'Search jobs with filters' })
   @ApiResponse({ status: 200, type: PaginatedJobsResponseDto })
   async searchJobs(@Query() searchDto: SearchJobsDto, @Request() req?: any): Promise<PaginatedJobsResponseDto> {
-    const userId = req?.user?.id;
+    const userId = req?.user?.sub;
     return this.jobsService.searchJobs(searchDto, userId);
   }
 
   @Get('recommended')
-  @UseGuards(AuthGuard())
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Get recommended jobs for user' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   async getRecommendedJobs(@Request() req: any, @Query('page') page?: number, @Query('limit') limit?: number) {
-    return this.jobsService.getRecommendedJobs(req.user.id, page, limit);
+    return this.jobsService.getRecommendedJobs(req.user.sub, page, limit);
   }
 
   @Get('saved')
-  @UseGuards(AuthGuard())
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Get saved jobs' })
   async getSavedJobs(@Request() req: any, @Query('page') page?: number, @Query('limit') limit?: number) {
-    return this.jobsService.getSavedJobs(req.user.id, page, limit);
+    return this.jobsService.getSavedJobs(req.user.sub, page, limit);
   }
 
   @Post('saved')
-  @UseGuards(AuthGuard())
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Save a job' })
   async saveJob(@Body() body: { jobId: string; notes?: string; tags?: string[] }, @Request() req: any) {
     const { jobId, ...saveJobDto } = body;
-    return this.jobsService.saveJob(req.user.id, jobId, saveJobDto);
+    return this.jobsService.saveJob(req.user.sub, jobId, saveJobDto);
   }
 
   @Delete('saved/:id')
-  @UseGuards(AuthGuard())
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Unsave a job' })
   async unsaveJob(@Param('id') id: string, @Request() req: any) {
-    await this.jobsService.unsaveJob(req.user.id, id);
+    await this.jobsService.unsaveJob(req.user.sub, id);
     return { message: 'Job removed from saved jobs' };
   }
 
   @Patch('saved/:id')
-  @UseGuards(AuthGuard())
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Update saved job' })
   async updateSavedJob(@Param('id') id: string, @Body() updateDto: UpdateSavedJobDto, @Request() req: any) {
-    return this.jobsService.updateSavedJob(req.user.id, id, updateDto);
+    return this.jobsService.updateSavedJob(req.user.sub, id, updateDto);
   }
 
   @Post('match-score')
-  @UseGuards(AuthGuard())
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Calculate match score' })
   @ApiResponse({ status: 200, type: MatchScoreResponseDto })
   async getMatchScore(@Body() matchScoreDto: MatchScoreDto, @Request() req: any): Promise<MatchScoreResponseDto> {
-    return this.jobsService.calculateMatchScore(matchScoreDto.jobId, matchScoreDto.resumeId, req.user.id);
+    return this.jobsService.calculateMatchScore(matchScoreDto.jobId, matchScoreDto.resumeId, req.user.sub);
   }
 
   @Post('salary-prediction')
@@ -147,7 +105,7 @@ export class JobsController {
   @ApiParam({ name: 'id', description: 'Job ID' })
   @ApiResponse({ status: 200, type: JobResponseDto })
   async getJobById(@Param('id') id: string, @Request() req?: any): Promise<JobResponseDto> {
-    const userId = req?.user?.id;
+    const userId = req?.user?.sub;
     return this.jobsService.getJobById(id, userId);
   }
 
@@ -167,13 +125,13 @@ export class JobsController {
   }
 
   @Post(':id/report')
-  @UseGuards(AuthGuard())
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Report a job' })
   @ApiParam({ name: 'id', description: 'Job ID' })
   @ApiResponse({ status: 200, type: ReportJobResponseDto })
   async reportJob(@Param('id') id: string, @Body() reportJobDto: ReportJobDto, @Request() req: any): Promise<ReportJobResponseDto> {
-    return this.jobsService.reportJob(id, reportJobDto, req.user.id);
+    return this.jobsService.reportJob(id, reportJobDto, req.user.sub);
   }
 
   @Get(':id/reports')
@@ -200,13 +158,13 @@ export class JobsController {
   }
 
   @Get(':id/has-reported')
-  @UseGuards(AuthGuard())
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Check if user has reported this job' })
   @ApiParam({ name: 'id', description: 'Job ID' })
   @ApiResponse({ status: 200, description: 'Whether the user has reported this job' })
   async hasUserReportedJob(@Param('id') id: string, @Request() req: any): Promise<{ hasReported: boolean }> {
-    const hasReported = await this.jobsService.hasUserReportedJob(req.user.id, id);
+    const hasReported = await this.jobsService.hasUserReportedJob(req.user.sub, id);
     return { hasReported };
   }
 }

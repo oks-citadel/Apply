@@ -111,6 +111,9 @@ jobs:
           - resume-service
           - notification-service
           - auto-apply-service
+          - orchestrator-service
+          - payment-service
+          - analytics-service
 
     services:
       postgres:

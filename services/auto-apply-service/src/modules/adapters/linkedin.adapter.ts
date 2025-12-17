@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Page } from 'playwright';
+import type { Page } from 'playwright';
 import { BaseATSAdapter, ApplicationData, ApplicationResult } from './base.adapter';
 import { BrowserService } from '../browser/browser.service';
 import { FormMappingService } from '../form-mapping/form-mapping.service';

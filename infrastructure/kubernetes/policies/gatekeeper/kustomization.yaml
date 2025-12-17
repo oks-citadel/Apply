@@ -1,0 +1,35 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+metadata:
+  name: gatekeeper-policies
+  annotations:
+    description: "OPA Gatekeeper security policies for ApplyForUs AKS cluster"
+
+# Constraint Templates (deploy first)
+resources:
+  # Templates
+  - constraint-templates/allowed-repos-template.yaml
+  - constraint-templates/block-latest-tag-template.yaml
+  - constraint-templates/psp-no-privileged-template.yaml
+  - constraint-templates/require-run-as-nonroot-template.yaml
+  - constraint-templates/require-resources-template.yaml
+  - constraint-templates/verify-image-signature-template.yaml
+
+  # Constraints (deploy after templates)
+  - constraints/acr-allowlist-constraint.yaml
+  - constraints/block-latest-tag-constraint.yaml
+  - constraints/no-privileged-constraint.yaml
+  - constraints/run-as-nonroot-constraint.yaml
+  - constraints/require-resources-constraint.yaml
+  - constraints/verify-signature-constraint.yaml
+
+commonLabels:
+  managed-by: kustomize
+  policy-framework: gatekeeper
+  security-layer: admission-control
+
+commonAnnotations:
+  documentation: "https://github.com/your-org/Job-Apply-Platform/tree/main/infrastructure/kubernetes/policies"
+  contact: "security@applyforus.com"
+  deployed-by: "security-team"

@@ -17,7 +17,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { NormalizedJob } from './entities/normalized-job.entity';
 import { EmployerProfile } from './entities/employer-profile.entity';
-import { JobReport } from './entities/job-report.entity';
+import { JobReport, ReportSeverity, ReportStatus } from './entities/job-report.entity';
 import {
   NormalizeJobDto,
   BatchNormalizeJobsDto,
@@ -171,11 +171,11 @@ export class NormalizationController {
       reporter_id: dto.reporter_id,
       reporter_email: dto.reporter_email,
       report_type: dto.report_type,
-      severity: dto.severity || 'medium',
+      severity: dto.severity || ReportSeverity.MEDIUM,
       description: dto.description,
       evidence_urls: dto.evidence_urls || [],
-      status: 'pending',
-    });
+      status: ReportStatus.PENDING,
+    } as Partial<JobReport>);
 
     const saved = await this.jobReportRepository.save(report);
 
