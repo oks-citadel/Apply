@@ -100,6 +100,13 @@ export class JobsController {
     return this.jobsService.predictSalary(salaryPredictionDto);
   }
 
+  @Get('health')
+  @ApiOperation({ summary: 'Health check for jobs module' })
+  @ApiResponse({ status: 200, description: 'Jobs module is healthy' })
+  async getHealth() {
+    return { status: 'ok', module: 'jobs', timestamp: new Date().toISOString() };
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get job by ID' })
   @ApiParam({ name: 'id', description: 'Job ID' })

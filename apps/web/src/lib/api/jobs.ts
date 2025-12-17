@@ -13,16 +13,68 @@ import type {
   UpdateReportStatusDto,
 } from '@/types/job';
 
+// Transform backend response to frontend format
+interface BackendJobsResponse {
+  data: any[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    total_pages: number;
+    has_next: boolean;
+    has_prev: boolean;
+  };
+}
+
+const transformJobsResponse = (response: BackendJobsResponse): JobSearchResponse => ({
+  jobs: response.data.map(job => ({
+    id: job.id,
+    title: job.title,
+    company: job.company_name || job.company?.name || 'Unknown Company',
+    location: job.location || 'Remote',
+    locationType: job.remote_type === 'full_remote' ? 'remote' : job.remote_type === 'hybrid' ? 'hybrid' : 'onsite',
+    salary: job.salary_min || job.salary_max ? {
+      min: job.salary_min || 0,
+      max: job.salary_max || 0,
+      currency: job.salary_currency || 'USD',
+      period: job.salary_period || 'yearly',
+    } : undefined,
+    description: job.description || '',
+    requirements: job.requirements || [],
+    responsibilities: [],
+    benefits: job.benefits || [],
+    skills: job.skills || [],
+    experienceLevel: job.experience_level || 'mid',
+    employmentType: job.employment_type || 'full-time',
+    industry: job.industry || 'Technology',
+    companyLogo: job.company_logo_url || job.company?.logo_url,
+    companyWebsite: job.company?.website,
+    applyUrl: job.application_url,
+    source: job.source || 'direct',
+    postedAt: job.posted_at || job.created_at,
+    expiresAt: job.expires_at,
+    isSaved: job.saved || false,
+    isReported: false,
+    matchScore: job.match_score,
+    createdAt: job.created_at,
+    updatedAt: job.updated_at,
+  })),
+  total: response.pagination.total,
+  page: response.pagination.page,
+  limit: response.pagination.limit,
+  hasMore: response.pagination.has_next,
+});
+
 export const jobsApi = {
   /**
    * Search jobs with filters
    */
   searchJobs: async (filters: JobSearchFilters): Promise<JobSearchResponse> => {
     try {
-      const response = await apiClient.get<JobSearchResponse>('/jobs/search', {
+      const response = await apiClient.get<BackendJobsResponse>('/jobs/search', {
         params: filters,
       });
-      return response.data;
+      return transformJobsResponse(response.data);
     } catch (error) {
       throw handleApiError(error);
     }
@@ -33,8 +85,41 @@ export const jobsApi = {
    */
   getJob: async (id: string): Promise<Job> => {
     try {
-      const response = await apiClient.get<Job>(`/jobs/${id}`);
-      return response.data;
+      const response = await apiClient.get<any>(`/jobs/${id}`);
+      const job = response.data;
+      // Transform single job from backend format
+      return {
+        id: job.id,
+        title: job.title,
+        company: job.company_name || job.company?.name || 'Unknown Company',
+        location: job.location || 'Remote',
+        locationType: job.remote_type === 'full_remote' ? 'remote' : job.remote_type === 'hybrid' ? 'hybrid' : 'onsite',
+        salary: job.salary_min || job.salary_max ? {
+          min: job.salary_min || 0,
+          max: job.salary_max || 0,
+          currency: job.salary_currency || 'USD',
+          period: job.salary_period || 'yearly',
+        } : undefined,
+        description: job.description || '',
+        requirements: job.requirements || [],
+        responsibilities: [],
+        benefits: job.benefits || [],
+        skills: job.skills || [],
+        experienceLevel: job.experience_level || 'mid',
+        employmentType: job.employment_type || 'full-time',
+        industry: job.industry || 'Technology',
+        companyLogo: job.company_logo_url || job.company?.logo_url,
+        companyWebsite: job.company?.website,
+        applyUrl: job.application_url,
+        source: job.source || 'direct',
+        postedAt: job.posted_at || job.created_at,
+        expiresAt: job.expires_at,
+        isSaved: job.saved || false,
+        isReported: false,
+        matchScore: job.match_score,
+        createdAt: job.created_at,
+        updatedAt: job.updated_at,
+      };
     } catch (error) {
       throw handleApiError(error);
     }
@@ -48,10 +133,15 @@ export const jobsApi = {
     resumeId?: string;
   }): Promise<RecommendedJobsResponse> => {
     try {
-      const response = await apiClient.get<RecommendedJobsResponse>('/jobs/recommended', {
+      const response = await apiClient.get<BackendJobsResponse>('/jobs/recommended', {
         params,
       });
-      return response.data;
+      // Transform backend response to RecommendedJobsResponse format
+      const transformed = transformJobsResponse(response.data);
+      return {
+        jobs: transformed.jobs,
+        reasons: {},
+      };
     } catch (error) {
       throw handleApiError(error);
     }
@@ -93,13 +183,21 @@ export const jobsApi = {
     tags?: string[];
   }): Promise<{ savedJobs: SavedJob[]; total: number; page: number; limit: number }> => {
     try {
-      const response = await apiClient.get<{
-        savedJobs: SavedJob[];
-        total: number;
-        page: number;
-        limit: number;
-      }>('/jobs/saved', { params });
-      return response.data;
+      const response = await apiClient.get<BackendJobsResponse>('/jobs/saved', { params });
+      // Transform backend response
+      const transformed = transformJobsResponse(response.data);
+      return {
+        savedJobs: transformed.jobs.map(job => ({
+          id: job.id,
+          jobId: job.id,
+          userId: '',
+          job,
+          savedAt: job.createdAt,
+        })),
+        total: transformed.total,
+        page: transformed.page,
+        limit: transformed.limit,
+      };
     } catch (error) {
       throw handleApiError(error);
     }
