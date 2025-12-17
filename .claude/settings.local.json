@@ -642,7 +642,9 @@
       "Bash(\"/c/Program Files/Docker/Docker/resources/bin/docker.exe\" build -t applyforusacr.azurecr.io/applyai-web:v2.5.0 -f apps/web/Dockerfile \"C:\\Users\\kogun\\OneDrive\\Documents\\Job-Apply-Platform\")",
       "Bash(AZURE_DEVOPS_EXT_PAT=\"AYhpMYbwfVyMuLVU54Xx4H7lRi6a3ZvPTf7z8yT6k6v5yXoeX9nlJQQJ99BLACAAAAAAAAAAAAASAZDO3hzv\" az pipelines runs list --org https://dev.azure.com/citadelcloudmanagement --project ApplyPlatform --top 3 --query \"[].{ID:id,Number:buildNumber,Status:status,Result:result,QueueTime:queueTime}\" -o table)",
       "Bash(AZURE_DEVOPS_EXT_PAT=\"AYhpMYbwfVyMuLVU54Xx4H7lRi6a3ZvPTf7z8yT6k6v5yXoeX9nlJQQJ99BLACAAAAAAAAAAAAASAZDO3hzv\" az pipelines build show --id 1001 --org https://dev.azure.com/citadelcloudmanagement --project ApplyPlatform --query \"{id:id,status:status,result:result,startTime:startTime}\" -o json)",
-      "Bash(AZURE_DEVOPS_EXT_PAT=\"AYhpMYbwfVyMuLVU54Xx4H7lRi6a3ZvPTf7z8yT6k6v5yXoeX9nlJQQJ99BLACAAAAAAAAAAAAASAZDO3hzv\" az pipelines runs show:*)"
+      "Bash(AZURE_DEVOPS_EXT_PAT=\"AYhpMYbwfVyMuLVU54Xx4H7lRi6a3ZvPTf7z8yT6k6v5yXoeX9nlJQQJ99BLACAAAAAAAAAAAAASAZDO3hzv\" az pipelines runs show:*)",
+      "Bash(git log:*)",
+      "Bash(git merge-base:*)"
     ],
     "deny": [],
     "ask": []
