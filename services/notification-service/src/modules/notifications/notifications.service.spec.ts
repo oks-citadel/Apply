@@ -1,8 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { getQueueToken } from '@nestjs/bull';
 import { Repository } from 'typeorm';
 import { NotificationsService } from './notifications.service';
 import { Notification, NotificationStatus, NotificationType } from './entities/notification.entity';
+import { NotificationPreferences } from './entities/notification-preferences.entity';
 import { EmailService } from '../email/email.service';
 
 describe('NotificationsService', () => {
@@ -22,6 +24,20 @@ describe('NotificationsService', () => {
     count: jest.fn(),
   };
 
+  const mockPreferencesRepository = {
+    findOne: jest.fn(),
+    create: jest.fn(),
+    save: jest.fn(),
+  };
+
+  const mockEmailQueue = {
+    add: jest.fn(),
+  };
+
+  const mockNotificationQueue = {
+    add: jest.fn(),
+  };
+
   const mockEmailService = {
     sendEmail: jest.fn(),
     sendTemplatedEmail: jest.fn(),
@@ -38,6 +54,18 @@ describe('NotificationsService', () => {
         {
           provide: getRepositoryToken(Notification),
           useValue: mockRepository,
+        },
+        {
+          provide: getRepositoryToken(NotificationPreferences),
+          useValue: mockPreferencesRepository,
+        },
+        {
+          provide: getQueueToken('email'),
+          useValue: mockEmailQueue,
+        },
+        {
+          provide: getQueueToken('notifications'),
+          useValue: mockNotificationQueue,
         },
         {
           provide: EmailService,

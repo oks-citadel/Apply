@@ -3,32 +3,66 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { AnalyticsService } from '../analytics.service';
 import { AnalyticsEvent, EventType, EventCategory } from '../entities/analytics-event.entity';
+import { SLAContract } from '../../sla/entities/sla-contract.entity';
 import { CreateEventDto } from '../dto/create-event.dto';
 import { QueryAnalyticsDto, ExportAnalyticsDto } from '../dto/query-analytics.dto';
 
 describe('AnalyticsService', () => {
   let service: AnalyticsService;
   let repository: Repository<AnalyticsEvent>;
+  let mockQueryBuilder: any;
+  let mockSLAQueryBuilder: any;
+
+  // Function to create a fresh query builder mock with chainable methods
+  const createMockQueryBuilder = () => {
+    const qb: any = {
+      select: jest.fn(),
+      addSelect: jest.fn(),
+      where: jest.fn(),
+      andWhere: jest.fn(),
+      groupBy: jest.fn(),
+      orderBy: jest.fn(),
+      skip: jest.fn(),
+      take: jest.fn(),
+      limit: jest.fn(),
+      getRawOne: jest.fn(),
+      getRawMany: jest.fn(),
+      getMany: jest.fn(),
+      getManyAndCount: jest.fn(),
+    };
+    // Make chainable methods return the same object
+    qb.select.mockReturnValue(qb);
+    qb.addSelect.mockReturnValue(qb);
+    qb.where.mockReturnValue(qb);
+    qb.andWhere.mockReturnValue(qb);
+    qb.groupBy.mockReturnValue(qb);
+    qb.orderBy.mockReturnValue(qb);
+    qb.skip.mockReturnValue(qb);
+    qb.take.mockReturnValue(qb);
+    qb.limit.mockReturnValue(qb);
+    return qb;
+  };
+
+  const createMockSLAQueryBuilder = () => {
+    const qb: any = {
+      where: jest.fn(),
+      andWhere: jest.fn(),
+      getMany: jest.fn().mockResolvedValue([]),
+    };
+    qb.where.mockReturnValue(qb);
+    qb.andWhere.mockReturnValue(qb);
+    return qb;
+  };
 
   const mockRepository = {
     create: jest.fn(),
     save: jest.fn(),
     count: jest.fn(),
-    createQueryBuilder: jest.fn(() => ({
-      select: jest.fn().mockReturnThis(),
-      addSelect: jest.fn().mockReturnThis(),
-      where: jest.fn().mockReturnThis(),
-      andWhere: jest.fn().mockReturnThis(),
-      groupBy: jest.fn().mockReturnThis(),
-      orderBy: jest.fn().mockReturnThis(),
-      skip: jest.fn().mockReturnThis(),
-      take: jest.fn().mockReturnThis(),
-      limit: jest.fn().mockReturnThis(),
-      getRawOne: jest.fn(),
-      getRawMany: jest.fn(),
-      getMany: jest.fn(),
-      getManyAndCount: jest.fn(),
-    })),
+    createQueryBuilder: jest.fn(),
+  };
+
+  const mockSLAContractRepository = {
+    createQueryBuilder: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -39,6 +73,10 @@ describe('AnalyticsService', () => {
           provide: getRepositoryToken(AnalyticsEvent),
           useValue: mockRepository,
         },
+        {
+          provide: getRepositoryToken(SLAContract),
+          useValue: mockSLAContractRepository,
+        },
       ],
     }).compile();
 
@@ -46,6 +84,14 @@ describe('AnalyticsService', () => {
     repository = module.get<Repository<AnalyticsEvent>>(
       getRepositoryToken(AnalyticsEvent),
     );
+
+    // Create fresh query builder mocks for each test
+    mockQueryBuilder = createMockQueryBuilder();
+    mockSLAQueryBuilder = createMockSLAQueryBuilder();
+
+    // Wire up the createQueryBuilder to return our mocks
+    mockRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+    mockSLAContractRepository.createQueryBuilder.mockReturnValue(mockSLAQueryBuilder);
   });
 
   afterEach(() => {
@@ -168,8 +214,6 @@ describe('AnalyticsService', () => {
     it('should return dashboard metrics with aggregated data', async () => {
       const query: QueryAnalyticsDto = {};
 
-      const mockQueryBuilder = mockRepository.createQueryBuilder();
-
       mockQueryBuilder.getRawOne
         .mockResolvedValueOnce({ count: '1500' })
         .mockResolvedValueOnce({ count: '45' })
@@ -212,8 +256,6 @@ describe('AnalyticsService', () => {
     it('should handle empty data gracefully', async () => {
       const query: QueryAnalyticsDto = {};
 
-      const mockQueryBuilder = mockRepository.createQueryBuilder();
-
       mockQueryBuilder.getRawOne
         .mockResolvedValueOnce({ count: '0' })
         .mockResolvedValueOnce({ count: '0' })
@@ -238,9 +280,10 @@ describe('AnalyticsService', () => {
         userId: 'user-123',
       };
 
-      const mockQueryBuilder = mockRepository.createQueryBuilder();
-
-      mockQueryBuilder.getRawOne.mockResolvedValue({ count: '1' });
+      mockQueryBuilder.getRawOne
+        .mockResolvedValueOnce({ count: '1' })
+        .mockResolvedValueOnce({ count: '1' })
+        .mockResolvedValueOnce({ avg: '0' });
       mockRepository.count.mockResolvedValue(15);
       mockQueryBuilder.getRawMany.mockResolvedValue([]);
 
@@ -252,9 +295,10 @@ describe('AnalyticsService', () => {
     it('should calculate success rate correctly', async () => {
       const query: QueryAnalyticsDto = {};
 
-      const mockQueryBuilder = mockRepository.createQueryBuilder();
-
-      mockQueryBuilder.getRawOne.mockResolvedValue({ count: '100' });
+      mockQueryBuilder.getRawOne
+        .mockResolvedValueOnce({ count: '100' })
+        .mockResolvedValueOnce({ count: '100' })
+        .mockResolvedValueOnce({ avg: '0' });
       mockRepository.count
         .mockResolvedValueOnce(200)
         .mockResolvedValueOnce(10)
@@ -365,7 +409,6 @@ describe('AnalyticsService', () => {
         },
       ];
 
-      const mockQueryBuilder = mockRepository.createQueryBuilder();
       mockQueryBuilder.getManyAndCount.mockResolvedValue([mockEvents, 100]);
 
       const result = await service.getRecentActivity(query);
@@ -398,7 +441,6 @@ describe('AnalyticsService', () => {
         },
       ];
 
-      const mockQueryBuilder = mockRepository.createQueryBuilder();
       mockQueryBuilder.getManyAndCount.mockResolvedValue([mockEvents, 50]);
 
       const result = await service.getRecentActivity(query);
@@ -425,7 +467,6 @@ describe('AnalyticsService', () => {
         },
       ];
 
-      const mockQueryBuilder = mockRepository.createQueryBuilder();
       mockQueryBuilder.getManyAndCount.mockResolvedValue([mockEvents, 30]);
 
       const result = await service.getRecentActivity(query);
@@ -439,7 +480,6 @@ describe('AnalyticsService', () => {
         limit: 20,
       };
 
-      const mockQueryBuilder = mockRepository.createQueryBuilder();
       mockQueryBuilder.getManyAndCount.mockResolvedValue([[], 100]);
 
       const result = await service.getRecentActivity(query);
@@ -472,7 +512,6 @@ describe('AnalyticsService', () => {
         },
       ];
 
-      const mockQueryBuilder = mockRepository.createQueryBuilder();
       mockQueryBuilder.getManyAndCount.mockResolvedValue([mockEvents, 2]);
 
       const result = await service.getRecentActivity(query);
@@ -505,7 +544,6 @@ describe('AnalyticsService', () => {
         },
       ];
 
-      const mockQueryBuilder = mockRepository.createQueryBuilder();
       mockQueryBuilder.getMany.mockResolvedValue(mockEvents);
 
       const result = await service.exportAnalytics(query);
@@ -531,7 +569,6 @@ describe('AnalyticsService', () => {
         },
       ];
 
-      const mockQueryBuilder = mockRepository.createQueryBuilder();
       mockQueryBuilder.getMany.mockResolvedValue(mockEvents);
 
       const result = await service.exportAnalytics(query);
@@ -549,7 +586,6 @@ describe('AnalyticsService', () => {
         endDate: '2024-01-31T23:59:59Z',
       };
 
-      const mockQueryBuilder = mockRepository.createQueryBuilder();
       mockQueryBuilder.getMany.mockResolvedValue([]);
 
       await service.exportAnalytics(query);
@@ -563,7 +599,6 @@ describe('AnalyticsService', () => {
         format: 'csv',
       };
 
-      const mockQueryBuilder = mockRepository.createQueryBuilder();
       mockQueryBuilder.getMany.mockResolvedValue([]);
 
       const result = await service.exportAnalytics(query);
@@ -576,7 +611,6 @@ describe('AnalyticsService', () => {
         format: 'json',
       };
 
-      const mockQueryBuilder = mockRepository.createQueryBuilder();
       mockQueryBuilder.getMany.mockResolvedValue([]);
 
       await service.exportAnalytics(query);
@@ -589,8 +623,10 @@ describe('AnalyticsService', () => {
     it('should use default date range when not specified', async () => {
       const query: QueryAnalyticsDto = {};
 
-      const mockQueryBuilder = mockRepository.createQueryBuilder();
-      mockQueryBuilder.getRawOne.mockResolvedValue({ count: '0' });
+      mockQueryBuilder.getRawOne
+        .mockResolvedValueOnce({ count: '0' })
+        .mockResolvedValueOnce({ count: '0' })
+        .mockResolvedValueOnce({ avg: '0' });
       mockRepository.count.mockResolvedValue(0);
       mockQueryBuilder.getRawMany.mockResolvedValue([]);
 
@@ -605,8 +641,10 @@ describe('AnalyticsService', () => {
         endDate: '2024-01-31T23:59:59Z',
       };
 
-      const mockQueryBuilder = mockRepository.createQueryBuilder();
-      mockQueryBuilder.getRawOne.mockResolvedValue({ count: '0' });
+      mockQueryBuilder.getRawOne
+        .mockResolvedValueOnce({ count: '0' })
+        .mockResolvedValueOnce({ count: '0' })
+        .mockResolvedValueOnce({ avg: '0' });
       mockRepository.count.mockResolvedValue(0);
       mockQueryBuilder.getRawMany.mockResolvedValue([]);
 

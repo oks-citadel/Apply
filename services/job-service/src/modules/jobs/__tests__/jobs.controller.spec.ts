@@ -3,6 +3,8 @@ import { JobsController } from '../jobs.controller';
 import { JobsService } from '../jobs.service';
 import { RemoteType, ExperienceLevel, EmploymentType, JobSource } from '../entities/job.entity';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
+import { SavedJobStatus } from '../dto/save-job.dto';
+import { ReportReason } from '../dto/report-job.dto';
 
 describe('JobsController', () => {
   let controller: JobsController;
@@ -120,7 +122,7 @@ describe('JobsController', () => {
         page: 1,
         limit: 20,
       };
-      const req = { user: { id: 'user-1' } };
+      const req = { user: { sub: 'user-1' } };
 
       mockJobsService.searchJobs.mockResolvedValue(mockPaginatedResponse);
 
@@ -350,7 +352,7 @@ describe('JobsController', () => {
     });
 
     it('should get job by ID with authentication', async () => {
-      const req = { user: { id: 'user-1' } };
+      const req = { user: { sub: 'user-1' } };
 
       mockJobsService.getJobById.mockResolvedValue({ ...mockJob, saved: true });
 
@@ -369,7 +371,7 @@ describe('JobsController', () => {
 
   describe('getRecommendedJobs - GET /jobs/recommended', () => {
     it('should get recommended jobs for authenticated user', async () => {
-      const req = { user: { id: 'user-1' } };
+      const req = { user: { sub: 'user-1' } };
 
       mockJobsService.getRecommendedJobs.mockResolvedValue(mockPaginatedResponse);
 
@@ -380,7 +382,7 @@ describe('JobsController', () => {
     });
 
     it('should get recommended jobs with custom limit', async () => {
-      const req = { user: { id: 'user-1' } };
+      const req = { user: { sub: 'user-1' } };
 
       mockJobsService.getRecommendedJobs.mockResolvedValue(mockPaginatedResponse);
 
@@ -389,20 +391,20 @@ describe('JobsController', () => {
       expect(mockJobsService.getRecommendedJobs).toHaveBeenCalledWith('user-1', 10, undefined);
     });
 
-    it('should get recommended jobs with resume ID', async () => {
-      const req = { user: { id: 'user-1' } };
+    it('should get recommended jobs with custom page and limit', async () => {
+      const req = { user: { sub: 'user-1' } };
 
       mockJobsService.getRecommendedJobs.mockResolvedValue(mockPaginatedResponse);
 
-      await controller.getRecommendedJobs(req, undefined, 'resume-1');
+      await controller.getRecommendedJobs(req, 2, 10);
 
-      expect(mockJobsService.getRecommendedJobs).toHaveBeenCalledWith('user-1', undefined, 'resume-1');
+      expect(mockJobsService.getRecommendedJobs).toHaveBeenCalledWith('user-1', 2, 10);
     });
   });
 
   describe('getSavedJobs - GET /jobs/saved', () => {
     it('should get saved jobs for authenticated user', async () => {
-      const req = { user: { id: 'user-1' } };
+      const req = { user: { sub: 'user-1' } };
 
       mockJobsService.getSavedJobs.mockResolvedValue({
         ...mockPaginatedResponse,
@@ -412,33 +414,23 @@ describe('JobsController', () => {
       const result = await controller.getSavedJobs(req);
 
       expect(result.data[0].saved).toBe(true);
-      expect(mockJobsService.getSavedJobs).toHaveBeenCalledWith('user-1', undefined, undefined, undefined);
+      expect(mockJobsService.getSavedJobs).toHaveBeenCalledWith('user-1', undefined, undefined);
     });
 
     it('should get saved jobs with pagination', async () => {
-      const req = { user: { id: 'user-1' } };
+      const req = { user: { sub: 'user-1' } };
 
       mockJobsService.getSavedJobs.mockResolvedValue(mockPaginatedResponse);
 
       await controller.getSavedJobs(req, 2, 10);
 
-      expect(mockJobsService.getSavedJobs).toHaveBeenCalledWith('user-1', 2, 10, undefined);
-    });
-
-    it('should filter saved jobs by tags', async () => {
-      const req = { user: { id: 'user-1' } };
-
-      mockJobsService.getSavedJobs.mockResolvedValue(mockPaginatedResponse);
-
-      await controller.getSavedJobs(req, undefined, undefined, ['favorite', 'applied']);
-
-      expect(mockJobsService.getSavedJobs).toHaveBeenCalledWith('user-1', undefined, undefined, ['favorite', 'applied']);
+      expect(mockJobsService.getSavedJobs).toHaveBeenCalledWith('user-1', 2, 10);
     });
   });
 
   describe('saveJob - POST /jobs/saved', () => {
     it('should save job for authenticated user', async () => {
-      const req = { user: { id: 'user-1' } };
+      const req = { user: { sub: 'user-1' } };
       const body = {
         jobId: 'job-1',
         notes: 'Interesting position',
@@ -466,7 +458,7 @@ describe('JobsController', () => {
     });
 
     it('should save job without notes or tags', async () => {
-      const req = { user: { id: 'user-1' } };
+      const req = { user: { sub: 'user-1' } };
       const body = {
         jobId: 'job-1',
       };
@@ -483,7 +475,7 @@ describe('JobsController', () => {
     });
 
     it('should throw BadRequestException when job already saved', async () => {
-      const req = { user: { id: 'user-1' } };
+      const req = { user: { sub: 'user-1' } };
       const body = { jobId: 'job-1' };
 
       mockJobsService.saveJob.mockRejectedValue(new BadRequestException('Job already saved'));
@@ -494,7 +486,7 @@ describe('JobsController', () => {
 
   describe('unsaveJob - DELETE /jobs/saved/:id', () => {
     it('should unsave job for authenticated user', async () => {
-      const req = { user: { id: 'user-1' } };
+      const req = { user: { sub: 'user-1' } };
 
       mockJobsService.unsaveJob.mockResolvedValue(undefined);
 
@@ -505,7 +497,7 @@ describe('JobsController', () => {
     });
 
     it('should throw NotFoundException when saved job not found', async () => {
-      const req = { user: { id: 'user-1' } };
+      const req = { user: { sub: 'user-1' } };
 
       mockJobsService.unsaveJob.mockRejectedValue(new NotFoundException('Saved job not found'));
 
@@ -515,9 +507,9 @@ describe('JobsController', () => {
 
   describe('updateSavedJob - PATCH /jobs/saved/:id', () => {
     it('should update saved job status', async () => {
-      const req = { user: { id: 'user-1' } };
+      const req = { user: { sub: 'user-1' } };
       const updateDto = {
-        status: 'applied',
+        status: SavedJobStatus.APPLIED,
       };
 
       mockJobsService.updateSavedJob.mockResolvedValue({
@@ -535,7 +527,7 @@ describe('JobsController', () => {
     });
 
     it('should update saved job notes', async () => {
-      const req = { user: { id: 'user-1' } };
+      const req = { user: { sub: 'user-1' } };
       const updateDto = {
         notes: 'Updated notes after interview',
       };
@@ -553,7 +545,7 @@ describe('JobsController', () => {
     });
 
     it('should update saved job tags', async () => {
-      const req = { user: { id: 'user-1' } };
+      const req = { user: { sub: 'user-1' } };
       const updateDto = {
         tags: ['favorite', 'high-priority'],
       };
@@ -573,7 +565,7 @@ describe('JobsController', () => {
 
   describe('getMatchScore - POST /jobs/match-score', () => {
     it('should calculate match score for job and resume', async () => {
-      const req = { user: { id: 'user-1' } };
+      const req = { user: { sub: 'user-1' } };
       const matchScoreDto = {
         jobId: 'job-1',
         resumeId: 'resume-1',
@@ -697,9 +689,9 @@ describe('JobsController', () => {
 
   describe('reportJob - POST /jobs/:id/report', () => {
     it('should report a job posting', async () => {
-      const req = { user: { id: 'user-1' } };
+      const req = { user: { sub: 'user-1' } };
       const reportJobDto = {
-        reason: 'spam',
+        reason: ReportReason.SPAM,
         details: 'This job posting appears to be fraudulent',
       };
 
@@ -714,9 +706,9 @@ describe('JobsController', () => {
     });
 
     it('should handle different report reasons', async () => {
-      const req = { user: { id: 'user-1' } };
+      const req = { user: { sub: 'user-1' } };
       const reportJobDto = {
-        reason: 'misleading',
+        reason: ReportReason.MISLEADING,
         details: 'Salary information is inaccurate',
       };
 

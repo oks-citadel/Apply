@@ -57,6 +57,14 @@ export const mockUsersService = {
   disableMfa: jest.fn(),
 };
 
+export const mockEmailService = {
+  sendVerificationEmail: jest.fn().mockResolvedValue(undefined),
+  sendPasswordResetEmail: jest.fn().mockResolvedValue(undefined),
+  sendWelcomeEmail: jest.fn().mockResolvedValue(undefined),
+  sendEmail: jest.fn().mockResolvedValue(undefined),
+  resendVerificationEmail: jest.fn().mockResolvedValue(undefined),
+};
+
 export const mockRepository = {
   find: jest.fn(),
   findOne: jest.fn(),

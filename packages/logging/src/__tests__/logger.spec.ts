@@ -26,20 +26,20 @@ jest.mock('applicationinsights', () => ({
     context: { tags: {}, keys: { cloudRole: 'cloudRole', cloudRoleInstance: 'cloudRoleInstance' } },
     commonProperties: {},
     trackTrace: jest.fn(), trackEvent: jest.fn(), trackMetric: jest.fn(), trackDependency: jest.fn(), trackException: jest.fn(),
-    flush: jest.fn((options) => options?.callback?.()),
+    flush: jest.fn((options: { callback?: () => void }) => options?.callback?.()),
   },
   Contracts: { SeverityLevel: { Verbose: 0, Information: 1, Warning: 2, Error: 3 } },
   DistributedTracingModes: { AI_AND_W3C: 2 },
 }));
 
 jest.mock('cls-hooked', () => {
-  const contextData = {};
+  const contextData: Record<string, unknown> = {};
   const mockNamespace = {
-    get: jest.fn((key) => contextData[key]),
-    set: jest.fn((key, value) => { contextData[key] = value; }),
-    run: jest.fn((fn) => fn()),
-    runAndReturn: jest.fn((fn) => fn()),
-    bind: jest.fn((fn) => fn),
+    get: jest.fn((key: string) => contextData[key]),
+    set: jest.fn((key: string, value: unknown) => { contextData[key] = value; }),
+    run: jest.fn((fn: () => unknown) => fn()),
+    runAndReturn: jest.fn((fn: () => unknown) => fn()),
+    bind: jest.fn((fn: unknown) => fn),
     bindEmitter: jest.fn(),
     active: true,
   };
@@ -47,7 +47,7 @@ jest.mock('cls-hooked', () => {
 });
 
 describe('Logger Tests', () => {
-  let logger;
+  let logger: Logger;
   beforeEach(() => {
     jest.clearAllMocks();
     logger = new Logger({ serviceName: 'test', environment: 'test', version: '1.0.0', logLevel: LogLevel.DEBUG });

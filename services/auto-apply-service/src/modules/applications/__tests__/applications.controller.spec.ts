@@ -72,53 +72,15 @@ describe('ApplicationsController - Comprehensive Test Suite', () => {
     expect(controller).toBeDefined();
   });
 
-  describe('Authentication and Authorization', () => {
-    describe('extractUserId', () => {
-      it('should extract user ID from headers', () => {
-        const headers = { 'x-user-id': '123e4567-e89b-12d3-a456-426614174001' };
-        const userId = controller['extractUserId'](headers);
-        expect(userId).toBe('123e4567-e89b-12d3-a456-426614174001');
-      });
-
-      it('should throw BadRequestException if user ID is missing', () => {
-        const headers = {};
-        expect(() => controller['extractUserId'](headers)).toThrow(BadRequestException);
-        expect(() => controller['extractUserId'](headers)).toThrow('User ID is required in headers');
-      });
-
-      it('should throw BadRequestException if user ID is undefined', () => {
-        const headers = { 'x-user-id': undefined };
-        expect(() => controller['extractUserId'](headers)).toThrow(BadRequestException);
-      });
-
-      it('should throw BadRequestException if user ID is null', () => {
-        const headers = { 'x-user-id': null };
-        expect(() => controller['extractUserId'](headers)).toThrow(BadRequestException);
-      });
-
-      it('should throw BadRequestException if user ID is empty string', () => {
-        const headers = { 'x-user-id': '' };
-        expect(() => controller['extractUserId'](headers)).toThrow(BadRequestException);
-      });
-
-      it('should handle headers with multiple properties', () => {
-        const headers = {
-          'x-user-id': '123e4567-e89b-12d3-a456-426614174001',
-          'content-type': 'application/json',
-          'authorization': 'Bearer token',
-        };
-        const userId = controller['extractUserId'](headers);
-        expect(userId).toBe('123e4567-e89b-12d3-a456-426614174001');
-      });
-    });
-  });
+  // Note: Controller uses @User('id') decorator to extract userId from JWT token
+  // The decorator extracts userId before the method is called, so we pass userId string directly
+  const mockUserId = '123e4567-e89b-12d3-a456-426614174001';
 
   describe('Application Submission Flow', () => {
     describe('POST /applications/manual - Submit Manual Application', () => {
       it('should create a manual application successfully', async () => {
-        const headers = { 'x-user-id': '123e4567-e89b-12d3-a456-426614174001' };
         const createDto: CreateApplicationDto = {
-          user_id: '123e4567-e89b-12d3-a456-426614174001',
+          user_id: mockUserId,
           job_id: '123e4567-e89b-12d3-a456-426614174002',
           company_name: 'Test Company',
           position_title: 'Software Engineer',
@@ -132,11 +94,11 @@ describe('ApplicationsController - Comprehensive Test Suite', () => {
 
         mockApplicationsService.logManualApplication.mockResolvedValue(manualApplication);
 
-        const result = await controller.logManualApplication(createDto, headers);
+        const result = await controller.logManualApplication(createDto, mockUserId);
 
         expect(result).toEqual(manualApplication);
         expect(result.auto_applied).toBe(false);
-        expect(createDto.user_id).toBe('123e4567-e89b-12d3-a456-426614174001');
+        expect(createDto.user_id).toBe(mockUserId);
         expect(mockApplicationsService.logManualApplication).toHaveBeenCalledWith(createDto);
       });
 
@@ -153,7 +115,7 @@ describe('ApplicationsController - Comprehensive Test Suite', () => {
 
         mockApplicationsService.logManualApplication.mockResolvedValue(mockApplication);
 
-        const result = await controller.logManualApplication(createDto, headers);
+        const result = await controller.logManualApplication(createDto, mockUserId);
 
         expect(result.resume_id).toBe('123e4567-e89b-12d3-a456-426614174003');
         expect(result.cover_letter_id).toBe('123e4567-e89b-12d3-a456-426614174004');
@@ -169,7 +131,7 @@ describe('ApplicationsController - Comprehensive Test Suite', () => {
 
         mockApplicationsService.logManualApplication.mockResolvedValue(mockApplication);
 
-        await controller.logManualApplication(createDto, headers);
+        await controller.logManualApplication(createDto, mockUserId);
 
         expect(createDto.user_id).toBe('123e4567-e89b-12d3-a456-426614174001');
       });
@@ -201,7 +163,7 @@ describe('ApplicationsController - Comprehensive Test Suite', () => {
 
         mockApplicationsService.findOne.mockResolvedValue(mockApplication);
 
-        const result = await controller.findOne(id, headers);
+        const result = await controller.findOne(id, mockUserId);
 
         expect(result).toEqual(mockApplication);
         expect(result.status).toBe(ApplicationStatus.APPLIED);
@@ -247,7 +209,7 @@ describe('ApplicationsController - Comprehensive Test Suite', () => {
 
         mockApplicationsService.updateStatus.mockResolvedValue(updatedApplication);
 
-        const result = await controller.updateStatus(id, updateStatusDto, headers);
+        const result = await controller.updateStatus(id, updateStatusDto, mockUserId);
 
         expect(result.status).toBe(ApplicationStatus.VIEWED);
         expect(result.response_received_at).toBeDefined();
@@ -267,7 +229,7 @@ describe('ApplicationsController - Comprehensive Test Suite', () => {
           notes: 'Phone screen scheduled for next week',
         });
 
-        const result = await controller.updateStatus(id, updateStatusDto, headers);
+        const result = await controller.updateStatus(id, updateStatusDto, mockUserId);
 
         expect(result.status).toBe(ApplicationStatus.INTERVIEWING);
         expect(result.notes).toBe('Phone screen scheduled for next week');
@@ -287,7 +249,7 @@ describe('ApplicationsController - Comprehensive Test Suite', () => {
           notes: 'Received offer with 120k salary',
         });
 
-        const result = await controller.updateStatus(id, updateStatusDto, headers);
+        const result = await controller.updateStatus(id, updateStatusDto, mockUserId);
 
         expect(result.status).toBe(ApplicationStatus.OFFERED);
       });
@@ -306,7 +268,7 @@ describe('ApplicationsController - Comprehensive Test Suite', () => {
           notes: 'Position filled',
         });
 
-        const result = await controller.updateStatus(id, updateStatusDto, headers);
+        const result = await controller.updateStatus(id, updateStatusDto, mockUserId);
 
         expect(result.status).toBe(ApplicationStatus.REJECTED);
       });
@@ -321,7 +283,7 @@ describe('ApplicationsController - Comprehensive Test Suite', () => {
 
         mockApplicationsService.remove.mockResolvedValue(undefined);
 
-        const result = await controller.remove(id, headers);
+        const result = await controller.remove(id, mockUserId);
 
         expect(result).toEqual({ message: 'Application deleted successfully' });
         expect(mockApplicationsService.remove).toHaveBeenCalledWith(id, '123e4567-e89b-12d3-a456-426614174001');
@@ -594,7 +556,7 @@ describe('ApplicationsController - Comprehensive Test Suite', () => {
 
       mockApplicationsService.findOne.mockResolvedValue(applicationWithTimeline);
 
-      const result = await controller.findOne(id, headers);
+      const result = await controller.findOne(id, mockUserId);
 
       expect(result.applied_at).toBeDefined();
       expect(result.response_received_at).toBeDefined();
@@ -610,7 +572,7 @@ describe('ApplicationsController - Comprehensive Test Suite', () => {
 
       mockApplicationsService.findOne.mockResolvedValue(mockApplication);
 
-      const result = await controller.findOne(id, headers);
+      const result = await controller.findOne(id, mockUserId);
 
       expect(result.resume_id).toBe('123e4567-e89b-12d3-a456-426614174003');
       expect(result.cover_letter_id).toBe('123e4567-e89b-12d3-a456-426614174004');
@@ -650,7 +612,7 @@ describe('ApplicationsController - Comprehensive Test Suite', () => {
         status: ApplicationStatus.INTERVIEWING,
       });
 
-      const result = await controller.updateStatus(id, updateStatusDto, headers);
+      const result = await controller.updateStatus(id, updateStatusDto, mockUserId);
 
       expect(result.status).toBe(ApplicationStatus.INTERVIEWING);
     });

@@ -515,15 +515,16 @@ describe('Frontend Performance Tests', () => {
   describe('Performance Monitoring', () => {
     it('should collect performance metrics', () => {
       const metrics = {
+        timing: performance.timing || {},
         memory: (performance as any).memory || {},
-        entries: performance.getEntriesByType('navigation'),
+        navigation: performance.navigation || {},
       };
 
       console.log(`📊 Performance Metrics:`);
       console.log(
         `   Heap Size: ${((metrics.memory.usedJSHeapSize || 0) / 1024 / 1024).toFixed(2)}MB`,
       );
-      console.log(`   Navigation Entries: ${metrics.entries.length}`);
+      console.log(`   Navigation Type: ${metrics.navigation.type || 'N/A'}`);
 
       expect(metrics).toBeDefined();
     });

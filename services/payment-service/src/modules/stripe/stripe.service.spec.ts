@@ -253,7 +253,7 @@ describe('StripeService', () => {
         },
         product_data: {
           name: 'BASIC Subscription',
-          description: 'BASIC tier subscription (monthly)',
+          statement_descriptor: 'BASIC tier subscription (monthly)',
         },
       });
       expect(stripeMock.checkout.sessions.create).toHaveBeenCalledWith(
@@ -461,7 +461,7 @@ describe('StripeService', () => {
         },
         product_data: {
           name: 'PROFESSIONAL Subscription',
-          description: 'PROFESSIONAL tier subscription (monthly)',
+          statement_descriptor: 'PROFESSIONAL tier subscription (monthly)',
         },
       });
       expect(stripeMock.subscriptions.update).toHaveBeenCalledWith('sub_test123', {

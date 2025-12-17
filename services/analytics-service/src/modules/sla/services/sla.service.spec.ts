@@ -459,6 +459,7 @@ describe('SLAService', () => {
     it('should return comprehensive dashboard data', async () => {
       const userId = 'user-123';
 
+      const endDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
       const contract = {
         id: 'contract-123',
         userId,
@@ -468,7 +469,8 @@ describe('SLAService', () => {
         deadlineDays: 60,
         contractPrice: 89.99,
         startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-        endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        endDate,
+        extendedEndDate: null,
         totalApplicationsSent: 50,
         totalEmployerResponses: 15,
         totalInterviewsScheduled: 2,
@@ -477,6 +479,9 @@ describe('SLAService', () => {
         isEligible: true,
         getDaysRemaining: () => 30,
         getProgressPercentage: () => 66.67,
+        getEffectiveEndDate: function() {
+          return this.extendedEndDate || this.endDate;
+        },
         isGuaranteeMet: () => false,
         isActive: () => true,
         isExpired: () => false,
@@ -523,18 +528,37 @@ describe('SLAService', () => {
         reason: 'SLA violation remedy',
       };
 
+      const endDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
       const contract = {
         id: 'contract-123',
         userId,
+        tier: SLATier.PROFESSIONAL,
         status: SLAStatus.ACTIVE,
-        endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        guaranteedInterviews: 3,
+        deadlineDays: 60,
+        contractPrice: 89.99,
+        startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+        endDate,
         extensionDays: 0,
         extendedEndDate: null,
         metadata: {},
+        totalApplicationsSent: 10,
+        totalEmployerResponses: 3,
+        totalInterviewsScheduled: 1,
+        totalInterviewsCompleted: 0,
+        totalOffersReceived: 0,
+        isEligible: true,
+        minConfidenceThreshold: 0.65,
         getEffectiveEndDate: function() {
           return this.extendedEndDate || this.endDate;
         },
         getDaysRemaining: () => 30,
+        getProgressPercentage: () => 33.33,
+        isGuaranteeMet: () => false,
+        isActive: () => true,
+        isExpired: () => false,
+        createdAt: new Date(),
+        updatedAt: new Date(),
       };
 
       mockContractRepository.findOne.mockResolvedValue(contract);

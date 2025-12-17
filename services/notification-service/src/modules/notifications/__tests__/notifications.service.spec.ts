@@ -140,7 +140,6 @@ describe('NotificationsService', () => {
     notificationQueue = module.get<Queue>(getQueueToken('notifications'));
     emailService = module.get<EmailService>(EmailService);
 
-    jest.clearAllMocks();
   });
 
   afterEach(() => {
@@ -543,7 +542,8 @@ describe('NotificationsService', () => {
         userId: 'user-123',
       };
 
-      mockPreferencesRepository.findOne.mockResolvedValue(mockPreferences);
+      // Mock checkPreferences to return true (email enabled)
+      jest.spyOn(service as any, 'checkPreferences').mockResolvedValue(true);
       mockNotificationRepository.create.mockReturnValue(mockNotification);
       mockNotificationRepository.save.mockResolvedValue(mockNotification);
       mockQueue.add.mockResolvedValue({});

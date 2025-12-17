@@ -488,7 +488,7 @@ describe('ApplicationsService', () => {
     it('should return analytics for user applications', async () => {
       const userId = '123e4567-e89b-12d3-a456-426614174001';
       const applications: Application[] = [
-        { ...mockApplication, status: ApplicationStatus.APPLIED, auto_applied: true, match_score: 85 },
+        { ...mockApplication, status: ApplicationStatus.APPLIED, auto_applied: true, match_score: 85, response_received_at: null },
         { ...mockApplication, id: '2', status: ApplicationStatus.VIEWED, auto_applied: true, match_score: 90, response_received_at: new Date() },
         { ...mockApplication, id: '3', status: ApplicationStatus.INTERVIEWING, auto_applied: false, match_score: 95, response_received_at: new Date() },
         { ...mockApplication, id: '4', status: ApplicationStatus.REJECTED, auto_applied: true, match_score: 70, response_received_at: new Date(), ats_platform: 'lever' },

@@ -15,7 +15,8 @@ export class WorkdayAdapter extends BaseATSAdapter {
   }
 
   detectPlatform(url: string): boolean {
-    return url.includes('myworkdayjobs.com') || url.includes('wd5.myworkdayjobs.com');
+    const lowerUrl = url.toLowerCase();
+    return lowerUrl.includes('myworkdayjobs.com') || lowerUrl.includes('wd5.myworkdayjobs.com');
   }
 
   async apply(data: ApplicationData): Promise<ApplicationResult> {

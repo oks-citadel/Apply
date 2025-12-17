@@ -278,14 +278,13 @@ describe('UsersService', () => {
     it('should update last login time and IP', async () => {
       const userId = 'test-user-id';
       const ip = '192.168.1.1';
-      const mockUser = TestFactory.createUser({ id: userId });
 
-      repository.findOne.mockResolvedValue(mockUser);
-      repository.save.mockResolvedValue(mockUser);
+      repository.update.mockResolvedValue({ affected: 1, raw: [], generatedMaps: [] });
 
       await service.updateLastLogin(userId, ip);
 
-      expect(repository.save).toHaveBeenCalledWith(
+      expect(repository.update).toHaveBeenCalledWith(
+        userId,
         expect.objectContaining({
           lastLoginIp: ip,
         }),
@@ -323,12 +322,13 @@ describe('UsersService', () => {
         passwordResetToken: 'reset-token',
       });
 
+      repository.update.mockResolvedValue({ affected: 1, raw: [], generatedMaps: [] });
       repository.findOne.mockResolvedValue(mockUser);
-      repository.save.mockResolvedValue(mockUser);
 
       await service.resetPassword(userId, newPassword);
 
-      expect(repository.save).toHaveBeenCalledWith(
+      expect(repository.update).toHaveBeenCalledWith(
+        userId,
         expect.objectContaining({
           passwordResetToken: null,
           passwordResetExpiry: null,
@@ -340,20 +340,14 @@ describe('UsersService', () => {
   describe('enableMfa', () => {
     it('should enable MFA for user', async () => {
       const userId = 'test-user-id';
-      const mockUser = TestFactory.createUser({
-        id: userId,
-        mfaSecret: 'secret',
-      });
 
-      repository.findOne.mockResolvedValue(mockUser);
-      repository.save.mockResolvedValue(mockUser);
+      repository.update.mockResolvedValue({ affected: 1, raw: [], generatedMaps: [] });
 
       await service.enableMfa(userId);
 
-      expect(repository.save).toHaveBeenCalledWith(
-        expect.objectContaining({
-          isMfaEnabled: true,
-        }),
+      expect(repository.update).toHaveBeenCalledWith(
+        userId,
+        { isMfaEnabled: true },
       );
     });
   });
@@ -361,18 +355,17 @@ describe('UsersService', () => {
   describe('disableMfa', () => {
     it('should disable MFA for user', async () => {
       const userId = 'test-user-id';
-      const mockUser = TestFactory.createMfaUser({ id: userId });
 
-      repository.findOne.mockResolvedValue(mockUser);
-      repository.save.mockResolvedValue(mockUser);
+      repository.update.mockResolvedValue({ affected: 1, raw: [], generatedMaps: [] });
 
       await service.disableMfa(userId);
 
-      expect(repository.save).toHaveBeenCalledWith(
-        expect.objectContaining({
+      expect(repository.update).toHaveBeenCalledWith(
+        userId,
+        {
           isMfaEnabled: false,
           mfaSecret: null,
-        }),
+        },
       );
     });
   });

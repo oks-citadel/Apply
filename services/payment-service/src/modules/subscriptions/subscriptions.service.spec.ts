@@ -14,26 +14,41 @@ describe('SubscriptionsService', () => {
   let subscriptionEventClient: any;
   let loggingService: LoggingService;
 
-  const mockSubscription: Partial<Subscription> = {
-    id: 'sub_123',
-    userId: 'user_123',
-    tier: SubscriptionTier.BASIC,
-    status: SubscriptionStatus.ACTIVE,
-    stripeCustomerId: 'cus_test123',
-    stripeSubscriptionId: 'sub_test123',
-    currentPeriodStart: new Date('2024-01-01'),
-    currentPeriodEnd: new Date('2024-02-01'),
-    cancelAtPeriodEnd: false,
-    canceledAt: null,
-    createdAt: new Date('2024-01-01'),
-    updatedAt: new Date('2024-01-01'),
-    isActive: jest.fn().mockReturnValue(true),
-    isCanceled: jest.fn().mockReturnValue(false),
-    isPastDue: jest.fn().mockReturnValue(false),
-    hasAccess: jest.fn().mockReturnValue(true),
+  // Factory function to create fresh mock subscription for each test
+  // This prevents mutation issues across tests
+  const createMockSubscription = (): Partial<Subscription> => {
+    // Use future dates to ensure hasAccess() returns true
+    const futureDate = new Date();
+    futureDate.setFullYear(futureDate.getFullYear() + 1);
+    const pastDate = new Date();
+    pastDate.setMonth(pastDate.getMonth() - 1);
+
+    return {
+      id: 'sub_123',
+      userId: 'user_123',
+      tier: SubscriptionTier.BASIC,
+      status: SubscriptionStatus.ACTIVE,
+      stripeCustomerId: 'cus_test123',
+      stripeSubscriptionId: 'sub_test123',
+      currentPeriodStart: pastDate,
+      currentPeriodEnd: futureDate,
+      cancelAtPeriodEnd: false,
+      canceledAt: null,
+      createdAt: pastDate,
+      updatedAt: pastDate,
+      isActive: jest.fn().mockReturnValue(true),
+      isCanceled: jest.fn().mockReturnValue(false),
+      isPastDue: jest.fn().mockReturnValue(false),
+      hasAccess: jest.fn().mockReturnValue(true),
+    };
   };
 
+  let mockSubscription: Partial<Subscription>;
+
   beforeEach(async () => {
+    // Create fresh mock subscription for each test
+    mockSubscription = createMockSubscription();
+
     const mockRepository = {
       create: jest.fn(),
       save: jest.fn(),

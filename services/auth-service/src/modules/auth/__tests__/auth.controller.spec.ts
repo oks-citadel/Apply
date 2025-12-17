@@ -16,6 +16,7 @@ import {
   ConflictException,
   BadRequestException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 
 // Helper function to create mock user with proper getters and methods
 function createMockUser(overrides: Partial<User> = {}): User {
@@ -73,6 +74,17 @@ describe('AuthController', () => {
     disableMfa: jest.fn(),
   };
 
+  const mockConfigService = {
+    get: jest.fn((key: string, defaultValue?: any) => {
+      const config: Record<string, any> = {
+        'frontend.url': 'http://localhost:3000',
+        'oauth.callbackSuccessUrl': '/auth/success',
+        'oauth.callbackErrorUrl': '/auth/error',
+      };
+      return config[key] || defaultValue;
+    }),
+  };
+
   beforeEach(async () => {
     // Create mock user with proper getters and methods
     mockUser = createMockUser();
@@ -99,6 +111,10 @@ describe('AuthController', () => {
         {
           provide: AuthService,
           useValue: mockAuthService,
+        },
+        {
+          provide: ConfigService,
+          useValue: mockConfigService,
         },
       ],
     }).compile();

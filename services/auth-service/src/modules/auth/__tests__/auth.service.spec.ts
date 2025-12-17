@@ -120,6 +120,7 @@ describe('AuthService', () => {
   const mockEmailService = {
     sendVerificationEmail: jest.fn(),
     sendPasswordResetEmail: jest.fn(),
+    sendWelcomeEmail: jest.fn(),
   };
 
   beforeEach(async () => {

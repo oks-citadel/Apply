@@ -644,7 +644,11 @@
       "Bash(AZURE_DEVOPS_EXT_PAT=\"AYhpMYbwfVyMuLVU54Xx4H7lRi6a3ZvPTf7z8yT6k6v5yXoeX9nlJQQJ99BLACAAAAAAAAAAAAASAZDO3hzv\" az pipelines build show --id 1001 --org https://dev.azure.com/citadelcloudmanagement --project ApplyPlatform --query \"{id:id,status:status,result:result,startTime:startTime}\" -o json)",
       "Bash(AZURE_DEVOPS_EXT_PAT=\"AYhpMYbwfVyMuLVU54Xx4H7lRi6a3ZvPTf7z8yT6k6v5yXoeX9nlJQQJ99BLACAAAAAAAAAAAAASAZDO3hzv\" az pipelines runs show:*)",
       "Bash(git log:*)",
-      "Bash(git merge-base:*)"
+      "Bash(git merge-base:*)",
+      "Bash(git tag:*)",
+      "Bash(MSYS_NO_PATHCONV=1 GH_TOKEN=\"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\" gh workflow list --repo oks-citadel/Apply)",
+      "Bash(AZURE_DEVOPS_EXT_PAT=\"AYhpMYbwfVyMuLVU54Xx4H7lRi6a3ZvPTf7z8yT6k6v5yXoeX9nlJQQJ99BLACAAAAAAAAAAAAASAZDO3hzv\" az pipelines runs list --org https://dev.azure.com/citadelcloudmanagement --project ApplyPlatform --top 5 --query \"[].{ID:id,Number:buildNumber,Status:status,Result:result,Pipeline:definition.name}\" -o table)",
+      "Bash(AZURE_DEVOPS_EXT_PAT=\"AYhpMYbwfVyMuLVU54Xx4H7lRi6a3ZvPTf7z8yT6k6v5yXoeX9nlJQQJ99BLACAAAAAAAAAAAAASAZDO3hzv\" az pipelines runs show --id 1003 --org https://dev.azure.com/citadelcloudmanagement --project ApplyPlatform --query \"{id:id,status:status,result:result,validationResults:validationResults}\" -o json)"
     ],
     "deny": [],
     "ask": []

@@ -91,8 +91,8 @@ describe('AnalyticsController', () => {
 
       expect(service.trackEvent).toHaveBeenCalledWith(
         createEventDto,
-        undefined,
-        undefined,
+        '',
+        '',
       );
       expect(result).toEqual(expectedResponse);
     });

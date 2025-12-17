@@ -5,6 +5,7 @@
 
 import axios, { AxiosInstance } from "axios";
 import nock from "nock";
+import { setupAllMocks } from "./mocks/api-mocks";
 
 // Test configuration
 export const config = {
@@ -103,6 +104,7 @@ jest.setTimeout(60000);
 // Global setup
 beforeAll(async () => {
   nock.disableNetConnect();
+  setupAllMocks();
   console.log("E2E Test Suite starting with mocked HTTP...");
 });
 
@@ -113,8 +115,9 @@ afterAll(async () => {
   console.log("E2E Test Suite complete");
 });
 
-// Clean up nock after each test
-afterEach(() => {
+// Reset mocks before each test to ensure fresh state
+beforeEach(() => {
   nock.cleanAll();
+  setupAllMocks();
 });
 

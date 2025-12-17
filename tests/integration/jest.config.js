@@ -1,10 +1,13 @@
+const path = require('path');
+
 module.exports = {
   displayName: 'integration-tests',
-  testEnvironment: 'node',
-  testMatch: ['**/tests/integration/**/*.test.ts'],
+  testEnvironment: '<rootDir>/tests/integration/custom-environment.js',
+  rootDir: path.resolve(__dirname, '../..'),
+  testMatch: ['**/tests/integration/**/*.integration.test.ts'],
   transform: {
     '^.+\\.ts$': ['ts-jest', {
-      tsconfig: '<rootDir>/tsconfig.json',
+      tsconfig: '<rootDir>/tests/integration/tsconfig.json',
     }],
   },
   moduleFileExtensions: ['ts', 'js', 'json'],

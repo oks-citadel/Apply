@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
+import { EmailService } from '../email/email.service';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import {
@@ -9,7 +10,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { TestFactory } from '../../../test/utils/test-factory';
-import { mockConfigService, mockJwtService, mockUsersService } from '../../../test/utils/mock-config';
+import { mockConfigService, mockJwtService, mockUsersService, mockEmailService } from '../../../test/utils/mock-config';
 import { UserStatus, AuthProvider } from '../users/entities/user.entity';
 import * as bcrypt from 'bcrypt';
 
@@ -18,6 +19,7 @@ describe('AuthService', () => {
   let usersService: jest.Mocked<UsersService>;
   let jwtService: jest.Mocked<JwtService>;
   let configService: jest.Mocked<ConfigService>;
+  let emailService: jest.Mocked<EmailService>;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -35,6 +37,10 @@ describe('AuthService', () => {
           provide: ConfigService,
           useValue: mockConfigService,
         },
+        {
+          provide: EmailService,
+          useValue: mockEmailService,
+        },
       ],
     }).compile();
 
@@ -42,6 +48,7 @@ describe('AuthService', () => {
     usersService = module.get(UsersService);
     jwtService = module.get(JwtService);
     configService = module.get(ConfigService);
+    emailService = module.get(EmailService);
 
     // Reset all mocks before each test
     jest.clearAllMocks();
@@ -61,13 +68,16 @@ describe('AuthService', () => {
       usersService.findByEmail.mockResolvedValue(null);
       usersService.findByUsername.mockResolvedValue(null);
       usersService.create.mockResolvedValue(mockUser);
+      usersService.updateRefreshToken.mockResolvedValue(undefined);
       jwtService.signAsync.mockResolvedValue('mock-access-token');
 
       const result = await service.register(registerDto);
 
       expect(result).toBeDefined();
       expect(result.accessToken).toBe('mock-access-token');
-      expect(result.user).toEqual(mockUser);
+      // The service returns a partial user in TokenResponseDto
+      expect(result.user.id).toBe(mockUser.id);
+      expect(result.user.email).toBe(mockUser.email);
       expect(usersService.findByEmail).toHaveBeenCalledWith(registerDto.email);
       expect(usersService.create).toHaveBeenCalled();
     });
@@ -106,7 +116,9 @@ describe('AuthService', () => {
       const mockUser = TestFactory.createUnverifiedUser();
 
       usersService.findByEmail.mockResolvedValue(null);
+      usersService.findByUsername.mockResolvedValue(null);
       usersService.create.mockResolvedValue(mockUser);
+      usersService.updateRefreshToken.mockResolvedValue(undefined);
       jwtService.signAsync.mockResolvedValue('mock-token');
 
       await service.register(registerDto);
@@ -126,6 +138,9 @@ describe('AuthService', () => {
 
       usersService.findByEmail.mockResolvedValue(mockUser);
       usersService.validatePassword.mockResolvedValue(true);
+      usersService.resetLoginAttempts.mockResolvedValue(undefined);
+      usersService.updateLastLogin.mockResolvedValue(undefined);
+      usersService.updateRefreshToken.mockResolvedValue(undefined);
       jwtService.signAsync.mockResolvedValue('mock-access-token');
 
       const result = await service.login(loginDto, '127.0.0.1');
@@ -231,6 +246,7 @@ describe('AuthService', () => {
       const mockUser = TestFactory.createUser();
 
       jwtService.signAsync.mockResolvedValue('new-token');
+      usersService.updateRefreshToken.mockResolvedValue(undefined);
 
       const result = await service.refreshToken(mockUser);
 

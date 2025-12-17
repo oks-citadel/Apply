@@ -226,13 +226,14 @@ describe('PaystackService', () => {
       expect(result).toEqual({
         authorizationUrl: 'https://checkout.paystack.com/test',
         reference: mockResponse.data.data.reference,
+        accessCode: 'access_code_123',
       });
 
       expect(axiosInstance.post).toHaveBeenCalledWith(
         '/transaction/initialize',
         expect.objectContaining({
           email: 'test@example.com',
-          amount: 499900, // 49.99 * 100
+          amount: 4999, // 49.99 * 100 (price is already in dollars, converted to kobo)
           metadata: expect.objectContaining({
             tier: SubscriptionTier.BASIC,
             billingPeriod: 'monthly',
@@ -281,7 +282,7 @@ describe('PaystackService', () => {
       expect(axiosInstance.post).toHaveBeenCalledWith(
         '/transaction/initialize',
         expect.objectContaining({
-          amount: 89999900, // 899.99 * 100
+          amount: 89999, // 899.99 * 100 (price is already in dollars, converted to kobo)
           metadata: expect.objectContaining({
             billingPeriod: 'yearly',
           }),

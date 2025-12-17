@@ -42,7 +42,12 @@ const customJestConfig = {
       statements: 80,
     },
   },
-  testPathIgnorePatterns: ['/node_modules/', '/.next/'],
+  testPathIgnorePatterns: [
+    '/node_modules/',
+    '/.next/',
+    '/e2e/',           // E2E tests use Playwright, not Jest
+    '\\.spec\\.ts$',   // Playwright spec files
+  ],
   transformIgnorePatterns: [
     '/node_modules/(?!msw)',
     '^.+\\.module\\.(css|sass|scss)$',

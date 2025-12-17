@@ -32,6 +32,7 @@ describe('BrowserService', () => {
       selectOption: jest.fn(),
       setInputFiles: jest.fn(),
       evaluate: jest.fn(),
+      inputValue: jest.fn(),
     } as any;
 
     mockContext = {
@@ -296,10 +297,11 @@ describe('BrowserService', () => {
       const value = 'John Doe';
 
       mockPage.waitForSelector.mockResolvedValue(null);
+      mockPage.inputValue.mockResolvedValue(value);
 
       await service.fillForm(mockPage, selector, value);
 
-      expect(mockPage.waitForSelector).toHaveBeenCalledWith(selector, { timeout: 5000 });
+      expect(mockPage.waitForSelector).toHaveBeenCalledWith(selector, { timeout: 5000, state: "visible" });
       expect(mockPage.fill).toHaveBeenCalledWith(selector, '');
       expect(mockPage.type).toHaveBeenCalledWith(selector, value, { delay: 50 });
     });
@@ -310,6 +312,7 @@ describe('BrowserService', () => {
       const delay = 100;
 
       mockPage.waitForSelector.mockResolvedValue(null);
+      mockPage.inputValue.mockResolvedValue(value);
 
       await service.fillForm(mockPage, selector, value, delay);
 
@@ -334,7 +337,7 @@ describe('BrowserService', () => {
 
       await service.clickElement(mockPage, selector);
 
-      expect(mockPage.waitForSelector).toHaveBeenCalledWith(selector, { timeout: 5000 });
+      expect(mockPage.waitForSelector).toHaveBeenCalledWith(selector, { timeout: 5000, state: "visible" });
       expect(mockPage.click).toHaveBeenCalledWith(selector);
       expect(mockPage.waitForTimeout).toHaveBeenCalledWith(100);
     });
@@ -368,7 +371,7 @@ describe('BrowserService', () => {
 
       await service.selectOption(mockPage, selector, value);
 
-      expect(mockPage.waitForSelector).toHaveBeenCalledWith(selector, { timeout: 5000 });
+      expect(mockPage.waitForSelector).toHaveBeenCalledWith(selector, { timeout: 5000, state: "visible" });
       expect(mockPage.selectOption).toHaveBeenCalledWith(selector, value);
     });
 
@@ -391,7 +394,7 @@ describe('BrowserService', () => {
 
       await service.uploadFile(mockPage, selector, filePath);
 
-      expect(mockPage.waitForSelector).toHaveBeenCalledWith(selector, { timeout: 5000 });
+      expect(mockPage.waitForSelector).toHaveBeenCalledWith(selector, { timeout: 5000, state: "visible" });
       expect(mockPage.setInputFiles).toHaveBeenCalledWith(selector, filePath);
     });
 
@@ -499,6 +502,7 @@ describe('BrowserService', () => {
       const value = 'John';
 
       mockPage.waitForSelector.mockResolvedValue(null);
+      mockPage.inputValue.mockResolvedValue(value);
 
       await service.fillForm(mockPage, selector, value);
 

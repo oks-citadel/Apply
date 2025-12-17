@@ -17,7 +17,7 @@ import { RedisCacheService } from './redis-cache.service';
         const defaultTtl = configService.get<number>('redis.ttl', 300);
 
         return {
-          store: redisStore,
+          store: redisStore as any,
           host: redisHost,
           port: redisPort,
           password: redisPassword || undefined,
@@ -30,7 +30,7 @@ import { RedisCacheService } from './redis-cache.service';
             }
             return Math.min(times * 1000, 3000); // Exponential backoff with max 3s
           },
-        };
+        } as any;
       },
       inject: [ConfigService],
     }),
