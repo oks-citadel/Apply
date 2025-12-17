@@ -135,7 +135,7 @@ describe('JwtAuthGuard', () => {
 });
 
 function createMockExecutionContext(): ExecutionContext {
-  const mockRequest = {
+  const mockRequest: { headers: { authorization: string }; user: any } = {
     headers: {
       authorization: 'Bearer token',
     },

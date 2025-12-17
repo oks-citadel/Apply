@@ -15,7 +15,7 @@ export const validationSchema = Joi.object({
   DB_SSL: Joi.string().default('false'),
 
   // JWT
-  JWT_SECRET: Joi.string().required(),
+  JWT_SECRET: Joi.string().default('change-this-secret-in-production'),
   JWT_EXPIRES_IN: Joi.string().default('7d'),
 
   // File Upload

@@ -1,10 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { ConfigService } from '@nestjs/config';
 import { UsersService } from './users.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { User, UserRole, UserStatus } from './entities/user.entity';
 import { Repository } from 'typeorm';
 import { TestFactory } from '../../../test/utils/test-factory';
-import { mockRepository } from '../../../test/utils/mock-config';
+import { mockRepository, mockConfigService } from '../../../test/utils/mock-config';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 
@@ -19,6 +20,10 @@ describe('UsersService', () => {
         {
           provide: getRepositoryToken(User),
           useValue: mockRepository,
+        },
+        {
+          provide: ConfigService,
+          useValue: mockConfigService,
         },
       ],
     }).compile();
@@ -236,12 +241,16 @@ describe('UsersService', () => {
 
       await service.incrementLoginAttempts(userId);
 
+      // After 5 attempts, account should be locked with lockedUntil set to a future date
       expect(repository.save).toHaveBeenCalledWith(
         expect.objectContaining({
           loginAttempts: 5,
-          isLocked: true,
         }),
       );
+      // Verify lockedUntil was set to a future time
+      const savedUser = repository.save.mock.calls[0][0] as User;
+      expect(savedUser.lockedUntil).toBeDefined();
+      expect(savedUser.lockedUntil!.getTime()).toBeGreaterThan(Date.now());
     });
   });
 
@@ -255,10 +264,10 @@ describe('UsersService', () => {
 
       await service.resetLoginAttempts(userId);
 
+      // isLocked is a getter, so we check lockedUntil is null instead
       expect(repository.save).toHaveBeenCalledWith(
         expect.objectContaining({
           loginAttempts: 0,
-          isLocked: false,
           lockedUntil: null,
         }),
       );

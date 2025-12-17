@@ -55,7 +55,7 @@ describe('JwtStrategy', () => {
 
   const mockConfigService = {
     get: jest.fn((key: string) => {
-      const config = {
+      const config: Record<string, string> = {
         'jwt.secret': 'test-secret-key',
         'jwt.issuer': 'applyforus',
         'jwt.audience': 'applyforus-users',
@@ -183,13 +183,13 @@ describe('JwtStrategy', () => {
       expect(result).toEqual(adminUser);
     });
 
-    it('should validate user with premium role', async () => {
-      const premiumUser = { ...mockUser, role: UserRole.PREMIUM };
-      mockUsersService.findById.mockResolvedValue(premiumUser);
+    it('should validate user with recruiter role', async () => {
+      const recruiterUser = { ...mockUser, role: UserRole.RECRUITER };
+      mockUsersService.findById.mockResolvedValue(recruiterUser);
 
       const result = await strategy.validate(mockPayload);
 
-      expect(result).toEqual(premiumUser);
+      expect(result).toEqual(recruiterUser);
     });
 
     it('should handle payload with different user IDs', async () => {

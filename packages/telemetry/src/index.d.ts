@@ -1,0 +1,33 @@
+import { SpanStatusCode } from '@opentelemetry/api';
+export interface TelemetryConfig {
+    serviceName: string;
+    serviceVersion?: string;
+    environment?: string;
+    azureMonitorConnectionString?: string;
+    enableConsoleExport?: boolean;
+    sampleRate?: number;
+    attributes?: Record<string, string | number | boolean>;
+}
+export declare function initTelemetry(config: TelemetryConfig): Promise<void>;
+export declare function shutdownTelemetry(): Promise<void>;
+export declare function getTracer(name: string, version?: string): import("@opentelemetry/api").Tracer;
+export declare function getCurrentSpan(): import("@opentelemetry/api").Span;
+export declare function getCurrentContext(): import("@opentelemetry/api").Context;
+export declare function setSpanStatus(code: SpanStatusCode, message?: string): void;
+export declare function addSpanAttributes(attributes: Record<string, string | number | boolean>): void;
+export declare function recordException(error: Error): void;
+export declare function isTracingEnabled(): boolean;
+export { trace, context, propagation, SpanStatusCode, SpanKind } from '@opentelemetry/api';
+export type { Span, Tracer, Context } from '@opentelemetry/api';
+export * from './tracing';
+export * from './middleware';
+export * from './decorators';
+export * from './logger';
+export * from './metrics';
+export * from './nestjs-module';
+export * from './prometheus.controller';
+export * from './prometheus.interceptor';
+export * from './prometheus-metrics.service';
+export * from './gateway-metrics';
+export * from './http-client';
+export * from './health';

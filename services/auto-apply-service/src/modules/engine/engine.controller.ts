@@ -11,6 +11,14 @@ import {
   NotFoundException,
   UseGuards,
 } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiParam,
+  ApiBody,
+} from '@nestjs/swagger';
 import { EngineService } from './engine.service';
 import { ServiceClientService } from './service-client.service';
 import { ApplicationsService } from '../applications/applications.service';
@@ -33,6 +41,8 @@ import { ApplicationStatus, ApplicationSource } from '../applications/entities/a
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { User } from '../../common/decorators/user.decorator';
 
+@ApiTags('Engine')
+@ApiBearerAuth('JWT-auth')
 @Controller('engine')
 @UseGuards(JwtAuthGuard)
 export class EngineController {
@@ -50,6 +60,18 @@ export class EngineController {
    */
   @Post('apply')
   @HttpCode(HttpStatus.ACCEPTED)
+  @ApiOperation({
+    summary: 'Start application for a single job',
+    description: 'Initiates the automated application process for a specific job. Validates eligibility, selects resume, prepares application data, and queues for processing.',
+  })
+  @ApiResponse({
+    status: 202,
+    description: 'Application queued successfully',
+    type: StartApplicationResponseDto,
+  })
+  @ApiResponse({ status: 400, description: 'User does not meet job requirements or invalid input' })
+  @ApiResponse({ status: 404, description: 'Job not found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   async startApplication(
     @Body() dto: StartApplicationDto,
     @User('id') userId: string,
@@ -160,6 +182,17 @@ export class EngineController {
    */
   @Post('batch-apply')
   @HttpCode(HttpStatus.ACCEPTED)
+  @ApiOperation({
+    summary: 'Batch apply to multiple jobs',
+    description: 'Initiates automated applications for multiple jobs at once. Each job is validated and queued with configurable delays between applications.',
+  })
+  @ApiResponse({
+    status: 202,
+    description: 'Batch application request processed',
+    type: BatchApplicationResponseDto,
+  })
+  @ApiResponse({ status: 400, description: 'Invalid input or no resumes found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   async batchApply(
     @Body() dto: BatchApplicationDto,
     @User('id') userId: string,
@@ -293,6 +326,18 @@ export class EngineController {
    * GET /engine/status/:applicationId - Check application status
    */
   @Get('status/:applicationId')
+  @ApiOperation({
+    summary: 'Check application status',
+    description: 'Retrieves the current status of a job application including queue position, progress, and any errors',
+  })
+  @ApiParam({ name: 'applicationId', description: 'Application ID', type: 'string' })
+  @ApiResponse({
+    status: 200,
+    description: 'Application status retrieved',
+    type: ApplicationStatusResponseDto,
+  })
+  @ApiResponse({ status: 404, description: 'Application not found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   async getStatus(
     @Param('applicationId') applicationId: string,
   ): Promise<ApplicationStatusResponseDto> {
@@ -319,6 +364,19 @@ export class EngineController {
    */
   @Post('retry/:applicationId')
   @HttpCode(HttpStatus.ACCEPTED)
+  @ApiOperation({
+    summary: 'Retry failed application',
+    description: 'Re-queues a failed job application for another attempt. Includes option to force retry beyond normal retry limits.',
+  })
+  @ApiParam({ name: 'applicationId', description: 'Application ID', type: 'string' })
+  @ApiResponse({
+    status: 202,
+    description: 'Application queued for retry',
+    type: RetryApplicationResponseDto,
+  })
+  @ApiResponse({ status: 400, description: 'Application already completed or max retries reached' })
+  @ApiResponse({ status: 404, description: 'Application not found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   async retryApplication(
     @Param('applicationId') applicationId: string,
     @Body() dto: RetryApplicationDto,

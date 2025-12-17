@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { BullModule } from '@nestjs/bull';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { LoggingModule, LoggingInterceptor } from '@applyforus/logging';
+import { join } from 'path';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { EmailModule } from './modules/email/email.module';
 import { PushModule } from './modules/push/push.module';
@@ -50,6 +51,11 @@ import { HealthModule } from './health/health.module';
         password: configService.get('DB_PASSWORD', 'postgres'),
         database: configService.get('DB_DATABASE', 'notification_service'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
+        // Migrations configuration - run on startup in production
+        migrations: [join(__dirname, './migrations/*{.ts,.js}')],
+        migrationsRun: configService.get('NODE_ENV') === 'production' ||
+          configService.get('RUN_MIGRATIONS') === 'true',
+        migrationsTableName: 'typeorm_migrations',
         // SECURITY: Never use synchronize in production - it can modify schema unexpectedly
         // Always use migrations instead
         synchronize: false,

@@ -17,13 +17,13 @@ authenticatedTest.describe('AI Cover Letter Generator', () => {
     await authenticatedPage.goto('/ai-tools/cover-letter');
   });
 
-  authenticatedTest.skip('should display cover letter generator page', async ({ authenticatedPage }) => {
+  authenticatedTest('should display cover letter generator page', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
     await expect(authenticatedPage).toHaveURL(/.*cover-letter|.*ai-tools/);
     await expect(authenticatedPage.getByRole('heading', { name: /cover.*letter/i })).toBeVisible();
   });
 
-  authenticatedTest.skip('should generate cover letter from job posting', async ({ authenticatedPage }) => {
+  authenticatedTest('should generate cover letter from job posting', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration with AI service
     const jobUrlInput = authenticatedPage.getByLabel(/job.*url|paste.*job/i);
     await jobUrlInput.fill('https://example.com/job/12345');
@@ -39,7 +39,7 @@ authenticatedTest.describe('AI Cover Letter Generator', () => {
     await expect(coverLetterOutput).not.toBeEmpty({ timeout: WAIT_TIMES.aiGeneration });
   });
 
-  authenticatedTest.skip('should generate cover letter from job description', async ({ authenticatedPage }) => {
+  authenticatedTest('should generate cover letter from job description', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
     const jobDescInput = authenticatedPage.getByLabel(/job.*description/i);
     await jobDescInput.fill('We are looking for a Senior Software Engineer with 5+ years experience...');
@@ -50,7 +50,7 @@ authenticatedTest.describe('AI Cover Letter Generator', () => {
     await expect(authenticatedPage.getByTestId('cover-letter-output')).not.toBeEmpty({ timeout: WAIT_TIMES.aiGeneration });
   });
 
-  authenticatedTest.skip('should customize tone of cover letter', async ({ authenticatedPage }) => {
+  authenticatedTest('should customize tone of cover letter', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
     const toneSelect = authenticatedPage.getByLabel(/tone|style/i);
     if (await toneSelect.isVisible().catch(() => false)) {
@@ -61,7 +61,7 @@ authenticatedTest.describe('AI Cover Letter Generator', () => {
     }
   });
 
-  authenticatedTest.skip('should edit generated cover letter', async ({ authenticatedPage }) => {
+  authenticatedTest('should edit generated cover letter', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
     // After generation
     const output = authenticatedPage.getByTestId('cover-letter-output');
@@ -76,7 +76,7 @@ authenticatedTest.describe('AI Cover Letter Generator', () => {
     }
   });
 
-  authenticatedTest.skip('should save generated cover letter', async ({ authenticatedPage }) => {
+  authenticatedTest('should save generated cover letter', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
     const saveButton = authenticatedPage.getByRole('button', { name: /save/i });
     await saveButton.click();
@@ -84,7 +84,7 @@ authenticatedTest.describe('AI Cover Letter Generator', () => {
     await expect(authenticatedPage.getByText(/saved/i)).toBeVisible();
   });
 
-  authenticatedTest.skip('should regenerate cover letter', async ({ authenticatedPage }) => {
+  authenticatedTest('should regenerate cover letter', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
     const regenerateButton = authenticatedPage.getByRole('button', { name: /regenerate|try.*again/i });
     if (await regenerateButton.isVisible().catch(() => false)) {
@@ -93,7 +93,7 @@ authenticatedTest.describe('AI Cover Letter Generator', () => {
     }
   });
 
-  authenticatedTest.skip('should copy cover letter to clipboard', async ({ authenticatedPage }) => {
+  authenticatedTest('should copy cover letter to clipboard', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
     const copyButton = authenticatedPage.getByRole('button', { name: /copy/i });
     await copyButton.click();

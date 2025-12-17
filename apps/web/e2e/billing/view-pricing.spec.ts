@@ -64,7 +64,7 @@ test.describe('View Pricing', () => {
     expect(featureCount).toBeGreaterThan(0);
   });
 
-  test.skip('should toggle between monthly and annual billing', async ({ page }) => {
+  test('should toggle between monthly and annual billing', async ({ page }) => {
     // TODO: Requires frontend implementation
     const billingToggle = page.getByRole('switch', { name: /annual|yearly|monthly/i });
     const billingButtons = page.getByRole('button', { name: /monthly|annual/i });
@@ -108,7 +108,7 @@ test.describe('View Pricing', () => {
     }
   });
 
-  test.skip('should expand FAQ items', async ({ page }) => {
+  test('should expand FAQ items', async ({ page }) => {
     // TODO: Requires frontend implementation
     const faqItem = page.getByRole('button', { name: /can.*i.*cancel|what.*included|how.*billing/i }).first();
 
@@ -139,7 +139,7 @@ test.describe('View Pricing', () => {
     }
   });
 
-  test.skip('should display money-back guarantee', async ({ page }) => {
+  test('should display money-back guarantee', async ({ page }) => {
     // TODO: Requires content
     const guarantee = page.getByText(/money.*back|guarantee|risk.*free/i);
 
@@ -148,7 +148,7 @@ test.describe('View Pricing', () => {
     }
   });
 
-  test.skip('should highlight recommended plan', async ({ page }) => {
+  test('should highlight recommended plan', async ({ page }) => {
     // TODO: Requires frontend implementation
     const recommended = page.getByText(/recommended|most.*popular|best.*value/i);
 

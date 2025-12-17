@@ -1,4 +1,4 @@
-import rateLimit, { RateLimitRequestHandler, Options } from 'express-rate-limit';
+import rateLimit, { RateLimitRequestHandler } from 'express-rate-limit';
 
 export interface RateLimitConfig {
   windowMs: number;
@@ -16,7 +16,7 @@ const defaultConfig: RateLimitConfig = {
 };
 
 export function createRateLimiter(config: Partial<RateLimitConfig> = {}): RateLimitRequestHandler {
-  const finalConfig: Options = {
+  const finalConfig = {
     ...defaultConfig,
     ...config,
     message: config.message || 'Too many requests, please try again later.',

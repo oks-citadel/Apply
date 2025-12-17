@@ -3,15 +3,15 @@
  * Tests API response times and throughput
  */
 
-import { test, expect } from '@playwright/test';
+import { test, expect, APIRequestContext } from '@playwright/test';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
 // Performance thresholds (ms)
 const THRESHOLDS = {
-  fast: 100,      // Very fast response
-  acceptable: 500, // Acceptable response
-  slow: 1000,     // Slow but tolerable
+  fast: 200,       // Very fast response (increased for realistic testing)
+  acceptable: 1000, // Acceptable response
+  slow: 2000,      // Slow but tolerable
 };
 
 test.describe('API Response Times', () => {

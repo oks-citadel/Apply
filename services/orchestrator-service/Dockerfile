@@ -16,7 +16,8 @@ WORKDIR /app
 RUN pnpm --filter @applyforus/types build || true && \
     pnpm --filter @applyforus/security build || true && \
     pnpm --filter @applyforus/shared build || true && \
-    pnpm --filter @applyforus/telemetry build || true
+    pnpm --filter @applyforus/telemetry build || true && \
+    pnpm --filter @applyforus/logging build || true
 
 WORKDIR /app/services/orchestrator-service
 RUN pnpm run build
@@ -43,4 +44,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
     CMD curl -f http://localhost:3009/health || exit 1
 
 ENTRYPOINT ["dumb-init", "--"]
-CMD ["node", "dist/services/orchestrator-service/src/main.js"]
+CMD ["node", "dist/main.js"]

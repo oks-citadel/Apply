@@ -12,7 +12,7 @@ import { test as authenticatedTest } from '../fixtures/user.fixture';
  */
 
 authenticatedTest.describe('Job Alerts', () => {
-  authenticatedTest.skip('should create a job alert from search', async ({ authenticatedPage }) => {
+  authenticatedTest('should create a job alert from search', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
     await authenticatedPage.goto('/jobs');
 
@@ -25,7 +25,7 @@ authenticatedTest.describe('Job Alerts', () => {
     await expect(authenticatedPage.getByText(/alert.*created/i)).toBeVisible();
   });
 
-  test.skip('should view all job alerts', async ({ page, context }) => {
+  test('should view all job alerts', async ({ page, context }) => {
     // TODO: Requires backend integration
     await context.addCookies([
       { name: 'auth-token', value: 'mock-token', domain: 'localhost', path: '/' },
@@ -36,7 +36,7 @@ authenticatedTest.describe('Job Alerts', () => {
     await expect(page.getByRole('heading', { name: /job.*alerts/i })).toBeVisible();
   });
 
-  authenticatedTest.skip('should edit job alert', async ({ authenticatedPage }) => {
+  authenticatedTest('should edit job alert', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
     await authenticatedPage.goto('/alerts');
 
@@ -49,7 +49,7 @@ authenticatedTest.describe('Job Alerts', () => {
     await expect(authenticatedPage.getByText(/updated/i)).toBeVisible();
   });
 
-  authenticatedTest.skip('should delete job alert', async ({ authenticatedPage }) => {
+  authenticatedTest('should delete job alert', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
     await authenticatedPage.goto('/alerts');
 
@@ -63,7 +63,7 @@ authenticatedTest.describe('Job Alerts', () => {
     expect(newCount).toBe(initialCount - 1);
   });
 
-  authenticatedTest.skip('should configure alert frequency', async ({ authenticatedPage }) => {
+  authenticatedTest('should configure alert frequency', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
     await authenticatedPage.goto('/alerts');
 

@@ -5,6 +5,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { LoggingModule, LoggingInterceptor } from '@applyforus/logging';
+import { TelemetryModule, PrometheusInterceptor } from '@applyforus/telemetry';
 import configuration from './config/configuration';
 import { databaseConfig } from './config/database.config';
 import { AuthModule } from './modules/auth/auth.module';
@@ -19,6 +20,17 @@ import { HealthModule } from './health/health.module';
       load: [configuration],
       envFilePath: ['.env.local', '.env'],
       cache: true,
+    }),
+
+    // Telemetry module (Prometheus metrics + structured logging)
+    TelemetryModule.forRoot({
+      serviceName: 'auth-service',
+      serviceVersion: process.env.SERVICE_VERSION || '1.0.0',
+      environment: process.env.NODE_ENV || 'development',
+      enablePrometheus: true,
+      enableDefaultMetrics: true,
+      prometheusPath: '/metrics',
+      logLevel: process.env.LOG_LEVEL || 'info',
     }),
 
     // Logging module
@@ -69,6 +81,11 @@ import { HealthModule } from './health/health.module';
     {
       provide: APP_INTERCEPTOR,
       useClass: LoggingInterceptor,
+    },
+    // Prometheus metrics interceptor for automatic HTTP metrics collection
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: PrometheusInterceptor,
     },
   ],
 })

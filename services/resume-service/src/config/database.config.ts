@@ -1,6 +1,7 @@
 import { DataSource, DataSourceOptions } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { config } from 'dotenv';
+import { join } from 'path';
 import { Resume } from '../modules/resumes/entities/resume.entity';
 import { ResumeVersion } from '../modules/resumes/entities/resume-version.entity';
 import { Section } from '../modules/sections/entities/section.entity';
@@ -18,8 +19,11 @@ export const dataSourceOptions: DataSourceOptions = {
   password: configService.get('DB_PASSWORD', 'postgres'),
   database: configService.get('DB_DATABASE', 'resume_service'),
   entities: [Resume, ResumeVersion, Section, Template],
-  migrations: ['dist/migrations/*.js'],
-  migrationsRun: configService.get('RUN_MIGRATIONS', 'false') === 'true',
+  // Migrations configuration - run on startup in production
+  migrations: [join(__dirname, '../migrations/*{.ts,.js}')],
+  migrationsRun: configService.get('NODE_ENV') === 'production' ||
+    configService.get('RUN_MIGRATIONS', 'false') === 'true',
+  migrationsTableName: 'typeorm_migrations',
   synchronize: false, // Never use synchronize in production - use migrations instead,
   logging: configService.get('NODE_ENV') === 'development',
   ssl: configService.get('NODE_ENV') === 'production' ? {

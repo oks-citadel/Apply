@@ -1,5 +1,6 @@
 import { ConfigService } from '@nestjs/config';
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
+import { join } from 'path';
 import { Profile } from '../modules/profile/entities/profile.entity';
 import { WorkExperience } from '../modules/career/entities/work-experience.entity';
 import { Education } from '../modules/career/entities/education.entity';
@@ -48,6 +49,11 @@ export const databaseConfig = (
     Cohort,
     PlacementTracking,
   ],
+  // Migrations configuration - run on startup in production
+  migrations: [join(__dirname, '../migrations/*{.ts,.js}')],
+  migrationsRun: configService.get<string>('nodeEnv') === 'production' ||
+    configService.get<boolean>('database.runMigrations', false),
+  migrationsTableName: 'typeorm_migrations',
   // SECURITY: Always use false in production - never allow auto-schema sync
   // Use migrations for schema changes instead
   synchronize: configService.get<string>('nodeEnv') === 'production'

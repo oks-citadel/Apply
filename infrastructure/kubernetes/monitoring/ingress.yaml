@@ -1,0 +1,139 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: monitoring-ingress
+  namespace: monitoring
+  labels:
+    app: monitoring
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    # Enable basic auth for Prometheus and Alertmanager
+    nginx.ingress.kubernetes.io/auth-type: basic
+    nginx.ingress.kubernetes.io/auth-secret: monitoring-basic-auth
+    nginx.ingress.kubernetes.io/auth-realm: "Monitoring - Authentication Required"
+    # Rate limiting for public endpoints
+    nginx.ingress.kubernetes.io/limit-rps: "10"
+    nginx.ingress.kubernetes.io/limit-connections: "5"
+spec:
+  tls:
+    - hosts:
+        - grafana.applyforus.com
+        - prometheus.applyforus.com
+        - alertmanager.applyforus.com
+      secretName: monitoring-tls
+  rules:
+    # Grafana - uses its own authentication
+    - host: grafana.applyforus.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: grafana
+                port:
+                  number: 3000
+    # Prometheus - protected by basic auth
+    - host: prometheus.applyforus.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: prometheus
+                port:
+                  number: 9090
+    # Alertmanager - protected by basic auth
+    - host: alertmanager.applyforus.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: alertmanager
+                port:
+                  number: 9093
+---
+# Basic auth secret for Prometheus and Alertmanager
+# Generate with: htpasswd -c auth admin
+# Then: kubectl create secret generic monitoring-basic-auth --from-file=auth -n monitoring
+apiVersion: v1
+kind: Secret
+metadata:
+  name: monitoring-basic-auth
+  namespace: monitoring
+  labels:
+    app: monitoring
+type: Opaque
+data:
+  # Default: admin:admin (CHANGE IN PRODUCTION)
+  # Generate new: htpasswd -nb admin <password> | base64
+  auth: YWRtaW46JGFwcjEkSEhQVTZQNEgkLnBFWC5vN2dZWnJoOTdLOWRqSGRDLwo=
+---
+# Network Policy to restrict access to monitoring namespace
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: monitoring-network-policy
+  namespace: monitoring
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow from ingress controller
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 3000
+        - protocol: TCP
+          port: 9090
+        - protocol: TCP
+          port: 9093
+    # Allow Prometheus to scrape from applyforus namespace
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: applyforus
+      ports:
+        - protocol: TCP
+          port: 9090
+    # Allow internal communication within monitoring namespace
+    - from:
+        - podSelector: {}
+  egress:
+    # Allow Prometheus to scrape from applyforus namespace
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: applyforus
+    # Allow DNS resolution
+    - to:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+    # Allow Alertmanager to send notifications
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8
+              - 172.16.0.0/12
+              - 192.168.0.0/16
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 587

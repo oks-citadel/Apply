@@ -50,7 +50,7 @@ test.describe('User Login', () => {
     await expect(page.getByText(/valid email|email.*invalid/i)).toBeVisible();
   });
 
-  test.skip('should successfully login with valid credentials', async ({ page }) => {
+  test('should successfully login with valid credentials', async ({ page }) => {
     // TODO: Requires backend integration
     const { email, password } = TEST_USERS.valid;
 
@@ -69,7 +69,7 @@ test.describe('User Login', () => {
     await expect(userMenu).toBeVisible();
   });
 
-  test.skip('should show error message for invalid credentials', async ({ page }) => {
+  test('should show error message for invalid credentials', async ({ page }) => {
     // TODO: Requires backend integration
 
     // Fill login form with invalid credentials
@@ -86,7 +86,7 @@ test.describe('User Login', () => {
     await expect(page).toHaveURL(/.*login/);
   });
 
-  test.skip('should show error for unverified email', async ({ page }) => {
+  test('should show error for unverified email', async ({ page }) => {
     // TODO: Requires backend integration
 
     // Attempt to login with unverified account
@@ -141,7 +141,7 @@ test.describe('User Login', () => {
     }
   });
 
-  test.skip('should handle "Remember me" functionality', async ({ page }) => {
+  test('should handle "Remember me" functionality', async ({ page }) => {
     // TODO: Requires backend integration
     const { email, password } = TEST_USERS.valid;
 
@@ -166,7 +166,7 @@ test.describe('User Login', () => {
     }
   });
 
-  test.skip('should handle account lockout after multiple failed attempts', async ({ page }) => {
+  test('should handle account lockout after multiple failed attempts', async ({ page }) => {
     // TODO: Requires backend integration
 
     // Attempt login 5 times with wrong password

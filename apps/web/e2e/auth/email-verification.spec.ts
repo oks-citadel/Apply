@@ -32,7 +32,7 @@ test.describe('Email Verification', () => {
       await expect(resendButton).toBeVisible();
     });
 
-    test.skip('should successfully resend verification email', async ({ page }) => {
+    test('should successfully resend verification email', async ({ page }) => {
       // TODO: Requires backend integration
 
       // Click resend button
@@ -46,7 +46,7 @@ test.describe('Email Verification', () => {
       await expect(resendButton).toBeDisabled();
     });
 
-    test.skip('should handle rate limiting for resend requests', async ({ page }) => {
+    test('should handle rate limiting for resend requests', async ({ page }) => {
       // TODO: Requires backend integration
 
       // Try to resend multiple times quickly
@@ -62,7 +62,7 @@ test.describe('Email Verification', () => {
       await expect(page.getByText(/too.*many.*requests|wait.*before|try.*later/i)).toBeVisible();
     });
 
-    test.skip('should show countdown timer after resending', async ({ page }) => {
+    test('should show countdown timer after resending', async ({ page }) => {
       // TODO: Requires frontend implementation
 
       // Click resend
@@ -99,7 +99,7 @@ test.describe('Email Verification', () => {
   });
 
   test.describe('Email Verification Token', () => {
-    test.skip('should successfully verify email with valid token', async ({ page }) => {
+    test('should successfully verify email with valid token', async ({ page }) => {
       // TODO: Requires backend integration
 
       // Navigate to verification link (as would come from email)
@@ -112,7 +112,7 @@ test.describe('Email Verification', () => {
       await expect(page).toHaveURL(/.*dashboard|.*onboarding|.*complete-profile/, { timeout: 10000 });
     });
 
-    test.skip('should handle invalid verification token', async ({ page }) => {
+    test('should handle invalid verification token', async ({ page }) => {
       // TODO: Requires backend integration
 
       // Navigate with invalid token
@@ -126,7 +126,7 @@ test.describe('Email Verification', () => {
       await expect(resendButton).toBeVisible();
     });
 
-    test.skip('should handle expired verification token', async ({ page }) => {
+    test('should handle expired verification token', async ({ page }) => {
       // TODO: Requires backend integration
 
       // Navigate with expired token
@@ -140,7 +140,7 @@ test.describe('Email Verification', () => {
       await expect(resendButton).toBeVisible();
     });
 
-    test.skip('should handle already verified email', async ({ page }) => {
+    test('should handle already verified email', async ({ page }) => {
       // TODO: Requires backend integration
 
       // Navigate with token for already verified email
@@ -153,7 +153,7 @@ test.describe('Email Verification', () => {
       await expect(page).toHaveURL(/.*dashboard/, { timeout: 10000 });
     });
 
-    test.skip('should invalidate token after successful verification', async ({ page }) => {
+    test('should invalidate token after successful verification', async ({ page }) => {
       // TODO: Requires backend integration
 
       // Verify email with token
@@ -169,7 +169,7 @@ test.describe('Email Verification', () => {
   });
 
   test.describe('Post-Registration Flow', () => {
-    test.skip('should redirect to verification page after registration', async ({ page }) => {
+    test('should redirect to verification page after registration', async ({ page }) => {
       // TODO: Requires backend integration
 
       // Register new user
@@ -187,7 +187,7 @@ test.describe('Email Verification', () => {
       await expect(page.getByText(/sent.*to.*@/i)).toBeVisible();
     });
 
-    test.skip('should send verification email upon registration', async ({ page }) => {
+    test('should send verification email upon registration', async ({ page }) => {
       // TODO: Requires email service integration
 
       // Register new user
@@ -204,7 +204,7 @@ test.describe('Email Verification', () => {
   });
 
   test.describe('Access Restrictions', () => {
-    test.skip('should block unverified users from certain features', async ({ page, context }) => {
+    test('should block unverified users from certain features', async ({ page, context }) => {
       // TODO: Requires backend integration
 
       // Login as unverified user
@@ -228,7 +228,7 @@ test.describe('Email Verification', () => {
       await expect(verifyLink).toBeVisible();
     });
 
-    test.skip('should display verification banner for unverified users', async ({ page, context }) => {
+    test('should display verification banner for unverified users', async ({ page, context }) => {
       // TODO: Requires backend integration
 
       // Login as unverified user
@@ -252,7 +252,7 @@ test.describe('Email Verification', () => {
       }
     });
 
-    test.skip('should allow basic features for unverified users', async ({ page, context }) => {
+    test('should allow basic features for unverified users', async ({ page, context }) => {
       // TODO: Requires backend integration
 
       // Login as unverified user
@@ -276,7 +276,7 @@ test.describe('Email Verification', () => {
   });
 
   test.describe('Email Verification Email Content', () => {
-    test.skip('should include verification link in email', async ({ page }) => {
+    test('should include verification link in email', async ({ page }) => {
       // TODO: Requires email service integration
 
       // In a real test, would:
@@ -287,13 +287,13 @@ test.describe('Email Verification', () => {
       // 5. Verify link format and token
     });
 
-    test.skip('should include expiration time in email', async ({ page }) => {
+    test('should include expiration time in email', async ({ page }) => {
       // TODO: Requires email service integration
 
       // Email should mention when link expires (e.g., "This link expires in 24 hours")
     });
 
-    test.skip('should include security notice in email', async ({ page }) => {
+    test('should include security notice in email', async ({ page }) => {
       // TODO: Requires email service integration
 
       // Email should include notice like "If you didn't create this account, please ignore"

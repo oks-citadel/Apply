@@ -140,3 +140,30 @@ data:
   # Version Control
   ENABLE_VERSION_CONTROL: "true"
   MAX_VERSIONS_PER_RESUME: "10"
+
+  # Monitoring & Observability Configuration
+  # Telemetry
+  TELEMETRY_ENABLED: "true"
+  TELEMETRY_SAMPLE_RATE: "1.0"
+  OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector.monitoring.svc.cluster.local:4318"
+
+  # Prometheus Metrics
+  PROMETHEUS_ENABLED: "true"
+  PROMETHEUS_PATH: "/metrics"
+  METRICS_PORT: "9090"
+
+  # Structured Logging
+  LOG_FORMAT: "json"
+  LOG_INCLUDE_TRACE: "true"
+  LOG_INCLUDE_TIMESTAMP: "true"
+
+  # Health Checks
+  HEALTH_CHECK_ENABLED: "true"
+  HEALTH_CHECK_PATH: "/health"
+  LIVENESS_PATH: "/health/live"
+  READINESS_PATH: "/health/ready"
+
+  # Monitoring URLs (Internal Kubernetes DNS)
+  PROMETHEUS_URL: "http://prometheus.monitoring.svc.cluster.local:9090"
+  GRAFANA_URL: "http://grafana.monitoring.svc.cluster.local:3000"
+  ALERTMANAGER_URL: "http://alertmanager.monitoring.svc.cluster.local:9093"

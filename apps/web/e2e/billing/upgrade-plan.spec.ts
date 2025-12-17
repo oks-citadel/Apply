@@ -17,7 +17,7 @@ authenticatedTest.describe('Manage Subscription', () => {
     await authenticatedPage.goto('/settings/billing');
   });
 
-  authenticatedTest.skip('should display current subscription', async ({ authenticatedPage }) => {
+  authenticatedTest('should display current subscription', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
     await expect(authenticatedPage.getByRole('heading', { name: /billing|subscription/i })).toBeVisible();
 
@@ -26,7 +26,7 @@ authenticatedTest.describe('Manage Subscription', () => {
     await expect(currentPlan).toBeVisible();
   });
 
-  authenticatedTest.skip('should upgrade to higher tier', async ({ authenticatedPage }) => {
+  authenticatedTest('should upgrade to higher tier', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
     const upgradeButton = authenticatedPage.getByRole('button', { name: /upgrade/i });
     await upgradeButton.click();
@@ -44,7 +44,7 @@ authenticatedTest.describe('Manage Subscription', () => {
     await expect(authenticatedPage.getByText(/upgraded|success/i)).toBeVisible();
   });
 
-  authenticatedTest.skip('should downgrade to lower tier', async ({ authenticatedPage }) => {
+  authenticatedTest('should downgrade to lower tier', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
     const changePlanButton = authenticatedPage.getByRole('button', { name: /change.*plan/i });
     await changePlanButton.click();
@@ -65,7 +65,7 @@ authenticatedTest.describe('Manage Subscription', () => {
     await expect(authenticatedPage.getByText(/downgraded|updated/i)).toBeVisible();
   });
 
-  authenticatedTest.skip('should cancel subscription', async ({ authenticatedPage }) => {
+  authenticatedTest('should cancel subscription', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
     const cancelButton = authenticatedPage.getByRole('button', { name: /cancel.*subscription/i });
     await cancelButton.click();
@@ -80,7 +80,7 @@ authenticatedTest.describe('Manage Subscription', () => {
     await expect(authenticatedPage.getByText(/cancelled|canceled/i)).toBeVisible();
   });
 
-  authenticatedTest.skip('should update payment method', async ({ authenticatedPage }) => {
+  authenticatedTest('should update payment method', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
     const updatePaymentButton = authenticatedPage.getByRole('button', { name: /update.*payment|change.*card/i });
     await updatePaymentButton.click();
@@ -97,7 +97,7 @@ authenticatedTest.describe('Manage Subscription', () => {
     await expect(authenticatedPage.getByText(/updated/i)).toBeVisible();
   });
 
-  authenticatedTest.skip('should view billing history', async ({ authenticatedPage }) => {
+  authenticatedTest('should view billing history', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
     const historyTab = authenticatedPage.getByRole('tab', { name: /history|invoices/i });
 
@@ -111,7 +111,7 @@ authenticatedTest.describe('Manage Subscription', () => {
     }
   });
 
-  authenticatedTest.skip('should download invoice', async ({ authenticatedPage }) => {
+  authenticatedTest('should download invoice', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
     const historyTab = authenticatedPage.getByRole('tab', { name: /history/i });
     if (await historyTab.isVisible().catch(() => false)) {
@@ -129,7 +129,7 @@ authenticatedTest.describe('Manage Subscription', () => {
     }
   });
 
-  authenticatedTest.skip('should display next billing date', async ({ authenticatedPage }) => {
+  authenticatedTest('should display next billing date', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
     const nextBilling = authenticatedPage.getByText(/next.*billing|renews.*on/i);
 
@@ -138,7 +138,7 @@ authenticatedTest.describe('Manage Subscription', () => {
     }
   });
 
-  authenticatedTest.skip('should reactivate cancelled subscription', async ({ authenticatedPage }) => {
+  authenticatedTest('should reactivate cancelled subscription', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
     // If subscription was cancelled but still active until period end
     const reactivateButton = authenticatedPage.getByRole('button', { name: /reactivate|resume/i });
@@ -151,7 +151,7 @@ authenticatedTest.describe('Manage Subscription', () => {
     }
   });
 
-  authenticatedTest.skip('should view subscription features', async ({ authenticatedPage }) => {
+  authenticatedTest('should view subscription features', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
     // Should show what features are included in current plan
     const features = authenticatedPage.getByText(/unlimited|applications|ai.*tools|support/i);
@@ -160,7 +160,7 @@ authenticatedTest.describe('Manage Subscription', () => {
     expect(count).toBeGreaterThan(0);
   });
 
-  authenticatedTest.skip('should update billing email', async ({ authenticatedPage }) => {
+  authenticatedTest('should update billing email', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
     const emailInput = authenticatedPage.getByLabel(/billing.*email/i);
 
@@ -172,7 +172,7 @@ authenticatedTest.describe('Manage Subscription', () => {
     }
   });
 
-  authenticatedTest.skip('should show usage statistics', async ({ authenticatedPage }) => {
+  authenticatedTest('should show usage statistics', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
     // For plans with usage limits
     const usage = authenticatedPage.getByText(/\d+.*of.*\d+|usage|\d+%/i);

@@ -42,6 +42,8 @@ spec:
               value: "production"
             - name: PORT
               value: "4003"
+            - name: DB_DATABASE
+              value: "auto_apply_db"
           envFrom:
             - secretRef:
                 name: applyforus-secrets

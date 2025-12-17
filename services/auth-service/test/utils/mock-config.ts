@@ -1,8 +1,9 @@
 export const mockConfigService = {
   get: jest.fn((key: string, defaultValue?: any) => {
-    const config = {
+    const config: Record<string, any> = {
       'security.maxLoginAttempts': 5,
       'security.lockoutDuration': 900,
+      'security.bcryptRounds': 10,
       'jwt.accessTokenExpiresIn': '15m',
       'jwt.refreshTokenExpiresIn': '7d',
       'jwt.secret': 'test-secret',

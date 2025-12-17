@@ -6,11 +6,15 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { HttpModule } from '@nestjs/axios';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { LoggingModule, LoggingInterceptor } from '@applyforus/logging';
+import { join } from 'path';
 
 // Configuration
 import { databaseConfig } from './config/database.config';
 import { elasticsearchConfig } from './config/elasticsearch.config';
 import { redisConfig } from './config/redis.config';
+
+// Cache Module
+import { RedisCacheModule } from './common/cache';
 
 // Entities - only load entities for enabled modules
 import { Job } from './modules/jobs/entities/job.entity';
@@ -86,6 +90,11 @@ import { HealthModule } from './health/health.module';
           EmployerProfile,
           JobReport,
         ],
+        // Migrations configuration - run on startup in production
+        migrations: [join(__dirname, './migrations/*{.ts,.js}')],
+        migrationsRun: configService.get('NODE_ENV') === 'production' ||
+          configService.get('RUN_MIGRATIONS') === 'true',
+        migrationsTableName: 'typeorm_migrations',
         // Disable synchronize - tables created manually to avoid TypeORM index duplication bug
         synchronize: false,
         logging: configService.get('NODE_ENV') === 'development',
@@ -128,6 +137,9 @@ import { HealthModule } from './health/health.module';
       timeout: 30000,
       maxRedirects: 5,
     }),
+
+    // Redis Cache Module for job search caching
+    RedisCacheModule,
 
     // Core feature modules - re-enabled
     HealthModule,

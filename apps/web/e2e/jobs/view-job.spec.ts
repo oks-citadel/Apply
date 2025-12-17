@@ -12,7 +12,7 @@ import { test, expect } from '@playwright/test';
  */
 
 test.describe('View Job Details', () => {
-  test.skip('should display job details page', async ({ page }) => {
+  test('should display job details page', async ({ page }) => {
     // TODO: Requires backend integration
     await page.goto('/jobs/1');
 
@@ -21,7 +21,7 @@ test.describe('View Job Details', () => {
     await expect(page.getByText(/location/i)).toBeVisible();
   });
 
-  test.skip('should display job description', async ({ page }) => {
+  test('should display job description', async ({ page }) => {
     // TODO: Requires backend integration
     await page.goto('/jobs/1');
 
@@ -29,7 +29,7 @@ test.describe('View Job Details', () => {
     await expect(description).toBeVisible();
   });
 
-  test.skip('should display job requirements', async ({ page }) => {
+  test('should display job requirements', async ({ page }) => {
     // TODO: Requires backend integration
     await page.goto('/jobs/1');
 
@@ -39,7 +39,7 @@ test.describe('View Job Details', () => {
     }
   });
 
-  test.skip('should display salary information', async ({ page }) => {
+  test('should display salary information', async ({ page }) => {
     // TODO: Requires backend integration
     await page.goto('/jobs/1');
 
@@ -49,7 +49,7 @@ test.describe('View Job Details', () => {
     }
   });
 
-  test.skip('should display apply button', async ({ page }) => {
+  test('should display apply button', async ({ page }) => {
     // TODO: Requires backend integration
     await page.goto('/jobs/1');
 
@@ -57,7 +57,7 @@ test.describe('View Job Details', () => {
     await expect(applyButton).toBeVisible();
   });
 
-  test.skip('should show similar jobs', async ({ page }) => {
+  test('should show similar jobs', async ({ page }) => {
     // TODO: Requires backend integration
     await page.goto('/jobs/1');
 
@@ -67,7 +67,7 @@ test.describe('View Job Details', () => {
     }
   });
 
-  test.skip('should allow sharing job', async ({ page }) => {
+  test('should allow sharing job', async ({ page }) => {
     // TODO: Requires backend integration
     await page.goto('/jobs/1');
 
@@ -78,7 +78,7 @@ test.describe('View Job Details', () => {
     }
   });
 
-  test.skip('should display company information', async ({ page }) => {
+  test('should display company information', async ({ page }) => {
     // TODO: Requires backend integration
     await page.goto('/jobs/1');
 

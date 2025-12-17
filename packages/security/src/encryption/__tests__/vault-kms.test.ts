@@ -7,27 +7,35 @@
 
 import { VaultKMSAdapter } from '../key-management';
 
+// Create a shared mock vault instance
+const mockVaultInstance = {
+  write: jest.fn(),
+  read: jest.fn(),
+  delete: jest.fn(),
+  health: jest.fn(),
+};
+
 // Mock node-vault for unit tests
 jest.mock('node-vault', () => {
-  return jest.fn(() => ({
-    write: jest.fn(),
-    read: jest.fn(),
-    delete: jest.fn(),
-    health: jest.fn(),
-  }));
+  return jest.fn(() => mockVaultInstance);
 });
 
 describe('VaultKMSAdapter', () => {
   let vaultAdapter: VaultKMSAdapter;
-  let mockVault: any;
+  let mockVault: typeof mockVaultInstance;
 
   beforeEach(() => {
     // Clear all mocks
     jest.clearAllMocks();
 
-    // Get the mock vault instance
-    const nodeVault = require('node-vault');
-    mockVault = nodeVault();
+    // Reset mock implementations
+    mockVaultInstance.write.mockReset();
+    mockVaultInstance.read.mockReset();
+    mockVaultInstance.delete.mockReset();
+    mockVaultInstance.health.mockReset();
+
+    // Use the shared mock instance
+    mockVault = mockVaultInstance;
 
     // Create adapter
     vaultAdapter = new VaultKMSAdapter({
@@ -83,9 +91,14 @@ describe('VaultKMSAdapter', () => {
     });
 
     it('should throw error if key name not provided', async () => {
+      // Clear environment variables that might provide a default key
+      const originalEnvKey = process.env.VAULT_DEFAULT_KEY_NAME;
+      delete process.env.VAULT_DEFAULT_KEY_NAME;
+
       const adapter = new VaultKMSAdapter({
         address: 'http://127.0.0.1:8200',
         token: 'test-token',
+        defaultKeyName: '', // Explicitly set empty
       });
 
       const plaintext = Buffer.from('test data');
@@ -93,6 +106,11 @@ describe('VaultKMSAdapter', () => {
       await expect(adapter.encrypt(plaintext, '')).rejects.toThrow(
         'Vault key name not provided'
       );
+
+      // Restore environment variable
+      if (originalEnvKey) {
+        process.env.VAULT_DEFAULT_KEY_NAME = originalEnvKey;
+      }
     });
 
     it('should handle 404 error with helpful message', async () => {
@@ -145,9 +163,14 @@ describe('VaultKMSAdapter', () => {
     });
 
     it('should throw error if key name not provided', async () => {
+      // Clear environment variables that might provide a default key
+      const originalEnvKey = process.env.VAULT_DEFAULT_KEY_NAME;
+      delete process.env.VAULT_DEFAULT_KEY_NAME;
+
       const adapter = new VaultKMSAdapter({
         address: 'http://127.0.0.1:8200',
         token: 'test-token',
+        defaultKeyName: '', // Explicitly set empty
       });
 
       const ciphertext = Buffer.from('vault:v1:base64encrypteddata');
@@ -155,6 +178,11 @@ describe('VaultKMSAdapter', () => {
       await expect(adapter.decrypt(ciphertext, '')).rejects.toThrow(
         'Vault key name not provided'
       );
+
+      // Restore environment variable
+      if (originalEnvKey) {
+        process.env.VAULT_DEFAULT_KEY_NAME = originalEnvKey;
+      }
     });
 
     it('should handle decryption errors', async () => {
@@ -197,14 +225,24 @@ describe('VaultKMSAdapter', () => {
     });
 
     it('should throw error if key name not provided', async () => {
+      // Clear environment variables that might provide a default key
+      const originalEnvKey = process.env.VAULT_DEFAULT_KEY_NAME;
+      delete process.env.VAULT_DEFAULT_KEY_NAME;
+
       const adapter = new VaultKMSAdapter({
         address: 'http://127.0.0.1:8200',
         token: 'test-token',
+        defaultKeyName: '', // Explicitly set empty
       });
 
       await expect(adapter.generateDataKey('')).rejects.toThrow(
         'Vault key name not provided'
       );
+
+      // Restore environment variable
+      if (originalEnvKey) {
+        process.env.VAULT_DEFAULT_KEY_NAME = originalEnvKey;
+      }
     });
   });
 
@@ -221,14 +259,24 @@ describe('VaultKMSAdapter', () => {
     });
 
     it('should throw error if key name not provided', async () => {
+      // Clear environment variables that might provide a default key
+      const originalEnvKey = process.env.VAULT_DEFAULT_KEY_NAME;
+      delete process.env.VAULT_DEFAULT_KEY_NAME;
+
       const adapter = new VaultKMSAdapter({
         address: 'http://127.0.0.1:8200',
         token: 'test-token',
+        defaultKeyName: '', // Explicitly set empty
       });
 
       await expect(adapter.rotateKey('')).rejects.toThrow(
         'Vault key name not provided'
       );
+
+      // Restore environment variable
+      if (originalEnvKey) {
+        process.env.VAULT_DEFAULT_KEY_NAME = originalEnvKey;
+      }
     });
 
     it('should handle rotation errors', async () => {

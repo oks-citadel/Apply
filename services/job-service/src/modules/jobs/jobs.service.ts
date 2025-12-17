@@ -6,9 +6,7 @@ import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
 import { Job } from './entities/job.entity';
 import { SavedJob } from './entities/saved-job.entity';
-// SearchService and ReportsService are optional until ES/Redis deployed
-// import { SearchService } from '../search/search.service';
-// import { ReportsService } from '../reports/reports.service';
+import { RedisCacheService } from '../../common/cache';
 import { SearchJobsDto, PaginatedJobsResponseDto, JobResponseDto } from './dto/search-jobs.dto';
 import { SaveJobDto, UpdateSavedJobDto } from './dto/save-job.dto';
 
@@ -22,17 +20,16 @@ export class JobsService {
     private readonly jobRepository: Repository<Job>,
     @InjectRepository(SavedJob)
     private readonly savedJobRepository: Repository<SavedJob>,
-    // @Optional() private readonly searchService: SearchService,
-    // @Optional() private readonly reportsService: ReportsService,
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
+    @Optional() private readonly cacheService: RedisCacheService,
   ) {
     this.aiServiceUrl = this.configService.get<string>('AI_SERVICE_URL');
-    this.logger.log('JobsService initialized (using database search, ES/Reports disabled)');
+    this.logger.log('JobsService initialized with Redis caching enabled');
   }
 
   /**
-   * Search jobs with database (ES disabled)
+   * Search jobs with database (ES disabled) - with Redis caching
    */
   async searchJobs(
     searchDto: SearchJobsDto,
@@ -43,6 +40,16 @@ export class JobsService {
 
       const page = searchDto.page || 1;
       const limit = searchDto.limit || 20;
+
+      // Try to get from cache first (only for non-user-specific searches)
+      // We don't cache user-specific results since they include saved status
+      if (this.cacheService && !userId) {
+        const cached = await this.cacheService.getSearchResults<PaginatedJobsResponseDto>(searchDto);
+        if (cached) {
+          this.logger.debug('Returning cached search results');
+          return cached;
+        }
+      }
 
       // Build database query (fallback from Elasticsearch)
       const queryBuilder = this.jobRepository
@@ -114,7 +121,7 @@ export class JobsService {
         saved: savedJobIds.includes(job.id),
       })) as JobResponseDto[];
 
-      return {
+      const result: PaginatedJobsResponseDto = {
         data: jobsWithSaved,
         pagination: {
           page,
@@ -125,6 +132,14 @@ export class JobsService {
           has_prev: page > 1,
         },
       };
+
+      // Cache the results only for non-user-specific searches
+      if (this.cacheService && !userId) {
+        await this.cacheService.setSearchResults(searchDto, result);
+        this.logger.debug('Cached search results');
+      }
+
+      return result;
     } catch (error) {
       this.logger.error(`Error searching jobs: ${error.message}`, error.stack);
       throw new BadRequestException('Failed to search jobs');
@@ -132,24 +147,43 @@ export class JobsService {
   }
 
   /**
-   * Get job by ID
+   * Get job by ID - with Redis caching
    */
   async getJobById(jobId: string, userId?: string): Promise<JobResponseDto> {
-    const job = await this.jobRepository.findOne({
-      where: { id: jobId, is_active: true },
-      relations: ['company'],
-    });
+    // Try to get from cache first (only base job data, not user-specific saved status)
+    let job: Job | null = null;
 
-    if (!job) {
-      throw new NotFoundException('Job not found');
+    if (this.cacheService) {
+      const cached = await this.cacheService.getJobDetail<Job>(jobId);
+      if (cached) {
+        this.logger.debug(`Cache hit for job ${jobId}`);
+        job = cached;
+      }
     }
 
-    // Increment view count asynchronously
+    if (!job) {
+      job = await this.jobRepository.findOne({
+        where: { id: jobId, is_active: true },
+        relations: ['company'],
+      });
+
+      if (!job) {
+        throw new NotFoundException('Job not found');
+      }
+
+      // Cache the job for future requests
+      if (this.cacheService) {
+        await this.cacheService.setJobDetail(jobId, job);
+        this.logger.debug(`Cached job ${jobId}`);
+      }
+    }
+
+    // Increment view count asynchronously (don't await)
     this.jobRepository.update(jobId, {
       view_count: () => 'view_count + 1',
-    });
+    }).catch(err => this.logger.error(`Error incrementing view count: ${err.message}`));
 
-    // Check if saved
+    // Check if saved (user-specific, not cached)
     let saved = false;
     if (userId) {
       const savedJob = await this.savedJobRepository.findOne({
@@ -165,7 +199,7 @@ export class JobsService {
   }
 
   /**
-   * Get recommended jobs for user based on profile
+   * Get recommended jobs for user based on profile - with Redis caching
    */
   async getRecommendedJobs(
     userId: string,
@@ -174,6 +208,15 @@ export class JobsService {
   ): Promise<PaginatedJobsResponseDto> {
     try {
       this.logger.log(`Getting recommended jobs for user: ${userId}`);
+
+      // Try to get from cache first
+      if (this.cacheService) {
+        const cached = await this.cacheService.getRecommendedJobs<PaginatedJobsResponseDto>(userId, page, limit);
+        if (cached) {
+          this.logger.debug('Returning cached recommended jobs');
+          return cached;
+        }
+      }
 
       // Call AI service to get personalized recommendations
       const response = await firstValueFrom(
@@ -223,7 +266,7 @@ export class JobsService {
         saved: savedJobIds.includes(job.id),
       })) as JobResponseDto[];
 
-      return {
+      const result: PaginatedJobsResponseDto = {
         data: jobsWithSaved,
         pagination: {
           page,
@@ -234,6 +277,14 @@ export class JobsService {
           has_prev: page > 1,
         },
       };
+
+      // Cache the results with short TTL (2 minutes for personalized content)
+      if (this.cacheService) {
+        await this.cacheService.setRecommendedJobs(userId, page, limit, result);
+        this.logger.debug('Cached recommended jobs');
+      }
+
+      return result;
     } catch (error) {
       this.logger.error(`Error getting recommended jobs: ${error.message}`, error.stack);
       // Fallback to recent jobs
@@ -247,7 +298,7 @@ export class JobsService {
   }
 
   /**
-   * Save job to favorites
+   * Save job to favorites - invalidates user cache
    */
   async saveJob(userId: string, jobId: string, saveJobDto: SaveJobDto): Promise<SavedJob> {
     // Check if job exists
@@ -282,11 +333,17 @@ export class JobsService {
       save_count: () => 'save_count + 1',
     });
 
+    // Invalidate user's saved jobs cache
+    if (this.cacheService) {
+      await this.cacheService.invalidateUserCache(userId);
+      this.logger.debug(`Invalidated cache for user ${userId} after saving job`);
+    }
+
     return savedJob;
   }
 
   /**
-   * Remove job from favorites
+   * Remove job from favorites - invalidates user cache
    */
   async unsaveJob(userId: string, jobId: string): Promise<void> {
     const savedJob = await this.savedJobRepository.findOne({
@@ -306,16 +363,31 @@ export class JobsService {
       .set({ save_count: () => 'GREATEST(save_count - 1, 0)' })
       .where('id = :jobId', { jobId })
       .execute();
+
+    // Invalidate user's saved jobs cache
+    if (this.cacheService) {
+      await this.cacheService.invalidateUserCache(userId);
+      this.logger.debug(`Invalidated cache for user ${userId} after unsaving job`);
+    }
   }
 
   /**
-   * Get user's saved jobs
+   * Get user's saved jobs - with Redis caching
    */
   async getSavedJobs(
     userId: string,
     page: number = 1,
     limit: number = 20,
   ): Promise<PaginatedJobsResponseDto> {
+    // Try to get from cache first
+    if (this.cacheService) {
+      const cached = await this.cacheService.getSavedJobs<PaginatedJobsResponseDto>(userId, page, limit);
+      if (cached) {
+        this.logger.debug('Returning cached saved jobs');
+        return cached;
+      }
+    }
+
     const [savedJobs, total] = await this.savedJobRepository.findAndCount({
       where: { user_id: userId },
       relations: ['job', 'job.company'],
@@ -331,7 +403,7 @@ export class JobsService {
         saved: true,
       })) as JobResponseDto[];
 
-    return {
+    const result: PaginatedJobsResponseDto = {
       data: jobs,
       pagination: {
         page,
@@ -342,10 +414,18 @@ export class JobsService {
         has_prev: page > 1,
       },
     };
+
+    // Cache the results
+    if (this.cacheService) {
+      await this.cacheService.setSavedJobs(userId, page, limit, result);
+      this.logger.debug('Cached saved jobs');
+    }
+
+    return result;
   }
 
   /**
-   * Update saved job
+   * Update saved job - invalidates user cache
    */
   async updateSavedJob(
     userId: string,
@@ -367,7 +447,15 @@ export class JobsService {
       savedJob.applied_at = new Date();
     }
 
-    return this.savedJobRepository.save(savedJob);
+    const result = await this.savedJobRepository.save(savedJob);
+
+    // Invalidate user's saved jobs cache
+    if (this.cacheService) {
+      await this.cacheService.invalidateUserCache(userId);
+      this.logger.debug(`Invalidated cache for user ${userId} after updating saved job`);
+    }
+
+    return result;
   }
 
   /**
@@ -414,12 +502,21 @@ export class JobsService {
   }
 
   /**
-   * Get similar jobs (using database since ES disabled)
+   * Get similar jobs (using database since ES disabled) - with Redis caching
    */
   async getSimilarJobs(
     jobId: string,
     limit: number = 10,
   ): Promise<JobResponseDto[]> {
+    // Try to get from cache first
+    if (this.cacheService) {
+      const cached = await this.cacheService.getSimilarJobs<JobResponseDto[]>(jobId, limit);
+      if (cached) {
+        this.logger.debug('Returning cached similar jobs');
+        return cached;
+      }
+    }
+
     const job = await this.jobRepository.findOne({
       where: { id: jobId, is_active: true },
     });
@@ -447,11 +544,19 @@ export class JobsService {
       .take(limit)
       .getMany();
 
-    return similarJobs as JobResponseDto[];
+    const result = similarJobs as JobResponseDto[];
+
+    // Cache the results
+    if (this.cacheService) {
+      await this.cacheService.setSimilarJobs(jobId, limit, result);
+      this.logger.debug('Cached similar jobs');
+    }
+
+    return result;
   }
 
   /**
-   * Track job application
+   * Track job application - invalidates caches
    */
   async trackApplication(jobId: string, userId: string): Promise<void> {
     // Update saved job if exists
@@ -469,6 +574,11 @@ export class JobsService {
     await this.jobRepository.update(jobId, {
       application_count: () => 'application_count + 1',
     });
+
+    // Invalidate user cache
+    if (this.cacheService) {
+      await this.cacheService.invalidateUserCache(userId);
+    }
 
     this.logger.log(`Tracked application for job ${jobId} by user ${userId}`);
   }
@@ -628,12 +738,12 @@ export class JobsService {
       };
     } catch (error) {
       this.logger.error(`Error predicting salary: ${error.message}`, error.stack);
-      
+
       // Return estimate based on experience
       const baseMin = 50000;
       const baseMax = 70000;
       const experienceMultiplier = 1 + (salaryPredictionDto.experienceYears * 0.05);
-      
+
       const min = Math.round(baseMin * experienceMultiplier);
       const max = Math.round(baseMax * experienceMultiplier);
       const avg = Math.round((min + max) / 2);
@@ -735,5 +845,90 @@ export class JobsService {
   async getJobReportCount(jobId: string): Promise<number> {
     // ReportsService disabled - return 0
     return 0;
+  }
+
+  // ==================== Cache Management Methods ====================
+
+  /**
+   * Create a new job - invalidates search cache
+   */
+  async createJob(createJobDto: Partial<Job>): Promise<Job> {
+    const job = this.jobRepository.create(createJobDto);
+    const savedJob = await this.jobRepository.save(job);
+
+    // Invalidate search cache since new job was added
+    if (this.cacheService) {
+      await this.cacheService.invalidateSearchCache();
+      this.logger.debug('Invalidated search cache after creating job');
+    }
+
+    return savedJob;
+  }
+
+  /**
+   * Update a job - invalidates job and search cache
+   */
+  async updateJob(jobId: string, updateJobDto: Partial<Job>): Promise<Job> {
+    const job = await this.jobRepository.findOne({ where: { id: jobId } });
+
+    if (!job) {
+      throw new NotFoundException('Job not found');
+    }
+
+    Object.assign(job, updateJobDto);
+    const updatedJob = await this.jobRepository.save(job);
+
+    // Invalidate caches
+    if (this.cacheService) {
+      await this.cacheService.invalidateJobCache(jobId);
+      this.logger.debug(`Invalidated cache for job ${jobId} after update`);
+    }
+
+    return updatedJob;
+  }
+
+  /**
+   * Delete/deactivate a job - invalidates job and search cache
+   */
+  async deleteJob(jobId: string): Promise<void> {
+    const job = await this.jobRepository.findOne({ where: { id: jobId } });
+
+    if (!job) {
+      throw new NotFoundException('Job not found');
+    }
+
+    // Soft delete by setting is_active to false
+    job.is_active = false;
+    await this.jobRepository.save(job);
+
+    // Invalidate caches
+    if (this.cacheService) {
+      await this.cacheService.invalidateJobCache(jobId);
+      this.logger.debug(`Invalidated cache for job ${jobId} after deletion`);
+    }
+  }
+
+  /**
+   * Get cache health status
+   */
+  async getCacheHealth(): Promise<{ healthy: boolean; stats: any }> {
+    if (!this.cacheService) {
+      return { healthy: false, stats: null };
+    }
+
+    const healthy = await this.cacheService.isHealthy();
+    const stats = await this.cacheService.getStats();
+
+    return { healthy, stats };
+  }
+
+  /**
+   * Manually invalidate all job caches (admin operation)
+   */
+  async invalidateAllCaches(): Promise<void> {
+    if (this.cacheService) {
+      await this.cacheService.invalidateAllJobCaches();
+      this.logger.log('All job caches invalidated');
+    }
   }
 }

@@ -107,6 +107,23 @@ export class JobsController {
     return { status: 'ok', module: 'jobs', timestamp: new Date().toISOString() };
   }
 
+  @Get('cache/health')
+  @ApiOperation({ summary: 'Get cache health status' })
+  @ApiResponse({ status: 200, description: 'Cache health status' })
+  async getCacheHealth() {
+    return this.jobsService.getCacheHealth();
+  }
+
+  @Post('cache/invalidate')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Invalidate all job caches (admin only)' })
+  @ApiResponse({ status: 200, description: 'All caches invalidated' })
+  async invalidateAllCaches() {
+    await this.jobsService.invalidateAllCaches();
+    return { message: 'All job caches invalidated', timestamp: new Date().toISOString() };
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get job by ID' })
   @ApiParam({ name: 'id', description: 'Job ID' })

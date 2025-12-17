@@ -17,7 +17,7 @@ authenticatedTest.describe('Resume Export', () => {
     await authenticatedPage.goto('/resumes');
   });
 
-  authenticatedTest.skip('should display export button for resume', async ({ authenticatedPage }) => {
+  authenticatedTest('should display export button for resume', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
 
     const resumeItem = authenticatedPage.getByTestId('resume-item').first();
@@ -29,7 +29,7 @@ authenticatedTest.describe('Resume Export', () => {
     }
   });
 
-  authenticatedTest.skip('should show export format options', async ({ authenticatedPage }) => {
+  authenticatedTest('should show export format options', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
 
     const resumeItem = authenticatedPage.getByTestId('resume-item').first();
@@ -47,7 +47,7 @@ authenticatedTest.describe('Resume Export', () => {
     expect(hasPDF || hasDOCX).toBeTruthy();
   });
 
-  authenticatedTest.skip('should export resume as PDF', async ({ authenticatedPage }) => {
+  authenticatedTest('should export resume as PDF', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
 
     const resumeItem = authenticatedPage.getByTestId('resume-item').first();
@@ -72,7 +72,7 @@ authenticatedTest.describe('Resume Export', () => {
     expect(path).toBeDefined();
   });
 
-  authenticatedTest.skip('should export resume as DOCX', async ({ authenticatedPage }) => {
+  authenticatedTest('should export resume as DOCX', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
 
     const resumeItem = authenticatedPage.getByTestId('resume-item').first();
@@ -93,7 +93,7 @@ authenticatedTest.describe('Resume Export', () => {
     expect(download.suggestedFilename()).toMatch(/\.docx$/i);
   });
 
-  authenticatedTest.skip('should customize export file name', async ({ authenticatedPage }) => {
+  authenticatedTest('should customize export file name', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
 
     const resumeItem = authenticatedPage.getByTestId('resume-item').first();
@@ -116,7 +116,7 @@ authenticatedTest.describe('Resume Export', () => {
     }
   });
 
-  authenticatedTest.skip('should show export options dialog', async ({ authenticatedPage }) => {
+  authenticatedTest('should show export options dialog', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
 
     await authenticatedPage.goto('/resumes/1');
@@ -145,7 +145,7 @@ authenticatedTest.describe('Resume Export', () => {
     }
   });
 
-  authenticatedTest.skip('should export with custom formatting', async ({ authenticatedPage }) => {
+  authenticatedTest('should export with custom formatting', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
 
     await authenticatedPage.goto('/resumes/1');
@@ -173,7 +173,7 @@ authenticatedTest.describe('Resume Export', () => {
     expect(download).toBeDefined();
   });
 
-  authenticatedTest.skip('should preview before export', async ({ authenticatedPage }) => {
+  authenticatedTest('should preview before export', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
 
     await authenticatedPage.goto('/resumes/1');
@@ -199,7 +199,7 @@ authenticatedTest.describe('Resume Export', () => {
     }
   });
 
-  authenticatedTest.skip('should generate shareable link', async ({ authenticatedPage }) => {
+  authenticatedTest('should generate shareable link', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
 
     await authenticatedPage.goto('/resumes/1');
@@ -232,7 +232,7 @@ authenticatedTest.describe('Resume Export', () => {
     }
   });
 
-  authenticatedTest.skip('should copy shareable link to clipboard', async ({ authenticatedPage }) => {
+  authenticatedTest('should copy shareable link to clipboard', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
 
     await authenticatedPage.goto('/resumes/1');
@@ -253,7 +253,7 @@ authenticatedTest.describe('Resume Export', () => {
     }
   });
 
-  authenticatedTest.skip('should set share link expiration', async ({ authenticatedPage }) => {
+  authenticatedTest('should set share link expiration', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
 
     await authenticatedPage.goto('/resumes/1');
@@ -278,7 +278,7 @@ authenticatedTest.describe('Resume Export', () => {
     }
   });
 
-  authenticatedTest.skip('should export multiple resumes in batch', async ({ authenticatedPage }) => {
+  authenticatedTest('should export multiple resumes in batch', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
 
     await authenticatedPage.goto('/resumes');
@@ -306,7 +306,7 @@ authenticatedTest.describe('Resume Export', () => {
     }
   });
 
-  authenticatedTest.skip('should email resume', async ({ authenticatedPage }) => {
+  authenticatedTest('should email resume', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
 
     await authenticatedPage.goto('/resumes/1');
@@ -340,7 +340,7 @@ authenticatedTest.describe('Resume Export', () => {
     }
   });
 
-  authenticatedTest.skip('should handle export errors gracefully', async ({ authenticatedPage }) => {
+  authenticatedTest('should handle export errors gracefully', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
 
     // Simulate export failure (would need to mock API error)
@@ -362,7 +362,7 @@ authenticatedTest.describe('Resume Export', () => {
     }
   });
 
-  authenticatedTest.skip('should show export progress for large files', async ({ authenticatedPage }) => {
+  authenticatedTest('should show export progress for large files', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
 
     await authenticatedPage.goto('/resumes/1');
@@ -380,7 +380,7 @@ authenticatedTest.describe('Resume Export', () => {
     }
   });
 
-  authenticatedTest.skip('should track export history', async ({ authenticatedPage }) => {
+  authenticatedTest('should track export history', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
 
     await authenticatedPage.goto('/resumes/1');
@@ -399,7 +399,7 @@ authenticatedTest.describe('Resume Export', () => {
     }
   });
 
-  authenticatedTest.skip('should support different page sizes for export', async ({ authenticatedPage }) => {
+  authenticatedTest('should support different page sizes for export', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
 
     await authenticatedPage.goto('/resumes/1');

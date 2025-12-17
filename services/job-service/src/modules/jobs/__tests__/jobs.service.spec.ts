@@ -9,6 +9,7 @@ import { of, throwError } from 'rxjs';
 import { Job, RemoteType, ExperienceLevel, EmploymentType, JobSource } from '../entities/job.entity';
 import { SavedJob } from '../entities/saved-job.entity';
 import { SearchService } from '../../search/search.service';
+import { SaveJobDto, SavedJobStatus, UpdateSavedJobDto } from '../dto/save-job.dto';
 
 describe('JobsService', () => {
   let service: JobsService;
@@ -62,7 +63,7 @@ describe('JobsService', () => {
     id: 'saved-1',
     user_id: 'user-1',
     job_id: 'job-1',
-    status: 'saved',
+    status: SavedJobStatus.INTERESTED,
     notes: 'Interesting position',
     tags: ['favorite'],
     created_at: new Date('2024-01-01'),
@@ -661,8 +662,8 @@ describe('JobsService', () => {
   });
 
   describe('saveJob', () => {
-    const saveJobDto = {
-      status: 'saved' as const,
+    const saveJobDto: SaveJobDto = {
+      status: SavedJobStatus.INTERESTED,
       notes: 'Interesting position',
       tags: ['favorite'],
     };
@@ -849,8 +850,8 @@ describe('JobsService', () => {
   });
 
   describe('updateSavedJob', () => {
-    const updateDto = {
-      status: 'applied',
+    const updateDto: UpdateSavedJobDto = {
+      status: SavedJobStatus.APPLIED,
       notes: 'Updated notes',
       tags: ['favorite', 'applied'],
     };
@@ -870,7 +871,7 @@ describe('JobsService', () => {
     });
 
     it('should set applied_at when status changes to applied', async () => {
-      const savedJob = { ...mockSavedJob, status: 'saved', applied_at: null };
+      const savedJob = { ...mockSavedJob, status: SavedJobStatus.INTERESTED, applied_at: null };
       mockSavedJobRepository.findOne.mockResolvedValue(savedJob as SavedJob);
       mockSavedJobRepository.save.mockResolvedValue({
         ...savedJob,
@@ -878,7 +879,7 @@ describe('JobsService', () => {
         applied_at: expect.any(Date),
       } as SavedJob);
 
-      const result = await service.updateSavedJob('user-1', 'job-1', { status: 'applied' });
+      const result = await service.updateSavedJob('user-1', 'job-1', { status: SavedJobStatus.APPLIED });
 
       expect(result.applied_at).toBeDefined();
     });
@@ -1085,7 +1086,7 @@ describe('JobsService', () => {
 
   describe('trackApplication', () => {
     it('should track application and update saved job status', async () => {
-      const savedJob = { ...mockSavedJob, status: 'saved' };
+      const savedJob = { ...mockSavedJob, status: SavedJobStatus.INTERESTED };
       mockSavedJobRepository.findOne.mockResolvedValue(savedJob as SavedJob);
       mockSavedJobRepository.save.mockResolvedValue({
         ...savedJob,

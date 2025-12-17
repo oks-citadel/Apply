@@ -9,6 +9,7 @@ import { of, throwError } from 'rxjs';
 import { Job, RemoteType, ExperienceLevel, EmploymentType, JobSource } from './entities/job.entity';
 import { SavedJob } from './entities/saved-job.entity';
 import { SearchService } from '../search/search.service';
+import { SaveJobDto, SavedJobStatus } from './dto/save-job.dto';
 
 describe('JobsService', () => {
   let service: JobsService;
@@ -394,8 +395,8 @@ describe('JobsService', () => {
   });
 
   describe('saveJob', () => {
-    const saveJobDto = {
-      status: 'saved' as const,
+    const saveJobDto: SaveJobDto = {
+      status: SavedJobStatus.INTERESTED,
       notes: 'Interesting position',
     };
 

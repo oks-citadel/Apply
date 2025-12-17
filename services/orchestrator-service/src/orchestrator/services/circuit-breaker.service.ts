@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import * as CircuitBreaker from 'opossum';
+import CircuitBreaker from 'opossum';
 import { AgentType, AgentStatus } from '../interfaces/agent.interface';
 
 interface CircuitBreakerConfig {

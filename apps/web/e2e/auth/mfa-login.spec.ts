@@ -17,7 +17,7 @@ test.describe('MFA Login', () => {
     await page.goto('/login');
   });
 
-  test.skip('should prompt for MFA code after valid credentials', async ({ page }) => {
+  test('should prompt for MFA code after valid credentials', async ({ page }) => {
     // TODO: Requires backend integration and MFA setup
     const { email, password } = TEST_USERS.withMFA;
 
@@ -34,7 +34,7 @@ test.describe('MFA Login', () => {
     await expect(page.getByRole('button', { name: /verify|submit/i })).toBeVisible();
   });
 
-  test.skip('should successfully verify MFA code', async ({ page }) => {
+  test('should successfully verify MFA code', async ({ page }) => {
     // TODO: Requires backend integration and MFA setup
     const { email, password } = TEST_USERS.withMFA;
     const validMFACode = '123456'; // Mock code
@@ -55,7 +55,7 @@ test.describe('MFA Login', () => {
     await expect(page).toHaveURL(/.*dashboard/, { timeout: 10000 });
   });
 
-  test.skip('should show error for invalid MFA code', async ({ page }) => {
+  test('should show error for invalid MFA code', async ({ page }) => {
     // TODO: Requires backend integration
     const { email, password } = TEST_USERS.withMFA;
     const invalidMFACode = '000000';
@@ -75,7 +75,7 @@ test.describe('MFA Login', () => {
     await expect(page.getByText(/invalid.*code|incorrect.*code|verification.*failed/i)).toBeVisible();
   });
 
-  test.skip('should allow login with backup code', async ({ page }) => {
+  test('should allow login with backup code', async ({ page }) => {
     // TODO: Requires backend integration
     const { email, password } = TEST_USERS.withMFA;
     const backupCode = 'BACKUP-CODE-12345';
@@ -101,7 +101,7 @@ test.describe('MFA Login', () => {
     await expect(page.getByText(/backup.*code.*used|regenerate.*codes/i)).toBeVisible();
   });
 
-  test.skip('should support "Remember this device" option', async ({ page }) => {
+  test('should support "Remember this device" option', async ({ page }) => {
     // TODO: Requires backend integration
     const { email, password } = TEST_USERS.withMFA;
     const validMFACode = '123456';
@@ -129,7 +129,7 @@ test.describe('MFA Login', () => {
     expect(deviceTrustCookie).toBeDefined();
   });
 
-  test.skip('should allow resending MFA code', async ({ page }) => {
+  test('should allow resending MFA code', async ({ page }) => {
     // TODO: Requires backend integration
     const { email, password } = TEST_USERS.withMFA;
 
@@ -150,7 +150,7 @@ test.describe('MFA Login', () => {
     }
   });
 
-  test.skip('should handle MFA timeout', async ({ page }) => {
+  test('should handle MFA timeout', async ({ page }) => {
     // TODO: Requires backend integration
     const { email, password } = TEST_USERS.withMFA;
 
@@ -173,7 +173,7 @@ test.describe('MFA Login', () => {
     await expect(page.getByText(/session.*expired|timeout|try.*again/i)).toBeVisible();
   });
 
-  test.skip('should navigate to MFA recovery flow', async ({ page }) => {
+  test('should navigate to MFA recovery flow', async ({ page }) => {
     // TODO: Requires backend integration
     const { email, password } = TEST_USERS.withMFA;
 
@@ -194,7 +194,7 @@ test.describe('MFA Login', () => {
     }
   });
 
-  test.skip('should auto-submit MFA code when complete', async ({ page }) => {
+  test('should auto-submit MFA code when complete', async ({ page }) => {
     // TODO: Requires backend integration
     const { email, password } = TEST_USERS.withMFA;
     const validMFACode = '123456';
@@ -214,7 +214,7 @@ test.describe('MFA Login', () => {
     await expect(page).toHaveURL(/.*dashboard/, { timeout: 10000 });
   });
 
-  test.skip('should display MFA code input with proper formatting', async ({ page }) => {
+  test('should display MFA code input with proper formatting', async ({ page }) => {
     // TODO: Requires backend integration
     const { email, password } = TEST_USERS.withMFA;
 

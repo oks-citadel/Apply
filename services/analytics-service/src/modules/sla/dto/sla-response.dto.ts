@@ -1,9 +1,17 @@
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { SLATier, SLAStatus, EligibilityStatus, SLAViolationType, RemedyType, RemedyStatus } from '../enums/sla.enums';
 
 export class SLAStatusResponseDto {
+  @ApiProperty({ description: 'SLA Contract ID', example: '123e4567-e89b-12d3-a456-426614174000' })
   id: string;
+
+  @ApiProperty({ description: 'User ID', example: '123e4567-e89b-12d3-a456-426614174001' })
   userId: string;
+
+  @ApiProperty({ description: 'SLA tier', enum: SLATier, example: 'professional' })
   tier: SLATier;
+
+  @ApiProperty({ description: 'Contract status', enum: SLAStatus, example: 'active' })
   status: SLAStatus;
 
   // Guarantee Terms

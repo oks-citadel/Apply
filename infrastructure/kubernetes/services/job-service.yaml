@@ -56,6 +56,15 @@ spec:
           value: "8004"
         - name: SERVICE_NAME
           value: "job-service"
+        # Redis caching configuration (override defaults if needed)
+        - name: REDIS_CACHE_ENABLED
+          value: "true"
+        - name: JOB_SEARCH_CACHE_TTL
+          value: "300"  # 5 minutes for search results
+        - name: JOB_DETAIL_CACHE_TTL
+          value: "3600"  # 1 hour for individual jobs
+        - name: RECOMMENDED_JOBS_CACHE_TTL
+          value: "120"  # 2 minutes for recommended jobs
         envFrom:
         - configMapRef:
             name: applyforus-config

@@ -1,0 +1,315 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-rules
+  namespace: monitoring
+  labels:
+    app: prometheus
+data:
+  alert-rules.yml: |
+    groups:
+      # ApplyForUs Service Health Alerts
+      - name: applyforus-service-health
+        rules:
+          # Service unavailable
+          - alert: ServiceDown
+            expr: up{job="applyforus-services"} == 0
+            for: 1m
+            labels:
+              severity: critical
+              team: platform
+            annotations:
+              summary: "Service {{ $labels.service }} is down"
+              description: "Service {{ $labels.service }} in namespace {{ $labels.namespace }} has been down for more than 1 minute."
+              runbook_url: "https://docs.applyforus.com/runbooks/service-down"
+
+          # High error rate
+          - alert: HighErrorRate
+            expr: |
+              (sum(rate(http_requests_total{status=~"5.."}[5m])) by (service))
+              /
+              (sum(rate(http_requests_total[5m])) by (service)) > 0.05
+            for: 5m
+            labels:
+              severity: critical
+              team: platform
+            annotations:
+              summary: "High error rate on {{ $labels.service }}"
+              description: "Service {{ $labels.service }} has an error rate above 5% for the last 5 minutes (current: {{ $value | humanizePercentage }})."
+
+          # High latency P99
+          - alert: HighLatencyP99
+            expr: |
+              histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[5m])) by (service, le)) > 2
+            for: 5m
+            labels:
+              severity: warning
+              team: platform
+            annotations:
+              summary: "High P99 latency on {{ $labels.service }}"
+              description: "Service {{ $labels.service }} P99 latency is above 2 seconds (current: {{ $value | humanizeDuration }})."
+
+          # High latency P95
+          - alert: HighLatencyP95
+            expr: |
+              histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (service, le)) > 1
+            for: 10m
+            labels:
+              severity: warning
+              team: platform
+            annotations:
+              summary: "High P95 latency on {{ $labels.service }}"
+              description: "Service {{ $labels.service }} P95 latency is above 1 second (current: {{ $value | humanizeDuration }})."
+
+          # Too many requests in flight
+          - alert: TooManyRequestsInFlight
+            expr: http_requests_in_flight > 100
+            for: 5m
+            labels:
+              severity: warning
+              team: platform
+            annotations:
+              summary: "High request load on {{ $labels.service }}"
+              description: "Service {{ $labels.service }} has more than 100 requests in flight (current: {{ $value }})."
+
+      # Resource Alerts
+      - name: applyforus-resources
+        rules:
+          # High CPU usage
+          - alert: HighCPUUsage
+            expr: |
+              (sum(rate(container_cpu_usage_seconds_total{namespace="applyforus"}[5m])) by (pod))
+              /
+              (sum(container_spec_cpu_quota{namespace="applyforus"}/100000) by (pod)) > 0.9
+            for: 10m
+            labels:
+              severity: warning
+              team: platform
+            annotations:
+              summary: "High CPU usage in {{ $labels.pod }}"
+              description: "Pod {{ $labels.pod }} CPU usage is above 90% (current: {{ $value | humanizePercentage }})."
+
+          # High memory usage
+          - alert: HighMemoryUsage
+            expr: |
+              (sum(container_memory_working_set_bytes{namespace="applyforus"}) by (pod))
+              /
+              (sum(container_spec_memory_limit_bytes{namespace="applyforus"}) by (pod)) > 0.9
+            for: 10m
+            labels:
+              severity: warning
+              team: platform
+            annotations:
+              summary: "High memory usage in {{ $labels.pod }}"
+              description: "Pod {{ $labels.pod }} memory usage is above 90% (current: {{ $value | humanizePercentage }})."
+
+          # Pod restart
+          - alert: PodRestart
+            expr: increase(kube_pod_container_status_restarts_total{namespace="applyforus"}[1h]) > 3
+            for: 0m
+            labels:
+              severity: warning
+              team: platform
+            annotations:
+              summary: "Pod {{ $labels.pod }} restarting frequently"
+              description: "Pod {{ $labels.pod }} has restarted {{ $value }} times in the last hour."
+
+          # Pod pending
+          - alert: PodPending
+            expr: kube_pod_status_phase{namespace="applyforus", phase="Pending"} == 1
+            for: 15m
+            labels:
+              severity: warning
+              team: platform
+            annotations:
+              summary: "Pod {{ $labels.pod }} stuck in Pending state"
+              description: "Pod {{ $labels.pod }} has been pending for more than 15 minutes."
+
+      # Database Alerts
+      - name: applyforus-database
+        rules:
+          # High database query latency
+          - alert: HighDBQueryLatency
+            expr: |
+              histogram_quantile(0.95, sum(rate(db_query_duration_seconds_bucket[5m])) by (service, le)) > 0.5
+            for: 5m
+            labels:
+              severity: warning
+              team: platform
+            annotations:
+              summary: "High database query latency on {{ $labels.service }}"
+              description: "Service {{ $labels.service }} database P95 query latency is above 500ms (current: {{ $value | humanizeDuration }})."
+
+          # Database connection pool exhaustion
+          - alert: DBConnectionPoolExhausted
+            expr: |
+              (db_connection_pool_used / db_connection_pool_size) > 0.9
+            for: 5m
+            labels:
+              severity: critical
+              team: platform
+            annotations:
+              summary: "Database connection pool nearly exhausted on {{ $labels.service }}"
+              description: "Service {{ $labels.service }} database connection pool is {{ $value | humanizePercentage }} utilized."
+
+          # High database error rate
+          - alert: HighDBErrorRate
+            expr: |
+              (sum(rate(db_queries_total{status="error"}[5m])) by (service))
+              /
+              (sum(rate(db_queries_total[5m])) by (service)) > 0.01
+            for: 5m
+            labels:
+              severity: warning
+              team: platform
+            annotations:
+              summary: "High database error rate on {{ $labels.service }}"
+              description: "Service {{ $labels.service }} has a database error rate above 1% (current: {{ $value | humanizePercentage }})."
+
+      # Queue Alerts
+      - name: applyforus-queues
+        rules:
+          # High queue backlog
+          - alert: HighQueueBacklog
+            expr: bull_queue_waiting > 1000
+            for: 10m
+            labels:
+              severity: warning
+              team: platform
+            annotations:
+              summary: "High queue backlog on {{ $labels.queue }}"
+              description: "Queue {{ $labels.queue }} has {{ $value }} waiting jobs."
+
+          # Queue job failures
+          - alert: HighQueueFailureRate
+            expr: |
+              (sum(rate(bull_queue_failed_total[5m])) by (queue))
+              /
+              (sum(rate(bull_queue_completed_total[5m]) + rate(bull_queue_failed_total[5m])) by (queue)) > 0.1
+            for: 10m
+            labels:
+              severity: warning
+              team: platform
+            annotations:
+              summary: "High failure rate on queue {{ $labels.queue }}"
+              description: "Queue {{ $labels.queue }} has a failure rate above 10% (current: {{ $value | humanizePercentage }})."
+
+          # Long queue job duration
+          - alert: LongQueueJobDuration
+            expr: |
+              histogram_quantile(0.95, sum(rate(bull_queue_job_duration_seconds_bucket[5m])) by (queue, le)) > 300
+            for: 10m
+            labels:
+              severity: warning
+              team: platform
+            annotations:
+              summary: "Long job duration on queue {{ $labels.queue }}"
+              description: "Queue {{ $labels.queue }} P95 job duration is above 5 minutes (current: {{ $value | humanizeDuration }})."
+
+      # Business Metrics Alerts
+      - name: applyforus-business
+        rules:
+          # High job application failure rate
+          - alert: HighJobApplicationFailureRate
+            expr: |
+              (sum(rate(job_applications_total{status="failed"}[1h])) by (service))
+              /
+              (sum(rate(job_applications_total[1h])) by (service)) > 0.2
+            for: 15m
+            labels:
+              severity: warning
+              team: product
+            annotations:
+              summary: "High job application failure rate"
+              description: "Job application failure rate is above 20% (current: {{ $value | humanizePercentage }})."
+
+          # High resume generation failure rate
+          - alert: HighResumeGenerationFailureRate
+            expr: |
+              (sum(rate(resume_generation_total{status="failed"}[1h])) by (service))
+              /
+              (sum(rate(resume_generation_total[1h])) by (service)) > 0.1
+            for: 15m
+            labels:
+              severity: warning
+              team: product
+            annotations:
+              summary: "High resume generation failure rate"
+              description: "Resume generation failure rate is above 10% (current: {{ $value | humanizePercentage }})."
+
+          # AI rate limiting
+          - alert: AIServiceRateLimited
+            expr: increase(ai_service_rate_limited_total[5m]) > 10
+            for: 5m
+            labels:
+              severity: warning
+              team: platform
+            annotations:
+              summary: "AI service being rate limited"
+              description: "AI service has been rate limited {{ $value }} times in the last 5 minutes."
+
+          # Payment failures
+          - alert: PaymentFailures
+            expr: increase(payment_transactions_total{status="failed"}[1h]) > 5
+            for: 0m
+            labels:
+              severity: critical
+              team: platform
+            annotations:
+              summary: "Payment processing failures detected"
+              description: "{{ $value }} payment failures detected in the last hour."
+
+          # API quota exhaustion
+          - alert: APIQuotaExhausted
+            expr: increase(api_quota_exhausted_total[1h]) > 100
+            for: 0m
+            labels:
+              severity: warning
+              team: platform
+            annotations:
+              summary: "High number of API quota exhaustion events"
+              description: "{{ $value }} API quota exhaustion events in the last hour."
+
+      # Cache Alerts
+      - name: applyforus-cache
+        rules:
+          # Low cache hit rate
+          - alert: LowCacheHitRate
+            expr: |
+              (sum(rate(cache_hits_total[5m])) by (cache_name))
+              /
+              (sum(rate(cache_hits_total[5m]) + rate(cache_misses_total[5m])) by (cache_name)) < 0.5
+            for: 15m
+            labels:
+              severity: warning
+              team: platform
+            annotations:
+              summary: "Low cache hit rate for {{ $labels.cache_name }}"
+              description: "Cache {{ $labels.cache_name }} hit rate is below 50% (current: {{ $value | humanizePercentage }})."
+
+      # SLA Alerts
+      - name: applyforus-sla
+        rules:
+          # SLA breach - availability
+          - alert: SLABreachAvailability
+            expr: |
+              (1 - (sum(rate(http_requests_total{status=~"5.."}[1h])) / sum(rate(http_requests_total[1h])))) < 0.999
+            for: 5m
+            labels:
+              severity: critical
+              team: platform
+            annotations:
+              summary: "SLA breach - availability below 99.9%"
+              description: "Platform availability is {{ $value | humanizePercentage }}, below the 99.9% SLA target."
+
+          # SLA breach - latency
+          - alert: SLABreachLatency
+            expr: |
+              histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[1h])) by (le)) > 0.5
+            for: 15m
+            labels:
+              severity: warning
+              team: platform
+            annotations:
+              summary: "SLA breach - P95 latency above 500ms"
+              description: "Platform P95 latency is {{ $value | humanizeDuration }}, above the 500ms SLA target."

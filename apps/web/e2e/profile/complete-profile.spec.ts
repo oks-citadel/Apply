@@ -43,7 +43,7 @@ test.describe('Complete Profile', () => {
       expect(hasProgressBar || hasProgressSteps).toBeTruthy();
     });
 
-    authenticatedTest.skip('should complete basic profile information', async ({ authenticatedPage }) => {
+    authenticatedTest('should complete basic profile information', async ({ authenticatedPage }) => {
       // TODO: Requires backend integration
 
       // Fill basic profile info
@@ -70,7 +70,7 @@ test.describe('Complete Profile', () => {
       expect(hasSuccess || hasNextStep).toBeTruthy();
     });
 
-    authenticatedTest.skip('should validate required fields', async ({ authenticatedPage }) => {
+    authenticatedTest('should validate required fields', async ({ authenticatedPage }) => {
       // TODO: Requires frontend validation
 
       // Try to proceed without filling required fields
@@ -80,7 +80,7 @@ test.describe('Complete Profile', () => {
       await expect(authenticatedPage.getByText(/required|field.*required/i)).toBeVisible();
     });
 
-    authenticatedTest.skip('should support multi-step profile completion', async ({ authenticatedPage }) => {
+    authenticatedTest('should support multi-step profile completion', async ({ authenticatedPage }) => {
       // TODO: Requires backend integration
 
       // Step 1: Basic info
@@ -117,7 +117,7 @@ test.describe('Complete Profile', () => {
       }
     });
 
-    authenticatedTest.skip('should show profile completion percentage', async ({ authenticatedPage }) => {
+    authenticatedTest('should show profile completion percentage', async ({ authenticatedPage }) => {
       // TODO: Requires frontend implementation
 
       // Check initial completion percentage
@@ -132,7 +132,7 @@ test.describe('Complete Profile', () => {
       // Would need to verify the number increased
     });
 
-    authenticatedTest.skip('should save profile as draft', async ({ authenticatedPage }) => {
+    authenticatedTest('should save profile as draft', async ({ authenticatedPage }) => {
       // TODO: Requires backend integration
 
       // Fill partial info
@@ -167,7 +167,7 @@ test.describe('Complete Profile', () => {
       }
     });
 
-    authenticatedTest.skip('should upload profile photo', async ({ authenticatedPage }) => {
+    authenticatedTest('should upload profile photo', async ({ authenticatedPage }) => {
       // TODO: Requires file upload implementation
 
       const uploadButton = authenticatedPage.getByRole('button', { name: /upload.*photo|add.*photo|choose.*image/i });
@@ -180,7 +180,7 @@ test.describe('Complete Profile', () => {
       }
     });
 
-    authenticatedTest.skip('should validate profile photo requirements', async ({ authenticatedPage }) => {
+    authenticatedTest('should validate profile photo requirements', async ({ authenticatedPage }) => {
       // TODO: Requires file upload implementation
 
       // Try to upload invalid file (too large, wrong format, etc.)
@@ -188,7 +188,7 @@ test.describe('Complete Profile', () => {
       // await expect(authenticatedPage.getByText(/invalid.*file|file.*too.*large/i)).toBeVisible();
     });
 
-    authenticatedTest.skip('should set preferred job preferences', async ({ authenticatedPage }) => {
+    authenticatedTest('should set preferred job preferences', async ({ authenticatedPage }) => {
       // TODO: Requires backend integration
 
       // Navigate to job preferences section
@@ -219,7 +219,7 @@ test.describe('Complete Profile', () => {
       }
     });
 
-    authenticatedTest.skip('should complete entire profile flow', async ({ authenticatedPage }) => {
+    authenticatedTest('should complete entire profile flow', async ({ authenticatedPage }) => {
       // TODO: Requires backend integration
 
       // Complete all steps
@@ -248,7 +248,7 @@ test.describe('Complete Profile', () => {
   });
 
   test.describe('Profile Completion Reminders', () => {
-    authenticatedTest.skip('should show completion reminder banner', async ({ authenticatedPage }) => {
+    authenticatedTest('should show completion reminder banner', async ({ authenticatedPage }) => {
       // TODO: Requires backend integration
 
       // Navigate to dashboard with incomplete profile
@@ -263,7 +263,7 @@ test.describe('Complete Profile', () => {
       await expect(completeLink).toBeVisible();
     });
 
-    authenticatedTest.skip('should hide reminder after profile completion', async ({ authenticatedPage }) => {
+    authenticatedTest('should hide reminder after profile completion', async ({ authenticatedPage }) => {
       // TODO: Requires backend integration
 
       // Complete profile

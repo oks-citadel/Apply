@@ -1,0 +1,28 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+metadata:
+  name: applyforus-monitoring
+
+namespace: monitoring
+
+resources:
+  - namespace.yaml
+  - prometheus-configmap.yaml
+  - prometheus-rules.yaml
+  - prometheus-deployment.yaml
+  - grafana-deployment.yaml
+  - grafana-dashboards.yaml
+  - alertmanager-deployment.yaml
+  - ingress.yaml
+
+commonLabels:
+  app.kubernetes.io/part-of: applyforus-monitoring
+  app.kubernetes.io/managed-by: kustomize
+
+configMapGenerator:
+  - name: monitoring-config
+    literals:
+      - PROMETHEUS_URL=http://prometheus:9090
+      - GRAFANA_URL=http://grafana:3000
+      - ALERTMANAGER_URL=http://alertmanager:9093

@@ -44,4 +44,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
     CMD curl -f http://localhost:4005/health || exit 1
 
 ENTRYPOINT ["dumb-init", "--"]
-CMD ["node", "dist/services/notification-service/src/main.js"]
+CMD ["node", "dist/main.js"]

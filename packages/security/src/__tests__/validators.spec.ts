@@ -208,7 +208,7 @@ describe('Validators Security Tests', () => {
       const validPhones = [
         '+12345678901',
         '+441234567890',
-        '+4412345678901234',
+        '+441234567890123', // 15 digits total (max E.164 length)
       ];
 
       validPhones.forEach((phone) => {

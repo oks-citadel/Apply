@@ -26,51 +26,53 @@ jest.mock('bcrypt');
 jest.mock('speakeasy');
 jest.mock('qrcode');
 
+// Helper function to create mock user with proper getters and methods
+function createMockUser(overrides: Partial<User> = {}): User {
+  const user = new User();
+  user.id = '123e4567-e89b-12d3-a456-426614174000';
+  user.email = 'test@example.com';
+  user.username = 'testuser';
+  user.password = '$2b$10$hashedpassword';
+  user.firstName = 'John';
+  user.lastName = 'Doe';
+  user.phoneNumber = '+1234567890';
+  user.profilePicture = null;
+  user.role = UserRole.USER;
+  user.status = UserStatus.ACTIVE;
+  user.authProvider = AuthProvider.LOCAL;
+  user.providerId = null;
+  user.isEmailVerified = true;
+  user.emailVerificationToken = null;
+  user.emailVerificationExpiry = null;
+  user.passwordResetToken = null;
+  user.passwordResetExpiry = null;
+  user.isMfaEnabled = false;
+  user.mfaSecret = null;
+  user.lastLoginAt = new Date();
+  user.lastLoginIp = '127.0.0.1';
+  user.loginAttempts = 0;
+  user.lockedUntil = null;
+  user.refreshToken = null;
+  user.metadata = {};
+  user.createdAt = new Date();
+  user.updatedAt = new Date();
+
+  // Apply overrides
+  Object.assign(user, overrides);
+  return user;
+}
+
 describe('AuthService', () => {
   let service: AuthService;
   let usersService: UsersService;
   let jwtService: JwtService;
   let configService: ConfigService;
   let emailService: EmailService;
+  let mockUser: User;
 
-  const mockUser: User = {
-    id: '123e4567-e89b-12d3-a456-426614174000',
-    email: 'test@example.com',
-    username: 'testuser',
-    password: '$2b$10$hashedpassword',
-    firstName: 'John',
-    lastName: 'Doe',
-    phoneNumber: '+1234567890',
-    profilePicture: null,
-    role: UserRole.USER,
-    status: UserStatus.ACTIVE,
-    authProvider: AuthProvider.LOCAL,
-    providerId: null,
-    isEmailVerified: true,
-    emailVerificationToken: null,
-    emailVerificationExpiry: null,
-    passwordResetToken: null,
-    passwordResetExpiry: null,
-    isMfaEnabled: false,
-    mfaSecret: null,
-    lastLoginAt: new Date(),
-    lastLoginIp: '127.0.0.1',
-    loginAttempts: 0,
-    lockedUntil: null,
-    refreshToken: null,
-    metadata: {},
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    get fullName() {
-      return `${this.firstName} ${this.lastName}`;
-    },
-    get isLocked() {
-      return this.lockedUntil && this.lockedUntil > new Date();
-    },
-    incrementLoginAttempts: jest.fn(),
-    resetLoginAttempts: jest.fn(),
-    lockAccount: jest.fn(),
-  };
+  beforeEach(() => {
+    mockUser = createMockUser();
+  });
 
   const mockUsersService = {
     create: jest.fn(),
@@ -101,7 +103,7 @@ describe('AuthService', () => {
 
   const mockConfigService = {
     get: jest.fn((key: string, defaultValue?: any) => {
-      const config = {
+      const config: Record<string, any> = {
         'security.maxLoginAttempts': 5,
         'security.lockoutDuration': 900,
         'jwt.accessTokenExpiresIn': '15m',
@@ -317,7 +319,7 @@ describe('AuthService', () => {
     });
 
     it('should throw UnauthorizedException for suspended account', async () => {
-      const suspendedUser = { ...mockUser, status: UserStatus.SUSPENDED };
+      const suspendedUser = createMockUser({ status: UserStatus.SUSPENDED });
       mockUsersService.findByEmail.mockResolvedValue(suspendedUser);
       mockUsersService.validatePassword.mockResolvedValue(true);
 
@@ -330,7 +332,7 @@ describe('AuthService', () => {
     });
 
     it('should throw UnauthorizedException for inactive account', async () => {
-      const inactiveUser = { ...mockUser, status: UserStatus.INACTIVE };
+      const inactiveUser = createMockUser({ status: UserStatus.INACTIVE });
       mockUsersService.findByEmail.mockResolvedValue(inactiveUser);
       mockUsersService.validatePassword.mockResolvedValue(true);
 
@@ -343,11 +345,10 @@ describe('AuthService', () => {
     });
 
     it('should throw UnauthorizedException for OAuth users without password', async () => {
-      const oauthUser = {
-        ...mockUser,
+      const oauthUser = createMockUser({
         password: null,
         authProvider: AuthProvider.GOOGLE,
-      };
+      });
       mockUsersService.findByEmail.mockResolvedValue(oauthUser);
 
       await expect(service.login(loginDto, '127.0.0.1')).rejects.toThrow(
@@ -359,7 +360,7 @@ describe('AuthService', () => {
     });
 
     it('should require MFA token when MFA is enabled', async () => {
-      const mfaUser = { ...mockUser, isMfaEnabled: true };
+      const mfaUser = createMockUser({ isMfaEnabled: true });
       mockUsersService.findByEmail.mockResolvedValue(mfaUser);
       mockUsersService.validatePassword.mockResolvedValue(true);
 
@@ -815,7 +816,7 @@ describe('AuthService', () => {
     });
 
     it('should return null for user without password (OAuth)', async () => {
-      const oauthUser = { ...mockUser, password: null };
+      const oauthUser = createMockUser({ password: null });
       mockUsersService.findByEmail.mockResolvedValue(oauthUser);
 
       const result = await service.validateUser('test@example.com', 'password');

@@ -20,15 +20,28 @@
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "paths": {
-      "@/*": ["src/*"],
-      "@modules/*": ["src/modules/*"],
-      "@config/*": ["src/config/*"],
-      "@common/*": ["src/common/*"],
-      "@applyforus/telemetry": ["../../packages/telemetry/src/index.ts"],
-      "@applyforus/logging": ["../../packages/logging/src/index.ts"],
-      "@applyforus/security": ["../../packages/security/src/index.ts"]
-    }
+      "@/*": [
+        "src/*"
+      ],
+      "@modules/*": [
+        "src/modules/*"
+      ],
+      "@config/*": [
+        "src/config/*"
+      ],
+      "@common/*": [
+        "src/common/*"
+      ]
+    },
+    "rootDir": "./src"
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "test", "**/*spec.ts"]
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "test",
+    "**/*spec.ts"
+  ]
 }

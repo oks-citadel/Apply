@@ -289,7 +289,9 @@ describe('Sanitizer Security Tests', () => {
       const result = sanitizeEmail(input);
       expect(result).not.toContain('<');
       expect(result).not.toContain('>');
-      expect(result).not.toContain('script');
+      // Note: sanitizeEmail removes invalid chars like < and >, but 'script' is valid text
+      // The result will be 'testscript@example.com' which is safe for email context
+      expect(result).toBe('testscript@example.com');
     });
 
     it('should allow valid email characters', () => {

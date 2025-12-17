@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { BullModule } from '@nestjs/bull';
 import { QueueService } from './queue.service';
 import { ApplicationProcessor } from './processors/application.processor';
@@ -12,7 +12,7 @@ import { applicationQueueConfig } from '../../config/queue.config';
       name: applicationQueueConfig.name,
       defaultJobOptions: applicationQueueConfig.defaultJobOptions,
     }),
-    ApplicationsModule,
+    forwardRef(() => ApplicationsModule),
     AdaptersModule,
   ],
   providers: [QueueService, ApplicationProcessor],

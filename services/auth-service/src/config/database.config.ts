@@ -1,5 +1,6 @@
 import { ConfigService } from '@nestjs/config';
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
+import { join } from 'path';
 import { User } from '../modules/users/entities/user.entity';
 import { AIGeneration } from '../modules/ai/entities/ai-generation.entity';
 
@@ -13,6 +14,11 @@ export const databaseConfig = (
   password: configService.get<string>('database.password'),
   database: configService.get<string>('database.database'),
   entities: [User, AIGeneration],
+  // Migrations configuration - run on startup in production
+  migrations: [join(__dirname, '../migrations/*{.ts,.js}')],
+  migrationsRun: configService.get<string>('nodeEnv') === 'production' ||
+    configService.get<boolean>('database.runMigrations', false),
+  migrationsTableName: 'typeorm_migrations',
   // SECURITY: Always use false in production - never allow auto-schema sync
   // Use migrations for schema changes instead
   synchronize: configService.get<string>('nodeEnv') === 'production'

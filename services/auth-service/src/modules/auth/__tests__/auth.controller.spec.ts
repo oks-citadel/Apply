@@ -17,63 +17,47 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 
+// Helper function to create mock user with proper getters and methods
+function createMockUser(overrides: Partial<User> = {}): User {
+  const user = new User();
+  user.id = '123e4567-e89b-12d3-a456-426614174000';
+  user.email = 'test@example.com';
+  user.username = 'testuser';
+  user.password = '$2b$10$hashedpassword';
+  user.firstName = 'John';
+  user.lastName = 'Doe';
+  user.phoneNumber = '+1234567890';
+  user.profilePicture = null;
+  user.role = UserRole.USER;
+  user.status = UserStatus.ACTIVE;
+  user.authProvider = AuthProvider.LOCAL;
+  user.providerId = null;
+  user.isEmailVerified = true;
+  user.emailVerificationToken = null;
+  user.emailVerificationExpiry = null;
+  user.passwordResetToken = null;
+  user.passwordResetExpiry = null;
+  user.isMfaEnabled = false;
+  user.mfaSecret = null;
+  user.lastLoginAt = new Date();
+  user.lastLoginIp = '127.0.0.1';
+  user.loginAttempts = 0;
+  user.lockedUntil = null;
+  user.refreshToken = null;
+  user.metadata = {};
+  user.createdAt = new Date();
+  user.updatedAt = new Date();
+
+  // Apply overrides
+  Object.assign(user, overrides);
+  return user;
+}
+
 describe('AuthController', () => {
   let controller: AuthController;
   let authService: AuthService;
-
-  const mockUser: User = {
-    id: '123e4567-e89b-12d3-a456-426614174000',
-    email: 'test@example.com',
-    username: 'testuser',
-    password: '$2b$10$hashedpassword',
-    firstName: 'John',
-    lastName: 'Doe',
-    phoneNumber: '+1234567890',
-    profilePicture: null,
-    role: UserRole.USER,
-    status: UserStatus.ACTIVE,
-    authProvider: AuthProvider.LOCAL,
-    providerId: null,
-    isEmailVerified: true,
-    emailVerificationToken: null,
-    emailVerificationExpiry: null,
-    passwordResetToken: null,
-    passwordResetExpiry: null,
-    isMfaEnabled: false,
-    mfaSecret: null,
-    lastLoginAt: new Date(),
-    lastLoginIp: '127.0.0.1',
-    loginAttempts: 0,
-    lockedUntil: null,
-    refreshToken: null,
-    metadata: {},
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    get fullName() {
-      return `${this.firstName} ${this.lastName}`;
-    },
-    get isLocked() {
-      return this.lockedUntil && this.lockedUntil > new Date();
-    },
-    incrementLoginAttempts: jest.fn(),
-    resetLoginAttempts: jest.fn(),
-    lockAccount: jest.fn(),
-  };
-
-  const mockTokenResponse: TokenResponseDto = {
-    accessToken: 'mock.access.token',
-    refreshToken: 'mock.refresh.token',
-    user: {
-      id: mockUser.id,
-      email: mockUser.email,
-      username: mockUser.username,
-      firstName: mockUser.firstName,
-      lastName: mockUser.lastName,
-      role: mockUser.role,
-      status: mockUser.status,
-    },
-    expiresIn: 900,
-  };
+  let mockUser: User;
+  let mockTokenResponse: TokenResponseDto;
 
   const mockAuthService = {
     register: jest.fn(),
@@ -90,6 +74,25 @@ describe('AuthController', () => {
   };
 
   beforeEach(async () => {
+    // Create mock user with proper getters and methods
+    mockUser = createMockUser();
+
+    mockTokenResponse = {
+      accessToken: 'mock.access.token',
+      refreshToken: 'mock.refresh.token',
+      tokenType: 'Bearer',
+      user: {
+        id: mockUser.id,
+        email: mockUser.email,
+        username: mockUser.username,
+        firstName: mockUser.firstName,
+        lastName: mockUser.lastName,
+        role: mockUser.role,
+        status: mockUser.status,
+      },
+      expiresIn: 900,
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AuthController],
       providers: [
@@ -613,13 +616,17 @@ describe('AuthController', () => {
   describe('googleCallback', () => {
     it('should successfully handle Google OAuth callback', async () => {
       const mockRequest = { user: mockUser } as any;
+      const mockRes = {
+        cookie: jest.fn(),
+        redirect: jest.fn(),
+      } as any;
 
       mockAuthService.googleLogin.mockResolvedValue(mockTokenResponse);
 
-      const result = await controller.googleCallback(mockRequest);
+      await controller.googleCallback(mockRequest, mockRes);
 
       expect(authService.googleLogin).toHaveBeenCalledWith(mockUser);
-      expect(result).toEqual(mockTokenResponse);
+      expect(mockRes.redirect).toHaveBeenCalled();
     });
 
     it('should handle new user from Google OAuth', async () => {
@@ -629,6 +636,10 @@ describe('AuthController', () => {
         isEmailVerified: true,
       };
       const mockRequest = { user: newGoogleUser } as any;
+      const mockRes = {
+        cookie: jest.fn(),
+        redirect: jest.fn(),
+      } as any;
 
       mockAuthService.googleLogin.mockResolvedValue({
         ...mockTokenResponse,
@@ -638,10 +649,10 @@ describe('AuthController', () => {
         },
       });
 
-      const result = await controller.googleCallback(mockRequest);
+      await controller.googleCallback(mockRequest, mockRes);
 
-      expect(result).toBeDefined();
       expect(authService.googleLogin).toHaveBeenCalledWith(newGoogleUser);
+      expect(mockRes.redirect).toHaveBeenCalled();
     });
   });
 
@@ -666,7 +677,7 @@ describe('AuthController', () => {
     });
 
     it('should allow MFA setup for user without existing MFA', async () => {
-      const userWithoutMfa = { ...mockUser, isMfaEnabled: false };
+      const userWithoutMfa = createMockUser({ isMfaEnabled: false });
       const mfaSetupResponse: MfaSetupResponseDto = {
         secret: 'NEWSECRET123',
         qrCode: 'data:image/png;base64,newqrcode...',
@@ -746,7 +757,7 @@ describe('AuthController', () => {
 
   describe('disableMfa', () => {
     it('should successfully disable MFA for authenticated user', async () => {
-      const userWithMfa = { ...mockUser, isMfaEnabled: true };
+      const userWithMfa = createMockUser({ isMfaEnabled: true });
       const expectedResponse = { message: 'MFA disabled successfully' };
 
       mockAuthService.disableMfa.mockResolvedValue(expectedResponse);
@@ -795,11 +806,10 @@ describe('AuthController', () => {
     });
 
     it('should return profile for OAuth user', async () => {
-      const oauthUser = {
-        ...mockUser,
+      const oauthUser = createMockUser({
         authProvider: AuthProvider.GOOGLE,
         password: null,
-      };
+      });
 
       const result = await controller.getCurrentUser(oauthUser);
 

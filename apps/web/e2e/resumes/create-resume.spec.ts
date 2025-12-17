@@ -23,7 +23,7 @@ authenticatedTest.describe('Resume Builder', () => {
     await expect(createButton).toBeVisible();
   });
 
-  authenticatedTest.skip('should open resume builder', async ({ authenticatedPage }) => {
+  authenticatedTest('should open resume builder', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
 
     // Click create button
@@ -36,7 +36,7 @@ authenticatedTest.describe('Resume Builder', () => {
     expect(isBuilderPage || hasBuilderModal).toBeTruthy();
   });
 
-  authenticatedTest.skip('should display template selection', async ({ authenticatedPage }) => {
+  authenticatedTest('should display template selection', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
 
     await authenticatedPage.getByRole('button', { name: /create.*resume/i }).click();
@@ -54,7 +54,7 @@ authenticatedTest.describe('Resume Builder', () => {
     }
   });
 
-  authenticatedTest.skip('should select a resume template', async ({ authenticatedPage }) => {
+  authenticatedTest('should select a resume template', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
 
     await authenticatedPage.getByRole('button', { name: /create.*resume/i }).click();
@@ -77,7 +77,7 @@ authenticatedTest.describe('Resume Builder', () => {
     }
   });
 
-  authenticatedTest.skip('should create resume with basic information', async ({ authenticatedPage }) => {
+  authenticatedTest('should create resume with basic information', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
 
     await authenticatedPage.getByRole('button', { name: /create.*resume/i }).click();
@@ -111,7 +111,7 @@ authenticatedTest.describe('Resume Builder', () => {
     await expect(authenticatedPage.getByText(/saved|success/i)).toBeVisible();
   });
 
-  authenticatedTest.skip('should add work experience to resume', async ({ authenticatedPage }) => {
+  authenticatedTest('should add work experience to resume', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
 
     // Navigate to resume builder work experience section
@@ -140,7 +140,7 @@ authenticatedTest.describe('Resume Builder', () => {
     await expect(authenticatedPage.getByText('Tech Corp')).toBeVisible();
   });
 
-  authenticatedTest.skip('should add education to resume', async ({ authenticatedPage }) => {
+  authenticatedTest('should add education to resume', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
 
     await authenticatedPage.goto('/resumes/new?section=education');
@@ -157,7 +157,7 @@ authenticatedTest.describe('Resume Builder', () => {
     await expect(authenticatedPage.getByText('State University')).toBeVisible();
   });
 
-  authenticatedTest.skip('should add skills to resume', async ({ authenticatedPage }) => {
+  authenticatedTest('should add skills to resume', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
 
     await authenticatedPage.goto('/resumes/new?section=skills');
@@ -178,7 +178,7 @@ authenticatedTest.describe('Resume Builder', () => {
     }
   });
 
-  authenticatedTest.skip('should add summary/objective to resume', async ({ authenticatedPage }) => {
+  authenticatedTest('should add summary/objective to resume', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
 
     await authenticatedPage.goto('/resumes/new?section=summary');
@@ -191,7 +191,7 @@ authenticatedTest.describe('Resume Builder', () => {
     await expect(authenticatedPage.getByText(/saved|success/i)).toBeVisible();
   });
 
-  authenticatedTest.skip('should preview resume', async ({ authenticatedPage }) => {
+  authenticatedTest('should preview resume', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
 
     // While building/editing resume
@@ -211,7 +211,7 @@ authenticatedTest.describe('Resume Builder', () => {
     expect(hasPreview || hasModal).toBeTruthy();
   });
 
-  authenticatedTest.skip('should save resume as draft', async ({ authenticatedPage }) => {
+  authenticatedTest('should save resume as draft', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
 
     await authenticatedPage.goto('/resumes/new');
@@ -229,7 +229,7 @@ authenticatedTest.describe('Resume Builder', () => {
     }
   });
 
-  authenticatedTest.skip('should auto-save resume progress', async ({ authenticatedPage }) => {
+  authenticatedTest('should auto-save resume progress', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
 
     await authenticatedPage.goto('/resumes/new');
@@ -248,7 +248,7 @@ authenticatedTest.describe('Resume Builder', () => {
     }
   });
 
-  authenticatedTest.skip('should navigate between resume sections', async ({ authenticatedPage }) => {
+  authenticatedTest('should navigate between resume sections', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
 
     await authenticatedPage.goto('/resumes/new');
@@ -273,7 +273,7 @@ authenticatedTest.describe('Resume Builder', () => {
     }
   });
 
-  authenticatedTest.skip('should import data from profile', async ({ authenticatedPage }) => {
+  authenticatedTest('should import data from profile', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
 
     await authenticatedPage.goto('/resumes/new');
@@ -293,7 +293,7 @@ authenticatedTest.describe('Resume Builder', () => {
     }
   });
 
-  authenticatedTest.skip('should duplicate resume for editing', async ({ authenticatedPage }) => {
+  authenticatedTest('should duplicate resume for editing', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
 
     await authenticatedPage.goto('/resumes');
@@ -314,7 +314,7 @@ authenticatedTest.describe('Resume Builder', () => {
     }
   });
 
-  authenticatedTest.skip('should handle unsaved changes warning', async ({ authenticatedPage }) => {
+  authenticatedTest('should handle unsaved changes warning', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
 
     await authenticatedPage.goto('/resumes/new');
@@ -339,7 +339,7 @@ authenticatedTest.describe('Resume Builder', () => {
     }
   });
 
-  authenticatedTest.skip('should complete and publish resume', async ({ authenticatedPage }) => {
+  authenticatedTest('should complete and publish resume', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
 
     await authenticatedPage.goto('/resumes/new');
@@ -358,7 +358,7 @@ authenticatedTest.describe('Resume Builder', () => {
     await expect(authenticatedPage.getByText(/published|completed/i)).toBeVisible();
   });
 
-  authenticatedTest.skip('should validate required resume fields', async ({ authenticatedPage }) => {
+  authenticatedTest('should validate required resume fields', async ({ authenticatedPage }) => {
     // TODO: Requires frontend validation
 
     await authenticatedPage.goto('/resumes/new');

@@ -12,7 +12,7 @@ import { test as authenticatedTest } from '../fixtures/user.fixture';
  */
 
 authenticatedTest.describe('Save Jobs', () => {
-  authenticatedTest.skip('should save a job from search results', async ({ authenticatedPage }) => {
+  authenticatedTest('should save a job from search results', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
     await authenticatedPage.goto('/jobs');
 
@@ -22,7 +22,7 @@ authenticatedTest.describe('Save Jobs', () => {
     await expect(authenticatedPage.getByText(/saved|bookmarked/i)).toBeVisible();
   });
 
-  authenticatedTest.skip('should save a job from detail page', async ({ authenticatedPage }) => {
+  authenticatedTest('should save a job from detail page', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
     await authenticatedPage.goto('/jobs/1');
 
@@ -32,7 +32,7 @@ authenticatedTest.describe('Save Jobs', () => {
     await expect(authenticatedPage.getByText(/saved/i)).toBeVisible();
   });
 
-  authenticatedTest.skip('should view saved jobs', async ({ authenticatedPage }) => {
+  authenticatedTest('should view saved jobs', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
     await authenticatedPage.goto('/jobs/saved');
 
@@ -41,7 +41,7 @@ authenticatedTest.describe('Save Jobs', () => {
     expect(await jobItems.count()).toBeGreaterThan(0);
   });
 
-  authenticatedTest.skip('should unsave a job', async ({ authenticatedPage }) => {
+  authenticatedTest('should unsave a job', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
     await authenticatedPage.goto('/jobs/saved');
 
@@ -54,7 +54,7 @@ authenticatedTest.describe('Save Jobs', () => {
     expect(newCount).toBe(initialCount - 1);
   });
 
-  authenticatedTest.skip('should organize saved jobs into folders', async ({ authenticatedPage }) => {
+  authenticatedTest('should organize saved jobs into folders', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
     await authenticatedPage.goto('/jobs/saved');
 

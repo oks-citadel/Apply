@@ -1,13 +1,13 @@
 import { Injectable, HttpStatus, Logger } from '@nestjs/common';
-import { InjectConnection } from '@nestjs/typeorm';
+import { InjectDataSource } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
-import { Connection } from 'typeorm';
+import { DataSource } from 'typeorm';
 import Redis from 'ioredis';
 
 // Inline health check utilities
-async function checkDatabaseConnection(connection: Connection): Promise<{ status: string; message?: string }> {
+async function checkDatabaseConnection(dataSource: DataSource): Promise<{ status: string; message?: string }> {
   try {
-    await connection.query('SELECT 1');
+    await dataSource.query('SELECT 1');
     return { status: 'up', message: 'Database connection successful' };
   } catch (error) {
     return { status: 'down', message: error instanceof Error ? error.message : 'Unknown error' };
@@ -44,8 +44,8 @@ export class HealthService {
   private redisClient: Redis;
 
   constructor(
-    @InjectConnection()
-    private readonly connection: Connection,
+    @InjectDataSource()
+    private readonly dataSource: DataSource,
     private readonly configService: ConfigService,
   ) {
     // Initialize Redis client for health checks
@@ -106,8 +106,8 @@ export class HealthService {
     const checks: Record<string, { status: string; message?: string }> = {};
 
     // Check database connection
-    if (this.connection) {
-      checks.database = await checkDatabaseConnection(this.connection);
+    if (this.dataSource) {
+      checks.database = await checkDatabaseConnection(this.dataSource);
     }
 
     // Check Redis connection

@@ -4,41 +4,47 @@ import * as bcrypt from 'bcrypt';
 export class TestFactory {
   /**
    * Create a test user with default values
+   * Note: fullName and isLocked are getters on the User entity and cannot be set directly
    */
   static createUser(overrides?: Partial<User>): User {
-    const defaultUser = {
-      id: 'test-user-id',
-      email: 'test@example.com',
-      username: 'testuser',
-      password: '$2b$10$XqXqXqXqXqXqXqXqXqXqXeTest', // Hashed password
-      firstName: 'Test',
-      lastName: 'User',
-      phoneNumber: '+1234567890',
-      profilePicture: null,
-      role: UserRole.USER,
-      status: UserStatus.ACTIVE,
-      authProvider: AuthProvider.LOCAL,
-      providerId: null,
-      isEmailVerified: true,
-      emailVerificationToken: null,
-      emailVerificationExpiry: null,
-      passwordResetToken: null,
-      passwordResetExpiry: null,
-      refreshToken: null,
-      isMfaEnabled: false,
-      mfaSecret: null,
-      loginAttempts: 0,
-      isLocked: false,
-      lockedUntil: null,
-      lastLoginAt: null,
-      lastLoginIp: null,
-      createdAt: new Date(),
-      metadata: {},
-      updatedAt: new Date(),
-      ...overrides,
-    };
+    const user = new User();
 
-    return defaultUser as User;
+    // Set default values
+    user.id = 'test-user-id';
+    user.email = 'test@example.com';
+    user.username = 'testuser';
+    user.password = '$2b$10$XqXqXqXqXqXqXqXqXqXqXeTest'; // Hashed password
+    user.firstName = 'Test';
+    user.lastName = 'User';
+    user.phoneNumber = '+1234567890';
+    user.profilePicture = null;
+    user.role = UserRole.USER;
+    user.status = UserStatus.ACTIVE;
+    user.authProvider = AuthProvider.LOCAL;
+    user.providerId = null;
+    user.isEmailVerified = true;
+    user.emailVerificationToken = null;
+    user.emailVerificationExpiry = null;
+    user.passwordResetToken = null;
+    user.passwordResetExpiry = null;
+    user.refreshToken = null;
+    user.isMfaEnabled = false;
+    user.mfaSecret = null;
+    user.loginAttempts = 0;
+    user.lockedUntil = null;
+    user.lastLoginAt = null;
+    user.lastLoginIp = null;
+    user.createdAt = new Date();
+    user.metadata = {};
+    user.updatedAt = new Date();
+
+    // Apply overrides (excluding getter properties)
+    if (overrides) {
+      const { fullName, isLocked, ...validOverrides } = overrides as any;
+      Object.assign(user, validOverrides);
+    }
+
+    return user;
   }
 
   /**
@@ -70,11 +76,11 @@ export class TestFactory {
 
   /**
    * Create a locked user
+   * Note: isLocked is a getter that returns true if lockedUntil > current time
    */
   static createLockedUser(overrides?: Partial<User>): User {
     return this.createUser({
-      isLocked: true,
-      lockedUntil: new Date(Date.now() + 900000), // 15 minutes
+      lockedUntil: new Date(Date.now() + 900000), // 15 minutes from now
       loginAttempts: 5,
       ...overrides,
     });

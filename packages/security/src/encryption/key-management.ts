@@ -444,7 +444,7 @@ export class VaultKMSAdapter implements ExternalKMS {
   private transitMount: string;
   private defaultKeyName: string;
 
-  constructor(private config: {
+  constructor(config: {
     address: string;
     token: string;
     namespace?: string;

@@ -144,8 +144,10 @@ describe('Skeleton Components', () => {
     it('renders title and metadata skeletons', () => {
       const { container } = render(<ResumeCardSkeleton />);
 
-      const title = container.querySelector('.h-6.w-3/4');
-      const metadata = container.querySelector('.h-4.w-1/2');
+      // Use Array.from and filter to find elements with specific classes
+      const allSkeletons = Array.from(container.querySelectorAll('.animate-pulse'));
+      const title = allSkeletons.find(el => el.classList.contains('h-6') && el.classList.contains('w-3/4'));
+      const metadata = allSkeletons.find(el => el.classList.contains('h-4') && el.classList.contains('w-1/2'));
 
       expect(title).toBeInTheDocument();
       expect(metadata).toBeInTheDocument();
@@ -179,8 +181,10 @@ describe('Skeleton Components', () => {
     it('renders title and company skeletons', () => {
       const { container } = render(<JobCardSkeleton />);
 
-      const title = container.querySelector('.h-6.w-3/4');
-      const company = container.querySelector('.h-4.w-1/2');
+      // Use Array.from and filter to find elements with specific classes
+      const allSkeletons = Array.from(container.querySelectorAll('.animate-pulse'));
+      const title = allSkeletons.find(el => el.classList.contains('h-6') && el.classList.contains('w-3/4'));
+      const company = allSkeletons.find(el => el.classList.contains('h-4') && el.classList.contains('w-1/2'));
 
       expect(title).toBeInTheDocument();
       expect(company).toBeInTheDocument();
@@ -205,7 +209,9 @@ describe('Skeleton Components', () => {
       const { container } = render(<JobCardSkeleton />);
 
       const fullLine = container.querySelector('.h-4.w-full');
-      const partialLine = container.querySelector('.h-4.w-5/6');
+      // Use Array.from and filter to find elements with specific classes
+      const allSkeletons = Array.from(container.querySelectorAll('.animate-pulse'));
+      const partialLine = allSkeletons.find(el => el.classList.contains('h-4') && el.classList.contains('w-5/6'));
 
       expect(fullLine).toBeInTheDocument();
       expect(partialLine).toBeInTheDocument();

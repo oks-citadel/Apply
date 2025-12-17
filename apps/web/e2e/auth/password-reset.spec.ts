@@ -47,7 +47,7 @@ test.describe('Password Reset', () => {
       await expect(page.getByText(/valid email|email.*invalid/i)).toBeVisible();
     });
 
-    test.skip('should successfully send reset email for registered user', async ({ page }) => {
+    test('should successfully send reset email for registered user', async ({ page }) => {
       // TODO: Requires backend integration
 
       // Enter valid email
@@ -64,7 +64,7 @@ test.describe('Password Reset', () => {
       }
     });
 
-    test.skip('should show same message for non-existent email (security)', async ({ page }) => {
+    test('should show same message for non-existent email (security)', async ({ page }) => {
       // TODO: Requires backend integration
 
       // Enter non-existent email
@@ -75,7 +75,7 @@ test.describe('Password Reset', () => {
       await expect(page.getByText(/email.*sent|check.*email|instructions.*sent/i)).toBeVisible();
     });
 
-    test.skip('should handle rate limiting', async ({ page }) => {
+    test('should handle rate limiting', async ({ page }) => {
       // TODO: Requires backend integration
 
       // Send multiple reset requests
@@ -150,7 +150,7 @@ test.describe('Password Reset', () => {
       await expect(page.getByText(/passwords.*match|passwords.*same/i)).toBeVisible();
     });
 
-    test.skip('should successfully reset password', async ({ page }) => {
+    test('should successfully reset password', async ({ page }) => {
       // TODO: Requires backend integration
 
       // Enter new password
@@ -170,7 +170,7 @@ test.describe('Password Reset', () => {
       await expect(page.getByText(/sign in.*new.*password|login.*continue/i)).toBeVisible();
     });
 
-    test.skip('should handle invalid reset token', async ({ page }) => {
+    test('should handle invalid reset token', async ({ page }) => {
       // TODO: Requires backend integration
 
       // Navigate with invalid token
@@ -185,7 +185,7 @@ test.describe('Password Reset', () => {
       await expect(page.getByText(/invalid.*token|link.*invalid|expired/i)).toBeVisible();
     });
 
-    test.skip('should handle expired reset token', async ({ page }) => {
+    test('should handle expired reset token', async ({ page }) => {
       // TODO: Requires backend integration
 
       // Navigate with expired token
@@ -241,7 +241,7 @@ test.describe('Password Reset', () => {
       }
     });
 
-    test.skip('should prevent reuse of previous password', async ({ page }) => {
+    test('should prevent reuse of previous password', async ({ page }) => {
       // TODO: Requires backend integration
 
       // Enter same password as before
@@ -274,7 +274,7 @@ test.describe('Password Reset', () => {
   });
 
   test.describe('Reset Password Email Flow', () => {
-    test.skip('should send reset email with valid token', async ({ page }) => {
+    test('should send reset email with valid token', async ({ page }) => {
       // TODO: Requires email service integration
 
       // Request password reset
@@ -289,7 +289,7 @@ test.describe('Password Reset', () => {
       // 4. Verify reset form is accessible
     });
 
-    test.skip('should expire reset token after time limit', async ({ page }) => {
+    test('should expire reset token after time limit', async ({ page }) => {
       // TODO: Requires backend integration
 
       // Navigate with token that should be expired
@@ -300,7 +300,7 @@ test.describe('Password Reset', () => {
       await expect(page.getByText(/token.*expired|link.*expired/i)).toBeVisible();
     });
 
-    test.skip('should invalidate reset token after use', async ({ page }) => {
+    test('should invalidate reset token after use', async ({ page }) => {
       // TODO: Requires backend integration
 
       // Use token to reset password

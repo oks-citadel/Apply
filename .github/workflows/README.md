@@ -1,481 +1,350 @@
 # GitHub Actions Workflows
 
-This directory contains all GitHub Actions workflows for the Job-Apply-Platform CI/CD pipeline.
+This directory contains all GitHub Actions workflows for the ApplyForUs Platform CI/CD pipeline.
 
-## Workflows Overview
+> **Note**: This project has migrated from Azure DevOps to GitHub Actions for CI/CD. The Azure DevOps pipeline at `.azuredevops/pipelines/` is deprecated.
 
-| Workflow | File | Trigger | Purpose |
-|----------|------|---------|---------|
-| CI Pipeline | `ci.yml` | Push/PR to main/develop | Linting, testing, building |
-| Deployment | `deploy.yml` | Push to main, tags | Deploy to staging/production |
-| Container Security | `container-security-scan.yml` | Push, PR, daily schedule | Security scanning |
-| Build & Scan | `build-and-scan.yml` | Called by other workflows | Reusable build workflow |
-| Integration Tests | `integration-tests.yml` | Push/PR, daily schedule | End-to-end integration testing |
-| Smoke Tests | `smoke-tests.yml` | Called after deployment | Post-deployment verification |
-| Rollback | `rollback.yml` | Manual trigger only | Emergency rollback |
+## Primary Workflow
 
-## Workflow Details
+### ci-cd.yml - Unified CI/CD Pipeline (RECOMMENDED)
 
-### ci.yml - Continuous Integration
+**Purpose**: Complete CI/CD pipeline that replaces Azure DevOps
 
-**Purpose**: Automated testing and validation on every code change
+**File**: `ci-cd.yml`
 
 **When it runs**:
-- Every push to `main` or `develop`
-- Every pull request to `main` or `develop`
-- Manual trigger via workflow_dispatch
-
-**What it does**:
-1. **Lint & Type Check** (~3 mins)
-   - ESLint for code quality
-   - Prettier for formatting
-   - TypeScript type checking
-
-2. **Unit Tests** (~10 mins)
-   - Runs tests for web app and all services
-   - Enforces 80% code coverage threshold
-   - Uploads coverage to Codecov
-
-3. **Build Verification** (~5 mins)
-   - Builds web application
-   - Verifies Docker images build successfully
-
-4. **E2E Tests** (~15 mins)
-   - Playwright browser tests
-   - Tests critical user journeys
-
-5. **Security Scanning** (~10 mins)
-   - CodeQL analysis
-   - npm audit
-   - Snyk vulnerability scanning
-
-**Total Runtime**: ~45 minutes
-
-**Required Secrets**:
-- `CODECOV_TOKEN` (optional)
-- `SNYK_TOKEN` (optional)
-
-### deploy.yml - Deployment Pipeline
-
-**Purpose**: Build and deploy services to staging and production
-
-**When it runs**:
-- Push to `main` → Deploy to staging
-- Git tag `v*.*.*` → Deploy to production
+- Push to `main` -> Tests + Build + Deploy to Staging
+- Push to `develop` -> Tests + Build + Deploy to Dev
+- Push to `release/*` -> Tests + Build + Deploy to Staging
+- Pull requests -> Tests + Build (no deploy)
 - Manual trigger with environment selection
 
-**What it does**:
+**Pipeline Stages**:
 
-#### Build & Push Stage (~20 mins)
-- Builds Docker images for all 8 services
-- Tags with git SHA and version
-- Pushes to Azure Container Registry
-- Runs in parallel for faster builds
+| Stage | Description | Duration |
+|-------|-------------|----------|
+| 1. Setup | Generate metadata, determine deployment target | ~1 min |
+| 2. Lint & Type Check | ESLint, Prettier, TypeScript | ~5 min |
+| 3. Security Scan | Dependency audit, secrets detection | ~3 min |
+| 4. Unit Tests | Web app + all services (parallel) | ~10 min |
+| 5. Build Images | Docker build + push to ACR (parallel) | ~15 min |
+| 6. Create Manifest | Deployment manifest with digests | ~1 min |
+| 7. Deploy Dev | Auto-deploy from develop branch | ~5 min |
+| 8. Deploy Staging | Auto-deploy from main/release | ~5 min |
+| 9. Deploy Production | Manual approval required | ~10 min |
+| 10. Notify | Slack notifications, summary | ~1 min |
 
-#### Staging Deployment (~15 mins)
-- Creates backup of current deployment
-- Deploys all services with rolling update
-- Runs comprehensive smoke tests
-- **Automatic rollback** on failure
-- Posts status to Slack
+**Total Runtime**: ~35-45 minutes (depending on parallelization)
 
-#### Production Deployment (~20 mins)
-- **Requires manual approval** in GitHub environment
-- Creates backup (90-day retention)
-- Blue/Green deployment for web app
-- Rolling update for backend services
-- Comprehensive smoke tests
-- Monitors metrics post-deployment
-- **Automatic rollback** on failure
-- Creates deployment record
-- Posts status to Slack
+## Required Secrets
 
-**Required Secrets**:
-- `AZURE_CREDENTIALS`
-- `ACR_USERNAME`
-- `ACR_PASSWORD`
-- `SLACK_WEBHOOK_URL`
-
-**Required Environments**:
-- `staging` (no approval)
-- `production` (approval required)
-
-### container-security-scan.yml
-
-**Purpose**: Regular security scanning of containers and Kubernetes manifests
-
-**When it runs**:
-- Push/PR with changes to Docker files or K8s manifests
-- Daily at 2:00 AM UTC
-- Manual trigger
-
-**What it scans**:
-1. **Container Images**
-   - Trivy: OS and library vulnerabilities
-   - Snyk: Container security issues
-
-2. **Kubernetes Manifests**
-   - Trivy: Configuration issues
-   - Checkov: Best practices and security
-
-3. **Dockerfiles**
-   - Hadolint: Dockerfile best practices
-
-**Results**: Uploaded to GitHub Security tab
-
-### build-and-scan.yml
-
-**Purpose**: Reusable workflow for building and scanning individual services
-
-**Type**: Reusable workflow (called by other workflows)
-
-**Inputs**:
-- `service-name`: Name of service to build
-- `version`: Version to tag the image
-
-**What it does**:
-1. Auto-detects service path (apps/ or services/)
-2. Builds Docker image without pushing
-3. Scans with Trivy for vulnerabilities
-4. Fails on HIGH/CRITICAL vulnerabilities
-5. Scans with Snyk (optional)
-6. Builds and pushes to ACR
-7. Generates SBOM
-8. Signs image with Cosign
-
-### integration-tests.yml
-
-**Purpose**: Test integration between services
-
-**When it runs**:
-- Push/PR to `main` or `develop`
-- Daily at 3:00 AM UTC
-- Manual trigger
-
-**Test Suites**:
-1. Auth Service Integration
-2. Job Application Flow
-3. AI Services Integration
-4. Notification Flow
-5. End-to-End Integration
-
-**Runtime**: ~45 minutes
-
-**Infrastructure**: Spins up PostgreSQL and Redis for testing
-
-### smoke-tests.yml
-
-**Purpose**: Quick verification that deployed services are working
-
-**Type**: Reusable workflow (called after deployments)
-
-**Inputs**:
-- `environment`: staging or production
-- `base-url`: Web application URL
-- `api-url`: API gateway URL
-
-**Test Categories**:
-1. **Health Checks** (~2 mins)
-   - All service health endpoints
-
-2. **API Tests** (~3 mins)
-   - Public endpoints
-   - API documentation
-   - CORS headers
-
-3. **Web Tests** (~3 mins)
-   - Homepage, login, registration
-   - Static assets
-   - Response times
-
-4. **Performance Tests** (~5 mins)
-   - Response times
-   - Concurrent requests
-   - Rate limiting
-
-5. **Security Tests** (~3 mins)
-   - Security headers
-   - HTTPS redirect
-   - SQL injection protection
-
-**Total Runtime**: ~15 minutes
-
-### rollback.yml
-
-**Purpose**: Emergency rollback of failed deployments
-
-**When it runs**: Manual trigger ONLY
-
-**Inputs**:
-- `environment`: staging or production (required)
-- `target-sha`: Git SHA to rollback to (optional, defaults to previous)
-- `service`: Specific service or all (required)
-- `reason`: Justification for rollback (required)
-
-**What it does**:
-1. Validates rollback request
-2. Creates backup of current state
-3. Performs rollback to target version
-4. Verifies rollback success
-5. Runs smoke tests
-6. Creates incident record
-7. Posts to Slack
-
-**Approval**: Production rollbacks require manual approval
-
-**Runtime**: ~10-15 minutes
-
-## Setup Instructions
-
-### 1. Required Secrets
-
-Add these secrets in GitHub Settings → Secrets and variables → Actions:
+### Azure OIDC Authentication (Recommended)
 
 ```yaml
-# Azure
-AZURE_CREDENTIALS      # JSON from: az ad sp create-for-rbac
-ACR_USERNAME          # Azure Container Registry username
-ACR_PASSWORD          # Azure Container Registry password
-
-# Third-party
-SLACK_WEBHOOK_URL     # Slack incoming webhook URL
-SNYK_TOKEN           # Snyk API token (optional)
-CODECOV_TOKEN        # Codecov upload token (optional)
-
-# Testing (optional)
-OPENAI_API_KEY_TEST  # Test API key for AI service
-TEST_USER_EMAIL      # Test user credentials
-TEST_USER_PASSWORD   # Test user credentials
+# Azure AD App Registration for OIDC
+AZURE_CLIENT_ID        # Azure AD App client ID
+AZURE_TENANT_ID        # Azure AD tenant ID
+AZURE_SUBSCRIPTION_ID  # Azure subscription ID
 ```
 
-### 2. GitHub Environments
+### Legacy Authentication (Fallback)
 
-Create environments in GitHub Settings → Environments:
+```yaml
+# Service Principal JSON
+AZURE_CREDENTIALS      # JSON from: az ad sp create-for-rbac --sdk-auth
 
-#### preview
-- No protection rules
-- Used for PR preview deployments
+# ACR Direct Access
+ACR_USERNAME          # Azure Container Registry username
+ACR_PASSWORD          # Azure Container Registry password
+```
 
-#### staging
-- No protection rules
-- Automatically deploys from `main` branch
-- Environment URL: https://staging.jobpilot.ai
+### Environment Secrets
 
-#### production
+```yaml
+# Development Environment
+DATABASE_URL_DEV           # PostgreSQL connection string for dev
+REDIS_URL_DEV              # Redis connection string for dev
+STRIPE_SECRET_KEY_DEV      # Stripe API key for dev
+
+# Staging Environment
+DATABASE_URL_STAGING       # PostgreSQL connection string for staging
+REDIS_URL_STAGING          # Redis connection string for staging
+STRIPE_SECRET_KEY_STAGING  # Stripe API key for staging
+
+# Production Environment
+DATABASE_URL_PROD          # PostgreSQL connection string for production
+REDIS_URL_PROD             # Redis connection string for production
+STRIPE_SECRET_KEY_PROD     # Stripe API key for production
+
+# Shared Secrets
+JWT_SECRET                 # JWT signing secret
+OPENAI_API_KEY            # OpenAI API key for AI services
+SENDGRID_API_KEY          # SendGrid for email notifications
+```
+
+### Notifications
+
+```yaml
+SLACK_WEBHOOK_URL     # Slack incoming webhook URL
+```
+
+## GitHub Environments
+
+Create these environments in **Settings > Environments**:
+
+### dev
+- **URL**: https://dev.applyforus.com
+- **Protection rules**: None
+- **Secrets**: DATABASE_URL_DEV, REDIS_URL_DEV, STRIPE_SECRET_KEY_DEV
+
+### staging
+- **URL**: https://staging.applyforus.com
+- **Protection rules**: None (auto-deploys from main)
+- **Secrets**: DATABASE_URL_STAGING, REDIS_URL_STAGING, STRIPE_SECRET_KEY_STAGING
+
+### production
+- **URL**: https://applyforus.com
 - **Protection rules**:
   - Required reviewers: DevOps team
   - Wait timer: 5 minutes
   - Deployment branches: main only
-- Environment URL: https://jobpilot.ai
+- **Secrets**: DATABASE_URL_PROD, REDIS_URL_PROD, STRIPE_SECRET_KEY_PROD
 
-#### production-rollback
-- **Protection rules**:
-  - Required reviewers: DevOps lead
-  - Used only for rollbacks
+## Azure Resources
 
-### 3. Azure Resources
+### Container Registry
 
-Ensure these Azure resources exist:
+| Resource | Value |
+|----------|-------|
+| Name | applyforusacr |
+| Login Server | applyforusacr.azurecr.io |
+| Image Prefix | applyai |
 
-**Staging**:
-- Resource Group: `jobpilot-staging-rg`
-- AKS Cluster: `jobpilot-staging-aks`
-- Namespace: `jobpilot`
+### Kubernetes Clusters
 
-**Production**:
-- Resource Group: `jobpilot-prod-rg`
-- AKS Cluster: `jobpilot-prod-aks`
-- Namespace: `jobpilot`
+| Environment | Resource Group | Cluster Name | Namespace |
+|-------------|----------------|--------------|-----------|
+| Dev | applyforus-prod-rg | applyforus-aks | applyforus-dev |
+| Staging | applyforus-staging-rg | applyforus-staging-aks | applyforus-staging |
+| Production | applyforus-prod-rg | applyforus-prod-aks | applyforus |
 
-**Shared**:
-- Container Registry: `jobpilotacr.azurecr.io`
+### Key Vault
 
-### 4. Kubernetes Prerequisites
+| Resource | Value |
+|----------|-------|
+| Name | applyforus-kv |
+| Purpose | Secrets management for AKS |
 
-Each environment needs:
+## Services Built and Deployed
 
-```bash
-# Image pull secret
-kubectl create secret docker-registry acr-secret \
-  --docker-server=jobpilotacr.azurecr.io \
-  --docker-username=<username> \
-  --docker-password=<password> \
-  -n jobpilot
+The pipeline builds and deploys these 11 services:
 
-# Blue/Green deployments for web (production only)
-kubectl create -f k8s/web-blue-deployment.yaml
-kubectl create -f k8s/web-green-deployment.yaml
-kubectl create -f k8s/web-service.yaml
-```
+| Service | Type | Dockerfile Location |
+|---------|------|---------------------|
+| web | Frontend | apps/web/Dockerfile |
+| auth-service | Backend | services/auth-service/Dockerfile |
+| user-service | Backend | services/user-service/Dockerfile |
+| job-service | Backend | services/job-service/Dockerfile |
+| resume-service | Backend | services/resume-service/Dockerfile |
+| notification-service | Backend | services/notification-service/Dockerfile |
+| auto-apply-service | Backend | services/auto-apply-service/Dockerfile |
+| analytics-service | Backend | services/analytics-service/Dockerfile |
+| ai-service | Backend | services/ai-service/Dockerfile |
+| orchestrator-service | Backend | services/orchestrator-service/Dockerfile |
+| payment-service | Backend | services/payment-service/Dockerfile |
 
-### 5. Slack Integration
+## Other Workflows
 
-1. Create incoming webhook in Slack
-2. Add webhook URL to GitHub secrets as `SLACK_WEBHOOK_URL`
-3. Invite workflow bot to `#deployments` channel
+| Workflow | File | Purpose |
+|----------|------|---------|
+| CI Pipeline | `ci.yml` | Legacy CI (tests only) |
+| Build and Scan | `build-and-scan.yml` | Build with security scanning |
+| CD - Dev | `cd-dev.yml` | Deploy to dev (triggered by build-and-scan) |
+| CD - Staging | `cd-staging.yml` | Deploy to staging |
+| CD - Prod | `cd-prod.yml` | Deploy to production |
+| Container Security | `container-security-scan.yml` | Daily security scans |
+| Integration Tests | `integration-tests.yml` | E2E integration testing |
+| Smoke Tests | `smoke-tests.yml` | Post-deployment verification |
+| Rollback | `rollback.yml` | Emergency rollback |
+| E2E Tests | `e2e-tests.yml` | Playwright E2E tests |
 
 ## Usage Examples
 
-### Deploy to Staging
+### Deploy to Development (Auto)
+
+```bash
+# Push to develop branch
+git checkout develop
+git push origin develop
+# Pipeline auto-deploys to dev
+```
+
+### Deploy to Staging (Auto)
 
 ```bash
 # Merge to main branch
 git checkout main
 git merge develop
 git push origin main
-
-# Workflow triggers automatically
+# Pipeline auto-deploys to staging
 ```
 
-### Deploy to Production
+### Deploy to Production (Manual)
 
 ```bash
-# Create and push tag
-git tag -a v1.2.3 -m "Release 1.2.3"
-git push origin v1.2.3
+# Option 1: Manual workflow dispatch
+gh workflow run ci-cd.yml \
+  -f deploy_environment=production
 
-# Go to GitHub Actions
-# Approve deployment in production environment
+# Option 2: Approve pending deployment in GitHub UI
+# Go to Actions > CI/CD Pipeline > [Run] > Review deployments
 ```
 
-### Run Integration Tests Manually
+### Emergency Deployment (Skip Tests)
 
 ```bash
-# Using GitHub CLI
-gh workflow run integration-tests.yml
-
-# Or via web UI:
-# Actions → Integration Tests → Run workflow
+gh workflow run ci-cd.yml \
+  -f deploy_environment=staging \
+  -f skip_tests=true
 ```
 
 ### Emergency Rollback
 
 ```bash
-# Go to GitHub Actions
-# Workflows → Rollback Deployment → Run workflow
-
-# Fill in:
-# - Environment: production
-# - Service: all
-# - Target SHA: (leave empty for previous)
-# - Reason: "Critical bug in authentication"
-
-# Approve in production-rollback environment
+gh workflow run rollback.yml \
+  -f environment=production \
+  -f service=all \
+  -f reason="Critical bug in auth service"
 ```
 
-### Run Smoke Tests Manually
+## Deployment Features
+
+### Digest-Based Deployments
+
+All images are deployed using immutable SHA digests, ensuring:
+- Exact same image across environments
+- No tag-based vulnerabilities
+- Full traceability
+
+### Deployment Manifest
+
+Each build creates a `deployment-manifest.json` artifact containing:
+- Version information
+- Image digests for all services
+- Git reference and SHA
+- Build timestamp
+
+### Blue-Green Deployment (Production)
+
+For the web frontend in production:
+1. Deploy to inactive slot (blue or green)
+2. Verify health checks
+3. Switch traffic
+4. Keep old version for quick rollback
+
+### Rolling Updates (All Environments)
+
+For backend services:
+- maxSurge: 25%
+- maxUnavailable: 0 (zero-downtime)
+- Automatic rollback on failure
+
+### Automatic Rollback
+
+Deployments automatically rollback if:
+- Rollout times out
+- Health checks fail
+- Smoke tests fail
+
+## Monitoring and Troubleshooting
+
+### View Pipeline Status
 
 ```bash
-gh workflow run smoke-tests.yml \
-  -f environment=staging \
-  -f base-url=https://staging.jobpilot.ai \
-  -f api-url=https://staging-api.jobpilot.ai
+# List recent runs
+gh run list --workflow=ci-cd.yml
+
+# View specific run
+gh run view <run-id>
+
+# Watch live
+gh run watch
 ```
 
-## Monitoring Workflows
+### Check Deployment Status
 
-### GitHub Actions UI
+```bash
+# Get AKS credentials
+az aks get-credentials -g applyforus-prod-rg -n applyforus-aks
 
-- **All Workflows**: https://github.com/yourorg/Job-Apply-Platform/actions
-- **Specific Workflow**: Actions → Select workflow from left sidebar
-- **Workflow Run**: Click on any run to see details
+# Check deployments
+kubectl get deployments -n applyforus-dev
+kubectl get pods -n applyforus-dev
 
-### Slack Notifications
+# View logs
+kubectl logs deployment/auth-service -n applyforus-dev
+```
 
-Notifications are posted to `#deployments` for:
-- Deployment start/success/failure
-- Rollback events
-- Integration test results
-- Security scan alerts
+### Common Issues
 
-### Email Notifications
+**Pipeline not triggering**:
+- Check branch name matches trigger pattern
+- Verify path filters don't exclude your changes
+- Ensure workflow file is valid YAML
 
-Configure in GitHub Settings → Notifications:
-- Workflow failures
-- Deployment approvals needed
-- Security alerts
+**ACR authentication failing**:
+- Verify AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID secrets
+- Check Azure AD app has AcrPush role on ACR
+- Ensure federated credentials are configured for GitHub
 
-## Troubleshooting
+**Deployment failing**:
+- Check AKS cluster is accessible
+- Verify namespace exists
+- Review pod events: `kubectl describe pod <name> -n <namespace>`
+- Check resource quotas
 
-### Workflow Not Triggering
+**Image not found**:
+- Verify image was built successfully
+- Check ACR for the image tag
+- Ensure AKS has permission to pull from ACR
 
-**Check**:
-1. Branch names match trigger patterns
-2. File paths match (if using path filters)
-3. Workflow file is valid YAML
-4. No workflow_run dependencies blocking
+## Migration from Azure DevOps
 
-### Workflow Failing
+The Azure DevOps pipeline at `.azuredevops/pipelines/main.yml` is deprecated. Key differences:
 
-**Steps**:
-1. Click on failed run
-2. Expand failed job
-3. Review logs
-4. Download artifacts if available
-5. Check [Troubleshooting Guide](../../docs/deployment/cicd-pipeline.md#troubleshooting)
+| Feature | Azure DevOps | GitHub Actions |
+|---------|--------------|----------------|
+| Agent | Self-hosted pool | GitHub-hosted runners |
+| Auth | Service connections | OIDC federation |
+| Caching | Pipeline Cache | GitHub Actions Cache |
+| Artifacts | Pipeline Artifacts | Actions Artifacts |
+| Environments | Environment approvals | Environment protection |
+| Templates | YAML templates | Composite actions (future) |
 
-### Secrets Not Working
+### Migrated Features
 
-**Verify**:
-1. Secret exists in GitHub settings
-2. Secret name matches exactly (case-sensitive)
-3. Environment is correct (if using environment secrets)
-4. Permissions are correct
-
-### Deployment Stuck
-
-**Actions**:
-1. Check AKS cluster status
-2. Review pod events: `kubectl describe pod <name> -n jobpilot`
-3. Check resource availability
-4. Consider canceling and re-running
+- [x] Lint and type checking
+- [x] Unit tests with service containers
+- [x] Security scanning
+- [x] Docker image building
+- [x] ACR push with digests
+- [x] AKS deployment (dev/staging/prod)
+- [x] Health checks and smoke tests
+- [x] Automatic rollback
+- [x] Slack notifications
+- [x] Deployment manifest generation
 
 ## Best Practices
 
-1. **Always test in staging first** before production
-2. **Review security scan results** before approving production
-3. **Monitor deployments** for at least 15 minutes after
-4. **Use meaningful commit messages** for better tracking
-5. **Tag releases semantically** (v1.2.3)
-6. **Document breaking changes** in release notes
-7. **Keep workflows DRY** using reusable workflows
-8. **Set timeouts** on all jobs to prevent hanging
-9. **Use concurrency** to prevent duplicate runs
-10. **Cache dependencies** to speed up workflows
-
-## Workflow Optimization
-
-### Current Performance
-
-| Workflow | Average Runtime |
-|----------|----------------|
-| CI Pipeline | ~45 minutes |
-| Staging Deploy | ~35 minutes |
-| Production Deploy | ~40 minutes |
-| Integration Tests | ~45 minutes |
-| Smoke Tests | ~15 minutes |
-
-### Optimization Tips
-
-1. **Parallel Jobs**: Use job dependencies wisely
-2. **Build Caching**: Leverage GitHub Actions cache
-3. **Matrix Strategy**: Run tests in parallel
-4. **Artifact Sharing**: Share between jobs instead of rebuilding
-5. **Conditional Steps**: Skip unnecessary steps
-
-## Contributing
-
-When adding new workflows:
-
-1. Follow naming convention: `kebab-case.yml`
-2. Add documentation to this README
-3. Include comments in workflow file
-4. Test thoroughly in a feature branch
-5. Add to monitoring and alerting
+1. **Always merge to develop first** - Dev environment validates changes
+2. **Review security scan results** - Check GitHub Security tab
+3. **Monitor deployments** - Watch for pod restarts after deployment
+4. **Use semantic versioning** - For production releases
+5. **Keep secrets in Key Vault** - Not in GitHub secrets for production
+6. **Test rollback procedures** - Before needing them in emergencies
 
 ## Support
 
-- **Documentation**: [CI/CD Pipeline Docs](../../docs/deployment/cicd-pipeline.md)
-- **Deployment Guide**: [Quick Reference](../../docs/deployment/DEPLOYMENT_GUIDE.md)
+- **Documentation**: [Deployment Guide](../../docs/deployment/DEPLOYMENT_GUIDE.md)
 - **Issues**: GitHub Issues
 - **Slack**: #devops channel

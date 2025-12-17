@@ -42,6 +42,8 @@ spec:
               value: "production"
             - name: PORT
               value: "4001"
+            - name: DB_DATABASE
+              value: "resume_service"
           envFrom:
             - secretRef:
                 name: applyforus-secrets

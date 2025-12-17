@@ -17,13 +17,13 @@ authenticatedTest.describe('AI Interview Prep', () => {
     await authenticatedPage.goto('/ai-tools/interview-prep');
   });
 
-  authenticatedTest.skip('should display interview prep page', async ({ authenticatedPage }) => {
+  authenticatedTest('should display interview prep page', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
     await expect(authenticatedPage).toHaveURL(/.*interview/);
     await expect(authenticatedPage.getByRole('heading', { name: /interview.*prep/i })).toBeVisible();
   });
 
-  authenticatedTest.skip('should generate practice questions', async ({ authenticatedPage }) => {
+  authenticatedTest('should generate practice questions', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration with AI service
     const roleInput = authenticatedPage.getByLabel(/job.*role|position/i);
     await roleInput.fill('Software Engineer');
@@ -37,7 +37,7 @@ authenticatedTest.describe('AI Interview Prep', () => {
     await expect(questions.first()).toBeVisible({ timeout: WAIT_TIMES.aiGeneration });
   });
 
-  authenticatedTest.skip('should get AI answer suggestions', async ({ authenticatedPage }) => {
+  authenticatedTest('should get AI answer suggestions', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
     const question = authenticatedPage.getByTestId('interview-question').first();
     const getAnswerButton = question.getByRole('button', { name: /get.*answer|suggestion/i });
@@ -50,7 +50,7 @@ authenticatedTest.describe('AI Interview Prep', () => {
     }
   });
 
-  authenticatedTest.skip('should practice answering questions', async ({ authenticatedPage }) => {
+  authenticatedTest('should practice answering questions', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
     const yourAnswerField = authenticatedPage.getByLabel(/your.*answer/i);
     if (await yourAnswerField.isVisible().catch(() => false)) {
@@ -64,7 +64,7 @@ authenticatedTest.describe('AI Interview Prep', () => {
     }
   });
 
-  authenticatedTest.skip('should provide interview tips', async ({ authenticatedPage }) => {
+  authenticatedTest('should provide interview tips', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
     const tipsSection = authenticatedPage.getByRole('heading', { name: /tips/i });
     if (await tipsSection.isVisible().catch(() => false)) {

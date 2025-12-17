@@ -3,7 +3,8 @@
  * Tests authentication flows including registration, login, logout, and token refresh
  */
 
-import { authClient, config, testState, register, login, logout } from './setup';
+import nock from "nock";
+import { authClient, config, testState } from "./setup";
 
 describe('Auth Service E2E', () => {
   const testUser = {

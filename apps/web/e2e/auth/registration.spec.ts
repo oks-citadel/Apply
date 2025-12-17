@@ -63,7 +63,7 @@ test.describe('User Registration', () => {
     await expect(page.getByText(/password.*least.*8/i)).toBeVisible();
   });
 
-  test.skip('should successfully register a new user', async ({ page }) => {
+  test('should successfully register a new user', async ({ page }) => {
     // TODO: Requires backend integration
     const uniqueEmail = generateUniqueEmail('register');
 
@@ -90,7 +90,7 @@ test.describe('User Registration', () => {
     await expect(successMessage).toBeVisible();
   });
 
-  test.skip('should prevent registration with existing email', async ({ page }) => {
+  test('should prevent registration with existing email', async ({ page }) => {
     // TODO: Requires backend integration
     const existingEmail = 'existing@example.com';
 
@@ -153,7 +153,7 @@ test.describe('User Registration', () => {
     }
   });
 
-  test.skip('should handle registration with referral code', async ({ page }) => {
+  test('should handle registration with referral code', async ({ page }) => {
     // TODO: Requires backend integration and referral feature
     const referralCodeInput = page.getByLabel(/referral.*code/i);
 

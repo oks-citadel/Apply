@@ -11,7 +11,7 @@ import {
 // Mock express-rate-limit
 jest.mock('express-rate-limit', () => {
   return jest.fn((options) => {
-    return (req: Request, res: Response, next: Function) => {
+    return (req: Request, _res: Response, next: Function) => {
       // Store config for testing
       (req as any).__rateLimitConfig = options;
       next();
@@ -197,7 +197,7 @@ describe('Rate Limiter Security Tests', () => {
     });
 
     it('should track requests by IP address', () => {
-      mockReq.ip = '10.0.0.1';
+      (mockReq as any).ip = '10.0.0.1';
       apiRateLimiter(mockReq as Request, mockRes as Response, nextFunction);
 
       expect(nextFunction).toHaveBeenCalled();
@@ -264,21 +264,21 @@ describe('Rate Limiter Security Tests', () => {
 
   describe('Edge Cases', () => {
     it('should handle missing IP address gracefully', () => {
-      mockReq.ip = undefined;
+      (mockReq as any).ip = undefined;
       expect(() => {
         apiRateLimiter(mockReq as Request, mockRes as Response, nextFunction);
       }).not.toThrow();
     });
 
     it('should handle IPv6 addresses', () => {
-      mockReq.ip = '2001:0db8:85a3:0000:0000:8a2e:0370:7334';
+      (mockReq as any).ip = '2001:0db8:85a3:0000:0000:8a2e:0370:7334';
       expect(() => {
         apiRateLimiter(mockReq as Request, mockRes as Response, nextFunction);
       }).not.toThrow();
     });
 
     it('should handle localhost requests', () => {
-      mockReq.ip = '127.0.0.1';
+      (mockReq as any).ip = '127.0.0.1';
       expect(() => {
         apiRateLimiter(mockReq as Request, mockRes as Response, nextFunction);
       }).not.toThrow();

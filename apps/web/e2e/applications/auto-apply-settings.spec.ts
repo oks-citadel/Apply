@@ -17,13 +17,13 @@ authenticatedTest.describe('Auto-Apply Settings', () => {
     await authenticatedPage.goto('/settings/auto-apply');
   });
 
-  authenticatedTest.skip('should display auto-apply settings page', async ({ authenticatedPage }) => {
+  authenticatedTest('should display auto-apply settings page', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
     await expect(authenticatedPage).toHaveURL(/.*auto-apply|.*settings/);
     await expect(authenticatedPage.getByRole('heading', { name: /auto.*apply|automatic.*applications/i })).toBeVisible();
   });
 
-  authenticatedTest.skip('should enable auto-apply feature', async ({ authenticatedPage }) => {
+  authenticatedTest('should enable auto-apply feature', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
     const enableToggle = authenticatedPage.getByRole('switch', { name: /enable.*auto.*apply/i });
     await enableToggle.click();
@@ -31,7 +31,7 @@ authenticatedTest.describe('Auto-Apply Settings', () => {
     await expect(authenticatedPage.getByText(/enabled|activated/i)).toBeVisible();
   });
 
-  authenticatedTest.skip('should set job criteria for auto-apply', async ({ authenticatedPage }) => {
+  authenticatedTest('should set job criteria for auto-apply', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
     // Job titles
     const jobTitlesInput = authenticatedPage.getByLabel(/job.*titles/i);
@@ -46,7 +46,7 @@ authenticatedTest.describe('Auto-Apply Settings', () => {
     await expect(authenticatedPage.getByText(/saved/i)).toBeVisible();
   });
 
-  authenticatedTest.skip('should set salary requirements', async ({ authenticatedPage }) => {
+  authenticatedTest('should set salary requirements', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
     const minSalaryInput = authenticatedPage.getByLabel(/minimum.*salary/i);
     if (await minSalaryInput.isVisible().catch(() => false)) {
@@ -57,7 +57,7 @@ authenticatedTest.describe('Auto-Apply Settings', () => {
     }
   });
 
-  authenticatedTest.skip('should set daily application limit', async ({ authenticatedPage }) => {
+  authenticatedTest('should set daily application limit', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
     const limitInput = authenticatedPage.getByLabel(/daily.*limit|applications.*per.*day/i);
     if (await limitInput.isVisible().catch(() => false)) {
@@ -68,7 +68,7 @@ authenticatedTest.describe('Auto-Apply Settings', () => {
     }
   });
 
-  authenticatedTest.skip('should exclude specific companies', async ({ authenticatedPage }) => {
+  authenticatedTest('should exclude specific companies', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
     const excludeInput = authenticatedPage.getByLabel(/exclude.*companies/i);
     if (await excludeInput.isVisible().catch(() => false)) {
@@ -79,7 +79,7 @@ authenticatedTest.describe('Auto-Apply Settings', () => {
     }
   });
 
-  authenticatedTest.skip('should select resume for auto-apply', async ({ authenticatedPage }) => {
+  authenticatedTest('should select resume for auto-apply', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
     const resumeSelect = authenticatedPage.getByLabel(/default.*resume|resume/i);
     await resumeSelect.click();
@@ -89,7 +89,7 @@ authenticatedTest.describe('Auto-Apply Settings', () => {
     await expect(authenticatedPage.getByText(/saved/i)).toBeVisible();
   });
 
-  authenticatedTest.skip('should configure auto-apply schedule', async ({ authenticatedPage }) => {
+  authenticatedTest('should configure auto-apply schedule', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
     const scheduleSection = authenticatedPage.getByRole('heading', { name: /schedule/i });
     if (await scheduleSection.isVisible().catch(() => false)) {
@@ -103,7 +103,7 @@ authenticatedTest.describe('Auto-Apply Settings', () => {
     }
   });
 
-  authenticatedTest.skip('should set auto-apply filters', async ({ authenticatedPage }) => {
+  authenticatedTest('should set auto-apply filters', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
     // Experience level
     const experienceSelect = authenticatedPage.getByLabel(/experience.*level/i);
@@ -119,7 +119,7 @@ authenticatedTest.describe('Auto-Apply Settings', () => {
     await expect(authenticatedPage.getByText(/saved/i)).toBeVisible();
   });
 
-  authenticatedTest.skip('should pause auto-apply', async ({ authenticatedPage }) => {
+  authenticatedTest('should pause auto-apply', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
     const pauseButton = authenticatedPage.getByRole('button', { name: /pause/i });
     if (await pauseButton.isVisible().catch(() => false)) {
@@ -128,7 +128,7 @@ authenticatedTest.describe('Auto-Apply Settings', () => {
     }
   });
 
-  authenticatedTest.skip('should view auto-apply history', async ({ authenticatedPage }) => {
+  authenticatedTest('should view auto-apply history', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
     const historyTab = authenticatedPage.getByRole('tab', { name: /history/i });
     if (await historyTab.isVisible().catch(() => false)) {
@@ -139,7 +139,7 @@ authenticatedTest.describe('Auto-Apply Settings', () => {
     }
   });
 
-  authenticatedTest.skip('should require premium subscription for auto-apply', async ({ authenticatedPage }) => {
+  authenticatedTest('should require premium subscription for auto-apply', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
     // If user doesn't have premium, should show upgrade prompt
     const upgradePrompt = authenticatedPage.getByText(/upgrade|premium.*required/i);

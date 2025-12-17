@@ -13,7 +13,7 @@ import { TEST_PAYMENT_DATA } from '../utils/test-data';
  */
 
 authenticatedTest.describe('Subscribe to Plan', () => {
-  authenticatedTest.skip('should display checkout page', async ({ authenticatedPage }) => {
+  authenticatedTest('should display checkout page', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
     await authenticatedPage.goto('/pricing');
 
@@ -25,7 +25,7 @@ authenticatedTest.describe('Subscribe to Plan', () => {
     await expect(authenticatedPage.getByRole('heading', { name: /checkout|payment|subscribe/i })).toBeVisible();
   });
 
-  authenticatedTest.skip('should display selected plan details', async ({ authenticatedPage }) => {
+  authenticatedTest('should display selected plan details', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
     await authenticatedPage.goto('/checkout?plan=professional');
 
@@ -34,7 +34,7 @@ authenticatedTest.describe('Subscribe to Plan', () => {
     await expect(authenticatedPage.getByText(/\$\d+/)).toBeVisible();
   });
 
-  authenticatedTest.skip('should enter payment information', async ({ authenticatedPage }) => {
+  authenticatedTest('should enter payment information', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
     await authenticatedPage.goto('/checkout?plan=professional');
 
@@ -52,7 +52,7 @@ authenticatedTest.describe('Subscribe to Plan', () => {
     }
   });
 
-  authenticatedTest.skip('should complete subscription successfully', async ({ authenticatedPage }) => {
+  authenticatedTest('should complete subscription successfully', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration with payment provider
     await authenticatedPage.goto('/checkout?plan=professional');
 
@@ -70,7 +70,7 @@ authenticatedTest.describe('Subscribe to Plan', () => {
     await expect(authenticatedPage.getByText(/success|subscribed|thank.*you/i)).toBeVisible();
   });
 
-  authenticatedTest.skip('should handle declined card', async ({ authenticatedPage }) => {
+  authenticatedTest('should handle declined card', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
     await authenticatedPage.goto('/checkout?plan=professional');
 
@@ -87,7 +87,7 @@ authenticatedTest.describe('Subscribe to Plan', () => {
     }
   });
 
-  authenticatedTest.skip('should validate payment form', async ({ authenticatedPage }) => {
+  authenticatedTest('should validate payment form', async ({ authenticatedPage }) => {
     // TODO: Requires frontend validation
     await authenticatedPage.goto('/checkout?plan=professional');
 
@@ -98,7 +98,7 @@ authenticatedTest.describe('Subscribe to Plan', () => {
     await expect(authenticatedPage.getByText(/required|invalid/i)).toBeVisible();
   });
 
-  authenticatedTest.skip('should apply coupon code', async ({ authenticatedPage }) => {
+  authenticatedTest('should apply coupon code', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
     await authenticatedPage.goto('/checkout?plan=professional');
 
@@ -113,7 +113,7 @@ authenticatedTest.describe('Subscribe to Plan', () => {
     }
   });
 
-  authenticatedTest.skip('should display order summary', async ({ authenticatedPage }) => {
+  authenticatedTest('should display order summary', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
     await authenticatedPage.goto('/checkout?plan=professional');
 
@@ -126,7 +126,7 @@ authenticatedTest.describe('Subscribe to Plan', () => {
     }
   });
 
-  authenticatedTest.skip('should show terms and conditions', async ({ authenticatedPage }) => {
+  authenticatedTest('should show terms and conditions', async ({ authenticatedPage }) => {
     // TODO: Requires content
     await authenticatedPage.goto('/checkout?plan=professional');
 
@@ -142,7 +142,7 @@ authenticatedTest.describe('Subscribe to Plan', () => {
     }
   });
 
-  authenticatedTest.skip('should save payment method for future use', async ({ authenticatedPage }) => {
+  authenticatedTest('should save payment method for future use', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
     await authenticatedPage.goto('/checkout?plan=professional');
 

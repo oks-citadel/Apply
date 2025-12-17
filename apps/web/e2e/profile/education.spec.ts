@@ -30,7 +30,7 @@ authenticatedTest.describe('Education Management', () => {
     await expect(addButton).toBeVisible();
   });
 
-  authenticatedTest.skip('should open add education modal/form', async ({ authenticatedPage }) => {
+  authenticatedTest('should open add education modal/form', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
 
     // Click add button
@@ -51,7 +51,7 @@ authenticatedTest.describe('Education Management', () => {
     await expect(authenticatedPage.getByLabel(/field.*study|major/i)).toBeVisible();
   });
 
-  authenticatedTest.skip('should successfully add education', async ({ authenticatedPage }) => {
+  authenticatedTest('should successfully add education', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
     const education = TEST_RESUME_DATA.education;
 
@@ -93,7 +93,7 @@ authenticatedTest.describe('Education Management', () => {
     await expect(authenticatedPage.getByText(education.field)).toBeVisible();
   });
 
-  authenticatedTest.skip('should support degree type selection', async ({ authenticatedPage }) => {
+  authenticatedTest('should support degree type selection', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
 
     // Open add form
@@ -124,7 +124,7 @@ authenticatedTest.describe('Education Management', () => {
     }
   });
 
-  authenticatedTest.skip('should validate required fields', async ({ authenticatedPage }) => {
+  authenticatedTest('should validate required fields', async ({ authenticatedPage }) => {
     // TODO: Requires frontend validation
 
     // Open add form
@@ -139,7 +139,7 @@ authenticatedTest.describe('Education Management', () => {
     await expect(authenticatedPage.getByText(/field.*required|major.*required/i)).toBeVisible();
   });
 
-  authenticatedTest.skip('should validate GPA format', async ({ authenticatedPage }) => {
+  authenticatedTest('should validate GPA format', async ({ authenticatedPage }) => {
     // TODO: Requires frontend validation
 
     // Open add form
@@ -162,7 +162,7 @@ authenticatedTest.describe('Education Management', () => {
     }
   });
 
-  authenticatedTest.skip('should handle current student status', async ({ authenticatedPage }) => {
+  authenticatedTest('should handle current student status', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
 
     // Open add form
@@ -194,7 +194,7 @@ authenticatedTest.describe('Education Management', () => {
     }
   });
 
-  authenticatedTest.skip('should edit existing education', async ({ authenticatedPage }) => {
+  authenticatedTest('should edit existing education', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
 
     // Assume there's at least one education entry
@@ -219,7 +219,7 @@ authenticatedTest.describe('Education Management', () => {
     await expect(authenticatedPage.getByText('Updated University')).toBeVisible();
   });
 
-  authenticatedTest.skip('should delete education', async ({ authenticatedPage }) => {
+  authenticatedTest('should delete education', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
 
     // Get initial count
@@ -246,7 +246,7 @@ authenticatedTest.describe('Education Management', () => {
     }
   });
 
-  authenticatedTest.skip('should add honors and awards', async ({ authenticatedPage }) => {
+  authenticatedTest('should add honors and awards', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
 
     // Open add/edit form
@@ -271,7 +271,7 @@ authenticatedTest.describe('Education Management', () => {
     await expect(authenticatedPage.getByText(/summa.*cum.*laude|dean.*list/i)).toBeVisible();
   });
 
-  authenticatedTest.skip('should support expected graduation date', async ({ authenticatedPage }) => {
+  authenticatedTest('should support expected graduation date', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
 
     // Open add form
@@ -301,7 +301,7 @@ authenticatedTest.describe('Education Management', () => {
     }
   });
 
-  authenticatedTest.skip('should display education in chronological order', async ({ authenticatedPage }) => {
+  authenticatedTest('should display education in chronological order', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration with multiple education entries
 
     // Verify most recent is first (assuming desc order)
@@ -314,7 +314,7 @@ authenticatedTest.describe('Education Management', () => {
     }
   });
 
-  authenticatedTest.skip('should handle empty state', async ({ authenticatedPage }) => {
+  authenticatedTest('should handle empty state', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration with no education entries
 
     // Should show empty state message
@@ -325,7 +325,7 @@ authenticatedTest.describe('Education Management', () => {
     }
   });
 
-  authenticatedTest.skip('should add relevant coursework', async ({ authenticatedPage }) => {
+  authenticatedTest('should add relevant coursework', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
 
     // Open add/edit form
@@ -350,7 +350,7 @@ authenticatedTest.describe('Education Management', () => {
     await expect(authenticatedPage.getByText(/data.*structures|algorithms/i)).toBeVisible();
   });
 
-  authenticatedTest.skip('should support multiple education entries', async ({ authenticatedPage }) => {
+  authenticatedTest('should support multiple education entries', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
 
     // Add first education (Bachelor's)

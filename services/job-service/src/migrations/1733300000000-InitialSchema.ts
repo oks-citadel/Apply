@@ -4,6 +4,9 @@ export class InitialSchema1733300000000 implements MigrationInterface {
   name = 'InitialSchema1733300000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
+    // Enable uuid-ossp extension if not exists
+    await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`);
+
     // Create enum types
     await queryRunner.query(`
       DO $$ BEGIN

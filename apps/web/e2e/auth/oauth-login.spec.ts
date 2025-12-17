@@ -30,7 +30,7 @@ test.describe('OAuth Login', () => {
     expect(hasGoogleButton || hasGithubButton || hasLinkedinButton).toBeTruthy();
   });
 
-  test.skip('should initiate Google OAuth flow', async ({ page, context }) => {
+  test('should initiate Google OAuth flow', async ({ page, context }) => {
     // TODO: Requires OAuth provider configuration
 
     // Click Google login button
@@ -49,7 +49,7 @@ test.describe('OAuth Login', () => {
     expect(url).toContain('oauth');
   });
 
-  test.skip('should initiate GitHub OAuth flow', async ({ page, context }) => {
+  test('should initiate GitHub OAuth flow', async ({ page, context }) => {
     // TODO: Requires OAuth provider configuration
 
     const githubButton = page.getByRole('button', { name: /github|sign in.*github/i });
@@ -67,7 +67,7 @@ test.describe('OAuth Login', () => {
     expect(url).toContain('login/oauth');
   });
 
-  test.skip('should initiate LinkedIn OAuth flow', async ({ page, context }) => {
+  test('should initiate LinkedIn OAuth flow', async ({ page, context }) => {
     // TODO: Requires OAuth provider configuration
 
     const linkedinButton = page.getByRole('button', { name: /linkedin|sign in.*linkedin/i });
@@ -85,7 +85,7 @@ test.describe('OAuth Login', () => {
     expect(url).toContain('oauth');
   });
 
-  test.skip('should successfully login with Google OAuth', async ({ page }) => {
+  test('should successfully login with Google OAuth', async ({ page }) => {
     // TODO: Requires OAuth provider configuration and test account
 
     // In a real test, this would:
@@ -106,7 +106,7 @@ test.describe('OAuth Login', () => {
     await expect(userMenu).toBeVisible();
   });
 
-  test.skip('should handle OAuth cancellation', async ({ page }) => {
+  test('should handle OAuth cancellation', async ({ page }) => {
     // TODO: Requires OAuth provider configuration
 
     // Mock OAuth callback with error
@@ -119,7 +119,7 @@ test.describe('OAuth Login', () => {
     await expect(page).toHaveURL(/.*login/);
   });
 
-  test.skip('should handle OAuth error', async ({ page }) => {
+  test('should handle OAuth error', async ({ page }) => {
     // TODO: Requires OAuth provider configuration
 
     // Mock OAuth callback with error
@@ -129,7 +129,7 @@ test.describe('OAuth Login', () => {
     await expect(page.getByText(/authentication.*failed|login.*failed|error/i)).toBeVisible();
   });
 
-  test.skip('should link OAuth account to existing account', async ({ page, context }) => {
+  test('should link OAuth account to existing account', async ({ page, context }) => {
     // TODO: Requires backend integration
 
     // Login with email/password first
@@ -156,7 +156,7 @@ test.describe('OAuth Login', () => {
     await expect(page.getByText(/google.*connected|connected.*google/i)).toBeVisible();
   });
 
-  test.skip('should handle OAuth account already linked to another user', async ({ page }) => {
+  test('should handle OAuth account already linked to another user', async ({ page }) => {
     // TODO: Requires backend integration
 
     // Attempt OAuth login with account already linked to different user
@@ -170,7 +170,7 @@ test.describe('OAuth Login', () => {
     await expect(loginLink).toBeVisible();
   });
 
-  test.skip('should create new account via OAuth for new users', async ({ page }) => {
+  test('should create new account via OAuth for new users', async ({ page }) => {
     // TODO: Requires backend integration
 
     // OAuth login with new Google account
@@ -186,7 +186,7 @@ test.describe('OAuth Login', () => {
     expect(isProfilePage || isDashboard).toBeTruthy();
   });
 
-  test.skip('should handle OAuth state parameter mismatch', async ({ page }) => {
+  test('should handle OAuth state parameter mismatch', async ({ page }) => {
     // TODO: Requires backend integration
 
     // OAuth callback with mismatched state (security issue)
@@ -199,7 +199,7 @@ test.describe('OAuth Login', () => {
     await expect(page).toHaveURL(/.*login/);
   });
 
-  test.skip('should persist redirect URL through OAuth flow', async ({ page }) => {
+  test('should persist redirect URL through OAuth flow', async ({ page }) => {
     // TODO: Requires OAuth provider configuration
 
     // Try to access protected page
@@ -217,7 +217,7 @@ test.describe('OAuth Login', () => {
     // await expect(page).toHaveURL(/.*applications/);
   });
 
-  test.skip('should sync user profile from OAuth provider', async ({ page }) => {
+  test('should sync user profile from OAuth provider', async ({ page }) => {
     // TODO: Requires backend integration
 
     // Login via OAuth

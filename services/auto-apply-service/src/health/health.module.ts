@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { HealthService } from './health.service';
 
 /**
@@ -7,7 +6,6 @@ import { HealthService } from './health.service';
  * Provides health check service for monitoring
  */
 @Module({
-  imports: [TypeOrmModule],
   providers: [HealthService],
   exports: [HealthService],
 })

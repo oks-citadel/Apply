@@ -1,8 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { ConfigService } from '@nestjs/config';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { TestFactory } from '../../../test/utils/test-factory';
 import { TokenResponseDto } from './dto/token-response.dto';
+import { mockConfigService } from '../../../test/utils/mock-config';
 
 describe('AuthController', () => {
   let controller: AuthController;
@@ -30,6 +32,10 @@ describe('AuthController', () => {
         {
           provide: AuthService,
           useValue: mockAuthService,
+        },
+        {
+          provide: ConfigService,
+          useValue: mockConfigService,
         },
       ],
     }).compile();
@@ -178,19 +184,23 @@ describe('AuthController', () => {
     it('should handle Google OAuth callback', async () => {
       const mockUser = TestFactory.createOAuthUser('GOOGLE' as any);
       const mockRequest = { user: mockUser } as any;
-      const mockResponse = new TokenResponseDto(
+      const mockTokenResponse = new TokenResponseDto(
         'access-token',
         'refresh-token',
         mockUser,
         900,
       );
+      const mockRes = {
+        cookie: jest.fn(),
+        redirect: jest.fn(),
+      } as any;
 
-      authService.googleLogin.mockResolvedValue(mockResponse);
+      authService.googleLogin.mockResolvedValue(mockTokenResponse);
 
-      const result = await controller.googleCallback(mockRequest);
+      await controller.googleCallback(mockRequest, mockRes);
 
-      expect(result).toEqual(mockResponse);
       expect(authService.googleLogin).toHaveBeenCalledWith(mockUser);
+      expect(mockRes.redirect).toHaveBeenCalled();
     });
   });
 

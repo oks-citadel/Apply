@@ -20,6 +20,7 @@ async function bootstrap() {
   // Import NestJS modules AFTER telemetry initialization
   const { NestFactory } = await import('@nestjs/core');
   const { ValidationPipe } = await import('@nestjs/common');
+  const { SwaggerModule, DocumentBuilder } = await import('@nestjs/swagger');
   const { AppModule } = await import('./app.module');
 
   const app = await NestFactory.create(AppModule);
@@ -56,6 +57,39 @@ async function bootstrap() {
     }),
   );
 
+  // Swagger documentation
+  const config = new DocumentBuilder()
+    .setTitle('Auto-Apply Service API')
+    .setDescription('Automated Job Application Service for ApplyForUs AI Platform - Handles automated job applications, application tracking, and answer libraries')
+    .setVersion('1.0')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        name: 'JWT',
+        description: 'Enter JWT token',
+        in: 'header',
+      },
+      'JWT-auth',
+    )
+    .addTag('Applications', 'Job application management and tracking')
+    .addTag('Auto-Apply', 'Automated application settings and controls')
+    .addTag('Engine', 'Application engine for processing job applications')
+    .addTag('Answer Library', 'Pre-saved answers for common application questions')
+    .addTag('Health', 'Health check endpoints')
+    .build();
+
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api/docs', app, document, {
+    swaggerOptions: {
+      persistAuthorization: true,
+      docExpansion: 'none',
+      filter: true,
+      showRequestDuration: true,
+    },
+  });
+
   // No global prefix - ingress routes /auto-apply to this service directly
   // app.setGlobalPrefix('api/v1');
 
@@ -63,7 +97,8 @@ async function bootstrap() {
   await app.listen(port);
 
   logger.log(`Auto-Apply Service is running on: http://localhost:${port}`);
-  logger.log(`Health check: http://localhost:${port}/api/v1/health`);
+  logger.log(`Swagger documentation: http://localhost:${port}/api/docs`);
+  logger.log(`Health check: http://localhost:${port}/health`);
 }
 
 bootstrap();

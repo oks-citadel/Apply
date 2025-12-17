@@ -87,7 +87,7 @@ describe('AnalyticsController', () => {
 
       mockAnalyticsService.trackEvent.mockResolvedValue(expectedResponse);
 
-      const result = await controller.trackEvent(createEventDto, undefined, undefined);
+      const result = await controller.trackEvent(createEventDto, '', '');
 
       expect(service.trackEvent).toHaveBeenCalledWith(
         createEventDto,

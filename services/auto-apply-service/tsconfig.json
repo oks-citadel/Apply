@@ -17,15 +17,31 @@
     "strictBindCallApply": false,
     "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": false,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
     "paths": {
-      "@/*": ["src/*"],
-      "@modules/*": ["src/modules/*"],
-      "@config/*": ["src/config/*"],
-      "@applyforus/telemetry": ["../../packages/telemetry/src/index.ts"],
-      "@applyforus/logging": ["../../packages/logging/src/index.ts"],
-      "@applyforus/security": ["../../packages/security/src/index.ts"]
-    }
+      "@/*": [
+        "src/*"
+      ],
+      "@modules/*": [
+        "src/modules/*"
+      ],
+      "@config/*": [
+        "src/config/*"
+      ]
+    },
+    "rootDir": "./src"
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "test", "**/*spec.ts", "**/*.example.ts", "**/*-example.ts", "**/*.ENHANCED.ts"]
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "test",
+    "**/*spec.ts",
+    "**/*.example.ts",
+    "**/*-example.ts",
+    "**/*.ENHANCED.ts"
+  ]
 }

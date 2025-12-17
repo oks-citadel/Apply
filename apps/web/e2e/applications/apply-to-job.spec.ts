@@ -13,7 +13,7 @@ import { test as authenticatedTest } from '../fixtures/user.fixture';
  */
 
 authenticatedTest.describe('Apply to Job', () => {
-  authenticatedTest.skip('should start application from job detail page', async ({ authenticatedPage }) => {
+  authenticatedTest('should start application from job detail page', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
     await authenticatedPage.goto('/jobs/1');
 
@@ -27,7 +27,7 @@ authenticatedTest.describe('Apply to Job', () => {
     expect(isApplicationPage || hasApplicationModal).toBeTruthy();
   });
 
-  authenticatedTest.skip('should select resume for application', async ({ authenticatedPage }) => {
+  authenticatedTest('should select resume for application', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
     await authenticatedPage.goto('/jobs/1/apply');
 
@@ -41,7 +41,7 @@ authenticatedTest.describe('Apply to Job', () => {
     await expect(authenticatedPage.getByText(/selected|chosen/i)).toBeVisible();
   });
 
-  authenticatedTest.skip('should upload new resume during application', async ({ authenticatedPage }) => {
+  authenticatedTest('should upload new resume during application', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
     await authenticatedPage.goto('/jobs/1/apply');
 
@@ -56,7 +56,7 @@ authenticatedTest.describe('Apply to Job', () => {
     }
   });
 
-  authenticatedTest.skip('should write cover letter', async ({ authenticatedPage }) => {
+  authenticatedTest('should write cover letter', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
     await authenticatedPage.goto('/jobs/1/apply');
 
@@ -67,7 +67,7 @@ authenticatedTest.describe('Apply to Job', () => {
     }
   });
 
-  authenticatedTest.skip('should use AI-generated cover letter', async ({ authenticatedPage }) => {
+  authenticatedTest('should use AI-generated cover letter', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration with AI service
     await authenticatedPage.goto('/jobs/1/apply');
 
@@ -80,7 +80,7 @@ authenticatedTest.describe('Apply to Job', () => {
     }
   });
 
-  authenticatedTest.skip('should fill application questions', async ({ authenticatedPage }) => {
+  authenticatedTest('should fill application questions', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
     await authenticatedPage.goto('/jobs/1/apply');
 
@@ -92,7 +92,7 @@ authenticatedTest.describe('Apply to Job', () => {
     }
   });
 
-  authenticatedTest.skip('should submit application successfully', async ({ authenticatedPage }) => {
+  authenticatedTest('should submit application successfully', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
     await authenticatedPage.goto('/jobs/1/apply');
 
@@ -109,7 +109,7 @@ authenticatedTest.describe('Apply to Job', () => {
     await expect(authenticatedPage.getByText(/application.*submitted|success/i)).toBeVisible({ timeout: 10000 });
   });
 
-  authenticatedTest.skip('should show application confirmation', async ({ authenticatedPage }) => {
+  authenticatedTest('should show application confirmation', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
     await authenticatedPage.goto('/jobs/1/apply');
 
@@ -122,7 +122,7 @@ authenticatedTest.describe('Apply to Job', () => {
     await expect(authenticatedPage.getByRole('heading', { name: /application.*submitted/i })).toBeVisible();
   });
 
-  authenticatedTest.skip('should validate required fields', async ({ authenticatedPage }) => {
+  authenticatedTest('should validate required fields', async ({ authenticatedPage }) => {
     // TODO: Requires frontend validation
     await authenticatedPage.goto('/jobs/1/apply');
 
@@ -132,7 +132,7 @@ authenticatedTest.describe('Apply to Job', () => {
     await expect(authenticatedPage.getByText(/required|must.*select/i)).toBeVisible();
   });
 
-  authenticatedTest.skip('should show application preview before submission', async ({ authenticatedPage }) => {
+  authenticatedTest('should show application preview before submission', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
     await authenticatedPage.goto('/jobs/1/apply');
 
@@ -147,7 +147,7 @@ authenticatedTest.describe('Apply to Job', () => {
     }
   });
 
-  authenticatedTest.skip('should save application as draft', async ({ authenticatedPage }) => {
+  authenticatedTest('should save application as draft', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
     await authenticatedPage.goto('/jobs/1/apply');
 
@@ -165,7 +165,7 @@ authenticatedTest.describe('Apply to Job', () => {
     }
   });
 
-  authenticatedTest.skip('should prevent duplicate applications', async ({ authenticatedPage }) => {
+  authenticatedTest('should prevent duplicate applications', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
     await authenticatedPage.goto('/jobs/1/apply');
 
@@ -181,7 +181,7 @@ authenticatedTest.describe('Apply to Job', () => {
     }
   });
 
-  authenticatedTest.skip('should redirect external applications', async ({ authenticatedPage }) => {
+  authenticatedTest('should redirect external applications', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
     await authenticatedPage.goto('/jobs/2/apply');
 

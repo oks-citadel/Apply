@@ -1,5 +1,24 @@
 # ============================================================================
-# MAIN ORCHESTRATOR PIPELINE - ApplyForUs Platform
+# DEPRECATED - AZURE DEVOPS PIPELINE
+# ============================================================================
+#
+# THIS PIPELINE IS DEPRECATED. Please use GitHub Actions instead.
+#
+# The CI/CD has been migrated to GitHub Actions at:
+#   .github/workflows/ci-cd.yml
+#
+# For documentation, see:
+#   .github/workflows/README.md
+#
+# Reasons for migration:
+#   - Self-hosted agent pool dependency removed
+#   - Better integration with GitHub for PRs and issues
+#   - OIDC authentication for Azure (no secrets rotation needed)
+#   - Improved caching with GitHub Actions cache
+#   - Native integration with GitHub Security tab
+#
+# ============================================================================
+# MAIN ORCHESTRATOR PIPELINE - ApplyForUs Platform (LEGACY)
 # ============================================================================
 # Single unified CI/CD pipeline controlling the complete lifecycle:
 #   A. Build & Test (dependencies, linting, tests, artifacts, Docker)

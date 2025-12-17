@@ -30,7 +30,7 @@ authenticatedTest.describe('Work Experience Management', () => {
     await expect(addButton).toBeVisible();
   });
 
-  authenticatedTest.skip('should open add experience modal/form', async ({ authenticatedPage }) => {
+  authenticatedTest('should open add experience modal/form', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
 
     // Click add button
@@ -51,7 +51,7 @@ authenticatedTest.describe('Work Experience Management', () => {
     await expect(authenticatedPage.getByLabel(/start.*date/i)).toBeVisible();
   });
 
-  authenticatedTest.skip('should successfully add work experience', async ({ authenticatedPage }) => {
+  authenticatedTest('should successfully add work experience', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
     const experience = TEST_RESUME_DATA.workExperience;
 
@@ -82,7 +82,7 @@ authenticatedTest.describe('Work Experience Management', () => {
     await expect(authenticatedPage.getByText(experience.company)).toBeVisible();
   });
 
-  authenticatedTest.skip('should handle current position checkbox', async ({ authenticatedPage }) => {
+  authenticatedTest('should handle current position checkbox', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
 
     // Open add form
@@ -111,7 +111,7 @@ authenticatedTest.describe('Work Experience Management', () => {
     await expect(authenticatedPage.getByText(/present|current/i)).toBeVisible();
   });
 
-  authenticatedTest.skip('should validate required fields', async ({ authenticatedPage }) => {
+  authenticatedTest('should validate required fields', async ({ authenticatedPage }) => {
     // TODO: Requires frontend validation
 
     // Open add form
@@ -126,7 +126,7 @@ authenticatedTest.describe('Work Experience Management', () => {
     await expect(authenticatedPage.getByText(/start.*date.*required/i)).toBeVisible();
   });
 
-  authenticatedTest.skip('should validate date logic', async ({ authenticatedPage }) => {
+  authenticatedTest('should validate date logic', async ({ authenticatedPage }) => {
     // TODO: Requires frontend validation
 
     // Open add form
@@ -143,7 +143,7 @@ authenticatedTest.describe('Work Experience Management', () => {
     await expect(authenticatedPage.getByText(/end.*date.*after.*start|invalid.*date/i)).toBeVisible();
   });
 
-  authenticatedTest.skip('should edit existing work experience', async ({ authenticatedPage }) => {
+  authenticatedTest('should edit existing work experience', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
 
     // Assume there's at least one experience in the list
@@ -168,7 +168,7 @@ authenticatedTest.describe('Work Experience Management', () => {
     await expect(authenticatedPage.getByText('Updated Job Title')).toBeVisible();
   });
 
-  authenticatedTest.skip('should delete work experience', async ({ authenticatedPage }) => {
+  authenticatedTest('should delete work experience', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
 
     // Get initial count of experiences
@@ -193,7 +193,7 @@ authenticatedTest.describe('Work Experience Management', () => {
     expect(newCount).toBe(initialCount - 1);
   });
 
-  authenticatedTest.skip('should cancel deletion', async ({ authenticatedPage }) => {
+  authenticatedTest('should cancel deletion', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
 
     // Get initial count
@@ -213,7 +213,7 @@ authenticatedTest.describe('Work Experience Management', () => {
     expect(newCount).toBe(initialCount);
   });
 
-  authenticatedTest.skip('should reorder work experiences', async ({ authenticatedPage }) => {
+  authenticatedTest('should reorder work experiences', async ({ authenticatedPage }) => {
     // TODO: Requires drag-and-drop implementation
 
     // Get experiences
@@ -240,7 +240,7 @@ authenticatedTest.describe('Work Experience Management', () => {
     }
   });
 
-  authenticatedTest.skip('should add multiple achievements/responsibilities', async ({ authenticatedPage }) => {
+  authenticatedTest('should add multiple achievements/responsibilities', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
 
     // Open add/edit form
@@ -271,7 +271,7 @@ authenticatedTest.describe('Work Experience Management', () => {
     }
   });
 
-  authenticatedTest.skip('should display work experience in chronological order', async ({ authenticatedPage }) => {
+  authenticatedTest('should display work experience in chronological order', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration with multiple experiences
 
     // Verify most recent is first (assuming desc order)
@@ -284,7 +284,7 @@ authenticatedTest.describe('Work Experience Management', () => {
     }
   });
 
-  authenticatedTest.skip('should show experience duration', async ({ authenticatedPage }) => {
+  authenticatedTest('should show experience duration', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
 
     // Check if duration is calculated and displayed (e.g., "2 years 3 months")
@@ -295,7 +295,7 @@ authenticatedTest.describe('Work Experience Management', () => {
     }
   });
 
-  authenticatedTest.skip('should handle empty state', async ({ authenticatedPage }) => {
+  authenticatedTest('should handle empty state', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration with no experiences
 
     // Should show empty state message

@@ -17,13 +17,13 @@ authenticatedTest.describe('AI Salary Assistant', () => {
     await authenticatedPage.goto('/ai-tools/salary');
   });
 
-  authenticatedTest.skip('should display salary assistant page', async ({ authenticatedPage }) => {
+  authenticatedTest('should display salary assistant page', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
     await expect(authenticatedPage).toHaveURL(/.*salary/);
     await expect(authenticatedPage.getByRole('heading', { name: /salary|compensation/i })).toBeVisible();
   });
 
-  authenticatedTest.skip('should estimate salary range', async ({ authenticatedPage }) => {
+  authenticatedTest('should estimate salary range', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration with AI service
     await authenticatedPage.getByLabel(/job.*title/i).fill('Senior Software Engineer');
     await authenticatedPage.getByLabel(/location/i).fill('San Francisco, CA');
@@ -37,7 +37,7 @@ authenticatedTest.describe('AI Salary Assistant', () => {
     await expect(salaryRange).toBeVisible({ timeout: WAIT_TIMES.aiGeneration });
   });
 
-  authenticatedTest.skip('should provide negotiation tips', async ({ authenticatedPage }) => {
+  authenticatedTest('should provide negotiation tips', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
     const tipsButton = authenticatedPage.getByRole('button', { name: /negotiation.*tips/i });
     if (await tipsButton.isVisible().catch(() => false)) {
@@ -47,7 +47,7 @@ authenticatedTest.describe('AI Salary Assistant', () => {
     }
   });
 
-  authenticatedTest.skip('should evaluate job offer', async ({ authenticatedPage }) => {
+  authenticatedTest('should evaluate job offer', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
     await authenticatedPage.getByLabel(/offered.*salary/i).fill('150000');
     await authenticatedPage.getByLabel(/job.*title/i).fill('Software Engineer');
@@ -59,7 +59,7 @@ authenticatedTest.describe('AI Salary Assistant', () => {
     await expect(evaluation).toBeVisible({ timeout: WAIT_TIMES.aiGeneration });
   });
 
-  authenticatedTest.skip('should compare multiple offers', async ({ authenticatedPage }) => {
+  authenticatedTest('should compare multiple offers', async ({ authenticatedPage }) => {
     // TODO: Requires backend integration
     const compareTab = authenticatedPage.getByRole('tab', { name: /compare/i });
     if (await compareTab.isVisible().catch(() => false)) {
