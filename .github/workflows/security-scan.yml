@@ -207,6 +207,7 @@ jobs:
 
       - name: Upload Trivy results
         uses: github/codeql-action/upload-sarif@v3
+        continue-on-error: true  # Dont fail if Advanced Security not enabled
         with:
           sarif_file: trivy-${{ matrix.service }}.sarif
         continue-on-error: true
@@ -323,6 +324,7 @@ jobs:
 
       - name: Upload infrastructure scan results
         uses: github/codeql-action/upload-sarif@v3
+        continue-on-error: true  # Dont fail if Advanced Security not enabled
         with:
           sarif_file: checkov-terraform.sarif
         continue-on-error: true

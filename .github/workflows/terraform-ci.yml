@@ -256,6 +256,7 @@ jobs:
 
       - name: Upload tfsec results to Security tab
         uses: github/codeql-action/upload-sarif@v3
+        continue-on-error: true  # Dont fail if Advanced Security not enabled
         with:
           sarif_file: results.sarif
           category: tfsec-${{ matrix.terraform_dir }}
@@ -313,6 +314,7 @@ jobs:
 
       - name: Upload Checkov results to Security tab
         uses: github/codeql-action/upload-sarif@v3
+        continue-on-error: true  # Dont fail if Advanced Security not enabled
         with:
           sarif_file: checkov-results.sarif
           category: checkov-${{ matrix.terraform_dir }}

@@ -228,6 +228,7 @@ jobs:
       - name: Upload scan results
         if: always()
         uses: github/codeql-action/upload-sarif@v3
+        continue-on-error: true  # Dont fail if Advanced Security not enabled
         with:
           sarif_file: trivy-${{ matrix.service }}.sarif
         continue-on-error: true
