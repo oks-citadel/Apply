@@ -187,13 +187,13 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Run Prettier check
-        run: pnpm run format:check || true
+        run: ppnpm run format:check || true
 
       - name: Run ESLint
-        run: pnpm run lint || true
+        run: ppnpm run lint || true
 
       - name: Run TypeScript type check
-        run: pnpm run type-check || true
+        run: ppnpm run type-check || true
 
   # ===========================================================================
   # STAGE 3: SECURITY SCANNING
@@ -291,7 +291,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Run web tests
-        run: pnpm run test --filter=@jobpilot/web || true
+        run: ppnpm run test --filter=@jobpilot/web || true
         env:
           CI: true
           NODE_ENV: test
@@ -363,7 +363,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Run tests for ${{ matrix.service }}
-        run: pnpm run test --filter=@jobpilot/${{ matrix.service }} || true
+        run: ppnpm run test --filter=@jobpilot/${{ matrix.service }} || true
         env:
           DATABASE_URL: postgresql://test:test@localhost:5432/test
           REDIS_URL: redis://localhost:6379

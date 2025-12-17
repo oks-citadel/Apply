@@ -356,14 +356,20 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          # cache handled by pnpm
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+          run_install: false
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Run integration tests
         run: |
-          npm run test:integration || true
+          pnpm run test:integration || true
         env:
           TEST_BASE_URL: https://staging.applyforus.com
           TEST_API_URL: https://staging-api.applyforus.com

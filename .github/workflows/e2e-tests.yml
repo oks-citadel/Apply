@@ -94,7 +94,7 @@ jobs:
           DATABASE_URL: postgresql://jobpilot:testpassword@localhost:5432/jobpilot_test
 
       - name: Run E2E tests
-        run: pnpm test:e2e
+        run: ppnpm test:e2e
         env:
           BASE_URL: http://localhost:3000
           DATABASE_URL: postgresql://jobpilot:testpassword@localhost:5432/jobpilot_test
@@ -156,7 +156,7 @@ jobs:
         run: pnpm exec playwright install --with-deps chromium
 
       - name: Run E2E tests against staging
-        run: pnpm test:e2e --project=chromium
+        run: ppnpm test:e2e --project=chromium
         env:
           BASE_URL: https://staging.applyforus.com
           CI: true
