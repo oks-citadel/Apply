@@ -13,10 +13,11 @@ export const dataSourceOptions: DataSourceOptions = {
   password: process.env.DB_PASSWORD || 'postgres',
   database: process.env.DB_DATABASE || 'applyforus',
   entities: [User, AIGeneration],
-  migrations: ['dist/migrations/*.js'],
+  migrations: ['src/migrations/*.ts'],
   migrationsRun: false,
   synchronize: false,
   logging: process.env.NODE_ENV === 'development',
+  ssl: process.env.DB_HOST?.includes('azure') ? { rejectUnauthorized: false } : false,
 };
 
 const dataSource = new DataSource(dataSourceOptions);

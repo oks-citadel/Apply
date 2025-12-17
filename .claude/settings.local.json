@@ -617,7 +617,13 @@
       "Bash(pnpm:*)",
       "Bash(for repo in applyai-web applyai-auth-service applyai-user-service applyai-job-service applyai-analytics-service applyai-notification-service applyai-ai-service)",
       "Bash(NODE_OPTIONS=\"--experimental-vm-modules\" npm test:*)",
-      "Bash(dir \"C:\\Users\\kogun\\OneDrive\\Documents\\Job-Apply-Platform\\*.md\")"
+      "Bash(dir \"C:\\Users\\kogun\\OneDrive\\Documents\\Job-Apply-Platform\\*.md\")",
+      "Bash(\"/c/Program Files/Docker/Docker/resources/bin/docker.exe\" build -t applyforusacr.azurecr.io/applyai-resume-service:v2.0.0 -f services/resume-service/Dockerfile .)",
+      "Bash(\"/c/Program Files/Docker/Docker/resources/bin/docker.exe\" build -t applyforusacr.azurecr.io/applyai-payment-service:v2.0.0 -f services/payment-service/Dockerfile .)",
+      "Bash(do echo \"=== $repo ===\")",
+      "Bash(MSYS_NO_PATHCONV=1 kubectl exec:*)",
+      "Bash(DATABASE_HOST=applyforus-postgres.postgres.database.azure.com DATABASE_PORT=5432 DATABASE_USERNAME=applyforusadmin DATABASE_PASSWORD=\"ApplyF0rus2024!Secure\" DATABASE_NAME=applyforus_auth npx typeorm-ts-node-commonjs migration:run:*)",
+      "Bash(DB_HOST=applyforus-postgres.postgres.database.azure.com DB_PORT=5432 DB_USERNAME=applyforusadmin DB_PASSWORD=\"ApplyF0rus2024!Secure\" DB_DATABASE=applyforus_auth npx typeorm-ts-node-commonjs migration:run:*)"
     ],
     "deny": [],
     "ask": []

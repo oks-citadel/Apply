@@ -54,10 +54,10 @@ export class AlignmentAnalysisResponseDto {
   experienceMatchPercentage: number;
 
   @ApiProperty({ example: 75.0, nullable: true })
-  educationMatchPercentage: number;
+  educationMatchPercentage: number | null;
 
   @ApiProperty({ example: 80.0, nullable: true })
-  certificationMatchPercentage: number;
+  certificationMatchPercentage: number | null;
 
   @ApiProperty({
     example:
@@ -133,17 +133,17 @@ export class AlignedResumeResponseDto {
   @ApiProperty({ example: 85.5 })
   matchScore: number;
 
-  @ApiProperty({ example: 92.0 })
-  atsScore: number;
+  @ApiProperty({ example: 92.0, nullable: true })
+  atsScore: number | null;
 
-  @ApiProperty({ example: 88.0 })
-  skillMatchScore: number;
+  @ApiProperty({ example: 88.0, nullable: true })
+  skillMatchScore: number | null;
 
-  @ApiProperty({ example: 90.0 })
-  experienceMatchScore: number;
+  @ApiProperty({ example: 90.0, nullable: true })
+  experienceMatchScore: number | null;
 
-  @ApiProperty({ example: 75.0 })
-  keywordDensity: number;
+  @ApiProperty({ example: 75.0, nullable: true })
+  keywordDensity: number | null;
 
   @ApiProperty({ example: true })
   isActive: boolean;
@@ -200,11 +200,11 @@ export class GeneratedCoverLetterResponseDto {
   @ApiProperty()
   metadata: any;
 
-  @ApiProperty({ example: 90.0 })
-  relevanceScore: number;
+  @ApiProperty({ example: 90.0, nullable: true })
+  relevanceScore: number | null;
 
-  @ApiProperty({ example: 95.0 })
-  toneAppropriateness: number;
+  @ApiProperty({ example: 95.0, nullable: true })
+  toneAppropriateness: number | null;
 
   @ApiProperty({ example: 350 })
   wordCount: number;
