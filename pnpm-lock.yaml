@@ -982,6 +982,9 @@ importers:
         specifier: ^0.3.19
         version: 0.3.28(ioredis@5.8.2)(pg@8.16.3)(ts-node@10.9.2)
     devDependencies:
+      '@types/node':
+        specifier: ^20.10.0
+        version: 20.19.25
       typescript:
         specifier: ^5.3.3
         version: 5.9.3
