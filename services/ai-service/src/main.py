@@ -404,12 +404,13 @@ app.include_router(
 app.include_router(
     probability_matching.router,
     prefix="/api/v1/matching",
-napp.include_router(
+    tags=["Interview Probability Matching"],
+)
+
+app.include_router(
     skills_analysis.router,
     prefix="/api/ai/skills",
     tags=["Skills Analysis & Recommendations"],
-)
-    tags=["Interview Probability Matching"],
 )
 
 # Main entry point

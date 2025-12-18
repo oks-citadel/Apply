@@ -583,7 +583,7 @@ export const POLICY_TEMPLATES: Record<PolicyType, string> = {
 export function compileTemplate(policyType: PolicyType, variables: PolicyVariables): string {
   const template = POLICY_TEMPLATES[policyType];
   if (!template) {
-    throw new Error(\`Template not found for policy type: \${policyType}\`);
+    throw new Error(`Template not found for policy type: ${policyType}`);
   }
 
   const compiledTemplate = Handlebars.compile(template);
