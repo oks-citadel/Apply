@@ -7,5 +7,6 @@ export {
   checkRedisConnection,
   checkElasticsearchConnection,
   createHealthResponse,
-  HealthCheckResult,
 } from './health.utils';
+
+export type { HealthCheckResult } from './health.utils';

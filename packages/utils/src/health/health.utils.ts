@@ -50,13 +50,14 @@ export async function checkDatabaseConnection(
     };
   } catch (error) {
     const responseTime = Date.now() - startTime;
+    const errorMessage = error instanceof Error ? error.message : String(error);
 
     return {
       healthy: false,
-      message: `Database connection failed: ${error.message}`,
+      message: `Database connection failed: ${errorMessage}`,
       responseTime,
       details: {
-        error: error.message,
+        error: errorMessage,
       },
     };
   }
@@ -121,13 +122,14 @@ export async function checkRedisConnection(
     }
   } catch (error) {
     const responseTime = Date.now() - startTime;
+    const errorMessage = error instanceof Error ? error.message : String(error);
 
     return {
       healthy: false,
-      message: `Redis connection failed: ${error.message}`,
+      message: `Redis connection failed: ${errorMessage}`,
       responseTime,
       details: {
-        error: error.message,
+        error: errorMessage,
       },
     };
   }
@@ -162,15 +164,16 @@ export async function checkElasticsearchConnection(
       let clusterHealth;
       try {
         clusterHealth = await esClient.cluster.health();
-      } catch (error) {
+      } catch (clusterError) {
         // If cluster health fails, still consider it partially healthy if ping worked
+        const clusterErrorMessage = clusterError instanceof Error ? clusterError.message : String(clusterError);
         return {
           healthy: true,
           message: 'Elasticsearch reachable but cluster health unavailable',
           responseTime,
           details: {
             ping: true,
-            clusterHealthError: error.message,
+            clusterHealthError: clusterErrorMessage,
           },
         };
       }
@@ -195,13 +198,14 @@ export async function checkElasticsearchConnection(
     }
   } catch (error) {
     const responseTime = Date.now() - startTime;
+    const errorMessage = error instanceof Error ? error.message : String(error);
 
     return {
       healthy: false,
-      message: `Elasticsearch connection failed: ${error.message}`,
+      message: `Elasticsearch connection failed: ${errorMessage}`,
       responseTime,
       details: {
-        error: error.message,
+        error: errorMessage,
       },
     };
   }
