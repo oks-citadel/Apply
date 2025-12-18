@@ -1,7 +1,7 @@
 # Monorepo-aware Dockerfile for auth-service
 # Pinned Node.js 20 Alpine with SHA256 digest for supply chain security
 # Update digest: docker pull node:20-alpine && docker inspect node:20-alpine | jq -r '.[0].RepoDigests[0]'
-FROM node:20-alpine@sha256:2d5e8a8a51bc341fd5f2eed6d91455c3a3d147e91a14298fc564b5dc519c1666 AS builder
+FROM node:20-alpine AS builder
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
@@ -30,7 +30,7 @@ RUN pnpm run build
 
 # Stage 2: Production - preserve monorepo structure for pnpm symlinks
 # Pinned Node.js 20 Alpine with SHA256 digest (must match builder stage)
-FROM node:20-alpine@sha256:2d5e8a8a51bc341fd5f2eed6d91455c3a3d147e91a14298fc564b5dc519c1666 AS production
+FROM node:20-alpine AS production
 
 RUN apk add --no-cache dumb-init curl
 

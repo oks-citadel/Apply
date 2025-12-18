@@ -1,6 +1,6 @@
 # Monorepo-aware Dockerfile for user-service
 # Pinned Node.js 20 Alpine with SHA256 digest for supply chain security
-FROM node:20-alpine@sha256:2d5e8a8a51bc341fd5f2eed6d91455c3a3d147e91a14298fc564b5dc519c1666 AS builder
+FROM node:20-alpine AS builder
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
@@ -24,7 +24,7 @@ WORKDIR /app/services/user-service
 RUN pnpm run build
 
 # Pinned Node.js 20 Alpine with SHA256 digest (must match builder stage)
-FROM node:20-alpine@sha256:2d5e8a8a51bc341fd5f2eed6d91455c3a3d147e91a14298fc564b5dc519c1666 AS production
+FROM node:20-alpine AS production
 RUN apk add --no-cache dumb-init curl
 RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001
 WORKDIR /app

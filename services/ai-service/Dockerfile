@@ -1,6 +1,6 @@
 # Stage 1: Builder - Install dependencies
-# Pinned Python 3.11 Slim with SHA256 digest for supply chain security
-FROM python:3.11-slim@sha256:ad4db0df957c2f83f87f5babc957e1d7c2ab821b6fcc1bbef4b8ff8cf1f2e13f AS builder
+# Python 3.11 Slim for AI/ML workloads
+FROM python:3.11-slim AS builder
 
 # Set working directory
 WORKDIR /app
@@ -28,8 +28,7 @@ RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
     pip cache purge
 
 # Stage 2: Production - Minimal runtime image
-# Pinned Python 3.11 Slim with SHA256 digest (must match builder stage)
-FROM python:3.11-slim@sha256:ad4db0df957c2f83f87f5babc957e1d7c2ab821b6fcc1bbef4b8ff8cf1f2e13f
+FROM python:3.11-slim
 
 WORKDIR /app
 

@@ -1,5 +1,5 @@
 # Monorepo-aware Dockerfile for Next.js web app
-FROM node:20-alpine@sha256:2d5e8a8a51bc341fd5f2eed6d91455c3a3d147e91a14298fc564b5dc519c1666 AS builder
+FROM node:20-alpine AS builder
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
@@ -38,7 +38,7 @@ ENV NEXT_PUBLIC_AUTH_API_URL=$NEXT_PUBLIC_AUTH_API_URL
 RUN pnpm turbo run build --filter=@applyforus/web
 
 # Stage 3: Runner
-FROM node:20-alpine@sha256:2d5e8a8a51bc341fd5f2eed6d91455c3a3d147e91a14298fc564b5dc519c1666 AS runner
+FROM node:20-alpine AS runner
 
 RUN apk add --no-cache dumb-init && rm -rf /var/cache/apk/*
 

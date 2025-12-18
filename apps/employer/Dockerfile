@@ -1,7 +1,7 @@
 # Multi-stage Dockerfile for Next.js Employer Portal
 
 # Stage 1: Dependencies
-FROM node:20-alpine@sha256:2d5e8a8a51bc341fd5f2eed6d91455c3a3d147e91a14298fc564b5dc519c1666 AS deps
+FROM node:20-alpine AS deps
 WORKDIR /app
 
 # Enable pnpm
@@ -20,7 +20,7 @@ COPY apps/employer/package.json ./apps/employer/
 RUN pnpm install --frozen-lockfile
 
 # Stage 2: Builder
-FROM node:20-alpine@sha256:2d5e8a8a51bc341fd5f2eed6d91455c3a3d147e91a14298fc564b5dc519c1666 AS builder
+FROM node:20-alpine AS builder
 WORKDIR /app
 
 # Enable pnpm
@@ -46,7 +46,7 @@ WORKDIR /app/apps/employer
 RUN pnpm run build
 
 # Stage 3: Runner
-FROM node:20-alpine@sha256:2d5e8a8a51bc341fd5f2eed6d91455c3a3d147e91a14298fc564b5dc519c1666 AS runner
+FROM node:20-alpine AS runner
 WORKDIR /app
 
 # Install curl for health checks
