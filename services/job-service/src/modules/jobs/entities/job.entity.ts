@@ -16,9 +16,28 @@ export enum RemoteType {
 }
 
 export enum JobSource {
+  // General Job Aggregators
   INDEED = 'indeed',
   LINKEDIN = 'linkedin',
   GLASSDOOR = 'glassdoor',
+  ZIPRECRUITER = 'ziprecruiter',
+  SIMPLYHIRED = 'simplyhired',
+  JOOBLE = 'jooble',
+  ADZUNA = 'adzuna',
+  GOOGLE_JOBS = 'google_jobs',
+
+  // Niche / Regional Aggregators
+  CAREERJET = 'careerjet',
+  TALENT_COM = 'talent_com',
+  JOBRAPIDO = 'jobrapido',
+  LINKUP = 'linkup',
+  GETWORK = 'getwork',
+
+  // Tech-Focused Aggregators
+  DICE = 'dice',
+  STACKOVERFLOW = 'stackoverflow',
+
+  // Direct / Internal
   DIRECT = 'direct',
 }
 

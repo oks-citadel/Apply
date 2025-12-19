@@ -4,9 +4,23 @@ import { Repository } from 'typeorm';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { Job, JobSource } from '../jobs/entities/job.entity';
 import { JobProvider, RawJobData } from './interfaces/job-provider.interface';
-import { LinkedInProvider } from './providers/linkedin.provider';
+import { JobCacheService } from './cache/job-cache.service';
+
+// General Job Aggregators
 import { IndeedProvider } from './providers/indeed.provider';
+import { LinkedInProvider } from './providers/linkedin.provider';
 import { GlassdoorProvider } from './providers/glassdoor.provider';
+import { ZipRecruiterProvider } from './providers/ziprecruiter.provider';
+import { SimplyHiredProvider } from './providers/simplyhired.provider';
+import { JoobleProvider } from './providers/jooble.provider';
+import { AdzunaProvider } from './providers/adzuna.provider';
+
+// Niche / Regional Aggregators
+import { CareerJetProvider } from './providers/careerjet.provider';
+import { TalentProvider } from './providers/talent.provider';
+
+// Tech-Focused Aggregators
+import { DiceProvider } from './providers/dice.provider';
 
 export interface AggregationResult {
   provider: string;
@@ -35,18 +49,40 @@ export class AggregatorService implements OnModuleInit {
   constructor(
     @InjectRepository(Job)
     private readonly jobRepository: Repository<Job>,
-    private readonly linkedInProvider: LinkedInProvider,
+    private readonly cacheService: JobCacheService,
+    // General Job Aggregators
     private readonly indeedProvider: IndeedProvider,
+    private readonly linkedInProvider: LinkedInProvider,
     private readonly glassdoorProvider: GlassdoorProvider,
+    private readonly zipRecruiterProvider: ZipRecruiterProvider,
+    private readonly simplyHiredProvider: SimplyHiredProvider,
+    private readonly joobleProvider: JoobleProvider,
+    private readonly adzunaProvider: AdzunaProvider,
+    // Niche / Regional Aggregators
+    private readonly careerJetProvider: CareerJetProvider,
+    private readonly talentProvider: TalentProvider,
+    // Tech-Focused Aggregators
+    private readonly diceProvider: DiceProvider,
   ) {}
 
   async onModuleInit() {
-    // Register all providers
-    this.registerProvider(this.linkedInProvider);
+    // Register all providers - General Job Aggregators
     this.registerProvider(this.indeedProvider);
+    this.registerProvider(this.linkedInProvider);
     this.registerProvider(this.glassdoorProvider);
+    this.registerProvider(this.zipRecruiterProvider);
+    this.registerProvider(this.simplyHiredProvider);
+    this.registerProvider(this.joobleProvider);
+    this.registerProvider(this.adzunaProvider);
 
-    this.logger.log(`Registered ${this.providers.size} job providers`);
+    // Niche / Regional Aggregators
+    this.registerProvider(this.careerJetProvider);
+    this.registerProvider(this.talentProvider);
+
+    // Tech-Focused Aggregators
+    this.registerProvider(this.diceProvider);
+
+    this.logger.log(`Registered ${this.providers.size} job providers: ${Array.from(this.providers.keys()).join(', ')}`);
   }
 
   registerProvider(provider: JobProvider): void {
@@ -198,25 +234,53 @@ export class AggregatorService implements OnModuleInit {
   }
 
   /**
-   * Search jobs across all providers in real-time
+   * Search jobs across all providers in real-time (with caching)
    */
   async searchAllProviders(params: {
     keywords: string;
     location?: string;
     limit?: number;
+    skipCache?: boolean;
   }): Promise<RawJobData[]> {
     const results: RawJobData[] = [];
     const limitPerProvider = Math.ceil((params.limit || 30) / this.providers.size);
 
     const promises = Array.from(this.providers.values()).map(async (provider) => {
+      const providerName = provider.getName();
+
       try {
+        // Check cache first (unless skipCache is true)
+        if (!params.skipCache) {
+          const cached = await this.cacheService.getSearchResults(providerName, {
+            keywords: params.keywords,
+            location: params.location,
+            page: 1,
+          });
+
+          if (cached) {
+            this.logger.debug(`Using cached results for ${providerName}`);
+            return cached.slice(0, limitPerProvider);
+          }
+        }
+
+        // Fetch from provider
         const jobs = await provider.fetchJobs({
           ...params,
           limit: limitPerProvider,
         });
+
+        // Cache the results
+        if (jobs.length > 0) {
+          await this.cacheService.setSearchResults(providerName, {
+            keywords: params.keywords,
+            location: params.location,
+            page: 1,
+          }, jobs);
+        }
+
         return jobs;
       } catch (error) {
-        this.logger.warn(`Search failed for ${provider.getName()}: ${error.message}`);
+        this.logger.warn(`Search failed for ${providerName}: ${error.message}`);
         return [];
       }
     });
@@ -235,20 +299,52 @@ export class AggregatorService implements OnModuleInit {
   }
 
   /**
-   * Check health of all providers
+   * Check health of all providers (with caching)
    */
   async checkProvidersHealth(): Promise<Record<string, boolean>> {
     const health: Record<string, boolean> = {};
 
     for (const [name, provider] of this.providers) {
       try {
-        health[name] = await provider.healthCheck();
+        // Check cached health status first
+        const cachedHealth = await this.cacheService.getProviderHealth(name);
+        if (cachedHealth !== null) {
+          health[name] = cachedHealth;
+          continue;
+        }
+
+        // Perform actual health check
+        const isHealthy = await provider.healthCheck();
+        health[name] = isHealthy;
+
+        // Cache the result
+        await this.cacheService.setProviderHealth(name, isHealthy);
       } catch {
         health[name] = false;
+        await this.cacheService.setProviderHealth(name, false);
       }
     }
 
     return health;
+  }
+
+  /**
+   * Get cache statistics
+   */
+  async getCacheStats(): Promise<{
+    isConnected: boolean;
+    keyCount: number;
+    memoryUsage: string;
+  }> {
+    return this.cacheService.getStats();
+  }
+
+  /**
+   * Clear all aggregator cache
+   */
+  async clearCache(): Promise<void> {
+    await this.cacheService.clearAllCache();
+    this.logger.log('Aggregator cache cleared');
   }
 
   /**

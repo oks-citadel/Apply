@@ -692,7 +692,14 @@
       "Bash(MSYS_NO_PATHCONV=1 GH_TOKEN=\"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\" gh workflow disable \"Cost Validation Gate\" --repo oks-citadel/Apply)",
       "Bash(MSYS_NO_PATHCONV=1 GH_TOKEN=\"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\" gh workflow disable \"Smoke Tests\" --repo oks-citadel/Apply)",
       "Bash(tee:*)",
-      "Bash(node --localstorage-file=.jest-localstorage.json ../../node_modules/.bin/jest:*)"
+      "Bash(node --localstorage-file=.jest-localstorage.json ../../node_modules/.bin/jest:*)",
+      "Bash(MSYS_NO_PATHCONV=1 GH_TOKEN=\"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\" gh run list --repo oks-citadel/Apply --limit 10)",
+      "Bash(MSYS_NO_PATHCONV=1 GH_TOKEN=\"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\" gh run view 20358337731 --repo oks-citadel/Apply --log-failed)",
+      "Bash(MSYS_NO_PATHCONV=1 GH_TOKEN=\"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\" gh run view 20358337731 --repo oks-citadel/Apply)",
+      "Bash(MSYS_NO_PATHCONV=1 GH_TOKEN=\"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\" gh api repos/oks-citadel/Apply/actions/runs/20358337731/jobs --jq '.jobs[] | {name: .name, conclusion: .conclusion, steps: [.steps[]? | select\\(.conclusion == \"\"failure\"\"\\) | {name: .name, conclusion: .conclusion}]}')",
+      "Bash(for svc in orchestrator-service payment-service resume-service)",
+      "Bash(do echo \"=== Building $svc ===\")",
+      "Bash(for d in */)"
     ],
     "deny": [],
     "ask": []

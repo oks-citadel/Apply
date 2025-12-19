@@ -112,6 +112,7 @@ async function bootstrap() {
     .addTag('Companies', 'Company information endpoints')
     .addTag('Alerts', 'Job alert management endpoints')
     .addTag('Search', 'Advanced search endpoints')
+    .addTag('Job Aggregation', 'Aggregate jobs from 10+ job boards (Indeed, LinkedIn, Glassdoor, ZipRecruiter, Dice, etc.)')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

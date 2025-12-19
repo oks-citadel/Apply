@@ -2,7 +2,8 @@
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
-  output: 'standalone',
+  // Use standalone output only in CI/Docker environments (not on Windows with OneDrive)
+  output: process.env.CI || process.env.DOCKER_BUILD ? 'standalone' : undefined,
 
   // Environment variables exposed to the browser
   env: {

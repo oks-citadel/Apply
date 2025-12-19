@@ -8,11 +8,9 @@ import {
   Briefcase,
   FileText,
   DollarSign,
-  Calendar,
   Download,
 } from 'lucide-react';
 import {
-  LineChart,
   Line,
   BarChart,
   Bar,
