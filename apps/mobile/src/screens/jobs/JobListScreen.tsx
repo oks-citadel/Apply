@@ -14,10 +14,10 @@ import { useQuery } from '@tanstack/react-query';
 import { Card, LoadingSpinner } from '../../components/common';
 import { jobsApi } from '../../services/api';
 import { theme } from '../../theme';
-import { MainTabParamList } from '../../navigation/types';
+import { JobsStackParamList } from '../../navigation/types';
 import { Job, EmploymentType, LocationType } from '../../types';
 
-type JobListScreenProps = NativeStackScreenProps<MainTabParamList, 'Jobs'>;
+type JobListScreenProps = NativeStackScreenProps<JobsStackParamList, 'JobsList'>;
 
 const EMPLOYMENT_TYPES: EmploymentType[] = ['full-time', 'part-time', 'contract', 'internship'];
 const LOCATION_TYPES: LocationType[] = ['remote', 'hybrid', 'onsite'];
@@ -65,8 +65,7 @@ export const JobListScreen: React.FC<JobListScreenProps> = ({ navigation }) => {
   };
 
   const handleJobPress = (job: Job) => {
-    // TODO: Navigate to job details screen when implemented
-    // navigation.navigate('JobDetails', { jobId: job.id });
+    navigation.navigate('JobDetails', { jobId: job.id });
   };
 
   const formatSalary = (salary?: { min: number; max: number; currency: string }) => {

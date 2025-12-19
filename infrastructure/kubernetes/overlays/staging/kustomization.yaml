@@ -38,6 +38,8 @@ replicas:
   count: 1
 - name: web-app
   count: 2
+- name: admin-app
+  count: 1
 
 # Image tag overrides
 images:
@@ -73,6 +75,9 @@ images:
   newTag: staging
 - name: ${ACR_LOGIN_SERVER}/web-app
   newName: applyforusacr.azurecr.io/web-app
+  newTag: staging
+- name: ${ACR_LOGIN_SERVER}/applyai-admin
+  newName: applyforusacr.azurecr.io/applyai-admin
   newTag: staging
 
 # ConfigMap overrides for staging environment

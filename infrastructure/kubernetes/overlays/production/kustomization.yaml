@@ -52,6 +52,9 @@ images:
 - name: ${ACR_LOGIN_SERVER}/web-app
   newName: applyforusacr.azurecr.io/web-app
   newTag: v1.0.0
+- name: ${ACR_LOGIN_SERVER}/applyai-admin
+  newName: applyforusacr.azurecr.io/applyai-admin
+  newTag: latest
 
 # ConfigMap overrides for production environment
 configMapGenerator:

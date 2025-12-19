@@ -2,7 +2,13 @@ import { Injectable, Logger, HttpException, HttpStatus } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
-import { AxiosRequestConfig, AxiosResponse } from 'axios';
+import { AxiosRequestConfig, AxiosResponse, Method } from 'axios';
+
+export interface ProxyResponse<T = unknown> {
+  status: number;
+  data: T;
+  headers: Record<string, unknown>;
+}
 
 @Injectable()
 export class ProxyService {
@@ -60,14 +66,14 @@ export class ProxyService {
   /**
    * Route request to appropriate backend service
    */
-  async proxyRequest(
+  async proxyRequest<T = unknown>(
     serviceName: string,
     path: string,
     method: string,
-    body?: any,
+    body?: unknown,
     headers?: Record<string, string>,
-    query?: Record<string, any>,
-  ): Promise<any> {
+    query?: Record<string, unknown>,
+  ): Promise<ProxyResponse<T>> {
     const service = this.serviceRoutes[serviceName];
 
     if (!service) {
@@ -88,7 +94,7 @@ export class ProxyService {
     try {
       // Prepare request config
       const config: AxiosRequestConfig = {
-        method: method.toLowerCase() as any,
+        method: method.toLowerCase() as Method,
         url: targetUrl,
         headers: {
           ...headers,
@@ -103,26 +109,27 @@ export class ProxyService {
       }
 
       // Make request to backend service
-      const response: AxiosResponse = await firstValueFrom(
-        this.httpService.request(config),
+      const response: AxiosResponse<T> = await firstValueFrom(
+        this.httpService.request<T>(config),
       );
 
       return {
         status: response.status,
         data: response.data,
-        headers: response.headers,
+        headers: response.headers as Record<string, unknown>,
       };
-    } catch (error) {
+    } catch (error: unknown) {
+      const err = error as { message?: string; stack?: string; response?: { data?: unknown; status?: number } };
       this.logger.error(
-        `Error proxying request to ${serviceName}: ${error.message}`,
-        error.stack,
+        `Error proxying request to ${serviceName}: ${err.message || 'Unknown error'}`,
+        err.stack,
       );
 
       // Forward error from backend service
-      if (error.response) {
+      if (err.response) {
         throw new HttpException(
-          error.response.data || 'Backend service error',
-          error.response.status || HttpStatus.INTERNAL_SERVER_ERROR,
+          err.response.data || 'Backend service error',
+          err.response.status || HttpStatus.INTERNAL_SERVER_ERROR,
         );
       }
 

@@ -38,6 +38,8 @@ replicas:
   count: 1
 - name: web-app
   count: 1
+- name: admin-app
+  count: 1
 
 # Image tag overrides
 images:
@@ -73,6 +75,9 @@ images:
   newTag: dev
 - name: ${ACR_LOGIN_SERVER}/web-app
   newName: applyforusacr.azurecr.io/web-app
+  newTag: dev
+- name: ${ACR_LOGIN_SERVER}/applyai-admin
+  newName: applyforusacr.azurecr.io/applyai-admin
   newTag: dev
 
 # ConfigMap overrides for dev environment

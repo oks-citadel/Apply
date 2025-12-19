@@ -23,6 +23,18 @@ export interface AggregatedHealth {
   };
 }
 
+export interface BasicHealthResponse {
+  status: string;
+  service: string;
+  version: string;
+  timestamp: string;
+}
+
+export interface ReadinessResponse {
+  status: string;
+  timestamp: string;
+}
+
 @Injectable()
 export class HealthService {
   private readonly logger = new Logger(HealthService.name);
@@ -49,7 +61,7 @@ export class HealthService {
   /**
    * Basic health check for the gateway itself
    */
-  getBasicHealth() {
+  getBasicHealth(): BasicHealthResponse {
     return {
       status: 'ok',
       service: 'api-gateway',
@@ -61,7 +73,7 @@ export class HealthService {
   /**
    * Liveness probe - simple check that service is running
    */
-  getLiveness() {
+  getLiveness(): ReadinessResponse {
     return {
       status: 'ok',
       timestamp: new Date().toISOString(),
@@ -71,7 +83,7 @@ export class HealthService {
   /**
    * Readiness probe - check if gateway can serve traffic
    */
-  async getReadiness(): Promise<any> {
+  async getReadiness(): Promise<ReadinessResponse> {
     // For now, just check if the gateway itself is ready
     // Could add checks for critical dependencies here
     return {
@@ -137,14 +149,15 @@ export class HealthService {
       const response = await firstValueFrom(
         this.httpService.get(healthUrl).pipe(
           timeout(3000),
-          catchError((error) => {
-            this.logger.warn(`Health check failed for ${name}: ${error.message}`);
+          catchError((error: unknown) => {
+            const err = error as { message?: string };
+            this.logger.warn(`Health check failed for ${name}: ${err.message || 'Unknown error'}`);
             return of({
               data: null,
               status: 0,
-              statusText: error.message,
+              statusText: err.message || 'Unknown error',
               headers: {},
-              config: {} as any,
+              config: {},
             });
           }),
         ),
@@ -170,15 +183,16 @@ export class HealthService {
           },
         };
       }
-    } catch (error) {
+    } catch (error: unknown) {
       const responseTime = Date.now() - startTime;
+      const err = error as { message?: string };
 
       return {
         name,
         health: {
           status: 'unknown',
           responseTime,
-          error: error.message || 'Unknown error',
+          error: err.message || 'Unknown error',
         },
       };
     }

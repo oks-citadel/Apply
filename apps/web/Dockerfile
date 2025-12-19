@@ -25,6 +25,7 @@ RUN pnpm --filter @applyforus/types build || true && \
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 ENV SKIP_ENV_VALIDATION=1
+ENV DOCKER_BUILD=1
 
 # Production API URLs - these are embedded at build time by Next.js
 # Note: Backend services handle /api/v1 routing internally. Do NOT include /api/v1 here.

@@ -3,7 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerGuard } from '@nestjs/throttler';
-import { LoggingModule, LoggingInterceptor } from '@applyforus/logging';
+import { LoggingModule, LoggingInterceptor, LogLevel } from '@applyforus/logging';
 import { TelemetryModule, PrometheusInterceptor } from '@applyforus/telemetry';
 import { ProxyModule } from './proxy/proxy.module';
 import { AuthModule } from './auth/auth.module';
@@ -34,14 +34,23 @@ import { AppController } from './app.controller';
     // Logging module
     LoggingModule.forRootAsync({
       isGlobal: true,
-      useFactory: (configService: ConfigService) => ({
-        serviceName: 'api-gateway',
-        environment: configService.get<string>('NODE_ENV', 'development'),
-        version: configService.get<string>('SERVICE_VERSION', '1.0.0'),
-        appInsightsKey: configService.get<string>('APPLICATIONINSIGHTS_INSTRUMENTATION_KEY'),
-        enableConsole: true,
-        logLevel: configService.get<string>('LOG_LEVEL', 'info') as any,
-      }),
+      useFactory: (configService: ConfigService) => {
+        const logLevelStr = configService.get<string>('LOG_LEVEL', 'info').toLowerCase();
+        const logLevel = logLevelStr === 'error' ? LogLevel.ERROR :
+                        logLevelStr === 'warn' ? LogLevel.WARN :
+                        logLevelStr === 'debug' ? LogLevel.DEBUG :
+                        logLevelStr === 'trace' ? LogLevel.TRACE :
+                        LogLevel.INFO;
+
+        return {
+          serviceName: 'api-gateway',
+          environment: configService.get<string>('NODE_ENV', 'development'),
+          version: configService.get<string>('SERVICE_VERSION', '1.0.0'),
+          appInsightsKey: configService.get<string>('APPLICATIONINSIGHTS_INSTRUMENTATION_KEY'),
+          enableConsole: true,
+          logLevel,
+        };
+      },
       inject: [ConfigService],
     }),
 

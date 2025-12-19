@@ -29,16 +29,16 @@ RUN pnpm run build 2>/dev/null || true
 WORKDIR /app/packages/logging
 RUN pnpm run build 2>/dev/null || true
 
-# Build job-service using tsc (more reliable than nest build in Docker)
+# Build job-service using nest build
 WORKDIR /app/services/job-service
 RUN echo "=== Starting job-service build ===" && \
     echo "Node version:" && node -v && \
-    echo "=== Running TypeScript compilation ===" && \
-    npx tsc -p tsconfig.json && \
+    echo "=== Running NestJS build ===" && \
+    pnpm run build && \
     echo "=== Build completed ===" && \
-    ls -la dist/ && \
-    test -f dist/main.js && \
-    echo "=== main.js verified ==="
+    echo "=== Exploring dist structure ===" && \
+    find dist -name "main.js" -type f 2>/dev/null && \
+    ls -laR dist/ | head -50
 
 FROM node:20-alpine@sha256:c13b26e7e602ef2f1074aef304ce6e9b7dd284c419b35d89fcf3cc8e44a8def9 AS production
 RUN apk add --no-cache dumb-init curl

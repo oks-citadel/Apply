@@ -86,11 +86,12 @@ export default function SettingsPage() {
   const onSaveGeneral = async (data: GeneralSettings) => {
     setSaveStatus('saving');
     try {
-      // TODO: Implement actual save logic
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const { settingsApi } = await import('@/lib/api/settings');
+      await settingsApi.saveGeneralSettings(data);
       setSaveStatus('success');
       setTimeout(() => setSaveStatus('idle'), 3000);
     } catch (error) {
+      console.error('Error saving general settings:', error);
       setSaveStatus('error');
       setTimeout(() => setSaveStatus('idle'), 3000);
     }
@@ -99,10 +100,12 @@ export default function SettingsPage() {
   const onSaveNotifications = async (data: NotificationSettings) => {
     setSaveStatus('saving');
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const { settingsApi } = await import('@/lib/api/settings');
+      await settingsApi.saveNotificationSettings(data);
       setSaveStatus('success');
       setTimeout(() => setSaveStatus('idle'), 3000);
     } catch (error) {
+      console.error('Error saving notification settings:', error);
       setSaveStatus('error');
       setTimeout(() => setSaveStatus('idle'), 3000);
     }
@@ -111,10 +114,12 @@ export default function SettingsPage() {
   const onSaveSecurity = async (data: SecuritySettings) => {
     setSaveStatus('saving');
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const { settingsApi } = await import('@/lib/api/settings');
+      await settingsApi.saveSecuritySettings(data);
       setSaveStatus('success');
       setTimeout(() => setSaveStatus('idle'), 3000);
     } catch (error) {
+      console.error('Error saving security settings:', error);
       setSaveStatus('error');
       setTimeout(() => setSaveStatus('idle'), 3000);
     }

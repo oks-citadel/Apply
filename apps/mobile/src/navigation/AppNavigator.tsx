@@ -12,12 +12,16 @@ import { LoginScreen } from '../screens/auth/LoginScreen';
 import { RegisterScreen } from '../screens/auth/RegisterScreen';
 import { DashboardScreen } from '../screens/dashboard/DashboardScreen';
 import { JobListScreen } from '../screens/jobs/JobListScreen';
+import { JobDetailsScreen } from '../screens/jobs/JobDetailsScreen';
 import { ApplicationsScreen } from '../screens/applications/ApplicationsScreen';
+import { ApplicationDetailsScreen } from '../screens/applications/ApplicationDetailsScreen';
 import { theme } from '../theme';
 import {
   RootStackParamList,
   AuthStackParamList,
   MainTabParamList,
+  JobsStackParamList,
+  ApplicationsStackParamList,
 } from './types';
 import {
   deepLinkingService,
@@ -28,6 +32,72 @@ import { notificationService } from '../services/notifications';
 const RootStack = createNativeStackNavigator<RootStackParamList>();
 const AuthStack = createNativeStackNavigator<AuthStackParamList>();
 const MainTab = createBottomTabNavigator<MainTabParamList>();
+const JobsStack = createNativeStackNavigator<JobsStackParamList>();
+const ApplicationsStack = createNativeStackNavigator<ApplicationsStackParamList>();
+
+// Jobs Stack Navigator
+const JobsNavigator = () => {
+  return (
+    <JobsStack.Navigator
+      screenOptions={{
+        headerShown: true,
+        headerStyle: {
+          backgroundColor: theme.colors.white,
+        },
+        headerTitleStyle: {
+          fontSize: 18,
+          fontWeight: '700',
+          color: theme.colors.gray[900],
+        },
+        headerTintColor: theme.colors.gray[900],
+        animation: 'slide_from_right',
+      }}
+    >
+      <JobsStack.Screen
+        name="JobsList"
+        component={JobListScreen}
+        options={{ headerShown: false }}
+      />
+      <JobsStack.Screen
+        name="JobDetails"
+        component={JobDetailsScreen}
+        options={{ title: 'Job Details' }}
+      />
+    </JobsStack.Navigator>
+  );
+};
+
+// Applications Stack Navigator
+const ApplicationsNavigator = () => {
+  return (
+    <ApplicationsStack.Navigator
+      screenOptions={{
+        headerShown: true,
+        headerStyle: {
+          backgroundColor: theme.colors.white,
+        },
+        headerTitleStyle: {
+          fontSize: 18,
+          fontWeight: '700',
+          color: theme.colors.gray[900],
+        },
+        headerTintColor: theme.colors.gray[900],
+        animation: 'slide_from_right',
+      }}
+    >
+      <ApplicationsStack.Screen
+        name="ApplicationsList"
+        component={ApplicationsScreen}
+        options={{ headerShown: false }}
+      />
+      <ApplicationsStack.Screen
+        name="ApplicationDetails"
+        component={ApplicationDetailsScreen}
+        options={{ title: 'Application Details' }}
+      />
+    </ApplicationsStack.Navigator>
+  );
+};
 
 // Auth Navigator
 const AuthNavigator = () => {
@@ -98,9 +168,10 @@ const MainNavigator = () => {
       />
       <MainTab.Screen
         name="Jobs"
-        component={JobListScreen}
+        component={JobsNavigator}
         options={{
           title: 'Jobs',
+          headerShown: false,
           tabBarIcon: ({ color, size }) => (
             <TabBarIcon icon="💼" color={color} size={size} />
           ),
@@ -108,9 +179,10 @@ const MainNavigator = () => {
       />
       <MainTab.Screen
         name="Applications"
-        component={ApplicationsScreen}
+        component={ApplicationsNavigator}
         options={{
           title: 'My Applications',
+          headerShown: false,
           tabBarIcon: ({ color, size }) => (
             <TabBarIcon icon="📝" color={color} size={size} />
           ),
@@ -200,12 +272,11 @@ export const AppNavigator = () => {
         const jobId = params.jobId || route.split('/')[1];
         if (jobId) {
           // Navigate to job details
-          // Note: You'll need to add JobDetails screen to your navigator
           console.log('Navigate to job:', jobId);
-          // navigationRef.current.navigate('Main', {
-          //   screen: 'Jobs',
-          //   params: { screen: 'JobDetails', params: { jobId } }
-          // });
+          navigationRef.current.navigate('Main', {
+            screen: 'Jobs',
+            params: { screen: 'JobDetails', params: { jobId } }
+          } as any);
         }
       }
       // Application routes
@@ -214,10 +285,10 @@ export const AppNavigator = () => {
         if (applicationId) {
           // Navigate to application details
           console.log('Navigate to application:', applicationId);
-          // navigationRef.current.navigate('Main', {
-          //   screen: 'Applications',
-          //   params: { screen: 'ApplicationDetails', params: { applicationId } }
-          // });
+          navigationRef.current.navigate('Main', {
+            screen: 'Applications',
+            params: { screen: 'ApplicationDetails', params: { applicationId } }
+          } as any);
         }
       }
       // Dashboard

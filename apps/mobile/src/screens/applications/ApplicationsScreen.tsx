@@ -14,12 +14,12 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, LoadingSpinner, StatusBadge } from '../../components/common';
 import { applicationsApi } from '../../services/api';
 import { theme } from '../../theme';
-import { MainTabParamList } from '../../navigation/types';
+import { ApplicationsStackParamList } from '../../navigation/types';
 import { Application, ApplicationStatus } from '../../types';
 
 type ApplicationsScreenProps = NativeStackScreenProps<
-  MainTabParamList,
-  'Applications'
+  ApplicationsStackParamList,
+  'ApplicationsList'
 >;
 
 const TABS: Array<{ key: ApplicationStatus | 'all'; label: string }> = [
@@ -87,8 +87,7 @@ export const ApplicationsScreen: React.FC<ApplicationsScreenProps> = ({
   };
 
   const handleApplicationPress = (application: Application) => {
-    // TODO: Navigate to application details screen when implemented
-    // navigation.navigate('ApplicationDetails', { applicationId: application.id });
+    navigation.navigate('ApplicationDetails', { applicationId: application.id });
   };
 
   const handleWithdraw = (application: Application) => {

@@ -40,6 +40,7 @@ COPY apps/employer ./apps/employer
 # Set environment variables for build
 ENV NEXT_TELEMETRY_DISABLED 1
 ENV NODE_ENV production
+ENV DOCKER_BUILD 1
 
 # Build the application
 WORKDIR /app/apps/employer

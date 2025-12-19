@@ -57,9 +57,11 @@ export const DashboardScreen = ({ navigation }: DashboardScreenProps) => {
   };
 
   const handleViewApplication = (applicationId: string) => {
-    // TODO: Navigate to application details screen when implemented
-    // This would require adding the detail screen to the navigation
-    // navigation.navigate('ApplicationDetails', { applicationId });
+    // Navigate to application details screen
+    (navigation as any).navigate('Applications', {
+      screen: 'ApplicationDetails',
+      params: { applicationId },
+    });
   };
 
   if (statsLoading || applicationsLoading) {

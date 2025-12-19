@@ -34,7 +34,7 @@ spec:
           # IMPORTANT: Replace with digest reference in deployment: image@sha256:xxx
           # CI/CD will update this with: applyforusacr.azurecr.io/applyai-admin@sha256:xxxxx
           # Tag reference for manual deploy (use digest for production): sha-<gitcommit>
-          image: applyforusacr.azurecr.io/applyai-admin:sha-REPLACE_WITH_GIT_SHA
+          image: applyforusacr.azurecr.io/applyai-admin:latest
           imagePullPolicy: Always
           ports:
             - name: http

@@ -699,7 +699,15 @@
       "Bash(MSYS_NO_PATHCONV=1 GH_TOKEN=\"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\" gh api repos/oks-citadel/Apply/actions/runs/20358337731/jobs --jq '.jobs[] | {name: .name, conclusion: .conclusion, steps: [.steps[]? | select\\(.conclusion == \"\"failure\"\"\\) | {name: .name, conclusion: .conclusion}]}')",
       "Bash(for svc in orchestrator-service payment-service resume-service)",
       "Bash(do echo \"=== Building $svc ===\")",
-      "Bash(for d in */)"
+      "Bash(for d in */)",
+      "Bash(MSYS_NO_PATHCONV=1 GH_TOKEN=\"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\" gh run list --repo oks-citadel/Apply --limit 5)",
+      "Bash(MSYS_NO_PATHCONV=1 GH_TOKEN=\"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\" gh run view 20371633525 --repo oks-citadel/Apply --log-failed)",
+      "Bash(MSYS_NO_PATHCONV=1 GH_TOKEN=\"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\" gh run view 20371633525 --repo oks-citadel/Apply --json conclusion,jobs)",
+      "Bash(MSYS_NO_PATHCONV=1 \"/c/Program Files/Docker/Docker/resources/bin/docker.exe\" run --rm -e PGPASSWORD=\"ApplyF0rus2024!Secure\" postgres:15-alpine psql -h applyforus-postgres.postgres.database.azure.com -U applyforusadmin -d postgres -c \"SELECT datname FROM pg_database WHERE datistemplate = false;\")",
+      "Bash(MSYS_NO_PATHCONV=1 \"/c/Program Files/Docker/Docker/resources/bin/docker.exe\" run --rm -e PGPASSWORD=\"ApplyF0rus2024!Secure\" postgres:15-alpine psql -h applyforus-postgres.postgres.database.azure.com -U applyforusadmin -d postgres -c \"CREATE DATABASE notification_service;\")",
+      "Bash(\"/c/Program Files/Docker/Docker/resources/bin/docker.exe\" build -t applyforusacr.azurecr.io/applyai-job-service:v3.0.0 -t applyforusacr.azurecr.io/applyai-job-service:latest -f services/job-service/Dockerfile .)",
+      "Bash(\"/c/Program Files/Docker/Docker/resources/bin/docker.exe\" build --no-cache -t applyforusacr.azurecr.io/applyai-job-service:v3.0.0 -t applyforusacr.azurecr.io/applyai-job-service:latest -f services/job-service/Dockerfile .)",
+      "Bash(\"/c/Program Files/Docker/Docker/resources/bin/docker.exe\" build --no-cache -t applyforusacr.azurecr.io/applyai-job-service:v3.0.0 -f services/job-service/Dockerfile .)"
     ],
     "deny": [],
     "ask": []

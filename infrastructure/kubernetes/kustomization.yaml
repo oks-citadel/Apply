@@ -26,6 +26,8 @@ resources:
   - services/orchestrator-service.yaml
   - services/payment-service.yaml
   - services/web-app.yaml
+  - services/employer-app.yaml
+  - services/admin-app.yaml
 
   # Monitoring Stack (optional - comment out if not needed)
   # - monitoring/prometheus.yaml
@@ -65,3 +67,7 @@ images:
     newTag: v1.0.0
   - name: applyforusacr.azurecr.io/web-app
     newTag: v1.0.0
+  - name: applyforusacr.azurecr.io/applyai-employer
+    newTag: latest
+  - name: applyforusacr.azurecr.io/applyai-admin
+    newTag: latest

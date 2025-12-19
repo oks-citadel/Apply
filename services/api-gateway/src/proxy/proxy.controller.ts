@@ -143,7 +143,7 @@ export class ProxyController {
         req.method,
         req.body,
         req.headers as Record<string, string>,
-        req.query as Record<string, any>,
+        req.query as Record<string, unknown>,
       );
 
       // Set response headers
@@ -161,10 +161,11 @@ export class ProxyController {
 
       // Send response
       res.status(result.status).json(result.data);
-    } catch (error) {
+    } catch (error: unknown) {
+      const err = error as { message?: string; stack?: string };
       this.logger.error(
-        `Proxy error for ${serviceName}: ${error.message}`,
-        error.stack,
+        `Proxy error for ${serviceName}: ${err.message || 'Unknown error'}`,
+        err.stack,
       );
 
       if (error instanceof HttpException) {

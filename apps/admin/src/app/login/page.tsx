@@ -42,26 +42,24 @@ function LoginForm() {
     setError(null);
 
     try {
-      // TODO: Replace with actual authentication logic
-      // This is a placeholder for demonstration
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
+      // Import auth API dynamically to avoid SSR issues
+      const { authApi } = await import('@/lib/api/auth');
+      const { setTokens } = await import('@/lib/api/client');
+
+      // Call auth service API
+      const response = await authApi.login({
+        email: data.email,
+        password: data.password,
+        rememberMe: data.rememberMe,
       });
 
-      if (!response.ok) {
-        throw new Error('Invalid email or password');
+      // Check if user is an admin
+      if (response.user.role !== 'admin') {
+        throw new Error('Access denied. Admin privileges required.');
       }
 
-      const result = await response.json();
-
-      // Set auth cookie
-      document.cookie = `auth-token=${result.token}; path=/; max-age=${
-        data.rememberMe ? 60 * 60 * 24 * 30 : 60 * 60 * 24
-      }`;
+      // Store tokens for API requests
+      setTokens(response.accessToken, response.refreshToken);
 
       // Redirect to callback URL or dashboard
       router.push(callbackUrl);

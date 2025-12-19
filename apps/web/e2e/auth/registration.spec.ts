@@ -64,8 +64,28 @@ test.describe('User Registration', () => {
   });
 
   test('should successfully register a new user', async ({ page }) => {
-    // TODO: Requires backend integration
     const uniqueEmail = generateUniqueEmail('register');
+
+    // Mock the registration API endpoint
+    await page.route('**/api/auth/register', async (route) => {
+      await route.fulfill({
+        status: 201,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          accessToken: 'mock-access-token-123456',
+          refreshToken: 'mock-refresh-token-789012',
+          user: {
+            id: 'user-123',
+            email: uniqueEmail,
+            firstName: 'John',
+            lastName: 'Doe',
+            isEmailVerified: false,
+            createdAt: new Date().toISOString()
+          },
+          expiresIn: 900
+        })
+      });
+    });
 
     // Fill registration form
     await page.getByLabel(/first name/i).fill('John');
@@ -91,8 +111,20 @@ test.describe('User Registration', () => {
   });
 
   test('should prevent registration with existing email', async ({ page }) => {
-    // TODO: Requires backend integration
     const existingEmail = 'existing@example.com';
+
+    // Mock the registration API endpoint to return conflict error
+    await page.route('**/api/auth/register', async (route) => {
+      await route.fulfill({
+        status: 409,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          statusCode: 409,
+          message: 'Email already exists',
+          error: 'Conflict'
+        })
+      });
+    });
 
     // Fill form with existing email
     await page.getByLabel(/first name/i).fill('John');
@@ -154,16 +186,40 @@ test.describe('User Registration', () => {
   });
 
   test('should handle registration with referral code', async ({ page }) => {
-    // TODO: Requires backend integration and referral feature
     const referralCodeInput = page.getByLabel(/referral.*code/i);
 
     if (await referralCodeInput.isVisible()) {
+      const uniqueEmail = generateUniqueEmail('referral');
+
+      // Mock the registration API endpoint with referral code support
+      await page.route('**/api/auth/register', async (route) => {
+        await route.fulfill({
+          status: 201,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            accessToken: 'mock-access-token-referral',
+            refreshToken: 'mock-refresh-token-referral',
+            user: {
+              id: 'user-referral-123',
+              email: uniqueEmail,
+              firstName: 'John',
+              lastName: 'Doe',
+              isEmailVerified: false,
+              referralCode: 'REFER123',
+              createdAt: new Date().toISOString()
+            },
+            expiresIn: 900,
+            referralApplied: true
+          })
+        });
+      });
+
       await referralCodeInput.fill('REFER123');
 
       // Complete registration
       await page.getByLabel(/first name/i).fill('John');
       await page.getByLabel(/last name/i).fill('Doe');
-      await page.getByLabel(/email/i).fill(generateUniqueEmail('referral'));
+      await page.getByLabel(/email/i).fill(uniqueEmail);
       await page.getByLabel(/password/i).fill('StrongPass123!@#');
 
       await page.getByRole('button', { name: /create account|sign up|register/i }).click();

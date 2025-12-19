@@ -91,7 +91,7 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: admin-app-service
+            name: admin-app
             port:
               number: 3001
 
