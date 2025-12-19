@@ -1,26 +1,44 @@
 # Monorepo-aware Dockerfile for job-service
-FROM node:20-alpine@sha256:c13b26e7e602ef2f1074aef304ce6e9b7dd284c419b35d89fcf3cc8e44a8def9 AS builder
-RUN apk add --no-cache libc6-compat
+FROM node:20-alpine AS builder
+RUN apk add --no-cache libc6-compat python3 make g++
 WORKDIR /app
 
 RUN corepack enable && corepack prepare pnpm@8.15.0 --activate
 
+# Copy workspace files
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY packages/ ./packages/
 COPY services/job-service/ ./services/job-service/
 
+# Install dependencies
 RUN pnpm install --no-frozen-lockfile
 
-# Build workspace packages first
-WORKDIR /app
-RUN pnpm --filter @applyforus/types build || echo "types build skipped" && \
-    pnpm --filter @applyforus/security build || echo "security build skipped" && \
-    pnpm --filter @applyforus/shared build || echo "shared build skipped" && \
-    pnpm --filter @applyforus/telemetry build || echo "telemetry build skipped" && \
-    pnpm --filter @applyforus/logging build || echo "logging build skipped"
+# Build workspace packages that job-service depends on
+WORKDIR /app/packages/types
+RUN pnpm run build 2>/dev/null || true
 
+WORKDIR /app/packages/security
+RUN pnpm run build 2>/dev/null || true
+
+WORKDIR /app/packages/shared
+RUN pnpm run build 2>/dev/null || true
+
+WORKDIR /app/packages/telemetry
+RUN pnpm run build 2>/dev/null || true
+
+WORKDIR /app/packages/logging
+RUN pnpm run build 2>/dev/null || true
+
+# Build job-service using tsc (more reliable than nest build in Docker)
 WORKDIR /app/services/job-service
-RUN pnpm run build && ls -la dist/ && test -f dist/main.js
+RUN echo "=== Starting job-service build ===" && \
+    echo "Node version:" && node -v && \
+    echo "=== Running TypeScript compilation ===" && \
+    npx tsc -p tsconfig.json && \
+    echo "=== Build completed ===" && \
+    ls -la dist/ && \
+    test -f dist/main.js && \
+    echo "=== main.js verified ==="
 
 FROM node:20-alpine@sha256:c13b26e7e602ef2f1074aef304ce6e9b7dd284c419b35d89fcf3cc8e44a8def9 AS production
 RUN apk add --no-cache dumb-init curl
