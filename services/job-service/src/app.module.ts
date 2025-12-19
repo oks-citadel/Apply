@@ -36,7 +36,7 @@ import { NormalizationModule } from './modules/normalization/normalization.modul
 // import { AlertsModule } from './modules/alerts/alerts.module';
 // import { SearchModule } from './modules/search/search.module';
 // import { ReportsModule } from './modules/reports/reports.module';
-// import { AggregatorModule } from './modules/aggregator/aggregator.module';
+import { AggregatorModule } from './modules/aggregator/aggregator.module';
 // import { PlaybooksModule } from './modules/playbooks/playbooks.module';
 import { HealthModule } from './health/health.module';
 // import { SeederModule } from './seeds/seeder.module';
@@ -148,12 +148,14 @@ import { HealthModule } from './health/health.module';
     IngestionModule,
     NormalizationModule,
 
+    // Job Aggregator for real-time worldwide job fetching (10 providers)
+    AggregatorModule,
+
     // Optional feature modules - disabled until needed
     // AlertsModule,    // Requires Redis/Bull
     // SearchModule,    // Requires Elasticsearch
     // ReportsModule,
     // SeederModule,
-    // AggregatorModule,
     // PlaybooksModule,
   ],
   controllers: [],

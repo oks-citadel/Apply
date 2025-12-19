@@ -2,8 +2,14 @@
 .git
 apps/mobile
 apps/mobile/**
-node_modules/**/react-native*
+# Exclude all node_modules - Dockerfile does pnpm install
+node_modules
+**/node_modules
 **/.turbo
 **/.next
 **/dist
 **/*.log
+# Exclude test files
+**/*.spec.ts
+**/*.test.ts
+**/__tests__
