@@ -1,16 +1,9 @@
-# ACR Build Ignore File - Exclude local node_modules to fix Windows path issues
-node_modules
-**/node_modules
+# ACR Build ignore file
 .git
-.gitignore
-*.md
-*.log
-.env
-.env.*
-coverage
-dist
-.next
-.turbo
-.cache
-*.tgz
-*.tar.gz
+apps/mobile
+apps/mobile/**
+node_modules/**/react-native*
+**/.turbo
+**/.next
+**/dist
+**/*.log
