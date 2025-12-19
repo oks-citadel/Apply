@@ -1,5 +1,5 @@
 {
-  "name": "@jobpilot/policy-generator",
+  "name": "@applyforus/policy-generator",
   "version": "1.0.0",
   "description": "Global Policy Generator Engine for ApplyForUs - generates region-specific legal and compliance policies",
   "main": "dist/index.js",

@@ -200,13 +200,8 @@ export class FlutterwaveController {
       required: ['transactionId'],
     },
   })
-  async initiateRefund(
-    @Body() body: { transactionId: number; amount?: number },
-  ) {
-    const result = await this.flutterwaveService.initiateRefund(
-      body.transactionId,
-      body.amount,
-    );
+  async initiateRefund(@Body() body: { transactionId: number; amount?: number }) {
+    const result = await this.flutterwaveService.initiateRefund(body.transactionId, body.amount);
 
     return {
       success: true,
@@ -227,9 +222,7 @@ export class FlutterwaveController {
       required: ['email', 'bvn'],
     },
   })
-  async createVirtualAccount(
-    @Body() body: { email: string; bvn: string; isPermanent?: boolean },
-  ) {
+  async createVirtualAccount(@Body() body: { email: string; bvn: string; isPermanent?: boolean }) {
     const result = await this.flutterwaveService.createVirtualAccount(
       body.email,
       body.bvn,

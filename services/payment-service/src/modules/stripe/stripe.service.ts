@@ -1,7 +1,10 @@
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Stripe from 'stripe';
-import { SubscriptionTier, SUBSCRIPTION_TIER_PRICES } from '../../common/enums/subscription-tier.enum';
+import {
+  SubscriptionTier,
+  SUBSCRIPTION_TIER_PRICES,
+} from '../../common/enums/subscription-tier.enum';
 
 @Injectable()
 export class StripeService {
@@ -51,10 +54,7 @@ export class StripeService {
   /**
    * Get or create a Stripe customer
    */
-  async getOrCreateCustomer(
-    email: string,
-    userId: string,
-  ): Promise<Stripe.Customer> {
+  async getOrCreateCustomer(email: string, userId: string): Promise<Stripe.Customer> {
     try {
       // Search for existing customer by email
       const existingCustomers = await this.stripe.customers.list({
@@ -258,10 +258,7 @@ export class StripeService {
   /**
    * Construct webhook event
    */
-  constructWebhookEvent(
-    payload: Buffer,
-    signature: string,
-  ): Stripe.Event {
+  constructWebhookEvent(payload: Buffer, signature: string): Stripe.Event {
     const webhookSecret = this.configService.get<string>('STRIPE_WEBHOOK_SECRET');
 
     if (!webhookSecret) {
@@ -269,11 +266,7 @@ export class StripeService {
     }
 
     try {
-      return this.stripe.webhooks.constructEvent(
-        payload,
-        signature,
-        webhookSecret,
-      );
+      return this.stripe.webhooks.constructEvent(payload, signature, webhookSecret);
     } catch (error) {
       this.logger.error(`Webhook signature verification failed: ${error.message}`);
       throw new BadRequestException('Invalid webhook signature');
@@ -295,10 +288,7 @@ export class StripeService {
   /**
    * List customer invoices
    */
-  async listCustomerInvoices(
-    customerId: string,
-    limit: number = 10,
-  ): Promise<Stripe.Invoice[]> {
+  async listCustomerInvoices(customerId: string, limit: number = 10): Promise<Stripe.Invoice[]> {
     try {
       const invoices = await this.stripe.invoices.list({
         customer: customerId,

@@ -2,7 +2,10 @@ import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios, { AxiosInstance } from 'axios';
 import * as crypto from 'crypto';
-import { SubscriptionTier, SUBSCRIPTION_TIER_PRICES } from '../../common/enums/subscription-tier.enum';
+import {
+  SubscriptionTier,
+  SUBSCRIPTION_TIER_PRICES,
+} from '../../common/enums/subscription-tier.enum';
 
 export interface FlutterwaveCustomer {
   email: string;
@@ -48,7 +51,9 @@ export class FlutterwaveService {
     this.encryptionKey = this.configService.get<string>('FLUTTERWAVE_ENCRYPTION_KEY') || '';
 
     if (!this.secretKey) {
-      this.logger.warn('FLUTTERWAVE_SECRET_KEY not configured. Flutterwave integration will not work.');
+      this.logger.warn(
+        'FLUTTERWAVE_SECRET_KEY not configured. Flutterwave integration will not work.',
+      );
     }
 
     this.client = axios.create({
@@ -254,7 +259,10 @@ export class FlutterwaveService {
   /**
    * Initiate a refund
    */
-  async initiateRefund(transactionId: number, amount?: number): Promise<{ id: number; status: string }> {
+  async initiateRefund(
+    transactionId: number,
+    amount?: number,
+  ): Promise<{ id: number; status: string }> {
     try {
       this.logger.log(`Initiating refund for transaction: ${transactionId}`);
 
@@ -311,7 +319,9 @@ export class FlutterwaveService {
   /**
    * Get banks for transfer
    */
-  async getBanks(country: string = 'NG'): Promise<Array<{ id: number; name: string; code: string }>> {
+  async getBanks(
+    country: string = 'NG',
+  ): Promise<Array<{ id: number; name: string; code: string }>> {
     try {
       const response = await this.client.get(`/banks/${country}`);
 

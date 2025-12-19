@@ -136,10 +136,7 @@ export class CoinsService {
   /**
    * Allocate monthly coins based on subscription tier
    */
-  async allocateMonthlyCoins(
-    userId: string,
-    tier: SubscriptionTier,
-  ): Promise<CoinBalance> {
+  async allocateMonthlyCoins(userId: string, tier: SubscriptionTier): Promise<CoinBalance> {
     this.logger.log(`Allocating monthly coins for user ${userId}, tier: ${tier}`);
 
     const balance = await this.getBalance(userId);
@@ -187,7 +184,9 @@ export class CoinsService {
     const coinPackage = VIRTUAL_COIN_PACKAGES[packageIndex];
     const totalCoins = coinPackage.coins + coinPackage.bonus;
 
-    this.logger.log(`User ${userId} purchasing ${totalCoins} coins (${coinPackage.coins} + ${coinPackage.bonus} bonus)`);
+    this.logger.log(
+      `User ${userId} purchasing ${totalCoins} coins (${coinPackage.coins} + ${coinPackage.bonus} bonus)`,
+    );
 
     return await this.creditCoins(
       userId,
@@ -292,10 +291,7 @@ export class CoinsService {
     const now = new Date();
 
     return this.visibilityBoosts.filter(
-      (b) =>
-        b.userId === userId &&
-        b.status === 'active' &&
-        new Date(b.endTime) > now,
+      (b) => b.userId === userId && b.status === 'active' && new Date(b.endTime) > now,
     );
   }
 
@@ -310,9 +306,7 @@ export class CoinsService {
    * Cancel an active boost (partial refund)
    */
   async cancelBoost(userId: string, boostId: string): Promise<{ refundedCoins: number }> {
-    const boost = this.visibilityBoosts.find(
-      (b) => b.id === boostId && b.userId === userId,
-    );
+    const boost = this.visibilityBoosts.find((b) => b.id === boostId && b.userId === userId);
 
     if (!boost) {
       throw new NotFoundException('Boost not found');

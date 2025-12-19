@@ -1,18 +1,23 @@
-import helmet from 'helmet';
+import helmet, { type HelmetOptions } from 'helmet';
 import { RequestHandler } from 'express';
 
+// Extract types from HelmetOptions
+type ContentSecurityPolicyOptions = Extract<HelmetOptions['contentSecurityPolicy'], object>;
+type StrictTransportSecurityOptions = Extract<HelmetOptions['hsts'], object>;
+type XFrameOptionsOptions = Extract<HelmetOptions['frameguard'], object>;
+
 export interface SecurityHeadersConfig {
-  contentSecurityPolicy?: boolean | helmet.ContentSecurityPolicyOptions;
+  contentSecurityPolicy?: boolean | ContentSecurityPolicyOptions;
   crossOriginEmbedderPolicy?: boolean;
   crossOriginOpenerPolicy?: boolean;
   crossOriginResourcePolicy?: boolean;
-  hsts?: boolean | helmet.StrictTransportSecurityOptions;
+  hsts?: boolean | StrictTransportSecurityOptions;
   noSniff?: boolean;
-  frameguard?: boolean | helmet.XFrameOptionsOptions;
+  frameguard?: boolean | XFrameOptionsOptions;
   xssFilter?: boolean;
 }
 
-const defaultConfig: helmet.HelmetOptions = {
+const defaultConfig: HelmetOptions = {
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
@@ -33,7 +38,7 @@ const defaultConfig: helmet.HelmetOptions = {
 };
 
 export function createSecurityMiddleware(config: SecurityHeadersConfig = {}): RequestHandler {
-  const helmetConfig: helmet.HelmetOptions = {
+  const helmetConfig: HelmetOptions = {
     ...defaultConfig,
   };
 

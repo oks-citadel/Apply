@@ -7,8 +7,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import apiClient from './api';
 
 // Storage keys
-const PUSH_TOKEN_KEY = '@jobpilot_push_token';
-const NOTIFICATION_PERMISSION_KEY = '@jobpilot_notification_permission';
+const PUSH_TOKEN_KEY = '@applyforus_push_token';
+const NOTIFICATION_PERMISSION_KEY = '@applyforus_notification_permission';
 
 // Configure notification behavior
 Notifications.setNotificationHandler({
@@ -16,6 +16,8 @@ Notifications.setNotificationHandler({
     shouldShowAlert: true,
     shouldPlaySound: true,
     shouldSetBadge: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
   }),
 });
 
@@ -89,10 +91,9 @@ export class NotificationService {
    */
   public async initialize(): Promise<void> {
     try {
-      // Set notification categories
-      await Notifications.setNotificationCategoriesAsync(
-        NOTIFICATION_CATEGORIES
-      );
+      // Note: Notification categories for interactive notifications
+      // are handled differently in newer versions of expo-notifications
+      // They need to be set up in the native layer (iOS/Android)
 
       // Check if we already have permission
       const hasPermission = await this.checkPermission();
@@ -269,7 +270,7 @@ export class NotificationService {
     notification: Notifications.Notification
   ): void => {
     console.log('Notification received:', notification);
-    const data = notification.request.content.data as NotificationData;
+    const data = notification.request.content.data as unknown as NotificationData;
 
     // You can emit an event here to update UI, show badge, etc.
     // For example, using EventEmitter or a state management solution
@@ -282,7 +283,7 @@ export class NotificationService {
     response: Notifications.NotificationResponse
   ): void => {
     console.log('Notification response:', response);
-    const data = response.notification.request.content.data as NotificationData;
+    const data = response.notification.request.content.data as unknown as NotificationData;
 
     // Navigate based on notification type
     this.navigateFromNotification(data);
@@ -445,10 +446,10 @@ export class NotificationService {
    */
   public cleanup(): void {
     if (this.notificationListener) {
-      Notifications.removeNotificationSubscription(this.notificationListener);
+      this.notificationListener.remove();
     }
     if (this.responseListener) {
-      Notifications.removeNotificationSubscription(this.responseListener);
+      this.responseListener.remove();
     }
   }
 }

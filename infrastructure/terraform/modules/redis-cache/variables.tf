@@ -35,7 +35,7 @@ variable "cache_sku" {
   default     = null
 
   validation {
-    condition = var.cache_sku == null || can(regex("^(Basic|Standard|Premium)_(C[0-6]|P[1-5])$", var.cache_sku))
+    condition     = var.cache_sku == null || can(regex("^(Basic|Standard|Premium)_(C[0-6]|P[1-5])$", var.cache_sku))
     error_message = "Invalid cache SKU. Format: Basic_C0-C6, Standard_C0-C6, or Premium_P1-P5."
   }
 }

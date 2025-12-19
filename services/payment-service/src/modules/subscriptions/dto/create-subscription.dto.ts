@@ -1,12 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import {
-  IsString,
-  IsEnum,
-  IsOptional,
-  IsBoolean,
-  IsDateString,
-  IsObject,
-} from 'class-validator';
+import { IsString, IsEnum, IsOptional, IsBoolean, IsDateString, IsObject } from 'class-validator';
 import { SubscriptionTier } from '../../../common/enums/subscription-tier.enum';
 import { SubscriptionStatus } from '../../../common/enums/subscription-status.enum';
 

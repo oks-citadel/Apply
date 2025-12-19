@@ -68,7 +68,7 @@ resource "azurerm_container_registry_task" "cleanup_task" {
 # ============================================================================
 
 resource "azurerm_container_registry_task_schedule_run_now" "initial_cleanup" {
-  count                 = var.enable_initial_cleanup ? 1 : 0
+  count                      = var.enable_initial_cleanup ? 1 : 0
   container_registry_task_id = azurerm_container_registry_task.cleanup_task.id
 }
 
@@ -118,21 +118,21 @@ resource "azurerm_container_registry_webhook" "cleanup_webhook" {
 
 # Cache frequently used base images to reduce pull costs
 resource "azurerm_container_registry_cache_rule" "node_cache" {
-  count                    = var.enable_cache_rules ? 1 : 0
-  name                     = "cache-node"
-  container_registry_id    = azurerm_container_registry.acr.id
-  source_repo              = "docker.io/library/node"
-  target_repo              = "cached/node"
-  credential_set_id        = null
+  count                 = var.enable_cache_rules ? 1 : 0
+  name                  = "cache-node"
+  container_registry_id = azurerm_container_registry.acr.id
+  source_repo           = "docker.io/library/node"
+  target_repo           = "cached/node"
+  credential_set_id     = null
 }
 
 resource "azurerm_container_registry_cache_rule" "nginx_cache" {
-  count                    = var.enable_cache_rules ? 1 : 0
-  name                     = "cache-nginx"
-  container_registry_id    = azurerm_container_registry.acr.id
-  source_repo              = "docker.io/library/nginx"
-  target_repo              = "cached/nginx"
-  credential_set_id        = null
+  count                 = var.enable_cache_rules ? 1 : 0
+  name                  = "cache-nginx"
+  container_registry_id = azurerm_container_registry.acr.id
+  source_repo           = "docker.io/library/nginx"
+  target_repo           = "cached/nginx"
+  credential_set_id     = null
 }
 
 # ============================================================================

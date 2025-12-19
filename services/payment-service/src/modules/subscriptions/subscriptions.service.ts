@@ -1,17 +1,14 @@
-import {
-  Injectable,
-  NotFoundException,
-  BadRequestException,
-  Inject,
-  Logger,
-} from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Inject, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ClientProxy } from '@nestjs/microservices';
 import { Subscription } from './entities/subscription.entity';
 import { CreateSubscriptionDto } from './dto/create-subscription.dto';
 import { UpdateSubscriptionDto } from './dto/update-subscription.dto';
-import { SubscriptionTier, SUBSCRIPTION_TIER_LIMITS } from '../../common/enums/subscription-tier.enum';
+import {
+  SubscriptionTier,
+  SUBSCRIPTION_TIER_LIMITS,
+} from '../../common/enums/subscription-tier.enum';
 import { SubscriptionStatus } from '../../common/enums/subscription-status.enum';
 import { LoggingService } from '../../common/logging/logging.service';
 

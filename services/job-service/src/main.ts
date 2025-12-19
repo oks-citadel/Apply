@@ -35,7 +35,7 @@ async function bootstrap() {
   });
 
   const configService = app.get(ConfigService);
-  const port = configService.get<number>('PORT', 4002);
+  const port = configService.get<number>('PORT', 8084);
   // Remove global prefix - ingress routes /jobs to this service directly
   const apiPrefix = configService.get<string>('API_PREFIX', '');
 

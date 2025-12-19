@@ -129,7 +129,7 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
 
-  const port = configService.get('PORT', 4004);
+  const port = configService.get('PORT', 8082);
   await app.listen(port);
 
   logger.log(`User Service is running on: http://localhost:${port}`);

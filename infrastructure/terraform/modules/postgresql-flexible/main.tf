@@ -1,17 +1,19 @@
 # ============================================================================
 # Azure PostgreSQL Flexible Server Module
 # ============================================================================
-# This module provisions Azure PostgreSQL Flexible Server with PUBLIC access
-# and security configurations including SSL enforcement and firewall rules.
+# This module provisions Azure PostgreSQL Flexible Server with configurable
+# network access (public or private) and comprehensive security configurations.
 #
 # Key Features:
-# - Public network access enabled (NO VNET integration)
+# - Configurable network access: public or private endpoints
+# - Private endpoint support for staging and production environments
 # - SSL/TLS enforcement for secure connections
-# - Firewall rules for Azure services and specific IPs
+# - Firewall rules for Azure services and specific IPs (public access mode)
 # - Multiple databases for microservices architecture
 # - High availability configuration options
 # - Automated backups with configurable retention
 # - Performance monitoring and diagnostics
+# - Private DNS zone integration for private endpoints
 # ============================================================================
 
 # ============================================================================
@@ -28,11 +30,11 @@ resource "azurerm_postgresql_flexible_server" "main" {
   administrator_password = var.postgres_admin_password
 
   # Server configuration
-  version                      = var.postgres_version
-  storage_mb                   = var.storage_mb
-  sku_name                     = var.sku_name
-  zone                         = var.zone
-  public_network_access_enabled = true
+  version                       = var.postgres_version
+  storage_mb                    = var.storage_mb
+  sku_name                      = var.sku_name
+  zone                          = var.zone
+  public_network_access_enabled = var.public_network_access_enabled
 
   # Backup configuration
   backup_retention_days        = var.backup_retention_days
@@ -215,4 +217,75 @@ resource "azurerm_monitor_diagnostic_setting" "postgres" {
       days    = var.diagnostic_retention_days
     }
   }
+}
+
+# ============================================================================
+# Private Endpoint Configuration
+# ============================================================================
+
+# Private DNS Zone for PostgreSQL Flexible Server
+resource "azurerm_private_dns_zone" "postgresql" {
+  count               = var.enable_private_endpoint && var.create_private_dns_zone ? 1 : 0
+  name                = "privatelink.postgres.database.azure.com"
+  resource_group_name = var.resource_group_name
+
+  tags = merge(
+    var.tags,
+    {
+      "Environment" = var.environment
+      "Project"     = var.project_name
+      "Service"     = "PostgreSQL"
+    }
+  )
+}
+
+# Virtual Network Link for Private DNS Zone
+resource "azurerm_private_dns_zone_virtual_network_link" "postgresql" {
+  count                 = var.enable_private_endpoint && var.create_private_dns_zone ? 1 : 0
+  name                  = "${var.project_name}-psql-vnet-link-${var.environment}"
+  resource_group_name   = var.resource_group_name
+  private_dns_zone_name = azurerm_private_dns_zone.postgresql[0].name
+  virtual_network_id    = var.private_endpoint_vnet_id
+  registration_enabled  = false
+
+  tags = var.tags
+}
+
+# Private Endpoint for PostgreSQL Flexible Server
+resource "azurerm_private_endpoint" "postgresql" {
+  count               = var.enable_private_endpoint ? 1 : 0
+  name                = "pe-${var.project_name}-psql-${var.environment}"
+  location            = var.location
+  resource_group_name = var.resource_group_name
+  subnet_id           = var.private_endpoint_subnet_id
+
+  private_service_connection {
+    name                           = "psc-${var.project_name}-psql-${var.environment}"
+    private_connection_resource_id = azurerm_postgresql_flexible_server.main.id
+    is_manual_connection           = false
+    subresource_names              = ["postgresqlServer"]
+  }
+
+  dynamic "private_dns_zone_group" {
+    for_each = var.create_private_dns_zone || var.existing_private_dns_zone_id != null ? [1] : []
+    content {
+      name = "default"
+      private_dns_zone_ids = var.create_private_dns_zone ? [
+        azurerm_private_dns_zone.postgresql[0].id
+      ] : [var.existing_private_dns_zone_id]
+    }
+  }
+
+  tags = merge(
+    var.tags,
+    {
+      "Environment" = var.environment
+      "Project"     = var.project_name
+      "Service"     = "PostgreSQL"
+    }
+  )
+
+  depends_on = [
+    azurerm_postgresql_flexible_server.main
+  ]
 }

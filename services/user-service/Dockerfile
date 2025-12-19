@@ -1,6 +1,6 @@
 # Monorepo-aware Dockerfile for user-service
 # Pinned Node.js 20 Alpine with SHA256 digest for supply chain security
-FROM node:20-alpine AS builder
+FROM node:20-alpine@sha256:c13b26e7e602ef2f1074aef304ce6e9b7dd284c419b35d89fcf3cc8e44a8def9 AS builder
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
@@ -24,7 +24,7 @@ WORKDIR /app/services/user-service
 RUN pnpm run build
 
 # Pinned Node.js 20 Alpine with SHA256 digest (must match builder stage)
-FROM node:20-alpine AS production
+FROM node:20-alpine@sha256:c13b26e7e602ef2f1074aef304ce6e9b7dd284c419b35d89fcf3cc8e44a8def9 AS production
 RUN apk add --no-cache dumb-init curl
 RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001
 WORKDIR /app
@@ -37,13 +37,13 @@ COPY --from=builder --chown=nodejs:nodejs /app/services/user-service/package.jso
 
 USER nodejs
 ENV NODE_ENV=production
-ENV PORT=4004
-EXPOSE 4004
+ENV PORT=8082
+EXPOSE 8082
 
 WORKDIR /app/services/user-service
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-    CMD curl -f http://localhost:4004/health || exit 1
+    CMD curl -f http://localhost:8082/health || exit 1
 
 ENTRYPOINT ["dumb-init", "--"]
 CMD ["node", "dist/services/user-service/src/main.js"]

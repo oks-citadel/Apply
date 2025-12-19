@@ -25,14 +25,14 @@ locals {
 
 # Redis Cache
 resource "azurerm_redis_cache" "main" {
-  name                = "redis-${var.project_name}-${var.environment}-${var.unique_suffix}"
-  location            = var.location
-  resource_group_name = var.resource_group_name
-  capacity            = local.parsed_sku.capacity
-  family              = local.parsed_sku.family
-  sku_name            = local.sku_tier
+  name                 = "redis-${var.project_name}-${var.environment}-${var.unique_suffix}"
+  location             = var.location
+  resource_group_name  = var.resource_group_name
+  capacity             = local.parsed_sku.capacity
+  family               = local.parsed_sku.family
+  sku_name             = local.sku_tier
   non_ssl_port_enabled = false
-  minimum_tls_version = "1.2"
+  minimum_tls_version  = "1.2"
 
   # Premium features
   shard_count                   = local.is_premium ? var.shard_count : null

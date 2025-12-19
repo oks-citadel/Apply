@@ -4,8 +4,6 @@
  * Resource-based and attribute-based access control policies.
  */
 
-import { Permission } from './permissions';
-
 /**
  * Resource types in the system
  */

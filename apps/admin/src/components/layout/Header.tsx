@@ -192,7 +192,7 @@ export function Header() {
                   Admin User
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  admin@jobpilot.com
+                  admin@applyforus.com
                 </p>
               </div>
               <ChevronDown className="w-4 h-4 text-gray-600 dark:text-gray-400" />
@@ -205,7 +205,7 @@ export function Header() {
                     Admin User
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    admin@jobpilot.com
+                    admin@applyforus.com
                   </p>
                 </div>
                 <div className="py-1">

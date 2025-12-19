@@ -20,19 +20,19 @@ data "azurerm_subscription" "cost_management" {}
 locals {
   budget_limits = {
     dev = {
-      amount                = 500   # $500/month for dev
-      alert_thresholds      = [50, 75, 90, 100]
-      forecast_threshold    = 100
+      amount             = 500 # $500/month for dev
+      alert_thresholds   = [50, 75, 90, 100]
+      forecast_threshold = 100
     }
     staging = {
-      amount                = 1000  # $1000/month for staging
-      alert_thresholds      = [50, 75, 90, 100]
-      forecast_threshold    = 100
+      amount             = 1000 # $1000/month for staging
+      alert_thresholds   = [50, 75, 90, 100]
+      forecast_threshold = 100
     }
     prod = {
-      amount                = 5000  # $5000/month for production
-      alert_thresholds      = [50, 75, 90, 100, 110]
-      forecast_threshold    = 100
+      amount             = 5000 # $5000/month for production
+      alert_thresholds   = [50, 75, 90, 100, 110]
+      forecast_threshold = 100
     }
   }
 
@@ -42,11 +42,11 @@ locals {
   cost_tags = merge(
     local.common_tags,
     {
-      CostCenter    = "Engineering"
-      BusinessUnit  = "Product"
-      CostOwner     = "Platform Team"
-      BudgetCode    = "PLATFORM-${upper(var.environment)}"
-      Criticality   = var.environment == "prod" ? "High" : var.environment == "staging" ? "Medium" : "Low"
+      CostCenter   = "Engineering"
+      BusinessUnit = "Product"
+      CostOwner    = "Platform Team"
+      BudgetCode   = "PLATFORM-${upper(var.environment)}"
+      Criticality  = var.environment == "prod" ? "High" : var.environment == "staging" ? "Medium" : "Low"
     }
   )
 }
@@ -70,7 +70,7 @@ resource "azurerm_consumption_budget_resource_group" "environment_budget" {
   # Budget filter to include only resources with our tags
   filter {
     tag {
-      name = "Environment"
+      name   = "Environment"
       values = [var.environment]
     }
   }
@@ -119,7 +119,7 @@ resource "azurerm_consumption_budget_subscription" "subscription_budget" {
   subscription_id = data.azurerm_subscription.cost_management.id
 
   # Total subscription budget across all environments
-  amount     = 10000  # $10,000/month total cap
+  amount     = 10000 # $10,000/month total cap
   time_grain = "Monthly"
 
   time_period {
@@ -193,10 +193,10 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "cost_anomaly_alert" {
   }
 
   auto_mitigation_enabled = false
-  description            = "Alert when resource costs show anomalous patterns"
-  display_name           = "${var.project_name}-${var.environment} Cost Anomaly"
-  enabled                = true
-  skip_query_validation  = false
+  description             = "Alert when resource costs show anomalous patterns"
+  display_name            = "${var.project_name}-${var.environment} Cost Anomaly"
+  enabled                 = true
+  skip_query_validation   = false
 
   action {
     action_groups = [module.monitoring.action_group_id]
@@ -230,7 +230,7 @@ resource "azurerm_monitor_metric_alert" "aks_node_count" {
     action_group_id = module.monitoring.action_group_id
   }
 
-  frequency = "PT15M"
+  frequency   = "PT15M"
   window_size = "PT15M"
 
   tags = local.cost_tags
@@ -256,7 +256,7 @@ resource "azurerm_monitor_metric_alert" "redis_memory_alert" {
     action_group_id = module.monitoring.action_group_id
   }
 
-  frequency = "PT5M"
+  frequency   = "PT5M"
   window_size = "PT15M"
 
   tags = local.cost_tags
@@ -283,7 +283,7 @@ resource "azurerm_monitor_metric_alert" "postgres_storage_alert" {
     action_group_id = module.monitoring.action_group_id
   }
 
-  frequency = "PT15M"
+  frequency   = "PT15M"
   window_size = "PT30M"
 
   tags = local.cost_tags
@@ -306,14 +306,14 @@ resource "azurerm_monitor_metric_alert" "acr_storage_alert" {
     aggregation      = "Average"
     operator         = "GreaterThan"
     # Threshold in bytes: 100GB for dev, 500GB for staging, 1TB for prod
-    threshold        = var.environment == "prod" ? 1099511627776 : var.environment == "staging" ? 536870912000 : 107374182400
+    threshold = var.environment == "prod" ? 1099511627776 : var.environment == "staging" ? 536870912000 : 107374182400
   }
 
   action {
     action_group_id = module.monitoring.action_group_id
   }
 
-  frequency = "PT1H"
+  frequency   = "PT1H"
   window_size = "PT6H"
 
   tags = local.cost_tags

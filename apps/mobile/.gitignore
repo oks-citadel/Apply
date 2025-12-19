@@ -64,6 +64,7 @@ web-build/
 
 # Testing
 coverage/
+.jest-localstorage.json
 
 # EAS Credentials - NEVER COMMIT THESE
 android/google-services.json

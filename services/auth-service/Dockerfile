@@ -1,7 +1,7 @@
 # Monorepo-aware Dockerfile for auth-service
 # Pinned Node.js 20 Alpine with SHA256 digest for supply chain security
 # Update digest: docker pull node:20-alpine && docker inspect node:20-alpine | jq -r '.[0].RepoDigests[0]'
-FROM node:20-alpine AS builder
+FROM node:20-alpine@sha256:c13b26e7e602ef2f1074aef304ce6e9b7dd284c419b35d89fcf3cc8e44a8def9 AS builder
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
@@ -30,7 +30,7 @@ RUN pnpm run build
 
 # Stage 2: Production - preserve monorepo structure for pnpm symlinks
 # Pinned Node.js 20 Alpine with SHA256 digest (must match builder stage)
-FROM node:20-alpine AS production
+FROM node:20-alpine@sha256:c13b26e7e602ef2f1074aef304ce6e9b7dd284c419b35d89fcf3cc8e44a8def9 AS production
 
 RUN apk add --no-cache dumb-init curl
 
@@ -53,14 +53,14 @@ COPY --from=builder --chown=nodejs:nodejs /app/services/auth-service/package.jso
 USER nodejs
 
 ENV NODE_ENV=production
-ENV PORT=4000
+ENV PORT=8081
 
-EXPOSE 4000
+EXPOSE 8081
 
 WORKDIR /app/services/auth-service
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-    CMD curl -f http://localhost:4000/health || exit 1
+    CMD curl -f http://localhost:8081/health || exit 1
 
 ENTRYPOINT ["dumb-init", "--"]
 CMD ["node", "dist/main.js"]

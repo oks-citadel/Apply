@@ -27,9 +27,9 @@ interface AuthState {
 }
 
 const STORAGE_KEYS = {
-  ACCESS_TOKEN: '@jobpilot/access_token',
-  REFRESH_TOKEN: '@jobpilot/refresh_token',
-  USER: '@jobpilot/user',
+  ACCESS_TOKEN: '@applyforus/access_token',
+  REFRESH_TOKEN: '@applyforus/refresh_token',
+  USER: '@applyforus/user',
 };
 
 export const useAuthStore = create<AuthState>((set, get) => ({

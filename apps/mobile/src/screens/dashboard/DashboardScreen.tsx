@@ -17,9 +17,9 @@ import { theme } from '../../theme';
 import { MainTabParamList } from '../../navigation/types';
 import { Application } from '../../types';
 
-type DashboardScreenProps = NativeStackScreenProps<MainTabParamList, 'Dashboard'>;
+export type DashboardScreenProps = NativeStackScreenProps<MainTabParamList, 'Dashboard'>;
 
-export const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
+export const DashboardScreen = ({ navigation }: DashboardScreenProps) => {
   const { user } = useAuthStore();
 
   const {

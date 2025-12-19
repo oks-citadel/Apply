@@ -72,10 +72,10 @@ services:
     container_name: applyforus-auth-service-test
     restart: unless-stopped
     ports:
-      - '3001:3001'
+      - '8081:8081'
     environment:
       NODE_ENV: test
-      PORT: 3001
+      PORT: 8081
       DB_HOST: postgres-test
       DB_PORT: 5432
       DB_USERNAME: postgres
@@ -94,7 +94,7 @@ services:
     networks:
       - test-network
     healthcheck:
-      test: ['CMD', 'curl', '-f', 'http://localhost:3001/api/v1/health']
+      test: ['CMD', 'curl', '-f', 'http://localhost:8081/api/v1/health']
       interval: 10s
       timeout: 5s
       retries: 3
@@ -107,16 +107,16 @@ services:
     container_name: applyforus-user-service-test
     restart: unless-stopped
     ports:
-      - '8002:8002'
+      - '8082:8082'
     environment:
       NODE_ENV: test
-      PORT: 8002
+      PORT: 8082
       DB_HOST: postgres-test
       DB_PORT: 5432
       DB_USERNAME: postgres
       DB_PASSWORD: postgres
       DB_DATABASE: user_service_test
-      AUTH_SERVICE_URL: http://auth-service-test:3001
+      AUTH_SERVICE_URL: http://auth-service-test:8081
     depends_on:
       postgres-test:
         condition: service_healthy
@@ -125,7 +125,7 @@ services:
     networks:
       - test-network
     healthcheck:
-      test: ['CMD', 'curl', '-f', 'http://localhost:8002/api/v1/health']
+      test: ['CMD', 'curl', '-f', 'http://localhost:8082/api/v1/health']
       interval: 10s
       timeout: 5s
       retries: 3
@@ -138,10 +138,10 @@ services:
     container_name: applyforus-job-service-test
     restart: unless-stopped
     ports:
-      - '3003:3003'
+      - '8084:8084'
     environment:
       NODE_ENV: test
-      PORT: 3003
+      PORT: 8084
       DB_HOST: postgres-test
       DB_PORT: 5432
       DB_USERNAME: postgres
@@ -160,7 +160,7 @@ services:
     networks:
       - test-network
     healthcheck:
-      test: ['CMD', 'curl', '-f', 'http://localhost:3003/api/v1/health']
+      test: ['CMD', 'curl', '-f', 'http://localhost:8084/api/v1/health']
       interval: 10s
       timeout: 5s
       retries: 3
@@ -173,10 +173,10 @@ services:
     container_name: applyforus-resume-service-test
     restart: unless-stopped
     ports:
-      - '3004:3004'
+      - '8083:8083'
     environment:
       NODE_ENV: test
-      PORT: 3004
+      PORT: 8083
       DB_HOST: postgres-test
       DB_PORT: 5432
       DB_USERNAME: postgres
@@ -188,7 +188,7 @@ services:
     networks:
       - test-network
     healthcheck:
-      test: ['CMD', 'curl', '-f', 'http://localhost:3004/api/v1/health']
+      test: ['CMD', 'curl', '-f', 'http://localhost:8083/api/v1/health']
       interval: 10s
       timeout: 5s
       retries: 3
@@ -201,10 +201,10 @@ services:
     container_name: applyforus-ai-service-test
     restart: unless-stopped
     ports:
-      - '8000:8000'
+      - '8090:8090'
     environment:
       ENVIRONMENT: test
-      PORT: 8000
+      PORT: 8090
       OPENAI_API_KEY: ${OPENAI_API_KEY:-test-key}
       REDIS_HOST: redis-test
       REDIS_PORT: 6379
@@ -214,7 +214,7 @@ services:
     networks:
       - test-network
     healthcheck:
-      test: ['CMD', 'curl', '-f', 'http://localhost:8000/health']
+      test: ['CMD', 'curl', '-f', 'http://localhost:8090/health']
       interval: 10s
       timeout: 5s
       retries: 3
@@ -227,10 +227,10 @@ services:
     container_name: applyforus-notification-service-test
     restart: unless-stopped
     ports:
-      - '3006:3006'
+      - '8087:8087'
     environment:
       NODE_ENV: test
-      PORT: 3006
+      PORT: 8087
       DB_HOST: postgres-test
       DB_PORT: 5432
       DB_USERNAME: postgres
@@ -248,7 +248,7 @@ services:
     networks:
       - test-network
     healthcheck:
-      test: ['CMD', 'curl', '-f', 'http://localhost:3006/api/v1/health']
+      test: ['CMD', 'curl', '-f', 'http://localhost:8087/api/v1/health']
       interval: 10s
       timeout: 5s
       retries: 3
@@ -261,10 +261,10 @@ services:
     container_name: applyforus-auto-apply-service-test
     restart: unless-stopped
     ports:
-      - '3007:3007'
+      - '8085:8085'
     environment:
       NODE_ENV: test
-      PORT: 3007
+      PORT: 8085
       DB_HOST: postgres-test
       DB_PORT: 5432
       DB_USERNAME: postgres
@@ -272,7 +272,7 @@ services:
       DB_DATABASE: auto_apply_service_test
       REDIS_HOST: redis-test
       REDIS_PORT: 6379
-      JOB_SERVICE_URL: http://job-service-test:3003
+      JOB_SERVICE_URL: http://job-service-test:8084
     depends_on:
       postgres-test:
         condition: service_healthy
@@ -283,7 +283,7 @@ services:
     networks:
       - test-network
     healthcheck:
-      test: ['CMD', 'curl', '-f', 'http://localhost:3007/api/v1/health']
+      test: ['CMD', 'curl', '-f', 'http://localhost:8085/api/v1/health']
       interval: 10s
       timeout: 5s
       retries: 3

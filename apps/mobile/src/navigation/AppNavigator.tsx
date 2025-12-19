@@ -46,7 +46,7 @@ const AuthNavigator = () => {
       />
       <AuthStack.Screen
         name="ForgotPassword"
-        component={LoginScreen}
+        component={LoginScreen as any}
         options={{ title: 'Forgot Password', headerShown: true }}
       />
     </AuthStack.Navigator>
@@ -118,7 +118,7 @@ const MainNavigator = () => {
       />
       <MainTab.Screen
         name="Profile"
-        component={DashboardScreen}
+        component={DashboardScreen as any}
         options={{
           title: 'Profile',
           tabBarIcon: ({ color, size }) => (

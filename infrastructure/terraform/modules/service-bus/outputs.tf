@@ -36,10 +36,10 @@ output "topics" {
 output "subscriptions" {
   description = "Map of subscription names to their IDs"
   value = {
-    application-created    = azurerm_servicebus_subscription.application_created.id
-    application-updated    = azurerm_servicebus_subscription.application_updated.id
-    application-completed  = azurerm_servicebus_subscription.application_completed.id
-    analytics-aggregation  = azurerm_servicebus_subscription.analytics_aggregation.id
+    application-created   = azurerm_servicebus_subscription.application_created.id
+    application-updated   = azurerm_servicebus_subscription.application_updated.id
+    application-completed = azurerm_servicebus_subscription.application_completed.id
+    analytics-aggregation = azurerm_servicebus_subscription.analytics_aggregation.id
   }
 }
 

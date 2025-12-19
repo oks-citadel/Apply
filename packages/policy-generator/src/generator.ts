@@ -9,13 +9,10 @@ import {
   PolicyType,
   RegionCode,
   PolicyVariables,
-  PolicyDocument,
-  PolicyVersion,
   GenerationOptions,
-  OutputFormat,
 } from './types';
 import { getRegionConfig, REGION_CONFIGS } from './regions';
-import { compileTemplate, getAvailableTemplates } from './templates';
+import { compileTemplate } from './templates';
 import { format } from 'date-fns';
 
 /**

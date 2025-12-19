@@ -93,7 +93,7 @@ async function bootstrap() {
   // No global prefix - ingress routes /auto-apply to this service directly
   // app.setGlobalPrefix('api/v1');
 
-  const port = process.env.PORT || 4003;
+  const port = process.env.PORT || 8085;
   await app.listen(port);
 
   logger.log(`Auto-Apply Service is running on: http://localhost:${port}`);

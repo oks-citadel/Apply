@@ -90,7 +90,7 @@ const securityAlerts: SecurityAlert[] = [
 const loginAttempts: LoginAttempt[] = [
   {
     id: '1',
-    email: 'admin@jobpilot.com',
+    email: 'admin@applyforus.com',
     ipAddress: '192.168.1.100',
     location: 'New York, USA',
     timestamp: '2024-03-20T10:30:00Z',
@@ -116,7 +116,7 @@ const loginAttempts: LoginAttempt[] = [
   },
   {
     id: '4',
-    email: 'developer@jobpilot.com',
+    email: 'developer@applyforus.com',
     ipAddress: '10.0.0.50',
     location: 'San Francisco, USA',
     timestamp: '2024-03-20T09:45:00Z',
@@ -124,7 +124,7 @@ const loginAttempts: LoginAttempt[] = [
   },
   {
     id: '5',
-    email: 'security@jobpilot.com',
+    email: 'security@applyforus.com',
     ipAddress: '172.16.0.25',
     location: 'London, UK',
     timestamp: '2024-03-20T08:30:00Z',

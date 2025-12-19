@@ -26,7 +26,7 @@ class Settings(BaseSettings):
 
     # Server
     host: str = Field(default="0.0.0.0", alias="HOST")
-    port: int = Field(default=8000, alias="PORT")
+    port: int = Field(default=8090, alias="PORT")
 
     # API Keys
     openai_api_key: str = Field(default="", alias="OPENAI_API_KEY")

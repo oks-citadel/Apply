@@ -116,6 +116,18 @@ variable "postgres_admin_password" {
   }
 }
 
+variable "postgresql_enable_private_endpoint" {
+  description = "Enable private endpoint for PostgreSQL Flexible Server"
+  type        = bool
+  default     = false
+}
+
+variable "postgresql_public_network_access_enabled" {
+  description = "Enable public network access to PostgreSQL server"
+  type        = bool
+  default     = true
+}
+
 # ============================================================================
 # Resource Tagging
 # ============================================================================

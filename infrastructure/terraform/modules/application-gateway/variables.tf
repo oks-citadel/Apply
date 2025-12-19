@@ -101,8 +101,8 @@ variable "backend_http_settings" {
 variable "http_listeners" {
   description = "Map of HTTP listener configurations"
   type = map(object({
-    protocol    = optional(string, "Https")
-    host_name   = optional(string)
+    protocol  = optional(string, "Https")
+    host_name = optional(string)
   }))
   default = {
     default = {
@@ -136,12 +136,12 @@ variable "health_probes" {
 variable "routing_rules" {
   description = "Map of request routing rule configurations"
   type = map(object({
-    rule_type                    = string
-    http_listener_key            = string
-    backend_address_pool_key     = optional(string)
-    backend_http_settings_key    = optional(string)
-    url_path_map_key             = optional(string)
-    priority                     = number
+    rule_type                 = string
+    http_listener_key         = string
+    backend_address_pool_key  = optional(string)
+    backend_http_settings_key = optional(string)
+    url_path_map_key          = optional(string)
+    priority                  = number
   }))
   default = {
     default = {
@@ -161,10 +161,10 @@ variable "url_path_maps" {
     default_backend_address_pool_key  = string
     default_backend_http_settings_key = string
     path_rules = list(object({
-      name                       = string
-      paths                      = list(string)
-      backend_address_pool_key   = string
-      backend_http_settings_key  = string
+      name                      = string
+      paths                     = list(string)
+      backend_address_pool_key  = string
+      backend_http_settings_key = string
     }))
   }))
   default = {}

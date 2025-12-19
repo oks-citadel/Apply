@@ -49,7 +49,7 @@ const mockNotifications: Notification[] = [
     recipients: 12543,
     sentAt: '2024-03-20T10:00:00Z',
     createdAt: '2024-03-19T14:30:00Z',
-    createdBy: 'marketing@jobpilot.com',
+    createdBy: 'marketing@applyforus.com',
     targetAudience: ['all_users'],
     metadata: {
       opened: 8234,
@@ -66,7 +66,7 @@ const mockNotifications: Notification[] = [
     recipients: 8500,
     scheduledAt: '2024-03-22T09:00:00Z',
     createdAt: '2024-03-20T16:20:00Z',
-    createdBy: 'system@jobpilot.com',
+    createdBy: 'system@applyforus.com',
     targetAudience: ['active_seekers'],
     template: 'weekly_recommendations',
   },
@@ -79,7 +79,7 @@ const mockNotifications: Notification[] = [
     recipients: 245,
     sentAt: '2024-03-20T08:15:00Z',
     createdAt: '2024-03-20T08:10:00Z',
-    createdBy: 'security@jobpilot.com',
+    createdBy: 'security@applyforus.com',
     targetAudience: ['affected_users'],
     metadata: {
       opened: 189,
@@ -95,7 +95,7 @@ const mockNotifications: Notification[] = [
     recipients: 12543,
     scheduledAt: '2024-03-24T18:00:00Z',
     createdAt: '2024-03-20T12:00:00Z',
-    createdBy: 'operations@jobpilot.com',
+    createdBy: 'operations@applyforus.com',
     targetAudience: ['all_users'],
   },
   {
@@ -107,7 +107,7 @@ const mockNotifications: Notification[] = [
     recipients: 1250,
     sentAt: '2024-03-19T15:30:00Z',
     createdAt: '2024-03-19T15:25:00Z',
-    createdBy: 'notifications@jobpilot.com',
+    createdBy: 'notifications@applyforus.com',
     targetAudience: ['applicants'],
     template: 'application_update',
     metadata: {
@@ -123,7 +123,7 @@ const mockNotifications: Notification[] = [
     status: 'draft',
     recipients: 5000,
     createdAt: '2024-03-20T11:00:00Z',
-    createdBy: 'sales@jobpilot.com',
+    createdBy: 'sales@applyforus.com',
     targetAudience: ['free_users'],
   },
 ];

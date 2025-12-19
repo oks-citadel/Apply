@@ -168,7 +168,10 @@ export const SUBSCRIPTION_TIER_LIMITS: Record<SubscriptionTier, SubscriptionTier
 };
 
 // New pricing structure - 2025 rebrand
-export const SUBSCRIPTION_TIER_PRICES: Record<SubscriptionTier, { monthly: number; yearly: number }> = {
+export const SUBSCRIPTION_TIER_PRICES: Record<
+  SubscriptionTier,
+  { monthly: number; yearly: number }
+> = {
   [SubscriptionTier.FREEMIUM]: { monthly: 0, yearly: 0 },
   [SubscriptionTier.STARTER]: { monthly: 23.99, yearly: 239.99 },
   [SubscriptionTier.BASIC]: { monthly: 49.99, yearly: 499.99 },

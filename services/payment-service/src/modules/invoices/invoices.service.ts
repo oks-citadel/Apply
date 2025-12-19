@@ -1,9 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-  Logger,
-  Inject,
-} from '@nestjs/common';
+import { Injectable, NotFoundException, Logger, Inject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ClientProxy } from '@nestjs/microservices';
@@ -51,9 +46,7 @@ export class InvoicesService {
   async createOrUpdate(createInvoiceDto: CreateInvoiceDto): Promise<Invoice> {
     try {
       // Check if invoice already exists
-      const existingInvoice = await this.findByStripeInvoiceId(
-        createInvoiceDto.stripeInvoiceId,
-      );
+      const existingInvoice = await this.findByStripeInvoiceId(createInvoiceDto.stripeInvoiceId);
 
       if (existingInvoice) {
         // Update existing invoice
@@ -168,7 +161,10 @@ export class InvoicesService {
   /**
    * Update invoice
    */
-  async update(id: string, updateInvoiceDto: UpdateInvoiceDto | CreateInvoiceDto): Promise<Invoice> {
+  async update(
+    id: string,
+    updateInvoiceDto: UpdateInvoiceDto | CreateInvoiceDto,
+  ): Promise<Invoice> {
     try {
       const invoice = await this.findOne(id);
 

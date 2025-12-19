@@ -48,7 +48,7 @@ const mockAuditLogs: AuditLog[] = [
     timestamp: '2024-03-20T10:30:45Z',
     user: {
       id: 'u1',
-      email: 'admin@jobpilot.com',
+      email: 'admin@applyforus.com',
       name: 'Admin User',
     },
     action: 'user.update',
@@ -67,7 +67,7 @@ const mockAuditLogs: AuditLog[] = [
     timestamp: '2024-03-20T09:45:22Z',
     user: {
       id: 'u2',
-      email: 'security@jobpilot.com',
+      email: 'security@applyforus.com',
       name: 'Security Admin',
     },
     action: 'security.login_failed',
@@ -85,7 +85,7 @@ const mockAuditLogs: AuditLog[] = [
     timestamp: '2024-03-20T08:15:30Z',
     user: {
       id: 'u1',
-      email: 'admin@jobpilot.com',
+      email: 'admin@applyforus.com',
       name: 'Admin User',
     },
     action: 'feature_flag.enable',
@@ -104,7 +104,7 @@ const mockAuditLogs: AuditLog[] = [
     timestamp: '2024-03-19T16:20:15Z',
     user: {
       id: 'u3',
-      email: 'dev@jobpilot.com',
+      email: 'dev@applyforus.com',
       name: 'Developer',
     },
     action: 'database.backup',
@@ -123,7 +123,7 @@ const mockAuditLogs: AuditLog[] = [
     timestamp: '2024-03-19T14:55:40Z',
     user: {
       id: 'u2',
-      email: 'security@jobpilot.com',
+      email: 'security@applyforus.com',
       name: 'Security Admin',
     },
     action: 'security.permission_denied',
@@ -142,7 +142,7 @@ const mockAuditLogs: AuditLog[] = [
     timestamp: '2024-03-19T13:30:00Z',
     user: {
       id: 'u1',
-      email: 'admin@jobpilot.com',
+      email: 'admin@applyforus.com',
       name: 'Admin User',
     },
     action: 'settings.update',
@@ -160,7 +160,7 @@ const mockAuditLogs: AuditLog[] = [
     timestamp: '2024-03-19T11:15:20Z',
     user: {
       id: 'u4',
-      email: 'support@jobpilot.com',
+      email: 'support@applyforus.com',
       name: 'Support Team',
     },
     action: 'user.delete',

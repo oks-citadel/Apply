@@ -67,7 +67,7 @@ variable "database_sku" {
   default     = null
 
   validation {
-    condition = var.database_sku == null || can(regex("^(Basic|S[0-9]|P[0-9]|GP_|BC_|HS_)", var.database_sku))
+    condition     = var.database_sku == null || can(regex("^(Basic|S[0-9]|P[0-9]|GP_|BC_|HS_)", var.database_sku))
     error_message = "Invalid database SKU. Must be Basic, Standard (S0-S12), Premium (P1-P15), or vCore-based (GP_, BC_, HS_)."
   }
 }

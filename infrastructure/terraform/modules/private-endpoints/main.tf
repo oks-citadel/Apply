@@ -10,20 +10,20 @@ terraform {
 # Local variables for Private DNS Zone names
 locals {
   private_dns_zones = {
-    key_vault              = "privatelink.vaultcore.azure.net"
-    sql_server             = "privatelink.database.windows.net"
-    redis_cache            = "privatelink.redis.cache.windows.net"
-    storage_blob           = "privatelink.blob.core.windows.net"
-    storage_file           = "privatelink.file.core.windows.net"
-    storage_queue          = "privatelink.queue.core.windows.net"
-    storage_table          = "privatelink.table.core.windows.net"
-    cosmos_db              = "privatelink.documents.azure.com"
-    service_bus            = "privatelink.servicebus.windows.net"
-    event_hub              = "privatelink.servicebus.windows.net"
-    container_registry     = "privatelink.azurecr.io"
-    app_service            = "privatelink.azurewebsites.net"
-    cognitive_services     = "privatelink.cognitiveservices.azure.com"
-    openai                 = "privatelink.openai.azure.com"
+    key_vault          = "privatelink.vaultcore.azure.net"
+    sql_server         = "privatelink.database.windows.net"
+    redis_cache        = "privatelink.redis.cache.windows.net"
+    storage_blob       = "privatelink.blob.core.windows.net"
+    storage_file       = "privatelink.file.core.windows.net"
+    storage_queue      = "privatelink.queue.core.windows.net"
+    storage_table      = "privatelink.table.core.windows.net"
+    cosmos_db          = "privatelink.documents.azure.com"
+    service_bus        = "privatelink.servicebus.windows.net"
+    event_hub          = "privatelink.servicebus.windows.net"
+    container_registry = "privatelink.azurecr.io"
+    app_service        = "privatelink.azurewebsites.net"
+    cognitive_services = "privatelink.cognitiveservices.azure.com"
+    openai             = "privatelink.openai.azure.com"
   }
 
   # Filter enabled resources

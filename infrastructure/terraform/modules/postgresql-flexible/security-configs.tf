@@ -54,7 +54,7 @@ resource "azurerm_postgresql_flexible_server_configuration" "log_checkpoints" {
 resource "azurerm_postgresql_flexible_server_configuration" "idle_in_transaction_session_timeout" {
   name      = "idle_in_transaction_session_timeout"
   server_id = azurerm_postgresql_flexible_server.main.id
-  value     = "1800000"  # 30 minutes
+  value     = "1800000" # 30 minutes
 }
 
 # ============================================================================

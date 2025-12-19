@@ -34,7 +34,7 @@ async function bootstrap() {
   });
 
   const configService = app.get(ConfigService);
-  const port = configService.get<number>('port', 4001);
+  const port = configService.get<number>('port', 8083);
   const apiPrefix = configService.get<string>('apiPrefix', 'api/v1');
   const swaggerEnabled = configService.get<boolean>('swagger.enabled', true);
 

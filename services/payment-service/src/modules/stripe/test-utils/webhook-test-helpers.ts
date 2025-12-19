@@ -19,10 +19,7 @@ export function generateWebhookSignature(
   const payloadString = Buffer.isBuffer(payload) ? payload.toString() : payload;
   const signedPayload = `${time}.${payloadString}`;
 
-  const signature = crypto
-    .createHmac('sha256', secret)
-    .update(signedPayload, 'utf8')
-    .digest('hex');
+  const signature = crypto.createHmac('sha256', secret).update(signedPayload, 'utf8').digest('hex');
 
   return `t=${time},v1=${signature}`;
 }
@@ -35,7 +32,7 @@ export function generateExpiredWebhookSignature(
   secret: string,
   minutesAgo: number = 10,
 ): string {
-  const expiredTimestamp = Math.floor(Date.now() / 1000) - (minutesAgo * 60);
+  const expiredTimestamp = Math.floor(Date.now() / 1000) - minutesAgo * 60;
   return generateWebhookSignature(payload, secret, expiredTimestamp);
 }
 
@@ -99,7 +96,7 @@ export function createMockStripeSubscription(
   overrides: Partial<Stripe.Subscription> = {},
 ): Stripe.Subscription {
   const now = Math.floor(Date.now() / 1000);
-  const monthFromNow = now + (30 * 24 * 60 * 60);
+  const monthFromNow = now + 30 * 24 * 60 * 60;
 
   return {
     id: `sub_${crypto.randomBytes(12).toString('hex')}`,
@@ -142,9 +139,7 @@ export function createMockCheckoutSession(
 /**
  * Create a mock Stripe Invoice object
  */
-export function createMockStripeInvoice(
-  overrides: Partial<Stripe.Invoice> = {},
-): Stripe.Invoice {
+export function createMockStripeInvoice(overrides: Partial<Stripe.Invoice> = {}): Stripe.Invoice {
   const now = Math.floor(Date.now() / 1000);
 
   return {
@@ -172,10 +167,7 @@ export function createMockStripeInvoice(
 /**
  * Create a mock webhook request object
  */
-export function createMockWebhookRequest(
-  rawBody: Buffer,
-  signature: string,
-): any {
+export function createMockWebhookRequest(rawBody: Buffer, signature: string): any {
   return {
     rawBody,
     headers: {
@@ -361,17 +353,14 @@ export class MockCheckoutSessionBuilder {
  * Generate multiple test signatures for various scenarios
  */
 export const WebhookSignatureScenarios = {
-  valid: (payload: Buffer, secret: string) =>
-    generateWebhookSignature(payload, secret),
+  valid: (payload: Buffer, secret: string) => generateWebhookSignature(payload, secret),
 
   expired: (payload: Buffer, secret: string) =>
     generateExpiredWebhookSignature(payload, secret, 10),
 
-  invalid: () =>
-    generateInvalidWebhookSignature(),
+  invalid: () => generateInvalidWebhookSignature(),
 
-  malformed: () =>
-    'not_a_valid_signature_format',
+  malformed: () => 'not_a_valid_signature_format',
 
   wrongVersion: (payload: Buffer, secret: string) => {
     const time = Math.floor(Date.now() / 1000);
@@ -403,9 +392,7 @@ export const WebhookSignatureScenarios = {
  */
 export const CommonEventScenarios = {
   checkoutCompleted: (userId: string, tier: SubscriptionTier = SubscriptionTier.BASIC) => {
-    const session = new MockCheckoutSessionBuilder()
-      .withMetadata({ userId, tier })
-      .build();
+    const session = new MockCheckoutSessionBuilder().withMetadata({ userId, tier }).build();
     return createMockStripeEvent('checkout.session.completed', session);
   },
 

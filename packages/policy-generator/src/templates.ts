@@ -6,7 +6,7 @@
    ============================================ */
 
 import Handlebars from 'handlebars';
-import { PolicyType, RegionCode, PolicyVariables } from './types';
+import { PolicyType, PolicyVariables } from './types';
 
 /**
  * Register Handlebars helpers

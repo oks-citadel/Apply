@@ -1,11 +1,16 @@
 module.exports = {
   preset: 'react-native',
+  testEnvironment: 'node',
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   transformIgnorePatterns: [
-    'node_modules/(?!(react-native|@react-native|@react-navigation|react-native-vector-icons)/)',
+    'node_modules/(?!.*react-native|@react-navigation|@testing-library|react-native-vector-icons)',
   ],
   moduleNameMapper: {
+    // Mock React Native polyfills to avoid Flow syntax errors
+    '^@react-native/js-polyfills/error-guard$': '<rootDir>/__mocks__/@react-native/js-polyfills/error-guard.js',
+    '^@react-native/js-polyfills/Object.es8$': '<rootDir>/__mocks__/@react-native/js-polyfills/Object.es8.js',
+    // Path aliases
     '^@/(.*)$': '<rootDir>/src/$1',
     '^@components/(.*)$': '<rootDir>/src/components/$1',
     '^@screens/(.*)$': '<rootDir>/src/screens/$1',

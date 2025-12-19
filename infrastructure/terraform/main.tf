@@ -42,7 +42,7 @@ provider "azurerm" {
     }
 
     virtual_machine {
-      delete_os_disk_on_deletion     = true
+      delete_os_disk_on_deletion = true
       # SECURITY FIX: Enable graceful shutdown to prevent data loss
       graceful_shutdown              = true
       skip_shutdown_and_force_delete = false
@@ -213,8 +213,8 @@ module "postgresql" {
   postgres_admin_password = var.postgres_admin_password
 
   # Server configuration based on environment
-  sku_name       = local.config.postgresql_sku.name
-  storage_mb     = local.config.postgresql_sku.storage_mb
+  sku_name         = local.config.postgresql_sku.name
+  storage_mb       = local.config.postgresql_sku.storage_mb
   postgres_version = "16"
 
   # Backup configuration
@@ -222,13 +222,21 @@ module "postgresql" {
   geo_redundant_backup_enabled = var.environment == "prod" ? true : false
 
   # High availability (only for production)
-  enable_high_availability = var.environment == "prod" ? true : false
-  high_availability_mode   = "ZoneRedundant"
+  enable_high_availability  = var.environment == "prod" ? true : false
+  high_availability_mode    = "ZoneRedundant"
   standby_availability_zone = "2"
 
-  # Network security - PUBLIC access with firewall rules
-  allow_azure_services = true
-  allowed_ip_addresses = []  # Add your IPs here if needed
+  # Network security configuration
+  public_network_access_enabled = var.postgresql_public_network_access_enabled
+  allow_azure_services          = var.postgresql_public_network_access_enabled ? true : false
+  allowed_ip_addresses          = [] # Add your IPs here if needed for public access
+
+  # Private endpoint configuration
+  enable_private_endpoint      = var.postgresql_enable_private_endpoint
+  private_endpoint_subnet_id   = var.postgresql_enable_private_endpoint ? module.networking.private_endpoints_subnet_id : null
+  private_endpoint_vnet_id     = var.postgresql_enable_private_endpoint ? module.networking.vnet_id : null
+  create_private_dns_zone      = true
+  existing_private_dns_zone_id = null
 
   # Database names for each microservice
   database_names = {
@@ -482,11 +490,11 @@ module "key_vault_secrets" {
 
   key_vault_id = module.key_vault.vault_id
 
-  sql_connection_string           = var.enable_sql_database ? module.sql_database[0].connection_string : ""
-  redis_connection_string         = module.redis_cache.primary_connection_string
-  servicebus_connection_string    = module.service_bus.connection_string
-  app_insights_key                = module.app_insights.instrumentation_key
-  app_insights_connection_string  = module.app_insights.connection_string
+  sql_connection_string          = var.enable_sql_database ? module.sql_database[0].connection_string : ""
+  redis_connection_string        = module.redis_cache.primary_connection_string
+  servicebus_connection_string   = module.service_bus.connection_string
+  app_insights_key               = module.app_insights.instrumentation_key
+  app_insights_connection_string = module.app_insights.connection_string
 
   depends_on = [
     module.sql_database,

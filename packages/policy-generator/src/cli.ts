@@ -13,10 +13,9 @@
      npx ts-node src/cli.ts audit
    ============================================ */
 
-import { PolicyGenerator, DEFAULT_COMPANY_VARIABLES } from './generator';
+import { PolicyGenerator } from './generator';
 import { ChangelogGenerator } from './changelog';
-import { VersionManager } from './versioning';
-import { getAllRegions, getRegionConfig, getRequiredPolicies } from './regions';
+import { getAllRegions, getRegionConfig,  } from './regions';
 import { PolicyType, RegionCode } from './types';
 
 const args = process.argv.slice(2);
@@ -31,6 +30,7 @@ function parseArgs(): Record<string, string | boolean> {
   for (let i = 1; i < args.length; i++) {
     const arg = args[i];
     if (arg.startsWith('--')) {
+    if (!arg) continue;
       const key = arg.slice(2);
       const nextArg = args[i + 1];
       if (nextArg && !nextArg.startsWith('--')) {

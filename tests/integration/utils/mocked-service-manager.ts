@@ -17,15 +17,16 @@ export class MockedServiceManager {
 
   constructor() {
     this.serviceConfigs = [
-      { name: 'auth-service', baseURL: 'http://localhost:3001', port: 3001, healthEndpoint: '/api/v1/health' },
-      { name: 'user-service', baseURL: 'http://localhost:8002', port: 8002, healthEndpoint: '/api/v1/health' },
-      { name: 'job-service', baseURL: 'http://localhost:3003', port: 3003, healthEndpoint: '/api/v1/health' },
-      { name: 'resume-service', baseURL: 'http://localhost:3004', port: 3004, healthEndpoint: '/api/v1/health' },
-      { name: 'ai-service', baseURL: 'http://localhost:8000', port: 8000, healthEndpoint: '/health' },
-      { name: 'notification-service', baseURL: 'http://localhost:3006', port: 3006, healthEndpoint: '/api/v1/health' },
-      { name: 'auto-apply-service', baseURL: 'http://localhost:3007', port: 3007, healthEndpoint: '/api/v1/health' },
-      { name: 'analytics-service', baseURL: 'http://localhost:3008', port: 3008, healthEndpoint: '/api/v1/health' },
-      { name: 'orchestrator-service', baseURL: 'http://localhost:3009', port: 3009, healthEndpoint: '/api/v1/health' },
+      { name: 'auth-service', baseURL: 'http://localhost:8081', port: 8081, healthEndpoint: '/api/v1/health' },
+      { name: 'user-service', baseURL: 'http://localhost:8082', port: 8082, healthEndpoint: '/api/v1/health' },
+      { name: 'resume-service', baseURL: 'http://localhost:8083', port: 8083, healthEndpoint: '/api/v1/health' },
+      { name: 'job-service', baseURL: 'http://localhost:8084', port: 8084, healthEndpoint: '/api/v1/health' },
+      { name: 'auto-apply-service', baseURL: 'http://localhost:8085', port: 8085, healthEndpoint: '/api/v1/health' },
+      { name: 'analytics-service', baseURL: 'http://localhost:8086', port: 8086, healthEndpoint: '/api/v1/health' },
+      { name: 'notification-service', baseURL: 'http://localhost:8087', port: 8087, healthEndpoint: '/api/v1/health' },
+      { name: 'payment-service', baseURL: 'http://localhost:8088', port: 8088, healthEndpoint: '/api/v1/health' },
+      { name: 'orchestrator-service', baseURL: 'http://localhost:8089', port: 8089, healthEndpoint: '/api/v1/health' },
+      { name: 'ai-service', baseURL: 'http://localhost:8090', port: 8090, healthEndpoint: '/health' },
     ];
   }
 
@@ -76,7 +77,7 @@ export class MockedServiceManager {
   }
 
   private setupAuthServiceMocks(): void {
-    const baseURL = 'http://localhost:3001';
+    const baseURL = 'http://localhost:8081';
 
     // Register
     nock(baseURL)
@@ -144,7 +145,7 @@ export class MockedServiceManager {
   }
 
   private setupUserServiceMocks(): void {
-    const baseURL = 'http://localhost:8002';
+    const baseURL = 'http://localhost:8082';
 
     // Profile endpoints
     nock(baseURL)
@@ -200,7 +201,7 @@ export class MockedServiceManager {
   }
 
   private setupJobServiceMocks(): void {
-    const baseURL = 'http://localhost:3003';
+    const baseURL = 'http://localhost:8084';
 
     nock(baseURL)
       .persist()
@@ -228,7 +229,7 @@ export class MockedServiceManager {
   }
 
   private setupResumeServiceMocks(): void {
-    const baseURL = 'http://localhost:3004';
+    const baseURL = 'http://localhost:8083';
 
     nock(baseURL)
       .persist()
@@ -255,7 +256,7 @@ export class MockedServiceManager {
   }
 
   private setupAIServiceMocks(): void {
-    const baseURL = 'http://localhost:8000';
+    const baseURL = 'http://localhost:8090';
 
     // Job matching
     nock(baseURL)
@@ -392,7 +393,7 @@ export class MockedServiceManager {
   }
 
   private setupNotificationServiceMocks(): void {
-    const baseURL = 'http://localhost:3006';
+    const baseURL = 'http://localhost:8087';
 
     // Create notification
     nock(baseURL)
@@ -475,7 +476,7 @@ export class MockedServiceManager {
   }
 
   private setupAutoApplyServiceMocks(): void {
-    const baseURL = 'http://localhost:3007';
+    const baseURL = 'http://localhost:8085';
 
     nock(baseURL)
       .persist()

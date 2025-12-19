@@ -1,11 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import {
-  IsEnum,
-  IsOptional,
-  IsDateString,
-  IsUrl,
-  IsObject,
-} from 'class-validator';
+import { IsEnum, IsOptional, IsDateString, IsUrl, IsObject } from 'class-validator';
 import { InvoiceStatus } from '../../../common/enums/invoice-status.enum';
 
 export class UpdateInvoiceDto {

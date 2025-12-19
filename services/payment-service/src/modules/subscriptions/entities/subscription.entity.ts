@@ -74,10 +74,7 @@ export class Subscription {
 
   // Helper methods
   isActive(): boolean {
-    return (
-      this.status === SubscriptionStatus.ACTIVE ||
-      this.status === SubscriptionStatus.TRIALING
-    );
+    return this.status === SubscriptionStatus.ACTIVE || this.status === SubscriptionStatus.TRIALING;
   }
 
   isCanceled(): boolean {

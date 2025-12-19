@@ -14,7 +14,7 @@ export interface FeatureFlagsModuleOptions {
 @Module({})
 export class FeatureFlagsModule {
   static forRoot(options: FeatureFlagsModuleOptions = {}): DynamicModule {
-    const providers = [
+    const providers: any[] = [
       FeatureFlagService,
       FeatureFlagAdminService,
       FeatureFlagGuard,

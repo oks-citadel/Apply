@@ -96,7 +96,7 @@ export const StripeTestHelpers = {
    * Generate an expired Stripe signature for testing timestamp validation
    */
   generateExpiredSignature(payload: string | Buffer, secret: string, minutesAgo = 10): string {
-    const expiredTimestamp = Math.floor(Date.now() / 1000) - (minutesAgo * 60);
+    const expiredTimestamp = Math.floor(Date.now() / 1000) - minutesAgo * 60;
     return this.generateSignature(payload, secret, expiredTimestamp);
   },
 
@@ -112,7 +112,11 @@ export const StripeTestHelpers = {
   /**
    * Create mock Stripe event
    */
-  createEvent<T>(type: string, data: T, options: { id?: string; livemode?: boolean } = {}): {
+  createEvent<T>(
+    type: string,
+    data: T,
+    options: { id?: string; livemode?: boolean } = {},
+  ): {
     id: string;
     object: 'event';
     type: string;
@@ -147,7 +151,7 @@ export const StripeTestHelpers = {
       customer: TEST_CONSTANTS.STRIPE_CUSTOMER_ID,
       status: 'active',
       current_period_start: now,
-      current_period_end: now + (30 * 24 * 60 * 60),
+      current_period_end: now + 30 * 24 * 60 * 60,
       cancel_at_period_end: false,
       created: now,
       metadata: {
@@ -282,20 +286,14 @@ export const PaystackTestHelpers = {
    * Generate Paystack webhook signature
    */
   generateSignature(payload: string | Buffer, secretKey: string): string {
-    return crypto
-      .createHmac('sha512', secretKey)
-      .update(payload)
-      .digest('hex');
+    return crypto.createHmac('sha512', secretKey).update(payload).digest('hex');
   },
 
   /**
    * Verify Paystack webhook signature
    */
   verifySignature(payload: Buffer | string, signature: string, secretKey: string): boolean {
-    const computed = crypto
-      .createHmac('sha512', secretKey)
-      .update(payload)
-      .digest('hex');
+    const computed = crypto.createHmac('sha512', secretKey).update(payload).digest('hex');
     return computed === signature;
   },
 
@@ -390,7 +388,10 @@ export const PeriodHelpers = {
   /**
    * Calculate period end based on billing period
    */
-  calculatePeriodEnd(startDate: Date, billingPeriod: 'monthly' | 'yearly' | 'weekly' | 'daily'): Date {
+  calculatePeriodEnd(
+    startDate: Date,
+    billingPeriod: 'monthly' | 'yearly' | 'weekly' | 'daily',
+  ): Date {
     const end = new Date(startDate);
     switch (billingPeriod) {
       case 'daily':
@@ -443,7 +444,11 @@ export const TierHelpers = {
     if (lowerName.includes('advanced') || lowerName.includes('business')) {
       return SubscriptionTier.ADVANCED_CAREER;
     }
-    if (lowerName.includes('executive') || lowerName.includes('elite') || lowerName.includes('enterprise')) {
+    if (
+      lowerName.includes('executive') ||
+      lowerName.includes('elite') ||
+      lowerName.includes('enterprise')
+    ) {
       return SubscriptionTier.EXECUTIVE_ELITE;
     }
 

@@ -14,11 +14,11 @@ export const PAGINATION = {
 
 // Storage Keys
 export const STORAGE_KEYS = {
-  ACCESS_TOKEN: '@jobpilot/access_token',
-  REFRESH_TOKEN: '@jobpilot/refresh_token',
-  USER: '@jobpilot/user',
-  THEME: '@jobpilot/theme',
-  LANGUAGE: '@jobpilot/language',
+  ACCESS_TOKEN: '@applyforus/access_token',
+  REFRESH_TOKEN: '@applyforus/refresh_token',
+  USER: '@applyforus/user',
+  THEME: '@applyforus/theme',
+  LANGUAGE: '@applyforus/language',
 };
 
 // Application Status

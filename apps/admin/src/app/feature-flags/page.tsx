@@ -42,7 +42,7 @@ const mockFeatureFlags: FeatureFlag[] = [
     rolloutPercentage: 100,
     createdAt: '2024-01-15',
     updatedAt: '2024-02-20',
-    createdBy: 'admin@jobpilot.com',
+    createdBy: 'admin@applyforus.com',
   },
   {
     id: '2',
@@ -54,7 +54,7 @@ const mockFeatureFlags: FeatureFlag[] = [
     rolloutPercentage: 75,
     createdAt: '2024-02-10',
     updatedAt: '2024-03-15',
-    createdBy: 'admin@jobpilot.com',
+    createdBy: 'admin@applyforus.com',
     targetUsers: ['premium', 'enterprise'],
   },
   {
@@ -67,7 +67,7 @@ const mockFeatureFlags: FeatureFlag[] = [
     rolloutPercentage: 30,
     createdAt: '2024-03-01',
     updatedAt: '2024-03-10',
-    createdBy: 'dev@jobpilot.com',
+    createdBy: 'dev@applyforus.com',
   },
   {
     id: '4',
@@ -79,7 +79,7 @@ const mockFeatureFlags: FeatureFlag[] = [
     rolloutPercentage: 100,
     createdAt: '2024-01-05',
     updatedAt: '2024-01-20',
-    createdBy: 'admin@jobpilot.com',
+    createdBy: 'admin@applyforus.com',
   },
   {
     id: '5',
@@ -91,7 +91,7 @@ const mockFeatureFlags: FeatureFlag[] = [
     rolloutPercentage: 100,
     createdAt: '2024-02-01',
     updatedAt: '2024-02-05',
-    createdBy: 'design@jobpilot.com',
+    createdBy: 'design@applyforus.com',
   },
   {
     id: '6',
@@ -103,7 +103,7 @@ const mockFeatureFlags: FeatureFlag[] = [
     rolloutPercentage: 10,
     createdAt: '2024-03-20',
     updatedAt: '2024-03-22',
-    createdBy: 'product@jobpilot.com',
+    createdBy: 'product@applyforus.com',
   },
 ];
 

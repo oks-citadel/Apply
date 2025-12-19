@@ -12,7 +12,7 @@ import {
   PolicyChange,
   RegulatoryUpdate,
 } from './types';
-import { format, parseISO, differenceInDays } from 'date-fns';
+import { format, differenceInDays } from 'date-fns';
 
 /**
  * Version storage interface
@@ -101,7 +101,7 @@ export function incrementVersion(
 export function determineChangeType(changes: PolicyChange['sections']): 'major' | 'minor' | 'patch' {
   const hasAddedSections = changes.some(c => c.changeType === 'added');
   const hasRemovedSections = changes.some(c => c.changeType === 'removed');
-  const hasModifiedSections = changes.some(c => c.changeType === 'modified');
+  // const hasModifiedSections = changes.some(c => c.changeType === 'modified');
 
   // Major: sections removed (could affect compliance)
   if (hasRemovedSections) return 'major';

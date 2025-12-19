@@ -61,27 +61,19 @@ export class StripeController {
     try {
       switch (event.type) {
         case 'checkout.session.completed':
-          await this.handleCheckoutSessionCompleted(
-            event.data.object as Stripe.Checkout.Session,
-          );
+          await this.handleCheckoutSessionCompleted(event.data.object as Stripe.Checkout.Session);
           break;
 
         case 'customer.subscription.created':
-          await this.handleSubscriptionCreated(
-            event.data.object as Stripe.Subscription,
-          );
+          await this.handleSubscriptionCreated(event.data.object as Stripe.Subscription);
           break;
 
         case 'customer.subscription.updated':
-          await this.handleSubscriptionUpdated(
-            event.data.object as Stripe.Subscription,
-          );
+          await this.handleSubscriptionUpdated(event.data.object as Stripe.Subscription);
           break;
 
         case 'customer.subscription.deleted':
-          await this.handleSubscriptionDeleted(
-            event.data.object as Stripe.Subscription,
-          );
+          await this.handleSubscriptionDeleted(event.data.object as Stripe.Subscription);
           break;
 
         case 'invoice.paid':
@@ -89,9 +81,7 @@ export class StripeController {
           break;
 
         case 'invoice.payment_failed':
-          await this.handleInvoicePaymentFailed(
-            event.data.object as Stripe.Invoice,
-          );
+          await this.handleInvoicePaymentFailed(event.data.object as Stripe.Invoice);
           break;
 
         case 'invoice.created':
@@ -112,9 +102,7 @@ export class StripeController {
   /**
    * Handle checkout.session.completed event
    */
-  private async handleCheckoutSessionCompleted(
-    session: Stripe.Checkout.Session,
-  ) {
+  private async handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) {
     this.logger.log(`Checkout session completed: ${session.id}`);
 
     const customerId = session.customer as string;
@@ -127,9 +115,7 @@ export class StripeController {
     }
 
     // Retrieve the subscription from Stripe
-    const subscription = await this.stripeService.getSubscription(
-      subscriptionId,
-    );
+    const subscription = await this.stripeService.getSubscription(subscriptionId);
 
     // Create subscription in our database
     await this.subscriptionsService.create({
@@ -156,10 +142,9 @@ export class StripeController {
     const customerId = subscription.customer as string;
 
     // Check if subscription already exists
-    const existingSubscription =
-      await this.subscriptionsService.findByStripeSubscriptionId(
-        subscription.id,
-      );
+    const existingSubscription = await this.subscriptionsService.findByStripeSubscriptionId(
+      subscription.id,
+    );
 
     if (existingSubscription) {
       this.logger.log(`Subscription already exists: ${subscription.id}`);
@@ -185,15 +170,12 @@ export class StripeController {
   private async handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     this.logger.log(`Subscription updated: ${subscription.id}`);
 
-    const existingSubscription =
-      await this.subscriptionsService.findByStripeSubscriptionId(
-        subscription.id,
-      );
+    const existingSubscription = await this.subscriptionsService.findByStripeSubscriptionId(
+      subscription.id,
+    );
 
     if (!existingSubscription) {
-      this.logger.warn(
-        `Subscription not found in database: ${subscription.id}`,
-      );
+      this.logger.warn(`Subscription not found in database: ${subscription.id}`);
       return;
     }
 
@@ -201,9 +183,7 @@ export class StripeController {
 
     // Update subscription in our database
     await this.subscriptionsService.update(existingSubscription.id, {
-      tier: metadata.tier
-        ? (metadata.tier as SubscriptionTier)
-        : existingSubscription.tier,
+      tier: metadata.tier ? (metadata.tier as SubscriptionTier) : existingSubscription.tier,
       status: subscription.status as SubscriptionStatus,
       currentPeriodStart: new Date(subscription.current_period_start * 1000),
       currentPeriodEnd: new Date(subscription.current_period_end * 1000),
@@ -219,15 +199,12 @@ export class StripeController {
   private async handleSubscriptionDeleted(subscription: Stripe.Subscription) {
     this.logger.log(`Subscription deleted: ${subscription.id}`);
 
-    const existingSubscription =
-      await this.subscriptionsService.findByStripeSubscriptionId(
-        subscription.id,
-      );
+    const existingSubscription = await this.subscriptionsService.findByStripeSubscriptionId(
+      subscription.id,
+    );
 
     if (!existingSubscription) {
-      this.logger.warn(
-        `Subscription not found in database: ${subscription.id}`,
-      );
+      this.logger.warn(`Subscription not found in database: ${subscription.id}`);
       return;
     }
 
@@ -238,13 +215,9 @@ export class StripeController {
     });
 
     // Optionally downgrade user to FREE tier
-    await this.subscriptionsService.downgradeToFreeTier(
-      existingSubscription.userId,
-    );
+    await this.subscriptionsService.downgradeToFreeTier(existingSubscription.userId);
 
-    this.logger.log(
-      `Canceled subscription in database: ${subscription.id}`,
-    );
+    this.logger.log(`Canceled subscription in database: ${subscription.id}`);
   }
 
   /**
@@ -261,15 +234,10 @@ export class StripeController {
     }
 
     // Find subscription
-    const subscription =
-      await this.subscriptionsService.findByStripeSubscriptionId(
-        subscriptionId,
-      );
+    const subscription = await this.subscriptionsService.findByStripeSubscriptionId(subscriptionId);
 
     if (!subscription) {
-      this.logger.warn(
-        `Subscription not found for invoice: ${invoice.id}`,
-      );
+      this.logger.warn(`Subscription not found for invoice: ${invoice.id}`);
       return;
     }
 
@@ -305,15 +273,10 @@ export class StripeController {
     }
 
     // Find subscription
-    const subscription =
-      await this.subscriptionsService.findByStripeSubscriptionId(
-        subscriptionId,
-      );
+    const subscription = await this.subscriptionsService.findByStripeSubscriptionId(subscriptionId);
 
     if (!subscription) {
-      this.logger.warn(
-        `Subscription not found for invoice: ${invoice.id}`,
-      );
+      this.logger.warn(`Subscription not found for invoice: ${invoice.id}`);
       return;
     }
 
@@ -334,9 +297,7 @@ export class StripeController {
       invoicePdfUrl: invoice.invoice_pdf || undefined,
     });
 
-    this.logger.log(
-      `Updated subscription to past_due: ${subscription.id}`,
-    );
+    this.logger.log(`Updated subscription to past_due: ${subscription.id}`);
   }
 
   /**
@@ -353,15 +314,10 @@ export class StripeController {
     }
 
     // Find subscription
-    const subscription =
-      await this.subscriptionsService.findByStripeSubscriptionId(
-        subscriptionId,
-      );
+    const subscription = await this.subscriptionsService.findByStripeSubscriptionId(subscriptionId);
 
     if (!subscription) {
-      this.logger.warn(
-        `Subscription not found for invoice: ${invoice.id}`,
-      );
+      this.logger.warn(`Subscription not found for invoice: ${invoice.id}`);
       return;
     }
 

@@ -1,5 +1,9 @@
-import helmet from 'helmet';
+import helmet, { type HelmetOptions } from 'helmet';
 import { INestApplication } from '@nestjs/common';
+
+// Extract types from HelmetOptions
+type ContentSecurityPolicyOptions = Extract<HelmetOptions['contentSecurityPolicy'], object>;
+type ContentSecurityPolicyDirectives = ContentSecurityPolicyOptions['directives'];
 
 export interface NestSecurityConfig {
   helmetEnabled?: boolean;
@@ -8,7 +12,7 @@ export interface NestSecurityConfig {
   corsOrigins?: string | string[];
   corsCredentials?: boolean;
   cspEnabled?: boolean;
-  cspDirectives?: helmet.ContentSecurityPolicyOptions['directives'];
+  cspDirectives?: ContentSecurityPolicyDirectives;
 }
 
 /**
@@ -31,25 +35,15 @@ export function configureNestSecurity(
 
   // Configure Helmet security headers
   if (helmetEnabled) {
-    const helmetConfig: Parameters<typeof helmet>[0] = {
+    const helmetConfig: HelmetOptions = {
       crossOriginEmbedderPolicy: false,
       crossOriginResourcePolicy: { policy: 'cross-origin' },
-    };
-
-    // Configure HSTS
-    if (hstsEnabled) {
-      helmetConfig.hsts = {
+      hsts: hstsEnabled ? {
         maxAge: hstsMaxAge,
         includeSubDomains: true,
         preload: true,
-      };
-    } else {
-      helmetConfig.hsts = false;
-    }
-
-    // Configure CSP
-    if (cspEnabled) {
-      helmetConfig.contentSecurityPolicy = {
+      } : false,
+      contentSecurityPolicy: cspEnabled ? {
         directives: cspDirectives || {
           defaultSrc: ["'self'"],
           styleSrc: ["'self'", "'unsafe-inline'"],
@@ -61,10 +55,8 @@ export function configureNestSecurity(
           mediaSrc: ["'self'"],
           frameSrc: ["'none'"],
         },
-      };
-    } else {
-      helmetConfig.contentSecurityPolicy = false;
-    }
+      } : false,
+    };
 
     app.use(helmet(helmetConfig));
   }
@@ -102,7 +94,7 @@ export function configureNestSecurity(
 /**
  * Default CSP directives for API services
  */
-export const API_CSP_DIRECTIVES: helmet.ContentSecurityPolicyOptions['directives'] = {
+export const API_CSP_DIRECTIVES: ContentSecurityPolicyDirectives = {
   defaultSrc: ["'self'"],
   styleSrc: ["'self'", "'unsafe-inline'"],
   scriptSrc: ["'self'"],
@@ -117,7 +109,7 @@ export const API_CSP_DIRECTIVES: helmet.ContentSecurityPolicyOptions['directives
 /**
  * CSP directives for services with Swagger UI
  */
-export const SWAGGER_CSP_DIRECTIVES: helmet.ContentSecurityPolicyOptions['directives'] = {
+export const SWAGGER_CSP_DIRECTIVES: ContentSecurityPolicyDirectives = {
   defaultSrc: ["'self'"],
   styleSrc: ["'self'", "'unsafe-inline'"],
   scriptSrc: ["'self'", "'unsafe-inline'"],

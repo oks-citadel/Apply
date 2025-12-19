@@ -41,25 +41,38 @@ replicas:
 
 # Image tag overrides
 images:
-- name: jobpilotacr.azurecr.io/auth-service
+- name: ${ACR_LOGIN_SERVER}/auth-service
+  newName: applyforusacr.azurecr.io/auth-service
   newTag: staging
-- name: jobpilotacr.azurecr.io/user-service
+- name: ${ACR_LOGIN_SERVER}/user-service
+  newName: applyforusacr.azurecr.io/user-service
   newTag: staging
-- name: jobpilotacr.azurecr.io/job-service
+- name: ${ACR_LOGIN_SERVER}/job-service
+  newName: applyforusacr.azurecr.io/job-service
   newTag: staging
-- name: jobpilotacr.azurecr.io/ai-service
+- name: ${ACR_LOGIN_SERVER}/ai-service
+  newName: applyforusacr.azurecr.io/ai-service
   newTag: staging
-- name: jobpilotacr.azurecr.io/resume-service
+- name: ${ACR_LOGIN_SERVER}/resume-service
+  newName: applyforusacr.azurecr.io/resume-service
   newTag: staging
-- name: jobpilotacr.azurecr.io/analytics-service
+- name: ${ACR_LOGIN_SERVER}/analytics-service
+  newName: applyforusacr.azurecr.io/analytics-service
   newTag: staging
-- name: jobpilotacr.azurecr.io/notification-service
+- name: ${ACR_LOGIN_SERVER}/notification-service
+  newName: applyforusacr.azurecr.io/notification-service
   newTag: staging
-- name: jobpilotacr.azurecr.io/auto-apply-service
+- name: ${ACR_LOGIN_SERVER}/auto-apply-service
+  newName: applyforusacr.azurecr.io/auto-apply-service
   newTag: staging
-- name: jobpilotacr.azurecr.io/orchestrator-service
+- name: ${ACR_LOGIN_SERVER}/orchestrator-service
+  newName: applyforusacr.azurecr.io/orchestrator-service
   newTag: staging
-- name: jobpilotacr.azurecr.io/web-app
+- name: ${ACR_LOGIN_SERVER}/payment-service
+  newName: applyforusacr.azurecr.io/payment-service
+  newTag: staging
+- name: ${ACR_LOGIN_SERVER}/web-app
+  newName: applyforusacr.azurecr.io/web-app
   newTag: staging
 
 # ConfigMap overrides for staging environment

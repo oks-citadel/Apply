@@ -33,6 +33,14 @@ Comprehensive security package for the ApplyForUs platform, providing encryption
 - **Input Validation**: Sanitize and validate user inputs
 - **XSS Protection**: Prevent cross-site scripting attacks
 
+### Subscription Management
+
+- **Subscription Guard**: NestJS guard for subscription-based feature gating
+- **Tier-Based Access Control**: Restrict endpoints based on subscription tier
+- **Feature Gating**: Control access to specific features per tier
+- **Usage Limit Enforcement**: Track and enforce monthly usage limits
+- **6 Subscription Tiers**: FREEMIUM, STARTER, BASIC, PROFESSIONAL, ADVANCED_CAREER, EXECUTIVE_ELITE
+
 ## Installation
 
 ```bash
@@ -257,6 +265,74 @@ await gdprService.recordConsent({
   timestamp: new Date(),
 });
 ```
+
+### Subscription-Based Feature Gating
+
+```typescript
+import {
+  SubscriptionGuard,
+  RequiresTier,
+  RequiresFeature,
+  CheckUsageLimit,
+  SubscriptionTier,
+  FeatureType,
+  UsageLimitType,
+} from '@applyforus/security';
+
+// Apply guard globally or to specific controllers
+@Module({
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: SubscriptionGuard,
+    },
+  ],
+})
+export class AppModule {}
+
+// Restrict endpoint to specific subscription tier
+@Controller('analytics')
+export class AnalyticsController {
+  @Get('advanced')
+  @RequiresTier(SubscriptionTier.PROFESSIONAL)
+  async getAdvancedAnalytics() {
+    // Only PROFESSIONAL tier or higher can access
+    return { data: 'advanced analytics' };
+  }
+
+  @Get('insights')
+  @RequiresFeature(FeatureType.ADVANCED_ANALYTICS)
+  async getInsights() {
+    // Only users with advanced analytics feature can access
+    return { insights: [] };
+  }
+}
+
+// Check and enforce usage limits
+@Controller('applications')
+export class ApplicationsController {
+  @Post()
+  @CheckUsageLimit(UsageLimitType.JOB_APPLICATIONS)
+  async submitApplication(@Body() dto: CreateApplicationDto) {
+    // Guard checks if user has remaining job applications
+    return { message: 'Application submitted' };
+  }
+}
+
+// Combine multiple checks
+@Post('ai-analysis')
+@RequiresTier(SubscriptionTier.PROFESSIONAL)
+@RequiresFeature(FeatureType.ADVANCED_ANALYTICS)
+@CheckUsageLimit(UsageLimitType.AI_COVER_LETTERS)
+async runAiAnalysis(@Body() dto: AnalysisDto) {
+  // Checks tier, feature access, AND usage limits
+  return { analysis: {} };
+}
+```
+
+For detailed usage examples and best practices, see:
+- [Subscription Guard Usage Guide](./SUBSCRIPTION_GUARD_USAGE.md)
+- [Subscription Guard Examples](./SUBSCRIPTION_GUARD_EXAMPLES.ts)
 
 ## API Reference
 

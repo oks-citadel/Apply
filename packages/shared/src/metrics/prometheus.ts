@@ -417,7 +417,7 @@ export class PrometheusMetrics {
   /**
    * Get metrics as JSON
    */
-  async getMetricsJSON(): Promise<promClient.metric[]> {
+  async getMetricsJSON(): Promise<any> {
     return this.register.getMetricsAsJSON();
   }
 

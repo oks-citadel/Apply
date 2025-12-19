@@ -109,8 +109,8 @@ services:
     environment:
       NODE_ENV: development
       PORT: 3000
-      NEXT_PUBLIC_API_URL: http://localhost:4000
-      NEXT_PUBLIC_AI_SERVICE_URL: http://localhost:5000
+      NEXT_PUBLIC_API_URL: http://localhost:8081
+      NEXT_PUBLIC_AI_SERVICE_URL: http://localhost:8090
       DATABASE_URL: postgresql://postgres:postgres123@postgres:5432/applyforus
       REDIS_URL: redis://:redis123@redis:6379
       NEXTAUTH_URL: http://localhost:3000
@@ -129,10 +129,10 @@ services:
     container_name: applyai-auth
     restart: unless-stopped
     ports:
-      - '4000:4000'
+      - '8081:8081'
     environment:
       NODE_ENV: development
-      PORT: 4000
+      PORT: 8081
       DATABASE_URL: postgresql://postgres:postgres123@postgres:5432/applyforus
       REDIS_URL: redis://:redis123@redis:6379
       JWT_SECRET: super-secret-jwt-key-change-in-production
@@ -156,10 +156,10 @@ services:
     container_name: applyai-ai
     restart: unless-stopped
     ports:
-      - '5000:5000'
+      - '8089:8089'
     environment:
       ENVIRONMENT: development
-      PORT: 5000
+      PORT: 8089
       OPENAI_API_KEY: ${OPENAI_API_KEY:-sk-your-openai-key}
       OPENAI_MODEL: gpt-4
       REDIS_URL: redis://:redis123@redis:6379
@@ -178,13 +178,13 @@ services:
     container_name: applyai-resume
     restart: unless-stopped
     ports:
-      - '4001:4001'
+      - '8083:8083'
     environment:
       NODE_ENV: development
-      PORT: 4001
+      PORT: 8083
       DATABASE_URL: postgresql://postgres:postgres123@postgres:5432/applyforus
       REDIS_URL: redis://:redis123@redis:6379
-      AI_SERVICE_URL: http://ai-service:5000
+      AI_SERVICE_URL: http://ai-service:8090
       RABBITMQ_URL: amqp://admin:admin123@rabbitmq:5672
     depends_on:
       postgres:
@@ -200,10 +200,10 @@ services:
     container_name: applyai-job
     restart: unless-stopped
     ports:
-      - '4002:4002'
+      - '8084:8084'
     environment:
       NODE_ENV: development
-      PORT: 4002
+      PORT: 8084
       DATABASE_URL: postgresql://postgres:postgres123@postgres:5432/applyforus
       REDIS_URL: redis://:redis123@redis:6379
       ELASTICSEARCH_URL: http://elasticsearch:9200
@@ -224,15 +224,15 @@ services:
     container_name: applyai-auto-apply
     restart: unless-stopped
     ports:
-      - '4003:4003'
+      - '8085:8085'
     environment:
       NODE_ENV: development
-      PORT: 4003
+      PORT: 8085
       DATABASE_URL: postgresql://postgres:postgres123@postgres:5432/applyforus
       REDIS_URL: redis://:redis123@redis:6379
-      JOB_SERVICE_URL: http://job-service:4002
-      RESUME_SERVICE_URL: http://resume-service:4001
-      AI_SERVICE_URL: http://ai-service:5000
+      JOB_SERVICE_URL: http://job-service:8084
+      RESUME_SERVICE_URL: http://resume-service:8083
+      AI_SERVICE_URL: http://ai-service:8090
       RABBITMQ_URL: amqp://admin:admin123@rabbitmq:5672
     depends_on:
       postgres:
@@ -248,10 +248,10 @@ services:
     container_name: applyai-user
     restart: unless-stopped
     ports:
-      - '4004:4004'
+      - '8082:8082'
     environment:
       NODE_ENV: development
-      PORT: 4004
+      PORT: 8082
       DATABASE_URL: postgresql://postgres:postgres123@postgres:5432/applyforus
       REDIS_URL: redis://:redis123@redis:6379
       RABBITMQ_URL: amqp://admin:admin123@rabbitmq:5672
@@ -269,10 +269,10 @@ services:
     container_name: applyai-notification
     restart: unless-stopped
     ports:
-      - '4005:4005'
+      - '8087:8087'
     environment:
       NODE_ENV: development
-      PORT: 4005
+      PORT: 8087
       DATABASE_URL: postgresql://postgres:postgres123@postgres:5432/applyforus
       REDIS_URL: redis://:redis123@redis:6379
       RABBITMQ_URL: amqp://admin:admin123@rabbitmq:5672

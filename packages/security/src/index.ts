@@ -20,3 +20,10 @@ export * from './audit/audit-logger';
 export * from './audit/audit-events';
 export * from './compliance/data-classification';
 export * from './compliance/gdpr';
+
+// Service-to-Service Authentication
+export * from './service-auth';
+
+// Subscription Management - Guards & Decorators
+export * from './guards/subscription.guard';
+export * from './decorators/subscription.decorator';

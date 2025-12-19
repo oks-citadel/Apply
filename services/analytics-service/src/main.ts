@@ -84,8 +84,8 @@ async function bootstrap() {
         'JWT-auth',
       )
       .addTag('analytics', 'Analytics endpoints')
-      .addServer(`http://localhost:${configService.get('port', 3007)}`, 'Local server')
-      .addServer(configService.get('apiBaseUrl', 'http://localhost:8006'), 'API server')
+      .addServer(`http://localhost:${configService.get('port', 8086)}`, 'Local server')
+      .addServer(configService.get('apiBaseUrl', 'http://localhost:8086'), 'API server')
       .build();
 
     const document = SwaggerModule.createDocument(app, config);
@@ -95,13 +95,13 @@ async function bootstrap() {
       },
     });
 
-    logger.log(`Swagger documentation available at: http://localhost:${configService.get('port', 3007)}/api/docs`);
+    logger.log(`Swagger documentation available at: http://localhost:${configService.get('port', 8086)}/api/docs`);
   }
 
   // Graceful shutdown handling
   app.enableShutdownHooks();
 
-  const port = configService.get('port', 3007);
+  const port = configService.get('port', 8086);
   await app.listen(port);
 
   logger.log(`Analytics Service is running on: http://localhost:${port}`);

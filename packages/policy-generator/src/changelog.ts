@@ -249,7 +249,7 @@ export class ChangelogGenerator {
       }
 
       // Track major changes (version bump in major number)
-      const [major] = entry.version.split('.');
+      const [major = '0'] = entry.version.split('.');
       if (parseInt(major) > 1 || entry.changes.some(c => c.type === 'removed')) {
         majorChanges.push(entry);
       }

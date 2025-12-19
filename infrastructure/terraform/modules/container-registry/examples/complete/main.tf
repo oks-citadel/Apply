@@ -98,8 +98,8 @@ output "identity_details" {
 output "role_assignments" {
   description = "ACR Role Assignment IDs"
   value = {
-    cicd_push         = module.container_registry.cicd_role_assignment_id
-    aks_pull          = module.container_registry.aks_role_assignment_id
-    workload_pull     = module.container_registry.workload_role_assignment_id
+    cicd_push     = module.container_registry.cicd_role_assignment_id
+    aks_pull      = module.container_registry.aks_role_assignment_id
+    workload_pull = module.container_registry.workload_role_assignment_id
   }
 }

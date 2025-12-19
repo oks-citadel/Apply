@@ -31,7 +31,7 @@ spec:
         pod-security.kubernetes.io/warn: restricted
       annotations:
         prometheus.io/scrape: "true"
-        prometheus.io/port: "8007"
+        prometheus.io/port: "8087"
         prometheus.io/path: "/metrics"
         # Pod Security Standards - Restricted profile
         seccomp.security.alpha.kubernetes.io/pod: runtime/default
@@ -48,12 +48,12 @@ spec:
         image: ${ACR_LOGIN_SERVER}/notification-service:${VERSION:-v1.0.0}
         imagePullPolicy: IfNotPresent
         ports:
-        - containerPort: 8007
+        - containerPort: 8087
           name: http
           protocol: TCP
         env:
         - name: PORT
-          value: "8007"
+          value: "8087"
         - name: SERVICE_NAME
           value: "notification-service"
         envFrom:
@@ -71,7 +71,7 @@ spec:
         livenessProbe:
           httpGet:
             path: /health/live
-            port: 8007
+            port: 8087
             scheme: HTTP
           initialDelaySeconds: 30
           periodSeconds: 10
@@ -81,7 +81,7 @@ spec:
         readinessProbe:
           httpGet:
             path: /health/ready
-            port: 8007
+            port: 8087
             scheme: HTTP
           initialDelaySeconds: 10
           periodSeconds: 5
@@ -132,8 +132,8 @@ spec:
   selector:
     app: notification-service
   ports:
-  - port: 8007
-    targetPort: 8007
+  - port: 8087
+    targetPort: 8087
     protocol: TCP
     name: http
   sessionAffinity: None

@@ -86,9 +86,7 @@ export class InitialSchema1733290000000 implements MigrationInterface {
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     // Drop foreign key
-    await queryRunner.query(
-      `ALTER TABLE "invoices" DROP CONSTRAINT "FK_invoices_subscriptionId"`,
-    );
+    await queryRunner.query(`ALTER TABLE "invoices" DROP CONSTRAINT "FK_invoices_subscriptionId"`);
 
     // Drop invoices table and indexes
     await queryRunner.query(`DROP INDEX "IDX_invoices_stripeCustomerId"`);

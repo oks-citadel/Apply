@@ -314,3 +314,32 @@ output "typeorm_connection_strings" {
   }
   sensitive = true
 }
+
+# ============================================================================
+# Private Endpoint Information
+# ============================================================================
+
+output "private_endpoint_enabled" {
+  description = "Whether private endpoint is enabled"
+  value       = var.enable_private_endpoint
+}
+
+output "private_endpoint_id" {
+  description = "ID of the private endpoint"
+  value       = var.enable_private_endpoint ? azurerm_private_endpoint.postgresql[0].id : null
+}
+
+output "private_endpoint_ip_address" {
+  description = "Private IP address of the PostgreSQL server"
+  value       = var.enable_private_endpoint ? azurerm_private_endpoint.postgresql[0].private_service_connection[0].private_ip_address : null
+}
+
+output "private_dns_zone_id" {
+  description = "ID of the private DNS zone"
+  value       = var.enable_private_endpoint && var.create_private_dns_zone ? azurerm_private_dns_zone.postgresql[0].id : var.existing_private_dns_zone_id
+}
+
+output "private_dns_zone_name" {
+  description = "Name of the private DNS zone"
+  value       = var.enable_private_endpoint && var.create_private_dns_zone ? azurerm_private_dns_zone.postgresql[0].name : null
+}

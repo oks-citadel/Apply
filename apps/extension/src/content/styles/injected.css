@@ -1,0 +1,263 @@
+/**
+ * Injected styles for JobPilot Chrome Extension
+ * These styles are injected into job board pages
+ */
+
+/* Floating Action Button */
+.jobpilot-fab {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999999;
+  transition: all 0.3s ease;
+  border: none;
+}
+
+.jobpilot-fab:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.6);
+}
+
+.jobpilot-fab svg {
+  width: 24px;
+  height: 24px;
+  fill: white;
+}
+
+/* Job Panel */
+.jobpilot-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 400px;
+  height: 100vh;
+  background: white;
+  box-shadow: -4px 0 12px rgba(0, 0, 0, 0.1);
+  z-index: 999998;
+  transform: translateX(100%);
+  transition: transform 0.3s ease;
+  overflow-y: auto;
+}
+
+.jobpilot-panel.open {
+  transform: translateX(0);
+}
+
+.jobpilot-panel-header {
+  padding: 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.jobpilot-panel-header h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.jobpilot-panel-close {
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  font-size: 24px;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.jobpilot-panel-content {
+  padding: 20px;
+}
+
+.jobpilot-job-info {
+  margin-bottom: 24px;
+}
+
+.jobpilot-job-title {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+  color: #1a202c;
+}
+
+.jobpilot-job-company {
+  font-size: 16px;
+  color: #4a5568;
+  margin: 0 0 4px 0;
+}
+
+.jobpilot-job-location {
+  font-size: 14px;
+  color: #718096;
+  margin: 0;
+}
+
+.jobpilot-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.jobpilot-btn {
+  padding: 12px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.jobpilot-btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.jobpilot-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.jobpilot-btn-secondary {
+  background: white;
+  color: #667eea;
+  border: 2px solid #667eea;
+}
+
+.jobpilot-btn-secondary:hover {
+  background: #f7fafc;
+}
+
+/* Autofill Overlay */
+.jobpilot-autofill-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 999997;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+}
+
+.jobpilot-autofill-overlay.visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+.jobpilot-autofill-modal {
+  background: white;
+  border-radius: 12px;
+  padding: 32px;
+  max-width: 500px;
+  width: 90%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.jobpilot-autofill-modal h3 {
+  margin: 0 0 16px 0;
+  font-size: 24px;
+  font-weight: 600;
+  color: #1a202c;
+}
+
+.jobpilot-autofill-modal p {
+  margin: 0 0 24px 0;
+  color: #4a5568;
+  line-height: 1.6;
+}
+
+/* Form Field Highlighting */
+.jobpilot-highlight-field {
+  outline: 2px solid #667eea !important;
+  outline-offset: 2px;
+  transition: outline 0.2s ease;
+}
+
+/* Loading Spinner */
+.jobpilot-spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: jobpilot-spin 0.8s linear infinite;
+}
+
+@keyframes jobpilot-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Toast Notifications */
+.jobpilot-toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: white;
+  padding: 16px 24px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000000;
+  transition: transform 0.3s ease;
+}
+
+.jobpilot-toast.visible {
+  transform: translateX(-50%) translateY(0);
+}
+
+.jobpilot-toast.success {
+  border-left: 4px solid #48bb78;
+}
+
+.jobpilot-toast.error {
+  border-left: 4px solid #f56565;
+}
+
+.jobpilot-toast.info {
+  border-left: 4px solid #4299e1;
+}
+
+/* Backdrop */
+.jobpilot-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999997;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+}
+
+.jobpilot-backdrop.visible {
+  opacity: 1;
+  visibility: visible;
+}

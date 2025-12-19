@@ -341,7 +341,8 @@ export class GDPRService {
     compliant: boolean;
     expiredData: string[];
   }> {
-    const records = this.getProcessingRecords(userId);
+    // Get processing records (for future implementation)
+    this.getProcessingRecords(userId);
     const expiredData: string[] = [];
 
     // In a real implementation, check actual data retention
@@ -402,57 +403,57 @@ export class GDPRService {
   }
 
   // Helper methods (stubs for demonstration)
-  private async fetchUserProfile(userId: string): Promise<any> {
+  private async fetchUserProfile(_userId: string): Promise<any> {
     // Stub - fetch from profile service
-    return { userId, name: 'User Profile Data' };
+    return { userId: _userId, name: 'User Profile Data' };
   }
 
-  private async fetchUserResumes(userId: string): Promise<any[]> {
+  private async fetchUserResumes(_userId: string): Promise<any[]> {
     // Stub - fetch from resume service
     return [];
   }
 
-  private async fetchUserApplications(userId: string): Promise<any[]> {
+  private async fetchUserApplications(_userId: string): Promise<any[]> {
     // Stub - fetch from application service
     return [];
   }
 
-  private async fetchUserPreferences(userId: string): Promise<any> {
+  private async fetchUserPreferences(_userId: string): Promise<any> {
     // Stub - fetch from preference service
     return {};
   }
 
-  private async fetchUserCommunications(userId: string): Promise<any[]> {
+  private async fetchUserCommunications(_userId: string): Promise<any[]> {
     // Stub - fetch from communication service
     return [];
   }
 
-  private async fetchUserAnalytics(userId: string): Promise<any> {
+  private async fetchUserAnalytics(_userId: string): Promise<any> {
     // Stub - fetch from analytics service
     return {};
   }
 
-  private async fetchUserActivityLog(userId: string): Promise<any[]> {
+  private async fetchUserActivityLog(_userId: string): Promise<any[]> {
     // Stub - fetch from audit log
     return [];
   }
 
-  private async deleteUserResumes(userId: string): Promise<number> {
+  private async deleteUserResumes(_userId: string): Promise<number> {
     // Stub - delete from resume service
     return 0;
   }
 
-  private async deleteUserApplications(userId: string): Promise<number> {
+  private async deleteUserApplications(_userId: string): Promise<number> {
     // Stub - delete from application service
     return 0;
   }
 
-  private async deleteUserDocuments(userId: string): Promise<number> {
+  private async deleteUserDocuments(_userId: string): Promise<number> {
     // Stub - delete from document service
     return 0;
   }
 
-  private async deleteUserCommunications(userId: string): Promise<number> {
+  private async deleteUserCommunications(_userId: string): Promise<number> {
     // Stub - delete from communication service
     return 0;
   }

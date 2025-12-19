@@ -49,9 +49,7 @@ export class HealthController {
   @ApiResponse({ status: 503, description: 'Service is not ready' })
   @HealthCheck()
   readiness() {
-    return this.health.check([
-      () => this.db.pingCheck('database'),
-    ]);
+    return this.health.check([() => this.db.pingCheck('database')]);
   }
 
   @Get('live')

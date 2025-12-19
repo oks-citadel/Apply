@@ -1,5 +1,5 @@
 # Monorepo-aware Dockerfile for payment-service
-FROM node:20-alpine AS builder
+FROM node:20-alpine@sha256:c13b26e7e602ef2f1074aef304ce6e9b7dd284c419b35d89fcf3cc8e44a8def9 AS builder
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
@@ -21,7 +21,7 @@ RUN pnpm --filter @applyforus/types build || true && \
 WORKDIR /app/services/payment-service
 RUN pnpm run build
 
-FROM node:20-alpine AS production
+FROM node:20-alpine@sha256:c13b26e7e602ef2f1074aef304ce6e9b7dd284c419b35d89fcf3cc8e44a8def9 AS production
 RUN apk add --no-cache dumb-init curl
 RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001
 WORKDIR /app
@@ -34,13 +34,13 @@ COPY --from=builder --chown=nodejs:nodejs /app/services/payment-service/package.
 
 USER nodejs
 ENV NODE_ENV=production
-ENV PORT=8009
-EXPOSE 8009
+ENV PORT=8088
+EXPOSE 8088
 
 WORKDIR /app/services/payment-service
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-    CMD curl -f http://localhost:8009/health || exit 1
+    CMD curl -f http://localhost:8088/health || exit 1
 
 ENTRYPOINT ["dumb-init", "--"]
 CMD ["node", "dist/main.js"]

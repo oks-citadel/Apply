@@ -71,8 +71,8 @@ resource "azurerm_cdn_frontdoor_origin_group" "main" {
       "additional_latency_in_milliseconds",
       50
     )
-    sample_size                        = lookup(each.value.load_balancing, "sample_size", 4)
-    successful_samples_required        = lookup(each.value.load_balancing, "successful_samples_required", 3)
+    sample_size                 = lookup(each.value.load_balancing, "sample_size", 4)
+    successful_samples_required = lookup(each.value.load_balancing, "successful_samples_required", 3)
   }
 }
 
@@ -113,8 +113,8 @@ resource "azurerm_cdn_frontdoor_custom_domain" "main" {
   host_name                = each.value.host_name
 
   tls {
-    certificate_type    = lookup(each.value.tls, "certificate_type", "ManagedCertificate")
-    minimum_tls_version = lookup(each.value.tls, "minimum_tls_version", "TLS12")
+    certificate_type        = lookup(each.value.tls, "certificate_type", "ManagedCertificate")
+    minimum_tls_version     = lookup(each.value.tls, "minimum_tls_version", "TLS12")
     cdn_frontdoor_secret_id = lookup(each.value.tls, "certificate_type", "ManagedCertificate") == "CustomerCertificate" ? lookup(each.value.tls, "cdn_frontdoor_secret_id", null) : null
   }
 }
@@ -150,7 +150,7 @@ resource "azurerm_cdn_frontdoor_route" "main" {
       query_string_caching_behavior = lookup(cache.value, "query_string_caching_behavior", "IgnoreQueryString")
       query_strings                 = lookup(cache.value, "query_strings", null)
       compression_enabled           = lookup(cache.value, "compression_enabled", true)
-      content_types_to_compress     = lookup(cache.value, "content_types_to_compress", [
+      content_types_to_compress = lookup(cache.value, "content_types_to_compress", [
         "application/eot",
         "application/font",
         "application/font-sfnt",

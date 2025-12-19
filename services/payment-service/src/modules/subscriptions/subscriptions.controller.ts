@@ -74,10 +74,7 @@ export class SubscriptionsController {
   @Post('user/:userId/check-feature')
   @ApiOperation({ summary: 'Check if user has access to a feature' })
   @ApiResponse({ status: 200, description: 'Feature access checked' })
-  async checkFeatureAccess(
-    @Param('userId') userId: string,
-    @Body('feature') feature: string,
-  ) {
+  async checkFeatureAccess(@Param('userId') userId: string, @Body('feature') feature: string) {
     const hasAccess = await this.subscriptionsService.checkFeatureAccess(userId, feature);
     return { hasAccess };
   }
@@ -90,11 +87,7 @@ export class SubscriptionsController {
     @Body('usageType') usageType: string,
     @Body('currentUsage') currentUsage: number,
   ) {
-    return await this.subscriptionsService.checkUsageLimits(
-      userId,
-      usageType,
-      currentUsage,
-    );
+    return await this.subscriptionsService.checkUsageLimits(userId, usageType, currentUsage);
   }
 
   @Post('checkout-session')
@@ -103,10 +96,7 @@ export class SubscriptionsController {
   @ApiResponse({ status: 400, description: 'Bad request' })
   async createCheckoutSession(@Body() dto: CreateCheckoutSessionDto) {
     // Get or create Stripe customer
-    const customer = await this.stripeService.getOrCreateCustomer(
-      dto.userEmail,
-      dto.userId,
-    );
+    const customer = await this.stripeService.getOrCreateCustomer(dto.userEmail, dto.userId);
 
     // Create checkout session
     const session = await this.stripeService.createCheckoutSession(
@@ -131,10 +121,7 @@ export class SubscriptionsController {
   @ApiOperation({ summary: 'Create a Stripe billing portal session' })
   @ApiResponse({ status: 201, description: 'Billing portal session created' })
   @ApiResponse({ status: 404, description: 'Subscription not found' })
-  async createBillingPortalSession(
-    @Param('id') id: string,
-    @Body('returnUrl') returnUrl: string,
-  ) {
+  async createBillingPortalSession(@Param('id') id: string, @Body('returnUrl') returnUrl: string) {
     const subscription = await this.subscriptionsService.findOne(id);
 
     if (!subscription.stripeCustomerId) {
@@ -163,10 +150,7 @@ export class SubscriptionsController {
   @ApiOperation({ summary: 'Update subscription' })
   @ApiResponse({ status: 200, description: 'Subscription updated successfully' })
   @ApiResponse({ status: 404, description: 'Subscription not found' })
-  update(
-    @Param('id') id: string,
-    @Body() updateSubscriptionDto: UpdateSubscriptionDto,
-  ) {
+  update(@Param('id') id: string, @Body() updateSubscriptionDto: UpdateSubscriptionDto) {
     return this.subscriptionsService.update(id, updateSubscriptionDto);
   }
 
@@ -175,18 +159,12 @@ export class SubscriptionsController {
   @ApiOperation({ summary: 'Cancel subscription' })
   @ApiResponse({ status: 200, description: 'Subscription canceled successfully' })
   @ApiResponse({ status: 404, description: 'Subscription not found' })
-  async cancel(
-    @Param('id') id: string,
-    @Body('immediately') immediately: boolean = false,
-  ) {
+  async cancel(@Param('id') id: string, @Body('immediately') immediately: boolean = false) {
     const subscription = await this.subscriptionsService.findOne(id);
 
     // Cancel in Stripe if it has a Stripe subscription ID
     if (subscription.stripeSubscriptionId) {
-      await this.stripeService.cancelSubscription(
-        subscription.stripeSubscriptionId,
-        immediately,
-      );
+      await this.stripeService.cancelSubscription(subscription.stripeSubscriptionId, immediately);
     }
 
     // Cancel in our database

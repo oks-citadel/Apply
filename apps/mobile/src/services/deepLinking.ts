@@ -4,7 +4,7 @@ import * as WebBrowser from 'expo-web-browser';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Storage key for initial URL
-const INITIAL_URL_KEY = '@jobpilot_initial_url';
+const INITIAL_URL_KEY = '@applyforus_initial_url';
 
 /**
  * Deep link route mapping
@@ -80,7 +80,7 @@ export class DeepLinkingService {
    */
   public async initialize(
     navigationCallback?: (link: ParsedDeepLink) => void
-  ): Promise<void> {
+  ): Promise<() => void> {
     this.navigationCallback = navigationCallback;
 
     // Get initial URL if app was opened via deep link

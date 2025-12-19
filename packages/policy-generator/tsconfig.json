@@ -9,7 +9,12 @@
     "module": "commonjs",
     "moduleResolution": "node",
     "esModuleInterop": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "strict": false,
+    "noImplicitThis": false,
+    "strictNullChecks": false,
+    "strictPropertyInitialization": false,
+    "noUnusedLocals": false
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "**/*.test.ts"]

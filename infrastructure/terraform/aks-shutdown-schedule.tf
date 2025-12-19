@@ -208,9 +208,9 @@ resource "azurerm_automation_schedule" "stop_aks_weeknight" {
   timezone                = "UTC"
 
   # Stop at 8 PM UTC Monday-Friday
-  start_time              = timeadd(timestamp(), "24h")
-  description             = "Stop AKS node pools at 8 PM UTC on weeknights"
-  week_days               = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
+  start_time  = timeadd(timestamp(), "24h")
+  description = "Stop AKS node pools at 8 PM UTC on weeknights"
+  week_days   = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
 
   lifecycle {
     ignore_changes = [start_time]
@@ -244,9 +244,9 @@ resource "azurerm_automation_schedule" "start_aks_morning" {
   timezone                = "UTC"
 
   # Start at 6 AM UTC Monday-Friday
-  start_time              = timeadd(timestamp(), "24h")
-  description             = "Start AKS node pools at 6 AM UTC on weekdays"
-  week_days               = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
+  start_time  = timeadd(timestamp(), "24h")
+  description = "Start AKS node pools at 6 AM UTC on weekdays"
+  week_days   = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
 
   lifecycle {
     ignore_changes = [start_time]
@@ -282,9 +282,9 @@ resource "azurerm_automation_schedule" "stop_aks_weekend" {
   timezone                = "UTC"
 
   # Stop Friday 8 PM UTC
-  start_time              = timeadd(timestamp(), "24h")
-  description             = "Stop AKS node pools for the weekend"
-  week_days               = ["Friday"]
+  start_time  = timeadd(timestamp(), "24h")
+  description = "Stop AKS node pools for the weekend"
+  week_days   = ["Friday"]
 
   lifecycle {
     ignore_changes = [start_time]
@@ -316,9 +316,9 @@ output "aks_automation_account_id" {
 output "aks_shutdown_schedules" {
   description = "AKS shutdown schedule configuration"
   value = var.enable_aks && var.environment != "prod" ? {
-    stop_weeknight = "8 PM UTC Monday-Friday"
-    start_morning  = "6 AM UTC Monday-Friday"
-    stop_weekend   = var.environment == "dev" ? "8 PM UTC Friday" : "N/A"
+    stop_weeknight    = "8 PM UTC Monday-Friday"
+    start_morning     = "6 AM UTC Monday-Friday"
+    stop_weekend      = var.environment == "dev" ? "8 PM UTC Friday" : "N/A"
     estimated_savings = var.environment == "dev" ? "~$400/month" : "~$200/month"
   } : null
 }

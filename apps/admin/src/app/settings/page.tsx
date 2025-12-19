@@ -55,7 +55,7 @@ export default function SettingsPage() {
     defaultValues: {
       siteName: 'JobPilot Admin',
       siteUrl: 'https://admin.jobpilot.com',
-      supportEmail: 'support@jobpilot.com',
+      supportEmail: 'support@applyforus.com',
       timezone: 'America/New_York',
       language: 'en',
     },

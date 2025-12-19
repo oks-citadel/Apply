@@ -16,9 +16,9 @@ import { useAuthStore } from '../../store/authStore';
 import { theme } from '../../theme';
 import { AuthStackParamList } from '../../navigation/types';
 
-type LoginScreenProps = NativeStackScreenProps<AuthStackParamList, 'Login'>;
+export type LoginScreenProps = NativeStackScreenProps<AuthStackParamList, 'Login'>;
 
-export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
+export const LoginScreen = ({ navigation }: LoginScreenProps) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});

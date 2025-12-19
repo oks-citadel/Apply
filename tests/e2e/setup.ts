@@ -9,14 +9,14 @@ import { setupAllMocks } from "./mocks/api-mocks";
 
 // Test configuration
 export const config = {
-  authServiceUrl: "http://localhost:3001",
-  userServiceUrl: "http://localhost:8002",
-  resumeServiceUrl: "http://localhost:8003",
-  jobServiceUrl: "http://localhost:8004",
-  autoApplyServiceUrl: "http://localhost:8005",
-  analyticsServiceUrl: "http://localhost:8006",
-  notificationServiceUrl: "http://localhost:8007",
-  aiServiceUrl: "http://localhost:8000",
+  authServiceUrl: "http://localhost:8081",
+  userServiceUrl: "http://localhost:8082",
+  resumeServiceUrl: "http://localhost:8083",
+  jobServiceUrl: "http://localhost:8084",
+  autoApplyServiceUrl: "http://localhost:8085",
+  analyticsServiceUrl: "http://localhost:8086",
+  notificationServiceUrl: "http://localhost:8087",
+  aiServiceUrl: "http://localhost:8090",
   testEmail: "e2e-test@example.com",
   testPassword: "TestPassword123!",
 };

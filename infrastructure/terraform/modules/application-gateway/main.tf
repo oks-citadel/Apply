@@ -44,7 +44,7 @@ resource "azurerm_user_assigned_identity" "appgw" {
 
 # Local variables for configuration
 locals {
-  gateway_ip_configuration_name = "${var.project_name}-appgw-ip-config"
+  gateway_ip_configuration_name  = "${var.project_name}-appgw-ip-config"
   frontend_ip_configuration_name = "${var.project_name}-appgw-feip"
   frontend_port_name_http        = "${var.project_name}-appgw-feport-http"
   frontend_port_name_https       = "${var.project_name}-appgw-feport-https"
@@ -60,12 +60,12 @@ locals {
   # Backend HTTP settings
   backend_http_settings = {
     for key, config in var.backend_http_settings : key => merge({
-      name                  = "${var.project_name}-appgw-be-htst-${key}"
-      cookie_based_affinity = "Disabled"
-      port                  = 443
-      protocol              = "Https"
-      request_timeout       = 60
-      probe_name            = "${var.project_name}-appgw-probe-${key}"
+      name                                = "${var.project_name}-appgw-be-htst-${key}"
+      cookie_based_affinity               = "Disabled"
+      port                                = 443
+      protocol                            = "Https"
+      request_timeout                     = 60
+      probe_name                          = "${var.project_name}-appgw-probe-${key}"
       pick_host_name_from_backend_address = true
     }, config)
   }

@@ -4,92 +4,92 @@
 locals {
   # Common app settings for all services
   common_app_settings = {
-    ENVIRONMENT                      = var.environment
-    APPINSIGHTS_INSTRUMENTATIONKEY   = var.app_insights_key
+    ENVIRONMENT                           = var.environment
+    APPINSIGHTS_INSTRUMENTATIONKEY        = var.app_insights_key
     APPLICATIONINSIGHTS_CONNECTION_STRING = var.app_insights_connection_string
-    DOCKER_REGISTRY_SERVER_URL       = var.container_registry_url
-    WEBSITES_ENABLE_APP_SERVICE_STORAGE = "false"
-    WEBSITES_PORT                    = "8080"
+    DOCKER_REGISTRY_SERVER_URL            = var.container_registry_url
+    WEBSITES_ENABLE_APP_SERVICE_STORAGE   = "false"
+    WEBSITES_PORT                         = "8080"
   }
 
   # Service-specific configurations
   services = {
     web-app = {
-      stack_type = "node"
+      stack_type    = "node"
       stack_version = "20-lts"
-      health_check = "/health"
-      cors_origins = ["*"]
-      app_settings = {}
+      health_check  = "/health"
+      cors_origins  = ["*"]
+      app_settings  = {}
     }
     auth-service = {
-      stack_type = "node"
+      stack_type    = "node"
       stack_version = "20-lts"
-      health_check = "/api/health"
-      cors_origins = ["*"]
+      health_check  = "/api/health"
+      cors_origins  = ["*"]
       app_settings = {
-        JWT_SECRET                = "@Microsoft.KeyVault(VaultName=${var.key_vault_name};SecretName=jwt-secret)"
-        JWT_EXPIRATION            = "24h"
-        REFRESH_TOKEN_EXPIRATION  = "7d"
+        JWT_SECRET               = "@Microsoft.KeyVault(VaultName=${var.key_vault_name};SecretName=jwt-secret)"
+        JWT_EXPIRATION           = "24h"
+        REFRESH_TOKEN_EXPIRATION = "7d"
       }
     }
     user-service = {
-      stack_type = "node"
+      stack_type    = "node"
       stack_version = "20-lts"
-      health_check = "/api/health"
-      cors_origins = ["*"]
+      health_check  = "/api/health"
+      cors_origins  = ["*"]
       app_settings = {
         DATABASE_URL = "@Microsoft.KeyVault(VaultName=${var.key_vault_name};SecretName=database-url)"
       }
     }
     job-service = {
-      stack_type = "node"
+      stack_type    = "node"
       stack_version = "20-lts"
-      health_check = "/api/health"
-      cors_origins = ["*"]
+      health_check  = "/api/health"
+      cors_origins  = ["*"]
       app_settings = {
-        DATABASE_URL = "@Microsoft.KeyVault(VaultName=${var.key_vault_name};SecretName=database-url)"
+        DATABASE_URL   = "@Microsoft.KeyVault(VaultName=${var.key_vault_name};SecretName=database-url)"
         OPENAI_API_KEY = "@Microsoft.KeyVault(VaultName=${var.key_vault_name};SecretName=openai-api-key)"
       }
     }
     resume-service = {
-      stack_type = "node"
+      stack_type    = "node"
       stack_version = "20-lts"
-      health_check = "/api/health"
-      cors_origins = ["*"]
+      health_check  = "/api/health"
+      cors_origins  = ["*"]
       app_settings = {
-        DATABASE_URL = "@Microsoft.KeyVault(VaultName=${var.key_vault_name};SecretName=database-url)"
+        DATABASE_URL         = "@Microsoft.KeyVault(VaultName=${var.key_vault_name};SecretName=database-url)"
         STORAGE_ACCOUNT_NAME = "@Microsoft.KeyVault(VaultName=${var.key_vault_name};SecretName=storage-account-name)"
-        STORAGE_ACCOUNT_KEY = "@Microsoft.KeyVault(VaultName=${var.key_vault_name};SecretName=storage-account-key)"
+        STORAGE_ACCOUNT_KEY  = "@Microsoft.KeyVault(VaultName=${var.key_vault_name};SecretName=storage-account-key)"
       }
     }
     analytics-service = {
-      stack_type = "node"
+      stack_type    = "node"
       stack_version = "20-lts"
-      health_check = "/api/health"
-      cors_origins = ["*"]
+      health_check  = "/api/health"
+      cors_origins  = ["*"]
       app_settings = {
         DATABASE_URL = "@Microsoft.KeyVault(VaultName=${var.key_vault_name};SecretName=database-url)"
       }
     }
     auto-apply-service = {
-      stack_type = "node"
+      stack_type    = "node"
       stack_version = "20-lts"
-      health_check = "/api/health"
-      cors_origins = ["*"]
+      health_check  = "/api/health"
+      cors_origins  = ["*"]
       app_settings = {
-        DATABASE_URL = "@Microsoft.KeyVault(VaultName=${var.key_vault_name};SecretName=database-url)"
+        DATABASE_URL   = "@Microsoft.KeyVault(VaultName=${var.key_vault_name};SecretName=database-url)"
         OPENAI_API_KEY = "@Microsoft.KeyVault(VaultName=${var.key_vault_name};SecretName=openai-api-key)"
       }
     }
     ai-service = {
-      stack_type = "python"
+      stack_type    = "python"
       stack_version = "3.11"
-      health_check = "/health"
-      cors_origins = ["*"]
+      health_check  = "/health"
+      cors_origins  = ["*"]
       app_settings = {
-        OPENAI_API_KEY = "@Microsoft.KeyVault(VaultName=${var.key_vault_name};SecretName=openai-api-key)"
+        OPENAI_API_KEY        = "@Microsoft.KeyVault(VaultName=${var.key_vault_name};SecretName=openai-api-key)"
         AZURE_OPENAI_ENDPOINT = "@Microsoft.KeyVault(VaultName=${var.key_vault_name};SecretName=azure-openai-endpoint)"
-        AZURE_OPENAI_API_KEY = "@Microsoft.KeyVault(VaultName=${var.key_vault_name};SecretName=azure-openai-api-key)"
+        AZURE_OPENAI_API_KEY  = "@Microsoft.KeyVault(VaultName=${var.key_vault_name};SecretName=azure-openai-api-key)"
       }
     }
   }
@@ -116,8 +116,8 @@ resource "azurerm_linux_web_app" "web_app" {
       support_credentials = false
     }
 
-    ftps_state = "FtpsOnly"
-    http2_enabled = true
+    ftps_state          = "FtpsOnly"
+    http2_enabled       = true
     minimum_tls_version = "1.2"
   }
 
@@ -125,9 +125,9 @@ resource "azurerm_linux_web_app" "web_app" {
     local.common_app_settings,
     local.services["web-app"].app_settings,
     {
-      SERVICE_NAME = "web-app"
+      SERVICE_NAME                    = "web-app"
       DOCKER_REGISTRY_SERVER_USERNAME = var.container_registry_name
-      API_BASE_URL = "https://${var.project_name}-auth-${var.environment}.azurewebsites.net"
+      API_BASE_URL                    = "https://${var.project_name}-auth-${var.environment}.azurewebsites.net"
     }
   )
 
@@ -182,8 +182,8 @@ resource "azurerm_linux_web_app" "auth_service" {
       support_credentials = false
     }
 
-    ftps_state = "FtpsOnly"
-    http2_enabled = true
+    ftps_state          = "FtpsOnly"
+    http2_enabled       = true
     minimum_tls_version = "1.2"
   }
 
@@ -191,7 +191,7 @@ resource "azurerm_linux_web_app" "auth_service" {
     local.common_app_settings,
     local.services["auth-service"].app_settings,
     {
-      SERVICE_NAME = "auth-service"
+      SERVICE_NAME                    = "auth-service"
       DOCKER_REGISTRY_SERVER_USERNAME = var.container_registry_name
     }
   )
@@ -247,8 +247,8 @@ resource "azurerm_linux_web_app" "user_service" {
       support_credentials = false
     }
 
-    ftps_state = "FtpsOnly"
-    http2_enabled = true
+    ftps_state          = "FtpsOnly"
+    http2_enabled       = true
     minimum_tls_version = "1.2"
   }
 
@@ -256,7 +256,7 @@ resource "azurerm_linux_web_app" "user_service" {
     local.common_app_settings,
     local.services["user-service"].app_settings,
     {
-      SERVICE_NAME = "user-service"
+      SERVICE_NAME                    = "user-service"
       DOCKER_REGISTRY_SERVER_USERNAME = var.container_registry_name
     }
   )
@@ -312,8 +312,8 @@ resource "azurerm_linux_web_app" "job_service" {
       support_credentials = false
     }
 
-    ftps_state = "FtpsOnly"
-    http2_enabled = true
+    ftps_state          = "FtpsOnly"
+    http2_enabled       = true
     minimum_tls_version = "1.2"
   }
 
@@ -321,7 +321,7 @@ resource "azurerm_linux_web_app" "job_service" {
     local.common_app_settings,
     local.services["job-service"].app_settings,
     {
-      SERVICE_NAME = "job-service"
+      SERVICE_NAME                    = "job-service"
       DOCKER_REGISTRY_SERVER_USERNAME = var.container_registry_name
     }
   )
@@ -377,8 +377,8 @@ resource "azurerm_linux_web_app" "resume_service" {
       support_credentials = false
     }
 
-    ftps_state = "FtpsOnly"
-    http2_enabled = true
+    ftps_state          = "FtpsOnly"
+    http2_enabled       = true
     minimum_tls_version = "1.2"
   }
 
@@ -386,7 +386,7 @@ resource "azurerm_linux_web_app" "resume_service" {
     local.common_app_settings,
     local.services["resume-service"].app_settings,
     {
-      SERVICE_NAME = "resume-service"
+      SERVICE_NAME                    = "resume-service"
       DOCKER_REGISTRY_SERVER_USERNAME = var.container_registry_name
     }
   )
@@ -442,8 +442,8 @@ resource "azurerm_linux_web_app" "analytics_service" {
       support_credentials = false
     }
 
-    ftps_state = "FtpsOnly"
-    http2_enabled = true
+    ftps_state          = "FtpsOnly"
+    http2_enabled       = true
     minimum_tls_version = "1.2"
   }
 
@@ -451,7 +451,7 @@ resource "azurerm_linux_web_app" "analytics_service" {
     local.common_app_settings,
     local.services["analytics-service"].app_settings,
     {
-      SERVICE_NAME = "analytics-service"
+      SERVICE_NAME                    = "analytics-service"
       DOCKER_REGISTRY_SERVER_USERNAME = var.container_registry_name
     }
   )
@@ -507,8 +507,8 @@ resource "azurerm_linux_web_app" "auto_apply_service" {
       support_credentials = false
     }
 
-    ftps_state = "FtpsOnly"
-    http2_enabled = true
+    ftps_state          = "FtpsOnly"
+    http2_enabled       = true
     minimum_tls_version = "1.2"
   }
 
@@ -516,7 +516,7 @@ resource "azurerm_linux_web_app" "auto_apply_service" {
     local.common_app_settings,
     local.services["auto-apply-service"].app_settings,
     {
-      SERVICE_NAME = "auto-apply-service"
+      SERVICE_NAME                    = "auto-apply-service"
       DOCKER_REGISTRY_SERVER_USERNAME = var.container_registry_name
     }
   )
@@ -572,8 +572,8 @@ resource "azurerm_linux_web_app" "ai_service" {
       support_credentials = false
     }
 
-    ftps_state = "FtpsOnly"
-    http2_enabled = true
+    ftps_state          = "FtpsOnly"
+    http2_enabled       = true
     minimum_tls_version = "1.2"
   }
 
@@ -581,9 +581,9 @@ resource "azurerm_linux_web_app" "ai_service" {
     local.common_app_settings,
     local.services["ai-service"].app_settings,
     {
-      SERVICE_NAME = "ai-service"
+      SERVICE_NAME                    = "ai-service"
       DOCKER_REGISTRY_SERVER_USERNAME = var.container_registry_name
-      PYTHONUNBUFFERED = "1"
+      PYTHONUNBUFFERED                = "1"
     }
   )
 

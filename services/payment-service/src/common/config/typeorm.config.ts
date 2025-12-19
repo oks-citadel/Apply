@@ -5,9 +5,7 @@ import { join } from 'path';
 import { Subscription } from '../../modules/subscriptions/entities/subscription.entity';
 import { Invoice } from '../../modules/invoices/entities/invoice.entity';
 
-export const typeOrmConfig = (
-  configService: ConfigService,
-): TypeOrmModuleOptions => ({
+export const typeOrmConfig = (configService: ConfigService): TypeOrmModuleOptions => ({
   type: 'postgres',
   host: configService.get<string>('DB_HOST', 'localhost'),
   port: configService.get<number>('DB_PORT', 5432),
@@ -17,17 +15,18 @@ export const typeOrmConfig = (
   entities: [Subscription, Invoice],
   // Migrations configuration - run on startup in production
   migrations: [join(__dirname, '../../migrations/*{.ts,.js}')],
-  migrationsRun: configService.get<string>('NODE_ENV') === 'production' ||
+  migrationsRun:
+    configService.get<string>('NODE_ENV') === 'production' ||
     configService.get<string>('RUN_MIGRATIONS') === 'true',
   migrationsTableName: 'typeorm_migrations',
   // SECURITY: Never use synchronize in production
-  synchronize: configService.get<string>('NODE_ENV') === 'production'
-    ? false
-    : configService.get<boolean>('DB_SYNCHRONIZE', false),
+  synchronize:
+    configService.get<string>('NODE_ENV') === 'production'
+      ? false
+      : configService.get<boolean>('DB_SYNCHRONIZE', false),
   logging: configService.get<boolean>('DB_LOGGING', false),
-  ssl: configService.get<string>('NODE_ENV') === 'production'
-    ? { rejectUnauthorized: false }
-    : false,
+  ssl:
+    configService.get<string>('NODE_ENV') === 'production' ? { rejectUnauthorized: false } : false,
   extra: {
     max: 20,
     min: 5,

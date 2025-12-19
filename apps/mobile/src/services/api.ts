@@ -28,7 +28,7 @@ const apiClient: AxiosInstance = axios.create({
 // Request interceptor - Add auth token
 apiClient.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
-    const token = await AsyncStorage.getItem('@jobpilot/access_token');
+    const token = await AsyncStorage.getItem('@applyforus/access_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -52,7 +52,7 @@ apiClient.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        const refreshToken = await AsyncStorage.getItem('@jobpilot/refresh_token');
+        const refreshToken = await AsyncStorage.getItem('@applyforus/refresh_token');
         if (!refreshToken) {
           throw new Error('No refresh token available');
         }
@@ -63,7 +63,7 @@ apiClient.interceptors.response.use(
         });
 
         const { accessToken } = response.data;
-        await AsyncStorage.setItem('@jobpilot/access_token', accessToken);
+        await AsyncStorage.setItem('@applyforus/access_token', accessToken);
 
         // Retry the original request with new token
         originalRequest.headers.Authorization = `Bearer ${accessToken}`;
@@ -71,9 +71,9 @@ apiClient.interceptors.response.use(
       } catch (refreshError) {
         // If refresh fails, clear storage and redirect to login
         await AsyncStorage.multiRemove([
-          '@jobpilot/access_token',
-          '@jobpilot/refresh_token',
-          '@jobpilot/user',
+          '@applyforus/access_token',
+          '@applyforus/refresh_token',
+          '@applyforus/user',
         ]);
         return Promise.reject(refreshError);
       }

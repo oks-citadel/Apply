@@ -31,7 +31,7 @@ spec:
         pod-security.kubernetes.io/warn: restricted
       annotations:
         prometheus.io/scrape: "true"
-        prometheus.io/port: "8009"
+        prometheus.io/port: "8088"
         prometheus.io/path: "/metrics"
         # Pod Security Standards - Restricted profile
         seccomp.security.alpha.kubernetes.io/pod: runtime/default
@@ -48,12 +48,12 @@ spec:
         image: ${ACR_LOGIN_SERVER}/payment-service:${VERSION:-v1.0.0}
         imagePullPolicy: IfNotPresent
         ports:
-        - containerPort: 8009
+        - containerPort: 8088
           name: http
           protocol: TCP
         env:
         - name: PORT
-          value: "8009"
+          value: "8088"
         - name: SERVICE_NAME
           value: "payment-service"
         envFrom:
@@ -71,7 +71,7 @@ spec:
         livenessProbe:
           httpGet:
             path: /health/live
-            port: 8009
+            port: 8088
             scheme: HTTP
           initialDelaySeconds: 30
           periodSeconds: 10
@@ -81,7 +81,7 @@ spec:
         readinessProbe:
           httpGet:
             path: /health/ready
-            port: 8009
+            port: 8088
             scheme: HTTP
           initialDelaySeconds: 10
           periodSeconds: 5
@@ -132,8 +132,8 @@ spec:
   selector:
     app: payment-service
   ports:
-  - port: 8009
-    targetPort: 8009
+  - port: 8088
+    targetPort: 8088
     protocol: TCP
     name: http
   sessionAffinity: None

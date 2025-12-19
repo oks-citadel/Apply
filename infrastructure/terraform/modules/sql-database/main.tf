@@ -118,9 +118,9 @@ resource "azurerm_private_endpoint" "sql" {
 resource "azurerm_mssql_server_security_alert_policy" "main" {
   count = var.enable_defender ? 1 : 0
 
-  resource_group_name = var.resource_group_name
-  server_name         = azurerm_mssql_server.main.name
-  state               = "Enabled"
+  resource_group_name  = var.resource_group_name
+  server_name          = azurerm_mssql_server.main.name
+  state                = "Enabled"
   email_account_admins = true
   email_addresses      = var.security_alert_emails
   retention_days       = 30

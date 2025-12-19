@@ -246,9 +246,7 @@ export class PaystackController {
       required: ['accountNumber', 'bankCode'],
     },
   })
-  async resolveAccount(
-    @Body() body: { accountNumber: string; bankCode: string },
-  ) {
+  async resolveAccount(@Body() body: { accountNumber: string; bankCode: string }) {
     const result = await this.paystackService.resolveAccountNumber(
       body.accountNumber,
       body.bankCode,
@@ -300,9 +298,7 @@ export class PaystackController {
       required: ['customerEmail'],
     },
   })
-  async createDedicatedAccount(
-    @Body() body: { customerEmail: string; preferredBank?: string },
-  ) {
+  async createDedicatedAccount(@Body() body: { customerEmail: string; preferredBank?: string }) {
     const result = await this.paystackService.createDedicatedVirtualAccount(
       body.customerEmail,
       body.preferredBank,
@@ -590,8 +586,10 @@ export class PaystackController {
    */
   private mapPlanToTier(planName: string): SubscriptionTier {
     const name = planName.toLowerCase();
-    if (name.includes('executive') || name.includes('enterprise')) return SubscriptionTier.EXECUTIVE_ELITE;
-    if (name.includes('advanced') || name.includes('business')) return SubscriptionTier.ADVANCED_CAREER;
+    if (name.includes('executive') || name.includes('enterprise'))
+      return SubscriptionTier.EXECUTIVE_ELITE;
+    if (name.includes('advanced') || name.includes('business'))
+      return SubscriptionTier.ADVANCED_CAREER;
     if (name.includes('professional') || name.includes('pro')) return SubscriptionTier.PROFESSIONAL;
     if (name.includes('basic')) return SubscriptionTier.BASIC;
     if (name.includes('starter')) return SubscriptionTier.STARTER;

@@ -289,3 +289,43 @@ variable "diagnostic_retention_days" {
     error_message = "Diagnostic retention days must be between 0 and 365"
   }
 }
+
+# ============================================================================
+# Network Security and Private Endpoint Configuration
+# ============================================================================
+
+variable "public_network_access_enabled" {
+  description = "Enable public network access to PostgreSQL server. Set to false for production environments with private endpoints."
+  type        = bool
+  default     = true
+}
+
+variable "enable_private_endpoint" {
+  description = "Enable private endpoint for PostgreSQL server. Recommended for staging and production environments."
+  type        = bool
+  default     = false
+}
+
+variable "private_endpoint_subnet_id" {
+  description = "Subnet ID where the private endpoint will be created. Required if enable_private_endpoint is true."
+  type        = string
+  default     = null
+}
+
+variable "private_endpoint_vnet_id" {
+  description = "Virtual Network ID for private DNS zone link. Required if enable_private_endpoint is true."
+  type        = string
+  default     = null
+}
+
+variable "create_private_dns_zone" {
+  description = "Create a new private DNS zone for PostgreSQL. Set to false if using an existing zone."
+  type        = bool
+  default     = true
+}
+
+variable "existing_private_dns_zone_id" {
+  description = "Existing private DNS zone ID to use instead of creating a new one. Only used if create_private_dns_zone is false."
+  type        = string
+  default     = null
+}

@@ -138,8 +138,8 @@ async function bootstrap() {
       )
       .addTag('auth', 'Authentication endpoints')
       .addTag('users', 'User management endpoints')
-      .addServer(`http://localhost:${configService.get('PORT', 3001)}`, 'Local server')
-      .addServer(configService.get('API_BASE_URL', 'http://localhost:3001'), 'API server')
+      .addServer(`http://localhost:${configService.get('PORT', 8081)}`, 'Local server')
+      .addServer(configService.get('API_BASE_URL', 'http://localhost:8081'), 'API server')
       .build();
 
     const document = SwaggerModule.createDocument(app, config);
@@ -149,13 +149,13 @@ async function bootstrap() {
       },
     });
 
-    logger.log(`Swagger documentation available at: http://localhost:${configService.get('PORT', 3001)}/docs`);
+    logger.log(`Swagger documentation available at: http://localhost:${configService.get('PORT', 8081)}/docs`);
   }
 
   // Graceful shutdown handling
   app.enableShutdownHooks();
 
-  const port = configService.get('PORT', 3001);
+  const port = configService.get('PORT', 8081);
   await app.listen(port);
 
   logger.log(`Auth Service is running on: http://localhost:${port}`);

@@ -1,6 +1,6 @@
 import { createLogger, format, transports, Logger as WinstonLogger } from 'winston';
 import { v4 as uuidv4 } from 'uuid';
-import * as pino from 'pino';
+import pino from 'pino';
 
 export enum LogLevel {
   ERROR = 'error',

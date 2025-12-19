@@ -32,14 +32,14 @@ async function bootstrap() {
   });
 
   const configService = app.get(ConfigService);
-  const port = configService.get<number>('PORT', 3000);
+  const port = configService.get<number>('PORT', 8088);
   const serviceName = configService.get<string>('SERVICE_NAME', 'payment-service');
 
   // CORS configuration - secure origins only
   // TODO: SECURITY - Never use '*' for CORS in production. Configure allowed origins via CORS_ORIGINS env variable.
   const corsOrigins = configService.get<string>('CORS_ORIGINS', '');
   const allowedOrigins = corsOrigins
-    ? corsOrigins.split(',').map(o => o.trim())
+    ? corsOrigins.split(',').map((o) => o.trim())
     : [
         'https://applyforus.com',
         'https://dev.applyforus.com',
@@ -63,7 +63,13 @@ async function bootstrap() {
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-CSRF-Token', 'Stripe-Signature'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'X-Requested-With',
+      'X-CSRF-Token',
+      'Stripe-Signature',
+    ],
     exposedHeaders: ['X-RateLimit-Limit', 'X-RateLimit-Remaining'],
   });
 
@@ -85,9 +91,7 @@ async function bootstrap() {
   // Swagger documentation
   const config = new DocumentBuilder()
     .setTitle('Payment Service API')
-    .setDescription(
-      'Payment and subscription management service with Stripe integration',
-    )
+    .setDescription('Payment and subscription management service with Stripe integration')
     .setVersion('1.0')
     .addTag('subscriptions', 'Subscription management endpoints')
     .addTag('invoices', 'Invoice management endpoints')

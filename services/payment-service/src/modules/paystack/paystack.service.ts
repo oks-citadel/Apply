@@ -2,7 +2,10 @@ import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios, { AxiosInstance } from 'axios';
 import * as crypto from 'crypto';
-import { SubscriptionTier, SUBSCRIPTION_TIER_PRICES } from '../../common/enums/subscription-tier.enum';
+import {
+  SubscriptionTier,
+  SUBSCRIPTION_TIER_PRICES,
+} from '../../common/enums/subscription-tier.enum';
 
 export interface PaystackCustomer {
   email: string;
@@ -141,18 +144,12 @@ export class PaystackService {
 
       const price = SUBSCRIPTION_TIER_PRICES[tier][billingPeriod];
 
-      return await this.initializeTransaction(
-        email,
-        price,
-        currency,
-        callbackUrl,
-        {
-          tier,
-          billingPeriod,
-          type: 'subscription',
-          ...metadata,
-        },
-      );
+      return await this.initializeTransaction(email, price, currency, callbackUrl, {
+        tier,
+        billingPeriod,
+        type: 'subscription',
+        ...metadata,
+      });
     } catch (error) {
       this.logger.error(`Failed to initialize subscription: ${error.message}`);
       throw new BadRequestException('Failed to initialize subscription');
@@ -356,7 +353,9 @@ export class PaystackService {
   /**
    * Get customer details
    */
-  async getCustomer(emailOrCode: string): Promise<PaystackCustomer & { authorizations: PaystackCard[] }> {
+  async getCustomer(
+    emailOrCode: string,
+  ): Promise<PaystackCustomer & { authorizations: PaystackCard[] }> {
     try {
       const response = await this.client.get(`/customer/${emailOrCode}`);
 
@@ -539,10 +538,7 @@ export class PaystackService {
     }
 
     try {
-      const hash = crypto
-        .createHmac('sha512', this.secretKey)
-        .update(payload)
-        .digest('hex');
+      const hash = crypto.createHmac('sha512', this.secretKey).update(payload).digest('hex');
 
       return hash === signature;
     } catch (error) {

@@ -23,7 +23,7 @@ export interface FeatureFlagConfig {
   defaultValue: boolean;
 
   // For percentage rollout
-  rolloutPercentage?: number;
+  rolloutPercentage?: number | null;
 
   // For user-specific flags
   enabledUserIds?: string[];
@@ -61,7 +61,7 @@ export interface FeatureFlagServiceOptions {
 export interface AdminFeatureFlagUpdate {
   status?: FeatureFlagStatus;
   defaultValue?: boolean;
-  rolloutPercentage?: number;
+  rolloutPercentage?: number | null;
   enabledUserIds?: string[];
   disabledUserIds?: string[];
   description?: string;

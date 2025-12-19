@@ -31,7 +31,7 @@ spec:
         pod-security.kubernetes.io/warn: restricted
       annotations:
         prometheus.io/scrape: "true"
-        prometheus.io/port: "8002"
+        prometheus.io/port: "8082"
         prometheus.io/path: "/metrics"
         # Pod Security Standards - Restricted profile
         seccomp.security.alpha.kubernetes.io/pod: runtime/default
@@ -48,12 +48,12 @@ spec:
         image: ${ACR_LOGIN_SERVER}/user-service:${VERSION:-v1.0.0}
         imagePullPolicy: IfNotPresent
         ports:
-        - containerPort: 8002
+        - containerPort: 8082
           name: http
           protocol: TCP
         env:
         - name: PORT
-          value: "8002"
+          value: "8082"
         - name: SERVICE_NAME
           value: "user-service"
         envFrom:
@@ -71,7 +71,7 @@ spec:
         livenessProbe:
           httpGet:
             path: /health/live
-            port: 8002
+            port: 8082
             scheme: HTTP
           initialDelaySeconds: 30
           periodSeconds: 10
@@ -81,7 +81,7 @@ spec:
         readinessProbe:
           httpGet:
             path: /health/ready
-            port: 8002
+            port: 8082
             scheme: HTTP
           initialDelaySeconds: 10
           periodSeconds: 5
@@ -132,8 +132,8 @@ spec:
   selector:
     app: user-service
   ports:
-  - port: 8002
-    targetPort: 8002
+  - port: 8082
+    targetPort: 8082
     protocol: TCP
     name: http
   sessionAffinity: None

@@ -1,0 +1,115 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "success": "Success!",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "search": "Search",
+    "filter": "Filter",
+    "sort": "Sort",
+    "refresh": "Refresh",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "submit": "Submit",
+    "confirm": "Confirm",
+    "close": "Close"
+  },
+  "auth": {
+    "login": "Log In",
+    "logout": "Log Out",
+    "register": "Sign Up",
+    "forgotPassword": "Forgot Password?",
+    "resetPassword": "Reset Password",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "rememberMe": "Remember me",
+    "orContinueWith": "Or continue with",
+    "alreadyHaveAccount": "Already have an account?",
+    "dontHaveAccount": "Don't have an account?",
+    "verifyEmail": "Verify your email",
+    "emailVerified": "Email verified successfully"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "welcome": "Welcome back, {name}!",
+    "applicationsThisWeek": "Applications this week",
+    "responseRate": "Response rate",
+    "interviewsScheduled": "Interviews scheduled",
+    "savedJobs": "Saved jobs"
+  },
+  "jobs": {
+    "title": "Jobs",
+    "searchPlaceholder": "Search jobs...",
+    "noJobsFound": "No jobs found",
+    "applied": "Applied",
+    "saved": "Saved",
+    "viewDetails": "View Details",
+    "applyNow": "Apply Now",
+    "saveJob": "Save Job",
+    "unsaveJob": "Unsave Job",
+    "postedOn": "Posted on {date}",
+    "expiresOn": "Expires on {date}",
+    "salary": "Salary",
+    "location": "Location",
+    "remote": "Remote",
+    "hybrid": "Hybrid",
+    "onsite": "On-site",
+    "fullTime": "Full Time",
+    "partTime": "Part Time",
+    "contract": "Contract"
+  },
+  "applications": {
+    "title": "Applications",
+    "status": {
+      "pending": "Pending",
+      "reviewing": "Reviewing",
+      "interviewing": "Interviewing",
+      "offered": "Offered",
+      "rejected": "Rejected",
+      "accepted": "Accepted",
+      "withdrawn": "Withdrawn"
+    },
+    "noApplications": "No applications yet"
+  },
+  "resume": {
+    "title": "Resume",
+    "upload": "Upload Resume",
+    "create": "Create Resume",
+    "optimize": "Optimize Resume",
+    "download": "Download",
+    "preview": "Preview"
+  },
+  "billing": {
+    "title": "Billing",
+    "currentPlan": "Current Plan",
+    "upgrade": "Upgrade",
+    "downgrade": "Downgrade",
+    "cancelSubscription": "Cancel Subscription",
+    "paymentMethod": "Payment Method",
+    "invoices": "Invoices",
+    "plans": {
+      "free": "Free",
+      "starter": "Starter",
+      "basic": "Basic",
+      "professional": "Professional",
+      "advanced": "Advanced Career",
+      "executive": "Executive Elite"
+    }
+  },
+  "errors": {
+    "required": "This field is required",
+    "invalidEmail": "Please enter a valid email address",
+    "passwordTooShort": "Password must be at least 8 characters",
+    "passwordsDoNotMatch": "Passwords do not match",
+    "networkError": "Network error. Please try again.",
+    "unauthorized": "You are not authorized to perform this action",
+    "notFound": "Resource not found",
+    "serverError": "Server error. Please try again later."
+  }
+}

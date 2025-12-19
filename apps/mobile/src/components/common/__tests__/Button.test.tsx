@@ -161,11 +161,11 @@ describe('Button', () => {
   });
 
   it('passes accessibility props', () => {
-    const { getByRole } = render(
+    const { getByLabelText } = render(
       <Button title="Click Me" accessibilityLabel="Submit button" />
     );
 
     // The button should be accessible
-    expect(getByRole('button')).toBeTruthy();
+    expect(getByLabelText('Submit button')).toBeTruthy();
   });
 });

@@ -54,7 +54,10 @@ import { typeOrmConfig } from './common/config/typeorm.config';
           transport: Transport.RMQ,
           options: {
             urls: [configService.get<string>('RABBITMQ_URL', 'amqp://guest:guest@localhost:5672')],
-            queue: configService.get<string>('RABBITMQ_QUEUE_SUBSCRIPTION_EVENTS', 'subscription_events'),
+            queue: configService.get<string>(
+              'RABBITMQ_QUEUE_SUBSCRIPTION_EVENTS',
+              'subscription_events',
+            ),
             queueOptions: {
               durable: true,
             },

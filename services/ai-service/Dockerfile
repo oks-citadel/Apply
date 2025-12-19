@@ -1,6 +1,6 @@
 # Stage 1: Builder - Install dependencies
 # Python 3.11 Slim for AI/ML workloads
-FROM python:3.11-slim AS builder
+FROM python:3.11-slim@sha256:ce81dc539f0aedc9114cae640f8352fad83d37461c24a3615b01f081d0c0f1a7 AS builder
 
 # Set working directory
 WORKDIR /app
@@ -28,7 +28,7 @@ RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
     pip cache purge
 
 # Stage 2: Production - Minimal runtime image
-FROM python:3.11-slim
+FROM python:3.11-slim@sha256:ce81dc539f0aedc9114cae640f8352fad83d37461c24a3615b01f081d0c0f1a7
 
 WORKDIR /app
 
@@ -65,7 +65,7 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONHASHSEED=random \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    PORT=5000 \
+    PORT=8089 \
     # PyTorch optimizations
     OMP_NUM_THREADS=4 \
     MKL_NUM_THREADS=4 \
@@ -74,16 +74,16 @@ ENV PYTHONUNBUFFERED=1 \
     HF_HOME=/app/cache/huggingface
 
 # Expose port
-EXPOSE 5000
+EXPOSE 8089
 
 # Health check with reduced frequency to save resources
 HEALTHCHECK --interval=60s --timeout=10s --start-period=30s --retries=3 \
-    CMD curl -f http://localhost:5000/health || exit 1
+    CMD curl -f http://localhost:8089/health || exit 1
 
 # Use exec form for proper signal handling
 CMD ["uvicorn", "src.main:app", \
      "--host", "0.0.0.0", \
-     "--port", "5000", \
+     "--port", "8089", \
      "--workers", "2", \
      "--loop", "uvloop", \
      "--http", "httptools", \

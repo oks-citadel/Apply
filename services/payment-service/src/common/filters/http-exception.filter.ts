@@ -23,10 +23,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
     if (exception instanceof HttpException) {
       status = exception.getStatus();
       const exceptionResponse = exception.getResponse();
-      message =
-        typeof exceptionResponse === 'string'
-          ? exceptionResponse
-          : exceptionResponse;
+      message = typeof exceptionResponse === 'string' ? exceptionResponse : exceptionResponse;
     } else if (exception instanceof Error) {
       message = exception.message;
     }
@@ -39,10 +36,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
       message,
     };
 
-    this.logger.error(
-      `${request.method} ${request.url}`,
-      JSON.stringify(errorResponse),
-    );
+    this.logger.error(`${request.method} ${request.url}`, JSON.stringify(errorResponse));
 
     response.status(status).json(errorResponse);
   }

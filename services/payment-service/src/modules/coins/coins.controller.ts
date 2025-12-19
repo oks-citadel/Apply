@@ -181,9 +181,7 @@ export class CoinsController {
     },
   })
   @ApiResponse({ status: 200, description: 'Boost cancelled with partial refund' })
-  async cancelBoost(
-    @Body() body: { userId: string; boostId: string },
-  ) {
+  async cancelBoost(@Body() body: { userId: string; boostId: string }) {
     const result = await this.coinsService.cancelBoost(body.userId, body.boostId);
 
     return {
@@ -227,16 +225,12 @@ export class CoinsController {
     },
   })
   @ApiResponse({ status: 200, description: 'Monthly coins allocated' })
-  async allocateMonthlyCoins(
-    @Body() body: { userId: string; tier: string },
-  ) {
-    const { SubscriptionTier } = await import(
-      '../../common/enums/subscription-tier.enum'
-    );
+  async allocateMonthlyCoins(@Body() body: { userId: string; tier: string }) {
+    const { SubscriptionTier } = await import('../../common/enums/subscription-tier.enum');
 
     const balance = await this.coinsService.allocateMonthlyCoins(
       body.userId,
-      body.tier as typeof SubscriptionTier[keyof typeof SubscriptionTier],
+      body.tier as (typeof SubscriptionTier)[keyof typeof SubscriptionTier],
     );
 
     return {

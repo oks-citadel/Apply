@@ -69,12 +69,12 @@ resource "azurerm_kubernetes_cluster" "main" {
 
   # Network configuration - Azure CNI
   network_profile {
-    network_plugin     = "azure"
-    network_policy     = "azure"
-    dns_service_ip     = var.dns_service_ip
-    service_cidr       = var.service_cidr
-    load_balancer_sku  = "standard"
-    outbound_type      = var.outbound_type
+    network_plugin    = "azure"
+    network_policy    = "azure"
+    dns_service_ip    = var.dns_service_ip
+    service_cidr      = var.service_cidr
+    load_balancer_sku = "standard"
+    outbound_type     = var.outbound_type
 
     load_balancer_profile {
       managed_outbound_ip_count = var.load_balancer_outbound_ip_count
@@ -215,10 +215,10 @@ resource "azurerm_kubernetes_cluster_node_pool" "gpu" {
   mode                  = "User"
 
   node_labels = {
-    "nodepool-type"    = "gpu"
-    "environment"      = var.environment
-    "project"          = var.project_name
-    "accelerator"      = "nvidia-gpu"
+    "nodepool-type" = "gpu"
+    "environment"   = var.environment
+    "project"       = var.project_name
+    "accelerator"   = "nvidia-gpu"
   }
 
   node_taints = concat(

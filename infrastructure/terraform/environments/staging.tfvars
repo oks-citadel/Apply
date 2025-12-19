@@ -120,6 +120,18 @@ max_replicas = 5
 # sql_admin_password is set via pipeline variable
 
 # ============================================================================
+# PostgreSQL Private Endpoint Configuration (STAGING)
+# ============================================================================
+# Enable private endpoints for PostgreSQL to enhance security
+# Public network access is disabled to enforce private connectivity only
+
+# Enable PostgreSQL private endpoint
+postgresql_enable_private_endpoint = true
+
+# Disable public network access (security best practice)
+postgresql_public_network_access_enabled = false
+
+# ============================================================================
 # Environment-Specific Notes
 # ============================================================================
 #
