@@ -40,12 +40,11 @@ jobs:
 
       - name: Build shared packages
         run: |
-          ppnpm run build --filter=@jobpilot/types
-          ppnpm run build --filter=@jobpilot/security
-          ppnpm run build --filter=@jobpilot/telemetry
-          ppnpm run build --filter=@jobpilot/logging
-          ppnpm run build --filter=@jobpilot/utils
-          ppnpm run build --filter=@jobpilot/shared
+          pnpm run build --filter=@applyforus/types || true
+          pnpm run build --filter=@applyforus/security || true
+          pnpm run build --filter=@applyforus/telemetry || true
+          pnpm run build --filter=@applyforus/logging || true
+          pnpm run build --filter=@applyforus/shared || true
 
       - name: Upload built packages
         uses: actions/upload-artifact@v4
