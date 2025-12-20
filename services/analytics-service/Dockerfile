@@ -24,7 +24,14 @@ RUN pnpm --filter @applyforus/types build || true && \
 
 # Build the service
 WORKDIR /app/services/analytics-service
-RUN pnpm run build
+RUN echo "=== Starting analytics-service build ===" && \
+    echo "Node version:" && node -v && \
+    echo "=== Running NestJS build ===" && \
+    pnpm run build && \
+    echo "=== Build completed ===" && \
+    echo "=== Exploring dist structure ===" && \
+    find dist -name "main.js" -type f 2>/dev/null && \
+    ls -laR dist/ | head -50
 
 # Stage 2: Production - preserve monorepo structure for pnpm symlinks
 FROM node:20-alpine@sha256:c13b26e7e602ef2f1074aef304ce6e9b7dd284c419b35d89fcf3cc8e44a8def9 AS production
