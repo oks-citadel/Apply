@@ -1,6 +1,6 @@
 # Stage 1: Builder - Install dependencies
 # Python 3.11 Slim for AI/ML workloads
-FROM python:3.11-slim@sha256:ce81dc539f0aedc9114cae640f8352fad83d37461c24a3615b01f081d0c0f1a7 AS builder
+FROM python:3.11-slim AS builder
 
 # Set working directory
 WORKDIR /app
@@ -28,7 +28,7 @@ RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
     pip cache purge
 
 # Stage 2: Production - Minimal runtime image
-FROM python:3.11-slim@sha256:ce81dc539f0aedc9114cae640f8352fad83d37461c24a3615b01f081d0c0f1a7
+FROM python:3.11-slim
 
 WORKDIR /app
 
