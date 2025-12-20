@@ -1,8 +1,8 @@
 import { Injectable, HttpStatus, Logger } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import Redis from 'ioredis';
+import { ConfigService } from '@nestjs/config';
 
-import type { ConfigService } from '@nestjs/config';
 import type { DataSource } from 'typeorm';
 
 

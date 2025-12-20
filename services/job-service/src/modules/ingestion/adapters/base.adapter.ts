@@ -1,5 +1,6 @@
 import { Logger } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
+import { HttpService } from '@nestjs/axios';
 
 import type { JobSource } from '../entities/job-source.entity';
 import type {
@@ -9,7 +10,6 @@ import type {
   NormalizedJob,
   HealthCheckResult,
 } from '../interfaces/job-adapter.interface';
-import type { HttpService } from '@nestjs/axios';
 import type { AxiosRequestConfig } from 'axios';
 
 /**

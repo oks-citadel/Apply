@@ -1,12 +1,12 @@
 
 import { BaseJobAdapter } from './base.adapter';
+import { HttpService } from '@nestjs/axios';
 
 import type {
   FetchOptions,
   FetchResult,
   NormalizedJob,
 } from '../interfaces/job-adapter.interface';
-import type { HttpService } from '@nestjs/axios';
 
 /**
  * ZipRecruiter API Adapter

@@ -1,10 +1,10 @@
 import { Client } from '@elastic/elasticsearch';
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 
 import type { SearchJobsDto } from '../jobs/dto/search-jobs.dto';
 import type { Job } from '../jobs/entities/job.entity';
 import type { OnModuleInit } from '@nestjs/common';
-import type { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class SearchService implements OnModuleInit {

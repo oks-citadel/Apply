@@ -24,9 +24,10 @@ import { WorkdayAdapter } from './workday.adapter';
 import { ZipRecruiterAdapter } from './ziprecruiter.adapter';
 import { SourceProvider } from '../entities/job-source.entity';
 
+import { HttpService } from '@nestjs/axios';
+
 import type { JobSource} from '../entities/job-source.entity';
 import type { IJobAdapter, IJobAdapterFactory } from '../interfaces/job-adapter.interface';
-import type { HttpService } from '@nestjs/axios';
 
 @Injectable()
 export class JobAdapterFactory implements IJobAdapterFactory {

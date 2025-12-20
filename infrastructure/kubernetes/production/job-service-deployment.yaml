@@ -34,7 +34,7 @@ spec:
           # IMPORTANT: Replace with digest reference in deployment: image@sha256:xxx
           # CI/CD will update this with: applyforusacr.azurecr.io/applyai-job-service@sha256:xxxxx
           # Tag reference for manual deploy (use digest for production): sha-<gitcommit>
-          image: applyforusacr.azurecr.io/applyai-job-service:sha-REPLACE_WITH_GIT_SHA
+          image: applyforusacr.azurecr.io/applyai-job-service:v3.1.1
           imagePullPolicy: Always
           ports:
             - name: http
@@ -45,6 +45,11 @@ spec:
               value: "production"
             - name: PORT
               value: "4002"
+            # Redis Configuration
+            - name: REDIS_HOST
+              value: "redis"
+            - name: REDIS_PORT
+              value: "6379"
           envFrom:
             - secretRef:
                 name: applyforus-secrets

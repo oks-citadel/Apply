@@ -3,7 +3,7 @@ import Redis from 'ioredis';
 
 import type { RawJobData } from '../interfaces/job-provider.interface';
 import type { OnModuleInit, OnModuleDestroy } from '@nestjs/common';
-import type { ConfigService } from '@nestjs/config';
+import { ConfigService } from '@nestjs/config';
 
 interface CacheConfig {
   host: string;

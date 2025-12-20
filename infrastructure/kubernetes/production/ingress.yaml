@@ -87,7 +87,7 @@ spec:
               service:
                 name: ai-service
                 port:
-                  number: 5000
+                  number: 8008
           - path: /auto-apply
             pathType: Prefix
             backend:

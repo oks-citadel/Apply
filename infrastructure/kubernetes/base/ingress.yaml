@@ -145,7 +145,7 @@ spec:
           service:
             name: ai-service
             port:
-              number: 5000
+              number: 8008
 
       # Resume Service
       - path: /api/resumes

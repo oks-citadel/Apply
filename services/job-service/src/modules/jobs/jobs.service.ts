@@ -2,6 +2,8 @@ import { Injectable, NotFoundException, BadRequestException, Logger, Optional } 
 import { InjectRepository } from '@nestjs/typeorm';
 import { firstValueFrom } from 'rxjs';
 import { ILike } from 'typeorm';
+import { ConfigService } from '@nestjs/config';
+import { HttpService } from '@nestjs/axios';
 
 import { Job } from './entities/job.entity';
 import { SavedJob } from './entities/saved-job.entity';
@@ -10,8 +12,6 @@ import { SavedJob } from './entities/saved-job.entity';
 import type { SaveJobDto, UpdateSavedJobDto } from './dto/save-job.dto';
 import type { SearchJobsDto, PaginatedJobsResponseDto, JobResponseDto } from './dto/search-jobs.dto';
 import type { RedisCacheService } from '../../common/cache';
-import type { HttpService } from '@nestjs/axios';
-import type { ConfigService } from '@nestjs/config';
 import type { Repository} from 'typeorm';
 
 @Injectable()

@@ -46,6 +46,11 @@ spec:
                 secretKeyRef:
                   name: applyforus-secrets
                   key: DB_PASSWORD
+            # Redis Configuration
+            - name: REDIS_HOST
+              value: "redis"
+            - name: REDIS_PORT
+              value: "6379"
           envFrom:
             - configMapRef:
                 name: applyforus-config

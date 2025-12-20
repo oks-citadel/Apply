@@ -1,11 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import axios from 'axios';
+import { ConfigService } from '@nestjs/config';
 
 import { JobSource, RemoteType, ExperienceLevel, EmploymentType } from '../../jobs/entities/job.entity';
 
 import type { Job} from '../../jobs/entities/job.entity';
 import type { JobProvider, RawJobData, JobProviderConfig } from '../interfaces/job-provider.interface';
-import type { ConfigService } from '@nestjs/config';
 import type { AxiosInstance } from 'axios';
 
 /**

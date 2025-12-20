@@ -8,6 +8,7 @@ import { RedisCacheService } from './redis-cache.service';
 @Global()
 @Module({
   imports: [
+    ConfigModule,
     CacheModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => {
