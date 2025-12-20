@@ -8,6 +8,7 @@ import {
   Index,
   Unique,
 } from 'typeorm';
+
 import { Job } from './job.entity';
 
 @Entity('saved_jobs')

@@ -12,24 +12,11 @@ import { SLARemedy } from './entities/sla-remedy.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([
-      SLAContract,
-      SLAProgress,
-      SLAViolation,
-      SLARemedy,
-    ]),
+    TypeOrmModule.forFeature([SLAContract, SLAProgress, SLAViolation, SLARemedy]),
     ScheduleModule.forRoot(),
   ],
   controllers: [SLAController],
-  providers: [
-    SLAService,
-    EligibilityCheckerService,
-    ViolationHandlerService,
-  ],
-  exports: [
-    SLAService,
-    EligibilityCheckerService,
-    ViolationHandlerService,
-  ],
+  providers: [SLAService, EligibilityCheckerService, ViolationHandlerService],
+  exports: [SLAService, EligibilityCheckerService, ViolationHandlerService],
 })
 export class SLAModule {}

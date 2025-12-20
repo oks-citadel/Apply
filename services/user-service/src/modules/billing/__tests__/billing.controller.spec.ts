@@ -1,9 +1,14 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { BadRequestException } from '@nestjs/common';
+import { Test } from '@nestjs/testing';
+
+import { SubscriptionTier, SubscriptionStatus } from '../../../common/enums/subscription-tier.enum';
 import { SubscriptionController } from '../subscription.controller';
 import { SubscriptionService } from '../subscription.service';
-import { CreateCheckoutSessionDto } from '../dto/create-checkout-session.dto';
-import { SubscriptionTier, SubscriptionStatus } from '../../../common/enums/subscription-tier.enum';
-import { BadRequestException } from '@nestjs/common';
+
+import type { CreateCheckoutSessionDto } from '../dto/create-checkout-session.dto';
+import type { TestingModule } from '@nestjs/testing';
+
+
 
 describe('SubscriptionController', () => {
   let controller: SubscriptionController;

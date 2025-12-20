@@ -1,6 +1,7 @@
 import { ApiPropertyOptional, PartialType } from '@nestjs/swagger';
-import { CreateResumeDto } from './create-resume.dto';
 import { IsOptional, IsNumber, Min, Max } from 'class-validator';
+
+import { CreateResumeDto } from './create-resume.dto';
 
 export class UpdateResumeDto extends PartialType(CreateResumeDto) {
   @ApiPropertyOptional({

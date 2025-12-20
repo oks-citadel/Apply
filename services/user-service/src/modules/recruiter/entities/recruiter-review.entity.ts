@@ -8,6 +8,7 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
+
 import { RecruiterProfile } from './recruiter-profile.entity';
 
 export enum ReviewStatus {
@@ -129,7 +130,7 @@ export class RecruiterReview {
       this.responsiveness_rating,
     ].filter(r => r !== null) as number[];
 
-    if (ratings.length === 0) return this.rating;
+    if (ratings.length === 0) {return this.rating;}
 
     const sum = ratings.reduce((acc, r) => acc + r, 0);
     return Math.round((sum / ratings.length) * 10) / 10;
@@ -137,7 +138,7 @@ export class RecruiterReview {
 
   getHelpfulnessRatio(): number {
     const total = this.helpful_count + this.not_helpful_count;
-    if (total === 0) return 0;
+    if (total === 0) {return 0;}
     return this.helpful_count / total;
   }
 

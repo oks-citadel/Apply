@@ -1,7 +1,10 @@
-import { DataSource, DataSourceOptions } from 'typeorm';
 import { config } from 'dotenv';
-import { User } from '../modules/users/entities/user.entity';
+import { DataSource } from 'typeorm';
+
 import { AIGeneration } from '../modules/ai/entities/ai-generation.entity';
+import { User } from '../modules/users/entities/user.entity';
+
+import type { DataSourceOptions } from 'typeorm';
 
 config();
 

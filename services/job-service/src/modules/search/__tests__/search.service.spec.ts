@@ -1,8 +1,14 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { ConfigService } from '@nestjs/config';
-import { SearchService } from '../search.service';
 import { Client } from '@elastic/elasticsearch';
-import { Job } from '../../jobs/entities/job.entity';
+import { ConfigService } from '@nestjs/config';
+import { Test } from '@nestjs/testing';
+
+import { SearchService } from '../search.service';
+
+import type { Job } from '../../jobs/entities/job.entity';
+import type { TestingModule } from '@nestjs/testing';
+
+
+
 
 // Mock Elasticsearch client
 jest.mock('@elastic/elasticsearch');

@@ -1,8 +1,10 @@
 import { Process, Processor, OnQueueActive, OnQueueCompleted, OnQueueFailed } from '@nestjs/bull';
 import { Logger } from '@nestjs/common';
-import { Job } from 'bull';
-import { OrchestratorService } from '../orchestrator.service';
-import { OrchestrateRequestDto } from '../dto/orchestrate.dto';
+
+
+import type { OrchestrateRequestDto } from '../dto/orchestrate.dto';
+import type { OrchestratorService } from '../orchestrator.service';
+import type { Job } from 'bull';
 
 interface TaskJobData {
   taskId: string;
@@ -42,7 +44,7 @@ export class TaskQueueProcessor {
   }
 
   @OnQueueCompleted()
-  onCompleted(job: Job<TaskJobData>, result: unknown) {
+  onCompleted(job: Job<TaskJobData>, _result: unknown) {
     this.logger.log(`Task ${job.data.taskId} completed successfully`);
   }
 

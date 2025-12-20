@@ -19,15 +19,7 @@ import {
   ApiParam,
   ApiBody,
 } from '@nestjs/swagger';
-import { EngineService } from './engine.service';
-import { ServiceClientService } from './service-client.service';
-import { ApplicationsService } from '../applications/applications.service';
-import { QueueService } from '../queue/queue.service';
-import {
-  StartApplicationDto,
-  BatchApplicationDto,
-  RetryApplicationDto,
-} from './dto/start-application.dto';
+
 import {
   StartApplicationResponseDto,
   BatchApplicationResponseDto,
@@ -36,10 +28,20 @@ import {
   ApplicationStatusEnum,
   QueueStatusEnum,
 } from './dto/application-status.dto';
-import { JobData, UserProfile, Resume, CoverLetter } from './interfaces/engine.interface';
+import { User } from '../../common/decorators/user.decorator';
 import { ApplicationStatus, ApplicationSource } from '../applications/entities/application.entity';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { User } from '../../common/decorators/user.decorator';
+
+import type {
+  StartApplicationDto,
+  BatchApplicationDto,
+  RetryApplicationDto,
+} from './dto/start-application.dto';
+import type { EngineService } from './engine.service';
+import type { JobData, UserProfile, Resume, CoverLetter } from './interfaces/engine.interface';
+import type { ServiceClientService } from './service-client.service';
+import type { ApplicationsService } from '../applications/applications.service';
+import type { QueueService } from '../queue/queue.service';
 
 @ApiTags('Engine')
 @ApiBearerAuth('JWT-auth')
@@ -146,7 +148,7 @@ export class EngineController {
       // Add to queue for async processing
       const queueJob = await this.queueService.addApplicationJob({
         applicationId: application.id,
-        userId: userId,
+        userId,
         jobId: dto.jobId,
         jobData: job,
         applicationData: preparedApplication,
@@ -165,7 +167,7 @@ export class EngineController {
       return {
         applicationId: application.id,
         jobId: dto.jobId,
-        userId: userId,
+        userId,
         status: ApplicationStatusEnum.QUEUED,
         queueStatus: QueueStatusEnum.WAITING,
         message: 'Application queued successfully',
@@ -277,7 +279,7 @@ export class EngineController {
         // Add to queue
         const queueJob = await this.queueService.addApplicationJob({
           applicationId: application.id,
-          userId: userId,
+          userId,
           jobId,
           jobData: job,
           applicationData: preparedApplication,
@@ -490,7 +492,7 @@ export class EngineController {
    * Extract requirements from job description if not explicitly provided
    */
   private extractRequirements(description: string): string[] {
-    if (!description) return [];
+    if (!description) {return [];}
 
     // Simple extraction logic - can be enhanced
     const requirements: string[] = [];

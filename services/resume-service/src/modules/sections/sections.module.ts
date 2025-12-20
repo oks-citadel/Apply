@@ -1,10 +1,11 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { JwtModule } from '@nestjs/jwt';
+import { TypeOrmModule } from '@nestjs/typeorm';
+
+import { Section } from './entities/section.entity';
 import { SectionsController } from './sections.controller';
 import { SectionsService } from './sections.service';
-import { Section } from './entities/section.entity';
 
 @Module({
   imports: [

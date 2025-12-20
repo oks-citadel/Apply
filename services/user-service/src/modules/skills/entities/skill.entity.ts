@@ -6,6 +6,7 @@ import {
   UpdateDateColumn,
   Index,
 } from 'typeorm';
+
 import { SkillProficiency } from '../../../common/enums/subscription-tier.enum';
 
 @Entity('skills')

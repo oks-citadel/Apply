@@ -1,8 +1,9 @@
 import { Injectable, Logger, ServiceUnavailableException, NotFoundException } from '@nestjs/common';
-import { HttpService } from '@nestjs/axios';
-import { ConfigService } from '@nestjs/config';
 import { firstValueFrom, retry, timeout, catchError, throwError } from 'rxjs';
-import { AxiosError } from 'axios';
+
+import type { HttpService } from '@nestjs/axios';
+import type { ConfigService } from '@nestjs/config';
+import type { AxiosError } from 'axios';
 
 /**
  * Circuit Breaker State

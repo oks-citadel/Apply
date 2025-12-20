@@ -1,12 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import {
-  SLAViolationType,
-  RemedyType,
-  RemedyStatus,
-  SLA_TIER_CONFIGS,
-} from '../enums/sla.enums';
+import { SLAViolationType, RemedyType, RemedyStatus, SLA_TIER_CONFIGS } from '../enums/sla.enums';
 import { SLAContract } from '../entities/sla-contract.entity';
 import { SLAViolation } from '../entities/sla-violation.entity';
 import { SLARemedy } from '../entities/sla-remedy.entity';
@@ -45,9 +40,7 @@ export class ViolationHandlerService {
     });
 
     if (existingViolation) {
-      this.logger.log(
-        `Violation already exists for contract ${contract.id}`,
-      );
+      this.logger.log(`Violation already exists for contract ${contract.id}`);
       return existingViolation;
     }
 
@@ -59,17 +52,14 @@ export class ViolationHandlerService {
   /**
    * Create violation record
    */
-  private async createViolation(
-    contract: SLAContract,
-  ): Promise<SLAViolation> {
+  private async createViolation(contract: SLAContract): Promise<SLAViolation> {
     const now = new Date();
     const effectiveEndDate = contract.getEffectiveEndDate();
     const daysOverDeadline = Math.ceil(
       (now.getTime() - effectiveEndDate.getTime()) / (1000 * 60 * 60 * 24),
     );
 
-    const interviewsShortfall =
-      contract.guaranteedInterviews - contract.totalInterviewsScheduled;
+    const interviewsShortfall = contract.guaranteedInterviews - contract.totalInterviewsScheduled;
 
     const responseRate =
       contract.totalApplicationsSent > 0
@@ -159,9 +149,7 @@ export class ViolationHandlerService {
     );
 
     if (rootCause.lowApplicationVolume) {
-      notes.push(
-        `Low application volume: ${contract.totalApplicationsSent} applications sent`,
-      );
+      notes.push(`Low application volume: ${contract.totalApplicationsSent} applications sent`);
     }
 
     if (rootCause.lowResponseRate) {
@@ -186,20 +174,13 @@ export class ViolationHandlerService {
   /**
    * Issue remedies for violation
    */
-  async issueRemedies(
-    violation: SLAViolation,
-    contract: SLAContract,
-  ): Promise<SLARemedy[]> {
+  async issueRemedies(violation: SLAViolation, contract: SLAContract): Promise<SLARemedy[]> {
     const recommendedRemedies = violation.getRecommendedRemedies();
     const remedies: SLARemedy[] = [];
 
     for (const remedyType of recommendedRemedies) {
       try {
-        const remedy = await this.createRemedy(
-          violation,
-          contract,
-          remedyType as RemedyType,
-        );
+        const remedy = await this.createRemedy(violation, contract, remedyType as RemedyType);
         remedies.push(remedy);
       } catch (error) {
         this.logger.error(
@@ -221,12 +202,7 @@ export class ViolationHandlerService {
     remedyType: RemedyType,
   ): Promise<SLARemedy> {
     const tierConfig = SLA_TIER_CONFIGS[contract.tier];
-    const remedyDetails = this.calculateRemedyDetails(
-      remedyType,
-      violation,
-      contract,
-      tierConfig,
-    );
+    const remedyDetails = this.calculateRemedyDetails(remedyType, violation, contract, tierConfig);
 
     const remedy = this.remedyRepository.create({
       violationId: violation.id,
@@ -269,14 +245,10 @@ export class ViolationHandlerService {
     switch (remedyType) {
       case RemedyType.SERVICE_EXTENSION:
         // Extend by 50% of original deadline or 30 days max
-        const extensionDays = Math.min(
-          Math.ceil(contract.deadlineDays * 0.5),
-          30,
-        );
+        const extensionDays = Math.min(Math.ceil(contract.deadlineDays * 0.5), 30);
         details.extensionDays = extensionDays;
         details.newEndDate = new Date(
-          contract.getEffectiveEndDate().getTime() +
-            extensionDays * 24 * 60 * 60 * 1000,
+          contract.getEffectiveEndDate().getTime() + extensionDays * 24 * 60 * 60 * 1000,
         );
         details.financialImpact = 0;
         break;
@@ -294,9 +266,7 @@ export class ViolationHandlerService {
         details.creditAmount = creditAmount;
         details.creditCurrency = 'USD';
         details.creditCode = `CREDIT-${Date.now()}`;
-        details.creditExpiryDate = new Date(
-          Date.now() + 90 * 24 * 60 * 60 * 1000,
-        ); // 90 days
+        details.creditExpiryDate = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000); // 90 days
         details.financialImpact = creditAmount;
         break;
 
@@ -354,18 +324,12 @@ export class ViolationHandlerService {
    */
   private requiresApproval(remedyType: RemedyType, details: any): boolean {
     // Refunds require approval
-    if (
-      remedyType === RemedyType.PARTIAL_REFUND ||
-      remedyType === RemedyType.FULL_REFUND
-    ) {
+    if (remedyType === RemedyType.PARTIAL_REFUND || remedyType === RemedyType.FULL_REFUND) {
       return true;
     }
 
     // High-value credits require approval
-    if (
-      remedyType === RemedyType.SERVICE_CREDIT &&
-      details.creditAmount > 50
-    ) {
+    if (remedyType === RemedyType.SERVICE_CREDIT && details.creditAmount > 50) {
       return true;
     }
 
@@ -375,10 +339,7 @@ export class ViolationHandlerService {
   /**
    * Execute remedy
    */
-  async executeRemedy(
-    remedy: SLARemedy,
-    contract: SLAContract,
-  ): Promise<boolean> {
+  async executeRemedy(remedy: SLARemedy, contract: SLAContract): Promise<boolean> {
     if (!remedy.canExecute()) {
       this.logger.warn(
         `Remedy ${remedy.id} cannot be executed. Status: ${remedy.status}, Requires approval: ${remedy.requiresApproval}`,
@@ -433,10 +394,7 @@ export class ViolationHandlerService {
       await this.remedyRepository.save(remedy);
       return success;
     } catch (error) {
-      this.logger.error(
-        `Error executing remedy ${remedy.id}:`,
-        error.stack,
-      );
+      this.logger.error(`Error executing remedy ${remedy.id}:`, error.stack);
 
       remedy.status = RemedyStatus.FAILED;
       remedy.failedAt = new Date();
@@ -461,9 +419,7 @@ export class ViolationHandlerService {
 
     // This would update the contract in the database
     // For now, we'll just log it
-    this.logger.log(
-      `Extended contract ${contract.id} by ${extensionDays} days to ${newEndDate}`,
-    );
+    this.logger.log(`Extended contract ${contract.id} by ${extensionDays} days to ${newEndDate}`);
 
     remedy.addExecutionLogEntry('extend_service', 'success', {
       extensionDays,
@@ -476,10 +432,7 @@ export class ViolationHandlerService {
   /**
    * Execute human recruiter escalation
    */
-  private async executeEscalation(
-    remedy: SLARemedy,
-    contract: SLAContract,
-  ): Promise<boolean> {
+  private async executeEscalation(remedy: SLARemedy, contract: SLAContract): Promise<boolean> {
     const { escalationLevel, ticketId } = remedy.remedyDetails;
 
     // This would create a ticket in the support system
@@ -499,10 +452,7 @@ export class ViolationHandlerService {
   /**
    * Execute service credit
    */
-  private async executeServiceCredit(
-    remedy: SLARemedy,
-    contract: SLAContract,
-  ): Promise<boolean> {
+  private async executeServiceCredit(remedy: SLARemedy, contract: SLAContract): Promise<boolean> {
     const { creditAmount, creditCode } = remedy.remedyDetails;
 
     // This would create a credit in the payment system
@@ -522,10 +472,7 @@ export class ViolationHandlerService {
   /**
    * Execute refund
    */
-  private async executeRefund(
-    remedy: SLARemedy,
-    contract: SLAContract,
-  ): Promise<boolean> {
+  private async executeRefund(remedy: SLARemedy, contract: SLAContract): Promise<boolean> {
     const { refundAmount, refundPercentage } = remedy.remedyDetails;
 
     // This would process refund via Stripe
@@ -545,11 +492,7 @@ export class ViolationHandlerService {
   /**
    * Approve remedy
    */
-  async approveRemedy(
-    remedyId: string,
-    approvedBy: string,
-    notes?: string,
-  ): Promise<SLARemedy> {
+  async approveRemedy(remedyId: string, approvedBy: string, notes?: string): Promise<SLARemedy> {
     const remedy = await this.remedyRepository.findOne({
       where: { id: remedyId },
     });

@@ -1,4 +1,4 @@
-import { useEffect } from 'react';; // React import for JSX
+import { useEffect } from 'react';
 import { useExtensionStore } from './store';
 import Header from './components/Header';
 import LoginForm from './components/LoginForm';
@@ -14,7 +14,7 @@ function App() {
   useEffect(() => {
     // Check authentication on mount
     checkAuth();
-  }, []);
+  }, [checkAuth]);
 
   const renderContent = () => {
     if (!auth.isAuthenticated) {

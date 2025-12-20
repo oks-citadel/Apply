@@ -8,6 +8,7 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
+
 import { Job } from '../../jobs/entities/job.entity';
 
 export enum ReportType {

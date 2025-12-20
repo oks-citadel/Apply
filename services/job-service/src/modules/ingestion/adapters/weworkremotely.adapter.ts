@@ -1,10 +1,12 @@
-import { HttpService } from '@nestjs/axios';
+
 import { BaseJobAdapter } from './base.adapter';
-import {
+
+import type {
   FetchOptions,
   FetchResult,
   NormalizedJob,
 } from '../interfaces/job-adapter.interface';
+import type { HttpService } from '@nestjs/axios';
 
 /**
  * We Work Remotely Adapter
@@ -119,7 +121,7 @@ export class WeWorkRemotelyAdapter extends BaseJobAdapter {
   }
 
   private mapEmploymentType(category: string): any {
-    if (!category) return 'full_time';
+    if (!category) {return 'full_time';}
 
     const lowerCategory = category.toLowerCase();
 
@@ -127,9 +129,9 @@ export class WeWorkRemotelyAdapter extends BaseJobAdapter {
       lowerCategory.includes('contract') ||
       lowerCategory.includes('freelance')
     )
-      return 'contract';
-    if (lowerCategory.includes('part-time')) return 'part_time';
-    if (lowerCategory.includes('intern')) return 'internship';
+      {return 'contract';}
+    if (lowerCategory.includes('part-time')) {return 'part_time';}
+    if (lowerCategory.includes('intern')) {return 'internship';}
 
     return 'full_time';
   }
@@ -137,8 +139,8 @@ export class WeWorkRemotelyAdapter extends BaseJobAdapter {
   private extractTags(rawJob: any): string[] {
     const tags: string[] = [];
 
-    if (rawJob.category) tags.push(rawJob.category);
-    if (rawJob.region) tags.push(rawJob.region);
+    if (rawJob.category) {tags.push(rawJob.category);}
+    if (rawJob.region) {tags.push(rawJob.region);}
     if (rawJob.tags) {
       if (Array.isArray(rawJob.tags)) {
         tags.push(...rawJob.tags);

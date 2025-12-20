@@ -1,8 +1,12 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { ExecutionContext, UnauthorizedException } from '@nestjs/common';
+import { UnauthorizedException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { JwtAuthGuard } from '../jwt-auth.guard';
+import { Test } from '@nestjs/testing';
+
 import { IS_PUBLIC_KEY } from '../../../../common/decorators/public.decorator';
+import { JwtAuthGuard } from '../jwt-auth.guard';
+
+import type { ExecutionContext} from '@nestjs/common';
+import type { TestingModule } from '@nestjs/testing';
 
 describe('JwtAuthGuard', () => {
   let guard: JwtAuthGuard;

@@ -1,18 +1,21 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { AuthService } from './auth.service';
-import { UsersService } from '../users/users.service';
-import { EmailService } from '../email/email.service';
-import { JwtService } from '@nestjs/jwt';
-import { ConfigService } from '@nestjs/config';
 import {
   ConflictException,
   UnauthorizedException,
   BadRequestException,
 } from '@nestjs/common';
-import { TestFactory } from '../../../test/utils/test-factory';
-import { mockConfigService, mockJwtService, mockUsersService, mockEmailService } from '../../../test/utils/mock-config';
-import { UserStatus, AuthProvider } from '../users/entities/user.entity';
+import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
+import { Test } from '@nestjs/testing';
 import * as bcrypt from 'bcrypt';
+
+import { AuthService } from './auth.service';
+import { mockConfigService, mockJwtService, mockUsersService, mockEmailService } from '../../../test/utils/mock-config';
+import { TestFactory } from '../../../test/utils/test-factory';
+import { EmailService } from '../email/email.service';
+import { UserStatus, AuthProvider } from '../users/entities/user.entity';
+import { UsersService } from '../users/users.service';
+
+import type { TestingModule } from '@nestjs/testing';
 
 describe('AuthService', () => {
   let service: AuthService;

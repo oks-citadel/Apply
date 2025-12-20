@@ -1,7 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
+
 import { Platform } from '../dto/compliance.dto';
+
+import type { ConfigService } from '@nestjs/config';
 
 interface RateLimitConfig {
   requestsPerMinute: number;
@@ -137,7 +139,7 @@ export class RateLimiterService {
       ...customLimits,
     };
 
-    const now = new Date();
+    const _now = new Date();
 
     // Check minute limit
     const minuteResult = await this.checkWindow(
@@ -273,7 +275,7 @@ export class RateLimiterService {
 
   private getInMemoryCount(key: string): number {
     const entry = this.inMemoryStore.get(key);
-    if (!entry) return 0;
+    if (!entry) {return 0;}
 
     if (new Date() > entry.resetAt) {
       this.inMemoryStore.delete(key);
@@ -301,9 +303,9 @@ export class RateLimiterService {
     // Calculate recommended delay to spread requests evenly
     const utilizationRatio = currentUsage / limit;
 
-    if (utilizationRatio < 0.5) return 0;
-    if (utilizationRatio < 0.75) return 500;
-    if (utilizationRatio < 0.9) return 1000;
+    if (utilizationRatio < 0.5) {return 0;}
+    if (utilizationRatio < 0.75) {return 500;}
+    if (utilizationRatio < 0.9) {return 1000;}
     return 2000;
   }
 

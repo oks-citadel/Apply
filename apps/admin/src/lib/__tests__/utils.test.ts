@@ -32,7 +32,8 @@ describe('utils', () => {
 
   describe('formatDate', () => {
     it('formats Date object', () => {
-      const date = new Date('2024-06-15');
+      // Use noon UTC to avoid timezone date rollover
+      const date = new Date('2024-06-15T12:00:00Z');
       const result = formatDate(date);
       expect(result).toContain('Jun');
       expect(result).toContain('15');
@@ -40,7 +41,8 @@ describe('utils', () => {
     });
 
     it('formats date string', () => {
-      const result = formatDate('2024-06-15');
+      // Use noon UTC to avoid timezone date rollover
+      const result = formatDate('2024-06-15T12:00:00Z');
       expect(result).toContain('Jun');
       expect(result).toContain('15');
       expect(result).toContain('2024');

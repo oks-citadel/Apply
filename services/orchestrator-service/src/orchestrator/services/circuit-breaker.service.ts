@@ -1,6 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import CircuitBreaker from 'opossum';
-import { AgentType, AgentStatus } from '../interfaces/agent.interface';
+
+import { AgentStatus } from '../interfaces/agent.interface';
+
+import type { AgentType} from '../interfaces/agent.interface';
 
 interface CircuitBreakerConfig {
   timeout: number;
@@ -100,8 +103,12 @@ export class CircuitBreakerService {
     let state = this.circuits.get(agentType);
 
     if (!state) {
-      const breaker = this.createBreaker(agentType, action);
-      state = this.circuits.get(agentType)!;
+      this.createBreaker(agentType, action);
+      const newState = this.circuits.get(agentType);
+      if (!newState) {
+        throw new Error(`Failed to create circuit breaker for ${agentType}`);
+      }
+      state = newState;
     }
 
     try {
@@ -154,7 +161,7 @@ export class CircuitBreakerService {
 
   getStats(agentType: AgentType): Record<string, unknown> | undefined {
     const state = this.circuits.get(agentType);
-    if (!state) return undefined;
+    if (!state) {return undefined;}
 
     const stats = state.breaker.stats;
     return {

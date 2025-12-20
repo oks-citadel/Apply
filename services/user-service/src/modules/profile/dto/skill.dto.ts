@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsString, IsOptional, IsEnum, MaxLength, IsInt } from 'class-validator';
+
 import { SkillProficiency } from '../../../common/enums/subscription-tier.enum';
 
 export class CreateSkillDto {

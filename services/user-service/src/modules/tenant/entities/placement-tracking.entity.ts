@@ -8,6 +8,7 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
+
 import { Tenant } from './tenant.entity';
 
 @Entity('placement_tracking')

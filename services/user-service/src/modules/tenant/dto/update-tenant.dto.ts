@@ -1,7 +1,8 @@
-import { IsString, IsEmail, IsEnum, IsOptional, IsUrl, ValidateNested, Matches, MaxLength } from 'class-validator';
 import { Type } from 'class-transformer';
-import { TenantStatus } from '../enums/tenant-type.enum';
+import { IsString, IsEmail, IsEnum, IsOptional, IsUrl, ValidateNested, Matches, MaxLength } from 'class-validator';
+
 import { BrandingSettingsDto } from './create-tenant.dto';
+import { TenantStatus } from '../enums/tenant-type.enum';
 
 export class UpdateTenantDto {
   @IsOptional()

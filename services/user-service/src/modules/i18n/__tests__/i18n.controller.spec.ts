@@ -1,7 +1,12 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { Test } from '@nestjs/testing';
+
+
 import { I18nController } from '../i18n.controller';
 import { I18nService } from '../i18n.service';
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+
+import type { TestingModule } from '@nestjs/testing';
+
 
 describe('I18nController', () => {
   let controller: I18nController;

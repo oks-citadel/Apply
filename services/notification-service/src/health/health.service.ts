@@ -5,26 +5,40 @@ import { DataSource } from 'typeorm';
 import Redis from 'ioredis';
 
 // Inline health check utilities
-async function checkDatabaseConnection(dataSource: DataSource): Promise<{ status: string; message?: string }> {
+async function checkDatabaseConnection(
+  dataSource: DataSource,
+): Promise<{ status: string; message?: string }> {
   try {
     await dataSource.query('SELECT 1');
     return { status: 'up', message: 'Database connection successful' };
   } catch (error) {
-    return { status: 'down', message: error instanceof Error ? error.message : 'Unknown error' };
+    return {
+      status: 'down',
+      message: error instanceof Error ? error.message : 'Unknown error',
+    };
   }
 }
 
-async function checkRedisConnection(redis: Redis): Promise<{ status: string; message?: string }> {
+async function checkRedisConnection(
+  redis: Redis,
+): Promise<{ status: string; message?: string }> {
   try {
     await redis.ping();
     return { status: 'up', message: 'Redis connection successful' };
   } catch (error) {
-    return { status: 'down', message: error instanceof Error ? error.message : 'Unknown error' };
+    return {
+      status: 'down',
+      message: error instanceof Error ? error.message : 'Unknown error',
+    };
   }
 }
 
-function createHealthResponse(serviceName: string, version: string, checks: Record<string, { status: string; message?: string }>) {
-  const allUp = Object.values(checks).every(check => check.status === 'up');
+function createHealthResponse(
+  serviceName: string,
+  version: string,
+  checks: Record<string, { status: string; message?: string }>,
+) {
+  const allUp = Object.values(checks).every((check) => check.status === 'up');
   return {
     status: allUp ? 'healthy' : 'degraded',
     service: serviceName,
@@ -92,8 +106,12 @@ export class HealthService {
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
       memory: {
-        heapUsed: Math.round((process.memoryUsage().heapUsed / 1024 / 1024) * 100) / 100,
-        heapTotal: Math.round((process.memoryUsage().heapTotal / 1024 / 1024) * 100) / 100,
+        heapUsed:
+          Math.round((process.memoryUsage().heapUsed / 1024 / 1024) * 100) /
+          100,
+        heapTotal:
+          Math.round((process.memoryUsage().heapTotal / 1024 / 1024) * 100) /
+          100,
         rss: Math.round((process.memoryUsage().rss / 1024 / 1024) * 100) / 100,
       },
     };
@@ -115,16 +133,25 @@ export class HealthService {
       checks.redis = await checkRedisConnection(this.redisClient);
 
       // Check queue health (Bull uses Redis)
-      checks.emailQueue = checks.redis.status === 'up'
-        ? { status: 'up', message: 'Email queue ready' }
-        : { status: 'down', message: 'Email queue unavailable (Redis down)' };
+      checks.emailQueue =
+        checks.redis.status === 'up'
+          ? { status: 'up', message: 'Email queue ready' }
+          : { status: 'down', message: 'Email queue unavailable (Redis down)' };
 
-      checks.pushQueue = checks.redis.status === 'up'
-        ? { status: 'up', message: 'Push notification queue ready' }
-        : { status: 'down', message: 'Push notification queue unavailable (Redis down)' };
+      checks.pushQueue =
+        checks.redis.status === 'up'
+          ? { status: 'up', message: 'Push notification queue ready' }
+          : {
+              status: 'down',
+              message: 'Push notification queue unavailable (Redis down)',
+            };
     }
 
-    const response = createHealthResponse('notification-service', '1.0.0', checks);
+    const response = createHealthResponse(
+      'notification-service',
+      '1.0.0',
+      checks,
+    );
 
     // If any check fails, return 503 status
     if (response.status === 'degraded') {

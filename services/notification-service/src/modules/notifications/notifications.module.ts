@@ -12,10 +12,7 @@ import { PushModule } from '../push/push.module';
 @Module({
   imports: [
     TypeOrmModule.forFeature([Notification, NotificationPreferences]),
-    BullModule.registerQueue(
-      { name: 'email' },
-      { name: 'notifications' },
-    ),
+    BullModule.registerQueue({ name: 'email' }, { name: 'notifications' }),
     EmailModule,
     forwardRef(() => PushModule),
   ],

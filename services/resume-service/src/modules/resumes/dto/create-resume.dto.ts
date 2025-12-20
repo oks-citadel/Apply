@@ -8,7 +8,8 @@ import {
   MinLength,
   MaxLength,
 } from 'class-validator';
-import { ResumeContent } from '../entities/resume.entity';
+
+import type { ResumeContent } from '../entities/resume.entity';
 
 export class CreateResumeDto {
   @ApiProperty({

@@ -9,25 +9,25 @@ jest.mock('next/navigation', () => ({
 
 // Mock next/link
 jest.mock('next/link', () => {
-  return ({ children, href }: { children: React.ReactNode; href: string }) => {
-    return <a href={href}>{children}</a>;
+  return ({ children, href, className, title }: { children: React.ReactNode; href: string; className?: string; title?: string }) => {
+    return <a href={href} className={className} title={title}>{children}</a>;
   };
 });
 
-// Mock lucide-react
+// Mock lucide-react - use unique text to avoid collision with nav item labels
 jest.mock('lucide-react', () => ({
-  LayoutDashboard: () => <span data-testid="layout-dashboard-icon">LayoutDashboard</span>,
-  Users: () => <span data-testid="users-icon">Users</span>,
-  Activity: () => <span data-testid="activity-icon">Activity</span>,
-  BarChart3: () => <span data-testid="bar-chart-icon">BarChart3</span>,
-  Flag: () => <span data-testid="flag-icon">Flag</span>,
-  Settings: () => <span data-testid="settings-icon">Settings</span>,
+  LayoutDashboard: () => <span data-testid="layout-dashboard-icon">DashIcon</span>,
+  Users: () => <span data-testid="users-icon">UsersIcon</span>,
+  Activity: () => <span data-testid="activity-icon">ActivityIcon</span>,
+  BarChart3: () => <span data-testid="bar-chart-icon">BarChartIcon</span>,
+  Flag: () => <span data-testid="flag-icon">FlagIcon</span>,
+  Settings: () => <span data-testid="settings-icon">SettingsIcon</span>,
   ChevronLeft: () => <span data-testid="chevron-left-icon">ChevronLeft</span>,
   ChevronRight: () => <span data-testid="chevron-right-icon">ChevronRight</span>,
-  Shield: () => <span data-testid="shield-icon">Shield</span>,
-  Database: () => <span data-testid="database-icon">Database</span>,
-  Bell: () => <span data-testid="bell-icon">Bell</span>,
-  FileText: () => <span data-testid="file-text-icon">FileText</span>,
+  Shield: () => <span data-testid="shield-icon">ShieldIcon</span>,
+  Database: () => <span data-testid="database-icon">DatabaseIcon</span>,
+  Bell: () => <span data-testid="bell-icon">BellIcon</span>,
+  FileText: () => <span data-testid="file-text-icon">FileTextIcon</span>,
 }));
 
 describe('Sidebar', () => {

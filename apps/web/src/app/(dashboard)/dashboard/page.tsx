@@ -167,7 +167,7 @@ export default function DashboardPage() {
                     title={job.title}
                     company={job.company}
                     location={job.location}
-                    salary={formatSalary(job.salaryMin, job.salaryMax)}
+                    salary={formatSalary(job.salary?.min, job.salary?.max)}
                   />
                 ))}
               </div>

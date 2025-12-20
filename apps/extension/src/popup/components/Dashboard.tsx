@@ -25,7 +25,7 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     loadStats();
     loadRecentApplications();
-  }, []);
+  }, [loadStats, loadRecentApplications]);
 
   if (!stats) {
     return (

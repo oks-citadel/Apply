@@ -1,5 +1,6 @@
-import { initTelemetry } from '@applyforus/telemetry';
 import { Logger } from '@nestjs/common';
+
+import { initTelemetry } from '@applyforus/telemetry';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');

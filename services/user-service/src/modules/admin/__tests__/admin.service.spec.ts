@@ -1,17 +1,21 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { AdminService } from '../admin.service';
-import { Repository } from 'typeorm';
+import { NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
+import { Test } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import * as bcrypt from 'bcrypt';
+
 import { User } from '../../profile/entities/user.entity';
+import { AdminService } from '../admin.service';
+import { AuditLog } from '../entities/audit-log.entity';
 import { Job } from '../entities/job.entity';
 import { Report } from '../entities/report.entity';
-import { AuditLog } from '../entities/audit-log.entity';
 import { SystemSettings } from '../entities/system-settings.entity';
-import { NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
-import { UserRole } from '../enums/user-role.enum';
-import { JobStatus } from '../enums/job-status.enum';
 import { ContentStatus } from '../enums/content-status.enum';
-import * as bcrypt from 'bcrypt';
+import { JobStatus } from '../enums/job-status.enum';
+import { UserRole } from '../enums/user-role.enum';
+
+
+import type { TestingModule } from '@nestjs/testing';
+import type { Repository } from 'typeorm';
 
 jest.mock('bcrypt');
 

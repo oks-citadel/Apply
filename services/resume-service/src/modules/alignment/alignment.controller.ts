@@ -11,19 +11,23 @@ import {
   Logger,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery } from '@nestjs/swagger';
-import { ResumeAlignmentService } from './services/resume-alignment.service';
-import { CoverLetterService } from './services/cover-letter.service';
-import { AnalyzeResumeDto } from './dto/analyze-resume.dto';
-import { GenerateAlignedResumeDto } from './dto/generate-aligned-resume.dto';
-import { GenerateCoverLetterDto } from './dto/generate-cover-letter.dto';
+
 import {
   AlignmentAnalysisResponseDto,
   AlignedResumeResponseDto,
   GeneratedCoverLetterResponseDto,
   ExplainAlignmentResponseDto,
 } from './dto/alignment-response.dto';
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+
+import type { AnalyzeResumeDto } from './dto/analyze-resume.dto';
+import type { GenerateAlignedResumeDto } from './dto/generate-aligned-resume.dto';
+import type { GenerateCoverLetterDto } from './dto/generate-cover-letter.dto';
+import type { CoverLetterService } from './services/cover-letter.service';
+import type { ResumeAlignmentService } from './services/resume-alignment.service';
+
+
 
 @ApiTags('alignment')
 @ApiBearerAuth()
@@ -265,7 +269,7 @@ export class AlignmentController {
   ): Promise<AlignedResumeResponseDto> {
     this.logger.log(`Getting aligned resume ${alignedResumeId} for user ${userId}`);
 
-    const alignedResume = await this.alignmentService.getAnalysis(userId, alignedResumeId);
+    const _alignedResume = await this.alignmentService.getAnalysis(userId, alignedResumeId);
 
     // This would need a dedicated method in the service
     // For now, return placeholder

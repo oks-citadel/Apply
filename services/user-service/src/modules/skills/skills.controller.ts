@@ -9,10 +9,12 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
-import { SkillsService } from './skills.service';
-import { CreateSkillDto, UpdateSkillDto } from './dto/create-skill.dto';
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+
+import type { CreateSkillDto, UpdateSkillDto } from './dto/create-skill.dto';
+import type { SkillsService } from './skills.service';
 
 @ApiTags('Skills')
 @ApiBearerAuth('JWT-auth')

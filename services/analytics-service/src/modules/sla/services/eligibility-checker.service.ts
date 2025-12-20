@@ -7,10 +7,7 @@ import {
   ProfileCompletenessField,
   SLA_ELIGIBILITY_REQUIREMENTS,
 } from '../enums/sla.enums';
-import {
-  EligibilityCheckResponseDto,
-  EligibilityCheckResultDto,
-} from '../dto';
+import { EligibilityCheckResponseDto, EligibilityCheckResultDto } from '../dto';
 
 /**
  * Eligibility Checker Service
@@ -42,9 +39,7 @@ export class EligibilityCheckerService {
       );
 
       const isEligible = this.isEligible(checkResult, requirements);
-      const status = isEligible
-        ? EligibilityStatus.ELIGIBLE
-        : EligibilityStatus.INELIGIBLE;
+      const status = isEligible ? EligibilityStatus.ELIGIBLE : EligibilityStatus.INELIGIBLE;
 
       const recommendations = this.generateRecommendations(checkResult, requirements);
 
@@ -58,10 +53,7 @@ export class EligibilityCheckerService {
         checkedAt: new Date(),
       };
     } catch (error) {
-      this.logger.error(
-        `Error checking eligibility for user ${userId}:`,
-        error.stack,
-      );
+      this.logger.error(`Error checking eligibility for user ${userId}:`, error.stack);
       throw error;
     }
   }
@@ -96,8 +88,7 @@ export class EligibilityCheckerService {
     }
 
     // Calculate profile completeness
-    const profileCompleteness =
-      (passedFields.length / requirements.requiredFields.length) * 100;
+    const profileCompleteness = (passedFields.length / requirements.requiredFields.length) * 100;
 
     // Check resume score
     const resumeScore = profile.resumeScore || 0;
@@ -105,13 +96,11 @@ export class EligibilityCheckerService {
 
     // Check work experience
     const workExperienceMonths = this.calculateWorkExperience(profile);
-    const workExperiencePassed =
-      workExperienceMonths >= requirements.minWorkExperience;
+    const workExperiencePassed = workExperienceMonths >= requirements.minWorkExperience;
 
     // Check approved resume
     const hasApprovedResume = profile.hasApprovedResume || false;
-    const approvedResumePassed =
-      !requirements.mustHaveApprovedResume || hasApprovedResume;
+    const approvedResumePassed = !requirements.mustHaveApprovedResume || hasApprovedResume;
 
     // Overall eligibility
     const meetsMinimumRequirements =
@@ -138,25 +127,16 @@ export class EligibilityCheckerService {
   private checkField(field: ProfileCompletenessField, profile: any): boolean {
     switch (field) {
       case ProfileCompletenessField.BASIC_INFO:
-        return !!(
-          profile.firstName &&
-          profile.lastName &&
-          profile.email
-        );
+        return !!(profile.firstName && profile.lastName && profile.email);
 
       case ProfileCompletenessField.CONTACT_INFO:
         return !!(profile.phone && profile.location);
 
       case ProfileCompletenessField.WORK_EXPERIENCE:
-        return (
-          Array.isArray(profile.workExperience) &&
-          profile.workExperience.length > 0
-        );
+        return Array.isArray(profile.workExperience) && profile.workExperience.length > 0;
 
       case ProfileCompletenessField.EDUCATION:
-        return (
-          Array.isArray(profile.education) && profile.education.length > 0
-        );
+        return Array.isArray(profile.education) && profile.education.length > 0;
 
       case ProfileCompletenessField.SKILLS:
         return Array.isArray(profile.skills) && profile.skills.length >= 3;
@@ -188,9 +168,7 @@ export class EligibilityCheckerService {
 
     for (const experience of profile.workExperience) {
       const startDate = new Date(experience.startDate);
-      const endDate = experience.endDate
-        ? new Date(experience.endDate)
-        : new Date();
+      const endDate = experience.endDate ? new Date(experience.endDate) : new Date();
 
       const months =
         (endDate.getFullYear() - startDate.getFullYear()) * 12 +
@@ -205,10 +183,7 @@ export class EligibilityCheckerService {
   /**
    * Determine if user meets eligibility criteria
    */
-  private isEligible(
-    checkResult: EligibilityCheckResultDto,
-    requirements: any,
-  ): boolean {
+  private isEligible(checkResult: EligibilityCheckResultDto, requirements: any): boolean {
     return (
       checkResult.meetsMinimumRequirements &&
       checkResult.resumeScore >= requirements.minResumeScore &&
@@ -228,9 +203,7 @@ export class EligibilityCheckerService {
 
     // Profile completeness recommendations
     if (checkResult.failedFields.length > 0) {
-      recommendations.push(
-        `Complete your profile: ${checkResult.failedFields.join(', ')}`,
-      );
+      recommendations.push(`Complete your profile: ${checkResult.failedFields.join(', ')}`);
     }
 
     // Resume score recommendation
@@ -241,32 +214,20 @@ export class EligibilityCheckerService {
     }
 
     // Work experience recommendation
-    if (
-      checkResult.workExperienceMonths < requirements.minWorkExperience
-    ) {
-      const monthsNeeded =
-        requirements.minWorkExperience - checkResult.workExperienceMonths;
-      recommendations.push(
-        `Add ${monthsNeeded} more months of work experience to your profile`,
-      );
+    if (checkResult.workExperienceMonths < requirements.minWorkExperience) {
+      const monthsNeeded = requirements.minWorkExperience - checkResult.workExperienceMonths;
+      recommendations.push(`Add ${monthsNeeded} more months of work experience to your profile`);
     }
 
     // Approved resume recommendation
-    if (
-      requirements.mustHaveApprovedResume &&
-      !checkResult.hasApprovedResume
-    ) {
-      recommendations.push(
-        'Upload and get your resume approved by our AI system',
-      );
+    if (requirements.mustHaveApprovedResume && !checkResult.hasApprovedResume) {
+      recommendations.push('Upload and get your resume approved by our AI system');
     }
 
     // If eligible, provide optimization tips
     if (recommendations.length === 0) {
       recommendations.push('You meet all eligibility requirements!');
-      recommendations.push(
-        'Consider optimizing your profile further for better job matches',
-      );
+      recommendations.push('Consider optimizing your profile further for better job matches');
     }
 
     return recommendations;
@@ -333,10 +294,7 @@ export class EligibilityCheckerService {
         const result = await this.checkEligibility(userId, tier);
         results.set(userId, result);
       } catch (error) {
-        this.logger.error(
-          `Failed to check eligibility for user ${userId}:`,
-          error.stack,
-        );
+        this.logger.error(`Failed to check eligibility for user ${userId}:`, error.stack);
       }
     }
 
@@ -346,10 +304,7 @@ export class EligibilityCheckerService {
   /**
    * Re-validate existing contract eligibility
    */
-  async revalidateEligibility(
-    userId: string,
-    tier: SLATier,
-  ): Promise<boolean> {
+  async revalidateEligibility(userId: string, tier: SLATier): Promise<boolean> {
     const result = await this.checkEligibility(userId, tier);
     return result.isEligible;
   }

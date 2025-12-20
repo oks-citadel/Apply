@@ -13,19 +13,22 @@ import {
   StreamableFile,
   Logger,
 } from '@nestjs/common';
-import { Response } from 'express';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
-import { TenantService } from './tenant.service';
-import { CreateTenantDto } from './dto/create-tenant.dto';
-import { UpdateTenantDto } from './dto/update-tenant.dto';
-import { BulkImportUsersDto } from './dto/bulk-import-users.dto';
-import { AnalyticsQueryDto } from './dto/analytics-query.dto';
-import { CreateDepartmentDto } from './dto/create-department.dto';
-import { CreatePlacementDto } from './dto/create-placement.dto';
-import { UpdateBrandingDto } from './dto/update-branding.dto';
-import { ExportUtil } from './utils/export.util';
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+
+
 import { TenantLicenseGuard } from './guards/tenant-license.guard';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+
+import type { AnalyticsQueryDto } from './dto/analytics-query.dto';
+import type { BulkImportUsersDto } from './dto/bulk-import-users.dto';
+import type { CreateDepartmentDto } from './dto/create-department.dto';
+import type { CreatePlacementDto } from './dto/create-placement.dto';
+import type { CreateTenantDto } from './dto/create-tenant.dto';
+import type { UpdateBrandingDto } from './dto/update-branding.dto';
+import type { UpdateTenantDto } from './dto/update-tenant.dto';
+import type { TenantService } from './tenant.service';
+import type { ExportUtil } from './utils/export.util';
+import type { Response } from 'express';
 
 @ApiTags('Tenants')
 @Controller('api/v1/tenants')

@@ -1,7 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
-import PDFDocument from 'pdfkit';
 import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } from 'docx';
-import { Resume } from '../resumes/entities/resume.entity';
+import PDFDocument from 'pdfkit';
+
+import type { Resume } from '../resumes/entities/resume.entity';
 
 @Injectable()
 export class ExportService {
@@ -31,18 +32,18 @@ export class ExportService {
           doc.moveDown(0.5);
 
           const contactInfo: string[] = [];
-          if (email) contactInfo.push(email);
-          if (phone) contactInfo.push(phone);
-          if (address) contactInfo.push(address);
+          if (email) {contactInfo.push(email);}
+          if (phone) {contactInfo.push(phone);}
+          if (address) {contactInfo.push(address);}
 
           if (contactInfo.length > 0) {
             doc.fontSize(10).font('Helvetica').text(contactInfo.join(' | '), { align: 'center' });
           }
 
           const linksInfo: string[] = [];
-          if (linkedin) linksInfo.push(linkedin);
-          if (github) linksInfo.push(github);
-          if (website) linksInfo.push(website);
+          if (linkedin) {linksInfo.push(linkedin);}
+          if (github) {linksInfo.push(github);}
+          if (website) {linksInfo.push(website);}
 
           if (linksInfo.length > 0) {
             doc.fontSize(9).fillColor('blue').text(linksInfo.join(' | '), { align: 'center', link: linksInfo[0] });
@@ -70,7 +71,7 @@ export class ExportService {
             doc.fontSize(11).font('Helvetica-Bold').text(exp.company);
 
             const expDetails: string[] = [];
-            if (exp.location) expDetails.push(exp.location);
+            if (exp.location) {expDetails.push(exp.location);}
             if (exp.startDate) {
               const dateRange = exp.current
                 ? `${this.formatDate(exp.startDate)} - Present`
@@ -109,11 +110,11 @@ export class ExportService {
             doc.fontSize(10).font('Helvetica').text(edu.institution);
 
             const eduDetails: string[] = [];
-            if (edu.location) eduDetails.push(edu.location);
+            if (edu.location) {eduDetails.push(edu.location);}
             if (edu.startDate && edu.endDate) {
               eduDetails.push(`${this.formatDate(edu.startDate)} - ${this.formatDate(edu.endDate)}`);
             }
-            if (edu.gpa) eduDetails.push(`GPA: ${edu.gpa}`);
+            if (edu.gpa) {eduDetails.push(`GPA: ${edu.gpa}`);}
 
             if (eduDetails.length > 0) {
               doc.fontSize(9).font('Helvetica').text(eduDetails.join(' | '));
@@ -231,9 +232,9 @@ export class ExportService {
         );
 
         const contactInfo: string[] = [];
-        if (email) contactInfo.push(email);
-        if (phone) contactInfo.push(phone);
-        if (address) contactInfo.push(address);
+        if (email) {contactInfo.push(email);}
+        if (phone) {contactInfo.push(phone);}
+        if (address) {contactInfo.push(address);}
 
         if (contactInfo.length > 0) {
           sections.push(
@@ -245,9 +246,9 @@ export class ExportService {
         }
 
         const linksInfo: string[] = [];
-        if (linkedin) linksInfo.push(linkedin);
-        if (github) linksInfo.push(github);
-        if (website) linksInfo.push(website);
+        if (linkedin) {linksInfo.push(linkedin);}
+        if (github) {linksInfo.push(github);}
+        if (website) {linksInfo.push(website);}
 
         if (linksInfo.length > 0) {
           sections.push(
@@ -310,7 +311,7 @@ export class ExportService {
           );
 
           const expDetails: string[] = [];
-          if (exp.location) expDetails.push(exp.location);
+          if (exp.location) {expDetails.push(exp.location);}
           if (exp.startDate) {
             const dateRange = exp.current
               ? `${this.formatDate(exp.startDate)} - Present`
@@ -376,11 +377,11 @@ export class ExportService {
           );
 
           const eduDetails: string[] = [];
-          if (edu.location) eduDetails.push(edu.location);
+          if (edu.location) {eduDetails.push(edu.location);}
           if (edu.startDate && edu.endDate) {
             eduDetails.push(`${this.formatDate(edu.startDate)} - ${this.formatDate(edu.endDate)}`);
           }
-          if (edu.gpa) eduDetails.push(`GPA: ${edu.gpa}`);
+          if (edu.gpa) {eduDetails.push(`GPA: ${edu.gpa}`);}
 
           if (eduDetails.length > 0) {
             sections.push(
@@ -571,7 +572,7 @@ export class ExportService {
    * Format date to readable format
    */
   private formatDate(dateString?: string): string {
-    if (!dateString) return '';
+    if (!dateString) {return '';}
 
     const date = new Date(dateString);
     const options: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'short' };

@@ -1,5 +1,6 @@
-import { IsString, IsEmail, IsEnum, IsOptional, IsObject, IsUrl, ValidateNested, Matches, MaxLength } from 'class-validator';
 import { Type } from 'class-transformer';
+import { IsString, IsEmail, IsEnum, IsOptional, IsObject, IsUrl, ValidateNested, Matches, MaxLength } from 'class-validator';
+
 import { TenantType, LicenseType } from '../enums/tenant-type.enum';
 
 export class BrandingSettingsDto {

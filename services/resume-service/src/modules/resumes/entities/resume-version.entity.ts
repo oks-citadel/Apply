@@ -7,7 +7,10 @@ import {
   JoinColumn,
   Index,
 } from 'typeorm';
-import { Resume, ResumeContent } from './resume.entity';
+
+import { Resume } from './resume.entity';
+
+import type { ResumeContent } from './resume.entity';
 
 @Entity('resume_versions')
 @Index(['resumeId', 'version'])

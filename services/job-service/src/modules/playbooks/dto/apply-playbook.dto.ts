@@ -1,5 +1,5 @@
-import { IsString, IsUUID, IsOptional, IsBoolean, IsNumber, IsObject, Min, Max } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsString, IsUUID, IsOptional, IsBoolean, IsNumber, IsObject, Min, Max } from 'class-validator';
 
 export class ApplyPlaybookDto {
   @ApiProperty({ description: 'Job ID to apply the playbook to' })

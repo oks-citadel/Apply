@@ -1,7 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { Page } from 'playwright';
 import axios from 'axios';
+
+import type { ConfigService } from '@nestjs/config';
+import type { Page } from 'playwright';
+
 
 export enum CaptchaType {
   RECAPTCHA_V2 = 'recaptcha_v2',
@@ -320,7 +322,7 @@ export class CaptchaService {
         for (const script of scripts) {
           const src = script.getAttribute('src') || '';
           const match = src.match(/render=([A-Za-z0-9_-]+)/);
-          if (match) return match[1];
+          if (match) {return match[1];}
         }
         return undefined;
       });
@@ -608,9 +610,9 @@ export class CaptchaService {
    */
   getConfiguredServices(): string[] {
     const services: string[] = [];
-    if (this.twoCaptchaApiKey) services.push('2Captcha');
-    if (this.antiCaptchaApiKey) services.push('AntiCaptcha');
-    if (this.capsolverApiKey) services.push('CapSolver');
+    if (this.twoCaptchaApiKey) {services.push('2Captcha');}
+    if (this.antiCaptchaApiKey) {services.push('AntiCaptcha');}
+    if (this.capsolverApiKey) {services.push('CapSolver');}
     return services;
   }
 }

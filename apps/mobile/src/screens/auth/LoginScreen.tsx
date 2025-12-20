@@ -47,7 +47,9 @@ export const LoginScreen = ({ navigation }: LoginScreenProps) => {
   };
 
   const handleLogin = async () => {
-    if (!validateForm()) return;
+    if (!validateForm()) {
+      return;
+    }
 
     try {
       clearError();

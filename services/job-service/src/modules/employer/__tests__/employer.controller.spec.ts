@@ -1,14 +1,17 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
-import { EmployerController } from '../employer.controller';
-import { EmployerService } from '../employer.service';
-import { CreateJobDto, UpdateJobDto } from '../dto/job.dto';
-import { UpdateApplicationStatusDto } from '../dto/application.dto';
-import { AddTeamMemberDto } from '../dto/team.dto';
-import { SearchCandidatesDto } from '../dto/candidate.dto';
-import { UpdateCompanyDto } from '../dto/company.dto';
+import { Test } from '@nestjs/testing';
+
 import { ApplicationStatus } from '../../applications/entities/application.entity';
 import { RemoteType, EmploymentType, ExperienceLevel } from '../../jobs/entities/job.entity';
+import { EmployerController } from '../employer.controller';
+import { EmployerService } from '../employer.service';
+
+import type { UpdateApplicationStatusDto } from '../dto/application.dto';
+import type { SearchCandidatesDto } from '../dto/candidate.dto';
+import type { UpdateCompanyDto } from '../dto/company.dto';
+import type { CreateJobDto, UpdateJobDto } from '../dto/job.dto';
+import type { AddTeamMemberDto } from '../dto/team.dto';
+import type { TestingModule } from '@nestjs/testing';
 
 describe('EmployerController', () => {
   let controller: EmployerController;

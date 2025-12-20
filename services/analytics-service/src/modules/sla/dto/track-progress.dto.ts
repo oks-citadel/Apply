@@ -118,7 +118,11 @@ export class TrackResponseDto {
   @IsUUID()
   applicationId: string;
 
-  @ApiProperty({ description: 'Response type', example: 'interview_request', enum: ['rejection', 'interview_request', 'offer', 'follow_up'] })
+  @ApiProperty({
+    description: 'Response type',
+    example: 'interview_request',
+    enum: ['rejection', 'interview_request', 'offer', 'follow_up'],
+  })
   @IsString()
   responseType: string;
 
@@ -157,11 +161,18 @@ export class TrackInterviewDto {
   @IsDateString()
   interviewScheduledAt: string;
 
-  @ApiProperty({ description: 'Interview type', example: 'video', enum: ['phone', 'video', 'onsite', 'panel'] })
+  @ApiProperty({
+    description: 'Interview type',
+    example: 'video',
+    enum: ['phone', 'video', 'onsite', 'panel'],
+  })
   @IsString()
   interviewType: string;
 
-  @ApiPropertyOptional({ description: 'Interview location', example: '123 Main St, San Francisco, CA' })
+  @ApiPropertyOptional({
+    description: 'Interview location',
+    example: '123 Main St, San Francisco, CA',
+  })
   @IsOptional()
   @IsString()
   interviewLocation?: string;
@@ -184,7 +195,10 @@ export class TrackInterviewDto {
 }
 
 export class VerifyProgressDto {
-  @ApiProperty({ description: 'Progress event ID', example: '123e4567-e89b-12d3-a456-426614174000' })
+  @ApiProperty({
+    description: 'Progress event ID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
   @IsUUID()
   progressId: string;
 

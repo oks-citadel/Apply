@@ -1,8 +1,11 @@
-import { DataSource, DataSourceOptions } from 'typeorm';
 import { config } from 'dotenv';
+import { DataSource } from 'typeorm';
+
 import { Application } from '../modules/applications/entities/application.entity';
 import { AutoApplySettings } from '../modules/applications/entities/auto-apply-settings.entity';
 import { FormMapping } from '../modules/form-mapping/entities/form-mapping.entity';
+
+import type { DataSourceOptions } from 'typeorm';
 
 config();
 

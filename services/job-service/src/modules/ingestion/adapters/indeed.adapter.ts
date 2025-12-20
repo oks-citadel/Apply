@@ -1,10 +1,12 @@
-import { HttpService } from '@nestjs/axios';
+
 import { BaseJobAdapter } from './base.adapter';
-import {
+
+import type {
   FetchOptions,
   FetchResult,
   NormalizedJob,
 } from '../interfaces/job-adapter.interface';
+import type { HttpService } from '@nestjs/axios';
 
 /**
  * Indeed API Adapter
@@ -113,7 +115,7 @@ export class IndeedAdapter extends BaseJobAdapter {
       location: rawJob.formattedLocation,
       ...location,
       remoteType: this.detectRemoteType(
-        rawJob.formattedLocation + ' ' + rawJob.snippet,
+        `${rawJob.formattedLocation  } ${  rawJob.snippet}`,
       ),
       description: this.cleanHtml(rawJob.snippet || ''),
       requirements: this.extractRequirements(rawJob.snippet || ''),
@@ -155,7 +157,7 @@ export class IndeedAdapter extends BaseJobAdapter {
   }
 
   private getDaysAgo(startDate?: Date): number {
-    if (!startDate) return 30; // Default to past 30 days
+    if (!startDate) {return 30;} // Default to past 30 days
 
     const daysDiff = Math.floor(
       (Date.now() - startDate.getTime()) / (1000 * 60 * 60 * 24),
@@ -169,7 +171,7 @@ export class IndeedAdapter extends BaseJobAdapter {
   }
 
   private parseRelativeDate(relativeTime: string): Date | undefined {
-    if (!relativeTime) return undefined;
+    if (!relativeTime) {return undefined;}
 
     const now = new Date();
     const match = relativeTime.match(/(\d+)\s*(hour|day|week|month)/i);
@@ -195,7 +197,7 @@ export class IndeedAdapter extends BaseJobAdapter {
 
   private calculateExpiry(postedTime: string): Date | undefined {
     const postedDate = this.parseRelativeDate(postedTime);
-    if (!postedDate) return undefined;
+    if (!postedDate) {return undefined;}
 
     // Most Indeed jobs expire after 30 days
     return new Date(postedDate.getTime() + 30 * 24 * 60 * 60 * 1000);

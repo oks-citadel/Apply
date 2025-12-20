@@ -1,8 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+
 import { FormMapping } from './entities/form-mapping.entity';
-import { Page } from 'playwright';
+
+import type { Page } from 'playwright';
+import type { Repository } from 'typeorm';
+
 
 export interface FormField {
   selector: string;

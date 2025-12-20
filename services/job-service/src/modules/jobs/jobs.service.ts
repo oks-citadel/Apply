@@ -1,14 +1,18 @@
 import { Injectable, NotFoundException, BadRequestException, Logger, Optional } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, ILike } from 'typeorm';
-import { HttpService } from '@nestjs/axios';
-import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
+import { ILike } from 'typeorm';
+
 import { Job } from './entities/job.entity';
 import { SavedJob } from './entities/saved-job.entity';
-import { RedisCacheService } from '../../common/cache';
-import { SearchJobsDto, PaginatedJobsResponseDto, JobResponseDto } from './dto/search-jobs.dto';
-import { SaveJobDto, UpdateSavedJobDto } from './dto/save-job.dto';
+
+
+import type { SaveJobDto, UpdateSavedJobDto } from './dto/save-job.dto';
+import type { SearchJobsDto, PaginatedJobsResponseDto, JobResponseDto } from './dto/search-jobs.dto';
+import type { RedisCacheService } from '../../common/cache';
+import type { HttpService } from '@nestjs/axios';
+import type { ConfigService } from '@nestjs/config';
+import type { Repository} from 'typeorm';
 
 @Injectable()
 export class JobsService {

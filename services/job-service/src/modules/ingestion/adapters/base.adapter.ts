@@ -1,15 +1,16 @@
-import { HttpService } from '@nestjs/axios';
 import { Logger } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
-import { AxiosRequestConfig } from 'axios';
-import {
+
+import type { JobSource } from '../entities/job-source.entity';
+import type {
   IJobAdapter,
   FetchOptions,
   FetchResult,
   NormalizedJob,
   HealthCheckResult,
 } from '../interfaces/job-adapter.interface';
-import { JobSource } from '../entities/job-source.entity';
+import type { HttpService } from '@nestjs/axios';
+import type { AxiosRequestConfig } from 'axios';
 
 /**
  * Base adapter class with common functionality for all job source adapters
@@ -218,13 +219,13 @@ export abstract class BaseJobAdapter implements IJobAdapter {
   protected buildQueryParams(options?: FetchOptions): Record<string, any> {
     const params: Record<string, any> = {};
 
-    if (options?.page) params.page = options.page;
-    if (options?.pageSize) params.limit = options.pageSize;
-    if (options?.pageToken) params.pageToken = options.pageToken;
-    if (options?.location) params.location = options.location;
-    if (options?.keywords?.length) params.q = options.keywords.join(' ');
-    if (options?.startDate) params.fromDate = options.startDate.toISOString();
-    if (options?.endDate) params.toDate = options.endDate.toISOString();
+    if (options?.page) {params.page = options.page;}
+    if (options?.pageSize) {params.limit = options.pageSize;}
+    if (options?.pageToken) {params.pageToken = options.pageToken;}
+    if (options?.location) {params.location = options.location;}
+    if (options?.keywords?.length) {params.q = options.keywords.join(' ');}
+    if (options?.startDate) {params.fromDate = options.startDate.toISOString();}
+    if (options?.endDate) {params.toDate = options.endDate.toISOString();}
 
     return params;
   }
@@ -244,7 +245,7 @@ export abstract class BaseJobAdapter implements IJobAdapter {
     state?: string;
     country?: string;
   } {
-    if (!location) return {};
+    if (!location) {return {};}
 
     const parts = location.split(',').map((p) => p.trim());
 
@@ -268,7 +269,7 @@ export abstract class BaseJobAdapter implements IJobAdapter {
     currency?: string;
     period?: string;
   } {
-    if (!salaryText) return {};
+    if (!salaryText) {return {};}
 
     const result: any = {};
 
@@ -304,7 +305,7 @@ export abstract class BaseJobAdapter implements IJobAdapter {
    * Detect remote type from text
    */
   protected detectRemoteType(text: string): 'onsite' | 'remote' | 'hybrid' {
-    if (!text) return 'onsite';
+    if (!text) {return 'onsite';}
 
     const lowerText = text.toLowerCase();
 

@@ -64,7 +64,9 @@ export class PushController {
     description: 'List of user devices',
     type: [DeviceToken],
   })
-  async getUserDevices(@Param('userId') userId: string): Promise<DeviceToken[]> {
+  async getUserDevices(
+    @Param('userId') userId: string,
+  ): Promise<DeviceToken[]> {
     return this.pushService.getUserDevices(userId);
   }
 

@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsString, IsNumber, IsEnum, IsBoolean, IsArray, Min, Max } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
+import { IsOptional, IsString, IsNumber, IsEnum, IsBoolean, IsArray, Min, Max } from 'class-validator';
+
 import { RemoteType, ExperienceLevel, EmploymentType } from '../entities/job.entity';
 
 export class SearchJobsDto {

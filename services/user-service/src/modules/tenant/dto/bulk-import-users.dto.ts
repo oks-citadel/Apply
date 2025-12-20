@@ -1,5 +1,6 @@
-import { IsString, IsEmail, IsEnum, IsOptional, IsArray, ValidateNested, IsBoolean } from 'class-validator';
 import { Type } from 'class-transformer';
+import { IsString, IsEmail, IsEnum, IsOptional, IsArray, ValidateNested, IsBoolean } from 'class-validator';
+
 import { UserRole } from '../enums/tenant-type.enum';
 
 export class BulkUserDto {

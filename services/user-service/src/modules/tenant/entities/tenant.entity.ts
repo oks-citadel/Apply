@@ -9,10 +9,11 @@ import {
   OneToOne,
   JoinColumn,
 } from 'typeorm';
-import { TenantType, TenantStatus } from '../enums/tenant-type.enum';
-import { TenantUser } from './tenant-user.entity';
+
 import { TenantDepartment } from './tenant-department.entity';
 import { TenantLicense } from './tenant-license.entity';
+import { TenantUser } from './tenant-user.entity';
+import { TenantType, TenantStatus } from '../enums/tenant-type.enum';
 
 @Entity('tenants')
 @Index(['slug'], { unique: true })

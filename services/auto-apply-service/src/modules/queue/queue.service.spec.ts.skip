@@ -1,8 +1,12 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { QueueService } from './queue.service';
 import { getQueueToken } from '@nestjs/bull';
-import { Queue, Job } from 'bull';
-import { ApplicationData } from '../adapters/base.adapter';
+import { Test } from '@nestjs/testing';
+import { Job } from 'bull';
+
+import { QueueService } from './queue.service';
+
+import type { ApplicationData } from '../adapters/base.adapter';
+import type { TestingModule } from '@nestjs/testing';
+import type { Queue} from 'bull';
 
 describe('QueueService', () => {
   let service: QueueService;

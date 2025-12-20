@@ -1,13 +1,15 @@
 import {
   Injectable,
-  CanActivate,
-  ExecutionContext,
   HttpException,
   HttpStatus,
   Logger,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { Reflector } from '@nestjs/core';
+
+import type {
+  CanActivate,
+  ExecutionContext} from '@nestjs/common';
+import type { ConfigService } from '@nestjs/config';
+import type { Reflector } from '@nestjs/core';
 
 interface RateLimitConfig {
   limit: number;

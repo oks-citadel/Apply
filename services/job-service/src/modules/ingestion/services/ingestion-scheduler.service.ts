@@ -1,11 +1,14 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, LessThanOrEqual } from 'typeorm';
-import { JobSource, SourceStatus } from '../entities/job-source.entity';
-import { IngestionService } from './ingestion.service';
+import { LessThanOrEqual } from 'typeorm';
+
 import { IngestionTrigger } from '../entities/ingestion-job.entity';
-import { DeduplicationService } from './deduplication.service';
+import { JobSource, SourceStatus } from '../entities/job-source.entity';
+
+import type { DeduplicationService } from './deduplication.service';
+import type { IngestionService } from './ingestion.service';
+import type { Repository} from 'typeorm';
 
 @Injectable()
 export class IngestionSchedulerService {

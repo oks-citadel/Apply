@@ -3,11 +3,17 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { DevicePlatform } from '../entities/device-token.entity';
 
 export class RegisterDeviceDto {
-  @ApiProperty({ description: 'User ID', example: '123e4567-e89b-12d3-a456-426614174000' })
+  @ApiProperty({
+    description: 'User ID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
   @IsString()
   userId: string;
 
-  @ApiProperty({ description: 'Device token from FCM/APNs', example: 'eXgVqN2...' })
+  @ApiProperty({
+    description: 'Device token from FCM/APNs',
+    example: 'eXgVqN2...',
+  })
   @IsString()
   token: string;
 
@@ -19,12 +25,15 @@ export class RegisterDeviceDto {
   @IsEnum(DevicePlatform)
   platform: DevicePlatform;
 
-  @ApiPropertyOptional({ description: 'Device name', example: 'John\'s iPhone' })
+  @ApiPropertyOptional({ description: 'Device name', example: "John's iPhone" })
   @IsOptional()
   @IsString()
   deviceName?: string;
 
-  @ApiPropertyOptional({ description: 'Device model', example: 'iPhone 14 Pro' })
+  @ApiPropertyOptional({
+    description: 'Device model',
+    example: 'iPhone 14 Pro',
+  })
   @IsOptional()
   @IsString()
   deviceModel?: string;
@@ -44,7 +53,10 @@ export class RegisterDeviceDto {
   @IsString()
   language?: string;
 
-  @ApiPropertyOptional({ description: 'Device timezone', example: 'America/New_York' })
+  @ApiPropertyOptional({
+    description: 'Device timezone',
+    example: 'America/New_York',
+  })
   @IsOptional()
   @IsString()
   timezone?: string;

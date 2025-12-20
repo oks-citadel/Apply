@@ -1,10 +1,14 @@
+import { createHash } from 'crypto';
+
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { createHash } from 'crypto';
-import { RawJobListing } from '../entities/raw-job-listing.entity';
+
+
 import { Job } from '../../jobs/entities/job.entity';
-import { NormalizedJob } from '../interfaces/job-adapter.interface';
+import { RawJobListing } from '../entities/raw-job-listing.entity';
+
+import type { NormalizedJob } from '../interfaces/job-adapter.interface';
+import type { Repository } from 'typeorm';
 
 export interface DeduplicationResult {
   isDuplicate: boolean;
@@ -128,7 +132,7 @@ export class DeduplicationService {
     const similarJobs: Array<{ id: string; similarity: number }> = [];
 
     for (const existing of recentJobs) {
-      if (existing.fingerprint === fingerprint) continue;
+      if (existing.fingerprint === fingerprint) {continue;}
 
       const similarity = this.calculateSimilarity(
         normalizedJob,
@@ -175,7 +179,7 @@ export class DeduplicationService {
         job1.companyName,
         job2.companyName,
       );
-      if (companySimilarity < 0.8) return 0; // Different companies
+      if (companySimilarity < 0.8) {return 0;} // Different companies
       score += companySimilarity * 0.3;
       weights += 0.3;
     }
@@ -199,8 +203,8 @@ export class DeduplicationService {
    * Calculate string similarity using Levenshtein distance
    */
   private stringSimilarity(str1: string, str2: string): number {
-    if (str1 === str2) return 1;
-    if (!str1 || !str2) return 0;
+    if (str1 === str2) {return 1;}
+    if (!str1 || !str2) {return 0;}
 
     const s1 = str1.toLowerCase();
     const s2 = str2.toLowerCase();
@@ -281,7 +285,7 @@ export class DeduplicationService {
    * Normalize a string for comparison
    */
   private normalizeString(str: string): string {
-    if (!str) return '';
+    if (!str) {return '';}
 
     return str
       .toLowerCase()

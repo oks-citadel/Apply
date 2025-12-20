@@ -1,3 +1,6 @@
+
+import { randomBytes } from 'crypto';
+
 import {
   Injectable,
   NotFoundException,
@@ -7,21 +10,24 @@ import {
   Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In, Between, MoreThan } from 'typeorm';
-import { randomBytes } from 'crypto';
-import { Tenant } from './entities/tenant.entity';
-import { TenantUser } from './entities/tenant-user.entity';
-import { TenantLicense } from './entities/tenant-license.entity';
-import { TenantDepartment } from './entities/tenant-department.entity';
+import { In, Between, MoreThan } from 'typeorm';
+
+import { AnalyticsType, TimeRange } from './dto/analytics-query.dto';
 import { PlacementTracking } from './entities/placement-tracking.entity';
-import { CreateTenantDto } from './dto/create-tenant.dto';
-import { UpdateTenantDto } from './dto/update-tenant.dto';
-import { BulkImportUsersDto } from './dto/bulk-import-users.dto';
-import { AnalyticsQueryDto, AnalyticsType, TimeRange } from './dto/analytics-query.dto';
-import { CreateDepartmentDto } from './dto/create-department.dto';
-import { CreatePlacementDto } from './dto/create-placement.dto';
-import { UpdateBrandingDto } from './dto/update-branding.dto';
+import { TenantDepartment } from './entities/tenant-department.entity';
+import { TenantLicense } from './entities/tenant-license.entity';
+import { TenantUser } from './entities/tenant-user.entity';
+import { Tenant } from './entities/tenant.entity';
 import { TenantStatus, LicenseType } from './enums/tenant-type.enum';
+
+import type { AnalyticsQueryDto} from './dto/analytics-query.dto';
+import type { BulkImportUsersDto } from './dto/bulk-import-users.dto';
+import type { CreateDepartmentDto } from './dto/create-department.dto';
+import type { CreatePlacementDto } from './dto/create-placement.dto';
+import type { CreateTenantDto } from './dto/create-tenant.dto';
+import type { UpdateBrandingDto } from './dto/update-branding.dto';
+import type { UpdateTenantDto } from './dto/update-tenant.dto';
+import type { Repository} from 'typeorm';
 
 @Injectable()
 export class TenantService {
@@ -597,7 +603,7 @@ export class TenantService {
     const placements = await this.placementTrackingRepository.find({
       where: {
         tenant_id: tenantId,
-        cohort: cohort,
+        cohort,
         placement_date: Between(startDate, endDate),
       },
     });

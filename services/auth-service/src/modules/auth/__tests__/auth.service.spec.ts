@@ -1,25 +1,28 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { JwtService } from '@nestjs/jwt';
-import { ConfigService } from '@nestjs/config';
-import { AuthService } from '../auth.service';
-import { UsersService } from '../../users/users.service';
-import { EmailService } from '../../email/email.service';
-import { RegisterDto } from '../dto/register.dto';
-import { LoginDto } from '../dto/login.dto';
-import { ForgotPasswordDto } from '../dto/forgot-password.dto';
-import { ResetPasswordDto } from '../dto/reset-password.dto';
-import { VerifyEmailDto } from '../dto/verify-email.dto';
-import { MfaVerifyDto } from '../dto/mfa-verify.dto';
-import { User, UserRole, UserStatus, AuthProvider } from '../../users/entities/user.entity';
 import {
   UnauthorizedException,
   ConflictException,
   BadRequestException,
   NotFoundException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
+import { Test } from '@nestjs/testing';
 import * as bcrypt from 'bcrypt';
-import * as speakeasy from 'speakeasy';
 import * as QRCode from 'qrcode';
+import * as speakeasy from 'speakeasy';
+
+import { EmailService } from '../../email/email.service';
+import { User, UserRole, UserStatus, AuthProvider } from '../../users/entities/user.entity';
+import { UsersService } from '../../users/users.service';
+import { AuthService } from '../auth.service';
+
+import type { ForgotPasswordDto } from '../dto/forgot-password.dto';
+import type { LoginDto } from '../dto/login.dto';
+import type { MfaVerifyDto } from '../dto/mfa-verify.dto';
+import type { RegisterDto } from '../dto/register.dto';
+import type { ResetPasswordDto } from '../dto/reset-password.dto';
+import type { VerifyEmailDto } from '../dto/verify-email.dto';
+import type { TestingModule } from '@nestjs/testing';
 
 // Mock external dependencies
 jest.mock('bcrypt');

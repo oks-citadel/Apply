@@ -1,6 +1,10 @@
-import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
-import { chromium, Browser, BrowserContext, Page } from 'playwright';
+import { Injectable, Logger } from '@nestjs/common';
+import { chromium } from 'playwright';
+
 import { browserConfig, contextConfig, navigationConfig } from '../../config/browser.config';
+
+import type { OnModuleDestroy } from '@nestjs/common';
+import type { Browser, BrowserContext, Page } from 'playwright';
 
 @Injectable()
 export class BrowserService implements OnModuleDestroy {

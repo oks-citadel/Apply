@@ -1,8 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Job } from '../../jobs/entities/job.entity';
+
 import { EmployerProfile } from '../entities/employer-profile.entity';
+
+import type { Job } from '../../jobs/entities/job.entity';
+import type { Repository } from 'typeorm';
+
 
 interface FraudDetectionResult {
   is_scam: boolean;
@@ -318,7 +321,7 @@ export class FraudDetectorService {
    * Check for payment requirements
    */
   private checkPaymentRequirements(job: Job, indicators: string[], signals: any): number {
-    let score = 0;
+    const score = 0;
     const fullText = `${job.description} ${job.requirements.join(' ')}`.toLowerCase();
 
     const paymentKeywords = [
@@ -446,9 +449,9 @@ export class FraudDetectorService {
    * Determine risk level based on scam score
    */
   private determineRiskLevel(scamScore: number): 'low' | 'medium' | 'high' | 'critical' {
-    if (scamScore >= 80) return 'critical';
-    if (scamScore >= 60) return 'high';
-    if (scamScore >= 40) return 'medium';
+    if (scamScore >= 80) {return 'critical';}
+    if (scamScore >= 60) {return 'high';}
+    if (scamScore >= 40) {return 'medium';}
     return 'low';
   }
 
@@ -456,8 +459,8 @@ export class FraudDetectorService {
    * Get employer risk score
    */
   private getEmployerRiskScore(profile: EmployerProfile): number {
-    if (profile.verification_status === 'blacklisted') return 100;
-    if (profile.verification_status === 'suspicious') return 70;
+    if (profile.verification_status === 'blacklisted') {return 100;}
+    if (profile.verification_status === 'suspicious') {return 70;}
 
     // Inverse of credibility score
     return 100 - profile.credibility_score;

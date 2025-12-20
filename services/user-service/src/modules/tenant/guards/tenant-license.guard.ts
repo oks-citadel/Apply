@@ -1,12 +1,14 @@
 import {
   Injectable,
-  CanActivate,
-  ExecutionContext,
   ForbiddenException,
   Logger,
 } from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
-import { TenantService } from '../tenant.service';
+
+import type { TenantService } from '../tenant.service';
+import type {
+  CanActivate,
+  ExecutionContext} from '@nestjs/common';
+import type { Reflector } from '@nestjs/core';
 
 export const REQUIRED_FEATURE = 'required_feature';
 export const REQUIRED_LICENSE = 'required_license';
@@ -116,9 +118,7 @@ export class TenantLicenseGuard implements CanActivate {
 /**
  * Decorator to mark required features
  */
-export const RequireFeature = (feature: string) => {
-  return (target: any, propertyKey: string, descriptor: PropertyDescriptor) => {
+export const RequireFeature = (feature: string) => (target: any, propertyKey: string, descriptor: PropertyDescriptor) => {
     Reflect.defineMetadata(REQUIRED_FEATURE, feature, descriptor.value);
     return descriptor;
   };
-};

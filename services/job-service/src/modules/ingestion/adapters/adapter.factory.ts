@@ -1,29 +1,32 @@
 import { Injectable } from '@nestjs/common';
-import { HttpService } from '@nestjs/axios';
-import { IJobAdapter, IJobAdapterFactory } from '../interfaces/job-adapter.interface';
-import { JobSource, SourceProvider } from '../entities/job-source.entity';
+
 
 // Job Board Adapters
-import { LinkedInAdapter } from './linkedin.adapter';
-import { IndeedAdapter } from './indeed.adapter';
-import { GlassdoorAdapter } from './glassdoor.adapter';
-import { GoogleJobsAdapter } from './google-jobs.adapter';
-import { ZipRecruiterAdapter } from './ziprecruiter.adapter';
 
 // ATS Adapters
-import { GreenhouseAdapter } from './greenhouse.adapter';
-import { LeverAdapter } from './lever.adapter';
-import { WorkdayAdapter } from './workday.adapter';
 import { BambooHRAdapter } from './bamboohr.adapter';
+import { GlassdoorAdapter } from './glassdoor.adapter';
+import { GoogleJobsAdapter } from './google-jobs.adapter';
+import { GreenhouseAdapter } from './greenhouse.adapter';
+import { IndeedAdapter } from './indeed.adapter';
+import { LeverAdapter } from './lever.adapter';
+import { LinkedInAdapter } from './linkedin.adapter';
 
 // Remote Platform Adapters
-import { WellfoundAdapter } from './wellfound.adapter';
 import { RemoteOKAdapter } from './remoteok.adapter';
-import { WeWorkRemotelyAdapter } from './weworkremotely.adapter';
 
 // Government Job Board Adapters
-import { USAJobsAdapter } from './usajobs.adapter';
 import { UKCivilServiceAdapter } from './uk-civil-service.adapter';
+import { USAJobsAdapter } from './usajobs.adapter';
+import { WellfoundAdapter } from './wellfound.adapter';
+import { WeWorkRemotelyAdapter } from './weworkremotely.adapter';
+import { WorkdayAdapter } from './workday.adapter';
+import { ZipRecruiterAdapter } from './ziprecruiter.adapter';
+import { SourceProvider } from '../entities/job-source.entity';
+
+import type { JobSource} from '../entities/job-source.entity';
+import type { IJobAdapter, IJobAdapterFactory } from '../interfaces/job-adapter.interface';
+import type { HttpService } from '@nestjs/axios';
 
 @Injectable()
 export class JobAdapterFactory implements IJobAdapterFactory {

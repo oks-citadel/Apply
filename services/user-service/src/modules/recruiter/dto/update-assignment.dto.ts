@@ -1,3 +1,4 @@
+import { ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsString,
   IsOptional,
@@ -6,7 +7,7 @@ import {
   Min,
   Max,
 } from 'class-validator';
-import { ApiPropertyOptional } from '@nestjs/swagger';
+
 import { AssignmentStatus } from '../entities/recruiter-assignment.entity';
 
 export class UpdateAssignmentDto {

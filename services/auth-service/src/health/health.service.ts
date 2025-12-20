@@ -1,6 +1,7 @@
 import { Injectable, HttpStatus } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
-import { DataSource } from 'typeorm';
+
+import type { DataSource } from 'typeorm';
 
 // Inline health check utilities (replaces @applyforus/utils)
 async function checkDatabaseConnection(dataSource: DataSource): Promise<{ status: string; message?: string }> {

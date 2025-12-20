@@ -1,12 +1,16 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { ConfigService } from '@nestjs/config';
 import { BadRequestException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { Test } from '@nestjs/testing';
+import { getRepositoryToken } from '@nestjs/typeorm';
 import Stripe from 'stripe';
-import { SubscriptionService } from '../subscription.service';
-import { Subscription } from '../entities/subscription.entity';
+
+
 import { SubscriptionTier, SubscriptionStatus } from '../../../common/enums/subscription-tier.enum';
+import { Subscription } from '../entities/subscription.entity';
+import { SubscriptionService } from '../subscription.service';
+
+import type { TestingModule } from '@nestjs/testing';
+import type { Repository } from 'typeorm';
 
 describe('SubscriptionService', () => {
   let service: SubscriptionService;

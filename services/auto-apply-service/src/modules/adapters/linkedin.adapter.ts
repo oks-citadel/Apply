@@ -1,8 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
+
+import { BaseATSAdapter } from './base.adapter';
+
+import type { ApplicationData, ApplicationResult } from './base.adapter';
+import type { BrowserService } from '../browser/browser.service';
+import type { FormMappingService } from '../form-mapping/form-mapping.service';
 import type { Page } from 'playwright';
-import { BaseATSAdapter, ApplicationData, ApplicationResult } from './base.adapter';
-import { BrowserService } from '../browser/browser.service';
-import { FormMappingService } from '../form-mapping/form-mapping.service';
 
 interface LinkedInJobData {
   jobId: string;
@@ -271,7 +274,7 @@ export class LinkedInAdapter extends BaseATSAdapter {
   ): Promise<void> {
     try {
       const label = await this.getFieldLabel(page, dropdown);
-      if (!label) return;
+      if (!label) {return;}
 
       // Get available options
       const options = await dropdown.$$eval('option', (opts: HTMLOptionElement[]) =>
@@ -303,10 +306,10 @@ export class LinkedInAdapter extends BaseATSAdapter {
   ): Promise<void> {
     try {
       const currentValue = await textArea.inputValue();
-      if (currentValue) return; // Already filled
+      if (currentValue) {return;} // Already filled
 
       const label = await this.getFieldLabel(page, textArea);
-      if (!label) return;
+      if (!label) {return;}
 
       const answer = await this.formMappingService.generateAIAnswer(label, data);
       await textArea.fill(answer);
@@ -323,10 +326,10 @@ export class LinkedInAdapter extends BaseATSAdapter {
   ): Promise<void> {
     try {
       const radios = await page.$$(groupSelector);
-      if (radios.length === 0) return;
+      if (radios.length === 0) {return;}
 
       const label = await this.getFieldLabel(page, radios[0]);
-      if (!label) return;
+      if (!label) {return;}
 
       const answer = await this.formMappingService.generateAIAnswer(label, data);
 
@@ -358,10 +361,10 @@ export class LinkedInAdapter extends BaseATSAdapter {
 
       for (const checkbox of checkboxes) {
         const isChecked = await checkbox.isChecked();
-        if (isChecked) continue;
+        if (isChecked) {continue;}
 
         const label = await this.getFieldLabel(page, checkbox);
-        if (!label) continue;
+        if (!label) {continue;}
 
         // Check agreement/terms checkboxes automatically
         const lowerLabel = label.toLowerCase();

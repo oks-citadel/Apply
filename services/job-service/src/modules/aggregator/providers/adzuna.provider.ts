@@ -1,8 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import axios, { AxiosInstance } from 'axios';
-import { JobProvider, RawJobData, JobProviderConfig } from '../interfaces/job-provider.interface';
-import { Job, JobSource, RemoteType, ExperienceLevel, EmploymentType } from '../../jobs/entities/job.entity';
+import axios from 'axios';
+
+import { JobSource, RemoteType, ExperienceLevel, EmploymentType } from '../../jobs/entities/job.entity';
+
+import type { Job} from '../../jobs/entities/job.entity';
+import type { JobProvider, RawJobData, JobProviderConfig } from '../interfaces/job-provider.interface';
+import type { ConfigService } from '@nestjs/config';
+import type { AxiosInstance } from 'axios';
 
 @Injectable()
 export class AdzunaProvider implements JobProvider {
@@ -115,6 +119,7 @@ export class AdzunaProvider implements JobProvider {
       salary_min: job.salary_min || null,
       salary_max: job.salary_max || null,
       salary_currency: 'USD',
+      salary_period: 'yearly',
       metadata: {
         source_api: 'rapidapi',
         category: job.category?.label,
@@ -126,7 +131,7 @@ export class AdzunaProvider implements JobProvider {
   }
 
   private parseJobListings(data: any): RawJobData[] {
-    if (!data?.results) return [];
+    if (!data?.results) {return [];}
 
     return data.results.map((job: any) => ({
       external_id: job.id || '',
@@ -144,6 +149,7 @@ export class AdzunaProvider implements JobProvider {
       salary_min: job.salary_min || null,
       salary_max: job.salary_max || null,
       salary_currency: 'GBP', // Adzuna default is GBP, convert as needed
+      salary_period: 'yearly',
       metadata: {
         adzuna_id: job.id,
         category: job.category?.label,
@@ -211,6 +217,7 @@ export class AdzunaProvider implements JobProvider {
       salary_min: rawJob.salary_min,
       salary_max: rawJob.salary_max,
       salary_currency: rawJob.salary_currency || 'USD',
+      salary_period: rawJob.salary_period || 'yearly',
       description: rawJob.description,
       requirements: rawJob.requirements || [],
       benefits: rawJob.benefits || [],
@@ -283,11 +290,11 @@ export class AdzunaProvider implements JobProvider {
 
   private mapEmploymentType(type: string): string {
     const normalized = (type || '').toLowerCase();
-    if (normalized.includes('full') || normalized.includes('permanent')) return 'full_time';
-    if (normalized.includes('part')) return 'part_time';
-    if (normalized.includes('contract')) return 'contract';
-    if (normalized.includes('temp')) return 'temporary';
-    if (normalized.includes('intern')) return 'internship';
+    if (normalized.includes('full') || normalized.includes('permanent')) {return 'full_time';}
+    if (normalized.includes('part')) {return 'part_time';}
+    if (normalized.includes('contract')) {return 'contract';}
+    if (normalized.includes('temp')) {return 'temporary';}
+    if (normalized.includes('intern')) {return 'internship';}
     return 'full_time';
   }
 
@@ -306,11 +313,11 @@ export class AdzunaProvider implements JobProvider {
     const title = (job.title || '').toLowerCase();
     const desc = (job.description || '').toLowerCase();
 
-    if (title.includes('senior') || title.includes('sr.') || title.includes('sr ')) return 'senior';
-    if (title.includes('junior') || title.includes('jr.') || title.includes('jr ')) return 'junior';
-    if (title.includes('entry') || title.includes('graduate') || desc.includes('0-2 years')) return 'entry';
-    if (title.includes('lead') || title.includes('principal')) return 'lead';
-    if (title.includes('director') || title.includes('executive') || title.includes('vp')) return 'executive';
+    if (title.includes('senior') || title.includes('sr.') || title.includes('sr ')) {return 'senior';}
+    if (title.includes('junior') || title.includes('jr.') || title.includes('jr ')) {return 'junior';}
+    if (title.includes('entry') || title.includes('graduate') || desc.includes('0-2 years')) {return 'entry';}
+    if (title.includes('lead') || title.includes('principal')) {return 'lead';}
+    if (title.includes('director') || title.includes('executive') || title.includes('vp')) {return 'executive';}
     return 'mid';
   }
 
@@ -327,7 +334,7 @@ export class AdzunaProvider implements JobProvider {
   }
 
   private extractRequirements(description: string): string[] {
-    if (!description) return [];
+    if (!description) {return [];}
     const requirements: string[] = [];
     const lines = description.split('\n');
     let inRequirements = false;
@@ -349,7 +356,7 @@ export class AdzunaProvider implements JobProvider {
   }
 
   private extractBenefits(description: string): string[] {
-    if (!description) return [];
+    if (!description) {return [];}
     const benefits: string[] = [];
     const lines = description.split('\n');
     let inBenefits = false;
@@ -368,7 +375,7 @@ export class AdzunaProvider implements JobProvider {
   }
 
   private extractSkills(description: string): string[] {
-    if (!description) return [];
+    if (!description) {return [];}
     const commonSkills = [
       'javascript', 'typescript', 'python', 'java', 'c#', 'c++', 'go', 'rust', 'ruby', 'php',
       'react', 'angular', 'vue', 'node.js', 'express', 'django', 'flask', 'spring',

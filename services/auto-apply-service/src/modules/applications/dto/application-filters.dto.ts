@@ -1,5 +1,6 @@
-import { IsOptional, IsEnum, IsString, IsArray, IsNumber, Min, IsDateString } from 'class-validator';
 import { Type } from 'class-transformer';
+import { IsOptional, IsEnum, IsString, IsArray, IsNumber, Min, IsDateString } from 'class-validator';
+
 import { ApplicationStatus, ApplicationSource } from '../entities/application.entity';
 
 export class ApplicationFiltersDto {

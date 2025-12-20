@@ -13,21 +13,25 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
-import { ProfileService } from './profile.service';
-import { ProfileSectionsService } from './profile-sections.service';
-import { UpdateProfileDto } from './dto/update-profile.dto';
-import {
-  CreateWorkExperienceDto,
-  UpdateWorkExperienceDto,
-} from './dto/work-experience.dto';
-import { CreateEducationDto, UpdateEducationDto } from './dto/education.dto';
-import { CreateSkillDto, UpdateSkillDto } from './dto/skill.dto';
-import {
+
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+
+import type {
   CreateCertificationDto,
   UpdateCertificationDto,
 } from './dto/certification.dto';
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
-import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import type { CreateEducationDto, UpdateEducationDto } from './dto/education.dto';
+import type { CreateSkillDto, UpdateSkillDto } from './dto/skill.dto';
+import type { UpdateProfileDto } from './dto/update-profile.dto';
+import type {
+  CreateWorkExperienceDto,
+  UpdateWorkExperienceDto,
+} from './dto/work-experience.dto';
+import type { ProfileSectionsService } from './profile-sections.service';
+import type { ProfileService } from './profile.service';
+
+
 
 @ApiTags('Profile')
 @ApiBearerAuth('JWT-auth')

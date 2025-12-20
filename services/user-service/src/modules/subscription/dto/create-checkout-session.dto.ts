@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEnum, IsString, IsUrl, IsOptional } from 'class-validator';
+
 import { SubscriptionTier } from '../../../common/enums/subscription-tier.enum';
 
 export class CreateCheckoutSessionDto {

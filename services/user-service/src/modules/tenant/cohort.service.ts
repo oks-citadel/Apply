@@ -5,11 +5,14 @@ import {
   Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between } from 'typeorm';
+import { Between } from 'typeorm';
+
 import { Cohort } from './entities/cohort.entity';
 import { PlacementTracking } from './entities/placement-tracking.entity';
 import { TenantUser } from './entities/tenant-user.entity';
-import { CreateCohortDto } from './dto/create-cohort.dto';
+
+import type { CreateCohortDto } from './dto/create-cohort.dto';
+import type { Repository} from 'typeorm';
 
 @Injectable()
 export class CohortService {
@@ -246,7 +249,7 @@ export class CohortService {
       recentPlacements: placements
         .filter((p) => p.placement_status === 'placed')
         .sort((a, b) => {
-          if (!a.placement_date || !b.placement_date) return 0;
+          if (!a.placement_date || !b.placement_date) {return 0;}
           return new Date(b.placement_date).getTime() - new Date(a.placement_date).getTime();
         })
         .slice(0, 10),

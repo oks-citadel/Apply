@@ -1,5 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { DetectedField, FieldCategory } from './field-detection.engine';
+
+import { FieldCategory } from './field-detection.engine';
+
+import type { DetectedField} from './field-detection.engine';
 
 export interface UserProfile {
   personalInfo: {
@@ -216,9 +219,9 @@ export class SemanticMatchingEngine {
   }
 
   private matchPersonalInfo(label: string, profile: UserProfile): string | null {
-    if (/first[\s_-]?name/i.test(label)) return profile.personalInfo.firstName;
-    if (/last[\s_-]?name/i.test(label)) return profile.personalInfo.lastName;
-    if (/middle[\s_-]?name/i.test(label)) return profile.personalInfo.middleName || '';
+    if (/first[\s_-]?name/i.test(label)) {return profile.personalInfo.firstName;}
+    if (/last[\s_-]?name/i.test(label)) {return profile.personalInfo.lastName;}
+    if (/middle[\s_-]?name/i.test(label)) {return profile.personalInfo.middleName || '';}
     if (/full[\s_-]?name/i.test(label)) {
       return `${profile.personalInfo.firstName} ${profile.personalInfo.lastName}`;
     }
@@ -228,54 +231,54 @@ export class SemanticMatchingEngine {
     if (/date[\s_-]?of[\s_-]?birth|dob/i.test(label)) {
       return profile.personalInfo.dateOfBirth || '';
     }
-    if (/gender/i.test(label)) return profile.personalInfo.gender || '';
-    if (/veteran/i.test(label)) return profile.veteranStatus || '';
-    if (/disability/i.test(label)) return profile.disabilityStatus || '';
-    if (/ethnicity|race/i.test(label)) return profile.ethnicity || '';
+    if (/gender/i.test(label)) {return profile.personalInfo.gender || '';}
+    if (/veteran/i.test(label)) {return profile.veteranStatus || '';}
+    if (/disability/i.test(label)) {return profile.disabilityStatus || '';}
+    if (/ethnicity|race/i.test(label)) {return profile.ethnicity || '';}
 
     return null;
   }
 
   private matchContactInfo(label: string, profile: UserProfile): string | null {
-    if (/email/i.test(label)) return profile.personalInfo.email;
-    if (/phone|mobile|cell|telephone/i.test(label)) return profile.personalInfo.phone;
-    if (/street|address[\s_-]?line/i.test(label)) return profile.address.street;
-    if (/city/i.test(label)) return profile.address.city;
-    if (/state|province/i.test(label)) return profile.address.state;
-    if (/zip|postal/i.test(label)) return profile.address.zipCode;
-    if (/country/i.test(label)) return profile.address.country;
-    if (/linkedin/i.test(label)) return profile.links.linkedin || '';
-    if (/github/i.test(label)) return profile.links.github || '';
-    if (/portfolio|website/i.test(label)) return profile.links.portfolio || profile.links.website || '';
+    if (/email/i.test(label)) {return profile.personalInfo.email;}
+    if (/phone|mobile|cell|telephone/i.test(label)) {return profile.personalInfo.phone;}
+    if (/street|address[\s_-]?line/i.test(label)) {return profile.address.street;}
+    if (/city/i.test(label)) {return profile.address.city;}
+    if (/state|province/i.test(label)) {return profile.address.state;}
+    if (/zip|postal/i.test(label)) {return profile.address.zipCode;}
+    if (/country/i.test(label)) {return profile.address.country;}
+    if (/linkedin/i.test(label)) {return profile.links.linkedin || '';}
+    if (/github/i.test(label)) {return profile.links.github || '';}
+    if (/portfolio|website/i.test(label)) {return profile.links.portfolio || profile.links.website || '';}
 
     return null;
   }
 
   private matchEmploymentInfo(label: string, resume: ResumeData): string | null {
-    if (resume.experience.length === 0) return null;
+    if (resume.experience.length === 0) {return null;}
 
     const mostRecent = resume.experience[0];
 
-    if (/company[\s_-]?name|employer/i.test(label)) return mostRecent.company;
-    if (/job[\s_-]?title|position/i.test(label)) return mostRecent.title;
-    if (/start[\s_-]?date/i.test(label)) return mostRecent.startDate;
-    if (/end[\s_-]?date/i.test(label)) return mostRecent.current ? 'Present' : mostRecent.endDate || '';
-    if (/responsibilities|duties|description/i.test(label)) return mostRecent.description;
+    if (/company[\s_-]?name|employer/i.test(label)) {return mostRecent.company;}
+    if (/job[\s_-]?title|position/i.test(label)) {return mostRecent.title;}
+    if (/start[\s_-]?date/i.test(label)) {return mostRecent.startDate;}
+    if (/end[\s_-]?date/i.test(label)) {return mostRecent.current ? 'Present' : mostRecent.endDate || '';}
+    if (/responsibilities|duties|description/i.test(label)) {return mostRecent.description;}
 
     return null;
   }
 
   private matchEducationInfo(label: string, resume: ResumeData): string | null {
-    if (resume.education.length === 0) return null;
+    if (resume.education.length === 0) {return null;}
 
     const mostRecent = resume.education[0];
 
-    if (/school[\s_-]?name|university|college|institution/i.test(label)) return mostRecent.institution;
-    if (/degree/i.test(label)) return mostRecent.degree;
-    if (/major|field[\s_-]?of[\s_-]?study/i.test(label)) return mostRecent.major;
-    if (/minor/i.test(label)) return mostRecent.minor || '';
-    if (/gpa/i.test(label)) return mostRecent.gpa || '';
-    if (/graduation/i.test(label)) return mostRecent.graduationDate;
+    if (/school[\s_-]?name|university|college|institution/i.test(label)) {return mostRecent.institution;}
+    if (/degree/i.test(label)) {return mostRecent.degree;}
+    if (/major|field[\s_-]?of[\s_-]?study/i.test(label)) {return mostRecent.major;}
+    if (/minor/i.test(label)) {return mostRecent.minor || '';}
+    if (/gpa/i.test(label)) {return mostRecent.gpa || '';}
+    if (/graduation/i.test(label)) {return mostRecent.graduationDate;}
 
     return null;
   }
@@ -416,22 +419,22 @@ export class SemanticMatchingEngine {
     value: string | null,
     source: FieldMatch['source'],
   ): number {
-    if (!value) return 0;
+    if (!value) {return 0;}
 
     let confidence = 50; // Base confidence
 
     // Boost for recognized category
-    if (field.fieldCategory !== 'unknown') confidence += 20;
+    if (field.fieldCategory !== 'unknown') {confidence += 20;}
 
     // Boost for profile data (most reliable)
-    if (source === 'profile') confidence += 15;
+    if (source === 'profile') {confidence += 15;}
 
     // Boost for clear field detection
     confidence += Math.min(15, field.confidence / 10);
 
     // Reduce confidence for very long or very short values
-    if (value.length < 2) confidence -= 20;
-    if (value.length > 1000) confidence -= 10;
+    if (value.length < 2) {confidence -= 20;}
+    if (value.length > 1000) {confidence -= 10;}
 
     return Math.max(0, Math.min(100, confidence));
   }

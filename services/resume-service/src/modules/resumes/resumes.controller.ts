@@ -25,17 +25,21 @@ import {
   ApiBody,
   ApiQuery,
 } from '@nestjs/swagger';
-import { Response } from 'express';
 import { plainToInstance } from 'class-transformer';
-import { ResumesService } from './resumes.service';
-import { ExportService } from '../export/export.service';
-import { CreateResumeDto } from './dto/create-resume.dto';
-import { UpdateResumeDto } from './dto/update-resume.dto';
-import { OptimizeResumeDto } from './dto/optimize-resume.dto';
-import { ResumeResponseDto, ResumeListResponseDto } from './dto/resume-response.dto';
+
+
 import { ResumeOptimizationResponseDto } from './dto/resume-optimization-response.dto';
+import { ResumeResponseDto, ResumeListResponseDto } from './dto/resume-response.dto';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
-import { CurrentUser, JwtPayload } from '../../common/decorators/current-user.decorator';
+
+import type { CreateResumeDto } from './dto/create-resume.dto';
+import type { OptimizeResumeDto } from './dto/optimize-resume.dto';
+import type { UpdateResumeDto } from './dto/update-resume.dto';
+import type { ResumesService } from './resumes.service';
+import type { JwtPayload } from '../../common/decorators/current-user.decorator';
+import type { ExportService } from '../export/export.service';
+import type { Response } from 'express';
 
 @ApiTags('resumes')
 @ApiBearerAuth('JWT-auth')

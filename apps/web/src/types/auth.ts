@@ -1,17 +1,21 @@
 export interface User {
   id: string;
   email: string;
-  fullName: string;
+  fullName?: string;
+  firstName?: string;
+  lastName?: string;
+  username?: string | null;
   phone?: string;
   bio?: string;
   avatarUrl?: string;
   role: 'user' | 'admin';
   mfaEnabled?: boolean;
+  isMfaEnabled?: boolean;
   isEmailVerified?: boolean;
-  status?: 'ACTIVE' | 'PENDING_VERIFICATION' | 'SUSPENDED' | 'INACTIVE';
+  status?: 'ACTIVE' | 'PENDING_VERIFICATION' | 'SUSPENDED' | 'INACTIVE' | 'active' | 'pending_verification' | 'suspended' | 'inactive';
   authProvider?: 'local' | 'google' | 'linkedin' | 'github';
-  createdAt: string;
-  updatedAt: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface LoginCredentials {

@@ -5,12 +5,13 @@
  * Replace your existing main.ts with this example (after adjusting for your specific needs).
  */
 
-import { initTelemetry } from '@applyforus/telemetry';
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import helmet from 'helmet';
 import compression from 'compression';
+import helmet from 'helmet';
+
+import { initTelemetry } from '@applyforus/telemetry';
 
 async function bootstrap() {
   // STEP 1: Initialize telemetry FIRST - before any other imports

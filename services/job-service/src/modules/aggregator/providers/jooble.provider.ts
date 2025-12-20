@@ -1,8 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import axios, { AxiosInstance } from 'axios';
-import { JobProvider, RawJobData, JobProviderConfig } from '../interfaces/job-provider.interface';
-import { Job, JobSource, RemoteType, ExperienceLevel, EmploymentType } from '../../jobs/entities/job.entity';
+import axios from 'axios';
+
+import { JobSource, RemoteType, ExperienceLevel, EmploymentType } from '../../jobs/entities/job.entity';
+
+import type { Job} from '../../jobs/entities/job.entity';
+import type { JobProvider, RawJobData, JobProviderConfig } from '../interfaces/job-provider.interface';
+import type { ConfigService } from '@nestjs/config';
+import type { AxiosInstance } from 'axios';
 
 @Injectable()
 export class JoobleProvider implements JobProvider {
@@ -114,7 +118,7 @@ export class JoobleProvider implements JobProvider {
   }
 
   private parseJobListings(data: any): RawJobData[] {
-    if (!data?.jobs) return [];
+    if (!data?.jobs) {return [];}
 
     return data.jobs.map((job: any) => ({
       external_id: job.id || `jb-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -228,11 +232,11 @@ export class JoobleProvider implements JobProvider {
 
   private mapEmploymentType(type: string): string {
     const normalized = (type || '').toLowerCase();
-    if (normalized.includes('full')) return 'full_time';
-    if (normalized.includes('part')) return 'part_time';
-    if (normalized.includes('contract')) return 'contract';
-    if (normalized.includes('temp')) return 'temporary';
-    if (normalized.includes('intern')) return 'internship';
+    if (normalized.includes('full')) {return 'full_time';}
+    if (normalized.includes('part')) {return 'part_time';}
+    if (normalized.includes('contract')) {return 'contract';}
+    if (normalized.includes('temp')) {return 'temporary';}
+    if (normalized.includes('intern')) {return 'internship';}
     return 'full_time';
   }
 
@@ -250,11 +254,11 @@ export class JoobleProvider implements JobProvider {
   private mapExperienceLevel(job: any): string {
     const title = (job.title || '').toLowerCase();
 
-    if (title.includes('senior') || title.includes('sr.')) return 'senior';
-    if (title.includes('junior') || title.includes('jr.')) return 'junior';
-    if (title.includes('entry') || title.includes('graduate')) return 'entry';
-    if (title.includes('lead') || title.includes('principal')) return 'lead';
-    if (title.includes('director') || title.includes('executive')) return 'executive';
+    if (title.includes('senior') || title.includes('sr.')) {return 'senior';}
+    if (title.includes('junior') || title.includes('jr.')) {return 'junior';}
+    if (title.includes('entry') || title.includes('graduate')) {return 'entry';}
+    if (title.includes('lead') || title.includes('principal')) {return 'lead';}
+    if (title.includes('director') || title.includes('executive')) {return 'executive';}
     return 'mid';
   }
 
@@ -271,8 +275,8 @@ export class JoobleProvider implements JobProvider {
   }
 
   private parseSalary(value: any): number | null {
-    if (!value) return null;
-    if (typeof value === 'number') return value;
+    if (!value) {return null;}
+    if (typeof value === 'number') {return value;}
 
     // Jooble salary format varies
     const str = String(value).replace(/[$,€£]/g, '');

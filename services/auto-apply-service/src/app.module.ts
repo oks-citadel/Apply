@@ -1,23 +1,25 @@
+import { HttpModule } from '@nestjs/axios';
+import { BullModule } from '@nestjs/bull';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { BullModule } from '@nestjs/bull';
-import { HttpModule } from '@nestjs/axios';
 import { APP_INTERCEPTOR, APP_GUARD } from '@nestjs/core';
+import { TypeOrmModule } from '@nestjs/typeorm';
+
 import { LoggingModule, LoggingInterceptor } from '@applyforus/logging';
-import { AuthModule } from './modules/auth/auth.module';
-import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
-import { ApplicationsModule } from './modules/applications/applications.module';
-import { EngineModule } from './modules/engine/engine.module';
-import { BrowserModule } from './modules/browser/browser.module';
-import { AdaptersModule } from './modules/adapters/adapters.module';
-import { FormMappingModule } from './modules/form-mapping/form-mapping.module';
-import { QueueModule } from './modules/queue/queue.module';
-import { AnswerLibraryModule } from './modules/answer-library/answer-library.module';
-import { CaptchaModule } from './modules/captcha/captcha.module';
-import { RateLimiterModule } from './modules/rate-limiter/rate-limiter.module';
+
 import { HealthModule } from './health/health.module';
 import { HealthController } from './health.controller';
+import { AdaptersModule } from './modules/adapters/adapters.module';
+import { AnswerLibraryModule } from './modules/answer-library/answer-library.module';
+import { ApplicationsModule } from './modules/applications/applications.module';
+import { AuthModule } from './modules/auth/auth.module';
+import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
+import { BrowserModule } from './modules/browser/browser.module';
+import { CaptchaModule } from './modules/captcha/captcha.module';
+import { EngineModule } from './modules/engine/engine.module';
+import { FormMappingModule } from './modules/form-mapping/form-mapping.module';
+import { QueueModule } from './modules/queue/queue.module';
+import { RateLimiterModule } from './modules/rate-limiter/rate-limiter.module';
 
 @Module({
   imports: [
@@ -52,7 +54,7 @@ import { HealthController } from './health.controller';
         username: configService.get('DB_USERNAME', 'postgres'),
         password: configService.get('DB_PASSWORD', 'postgres'),
         database: configService.get('DB_DATABASE', 'auto_apply_db'),
-        entities: [__dirname + '/**/*.entity{.ts,.js}'],
+        entities: [`${__dirname  }/**/*.entity{.ts,.js}`],
         // SECURITY: Never use synchronize in production - it can modify schema unexpectedly
         // Always use migrations instead
         synchronize: false,

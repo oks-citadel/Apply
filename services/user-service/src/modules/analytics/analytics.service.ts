@@ -1,11 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Profile } from '../profile/entities/profile.entity';
-import { WorkExperience } from '../career/entities/work-experience.entity';
+
+
 import { Education } from '../career/entities/education.entity';
+import { WorkExperience } from '../career/entities/work-experience.entity';
+import { Profile } from '../profile/entities/profile.entity';
 import { Skill } from '../skills/entities/skill.entity';
 import { Subscription } from '../subscription/entities/subscription.entity';
+
+import type { Repository } from 'typeorm';
 
 @Injectable()
 export class AnalyticsService {

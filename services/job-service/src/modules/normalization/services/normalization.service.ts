@@ -1,16 +1,21 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+
+
+
+
 import { Job } from '../../jobs/entities/job.entity';
-import { NormalizedJob, ApplicationComplexity } from '../entities/normalized-job.entity';
 import { EmployerProfile } from '../entities/employer-profile.entity';
-import { TitleNormalizerService } from './title-normalizer.service';
-import { SkillExtractorService } from './skill-extractor.service';
-import { DuplicateDetectorService } from './duplicate-detector.service';
-import { FraudDetectorService } from './fraud-detector.service';
-import { QualityScorerService } from './quality-scorer.service';
-import { EmployerCredibilityService } from './employer-credibility.service';
-import { NormalizationResultDto } from '../dto/normalize-job.dto';
+import { NormalizedJob, ApplicationComplexity } from '../entities/normalized-job.entity';
+
+import type { DuplicateDetectorService } from './duplicate-detector.service';
+import type { EmployerCredibilityService } from './employer-credibility.service';
+import type { FraudDetectorService } from './fraud-detector.service';
+import type { QualityScorerService } from './quality-scorer.service';
+import type { SkillExtractorService } from './skill-extractor.service';
+import type { TitleNormalizerService } from './title-normalizer.service';
+import type { NormalizationResultDto } from '../dto/normalize-job.dto';
+import type { Repository } from 'typeorm';
 
 @Injectable()
 export class NormalizationService {
@@ -278,7 +283,7 @@ export class NormalizationService {
    * Extract country code from location string
    */
   private extractCountryCode(location: string): string {
-    if (!location) return null;
+    if (!location) {return null;}
 
     // Simple country detection (would use a proper library in production)
     const countryPatterns: Record<string, string> = {
@@ -306,7 +311,7 @@ export class NormalizationService {
    * Convert salary to USD
    */
   private convertToUSD(amount: number, currency: string): number {
-    if (!amount) return null;
+    if (!amount) {return null;}
 
     // Simplified exchange rates (would use real-time rates in production)
     const rates: Record<string, number> = {

@@ -4,12 +4,12 @@
  * This file demonstrates how to configure the TelemetryModule in your AppModule.
  */
 
+import { BullModule } from '@nestjs/bull';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { ScheduleModule } from '@nestjs/schedule';
-import { BullModule } from '@nestjs/bull';
 import { APP_INTERCEPTOR, APP_FILTER } from '@nestjs/core';
+import { ScheduleModule } from '@nestjs/schedule';
+import { TypeOrmModule } from '@nestjs/typeorm';
 
 // Import Telemetry Module
 import {
@@ -19,10 +19,10 @@ import {
 } from '@applyforus/telemetry';
 
 // Your existing modules
+import { HealthModule } from './modules/health/health.module';
+import { IntegrationsModule } from './modules/integrations/integrations.module';
 import { JobsModule } from './modules/jobs/jobs.module';
 import { SearchModule } from './modules/search/search.module';
-import { IntegrationsModule } from './modules/integrations/integrations.module';
-import { HealthModule } from './modules/health/health.module';
 
 @Module({
   imports: [
@@ -53,7 +53,7 @@ import { HealthModule } from './modules/health/health.module';
         username: configService.get('DB_USERNAME'),
         password: configService.get('DB_PASSWORD'),
         database: configService.get('DB_NAME'),
-        entities: [__dirname + '/**/*.entity{.ts,.js}'],
+        entities: [`${__dirname  }/**/*.entity{.ts,.js}`],
         synchronize: configService.get('NODE_ENV') === 'development',
         logging: configService.get('NODE_ENV') === 'development',
       }),

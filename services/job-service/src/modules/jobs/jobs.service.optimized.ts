@@ -1,14 +1,18 @@
 import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In } from 'typeorm';
-import { HttpService } from '@nestjs/axios';
-import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
+import { In } from 'typeorm';
+
+import { UpdateSavedJobDto } from './dto/save-job.dto';
 import { Job } from './entities/job.entity';
 import { SavedJob } from './entities/saved-job.entity';
-import { SearchService } from '../search/search.service';
-import { SearchJobsDto, PaginatedJobsResponseDto, JobResponseDto } from './dto/search-jobs.dto';
-import { SaveJobDto, UpdateSavedJobDto } from './dto/save-job.dto';
+
+import type { SearchJobsDto, PaginatedJobsResponseDto, JobResponseDto } from './dto/search-jobs.dto';
+import type { SearchService } from '../search/search.service';
+import type { SaveJobDto} from './dto/save-job.dto';
+import type { HttpService } from '@nestjs/axios';
+import type { ConfigService } from '@nestjs/config';
+import type { Repository} from 'typeorm';
 
 /**
  * Optimized JobsService with performance improvements:

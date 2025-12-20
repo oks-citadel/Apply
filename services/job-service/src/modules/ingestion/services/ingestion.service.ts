@@ -1,25 +1,29 @@
+import { InjectQueue } from '@nestjs/bull';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In } from 'typeorm';
-import { InjectQueue } from '@nestjs/bull';
-import { Queue } from 'bull';
-import {
-  JobSource,
-  SourceStatus,
-} from '../entities/job-source.entity';
+import { In } from 'typeorm';
+
+
+import { Job } from '../../jobs/entities/job.entity';
 import {
   IngestionJob,
   IngestionStatus,
   IngestionTrigger,
 } from '../entities/ingestion-job.entity';
 import {
+  JobSource,
+  SourceStatus,
+} from '../entities/job-source.entity';
+import {
   RawJobListing,
   ProcessingStatus,
 } from '../entities/raw-job-listing.entity';
-import { Job } from '../../jobs/entities/job.entity';
-import { JobAdapterFactory } from '../adapters/adapter.factory';
-import { DeduplicationService } from './deduplication.service';
-import { FetchOptions, NormalizedJob } from '../interfaces/job-adapter.interface';
+
+import type { DeduplicationService } from './deduplication.service';
+import type { JobAdapterFactory } from '../adapters/adapter.factory';
+import type { FetchOptions, NormalizedJob } from '../interfaces/job-adapter.interface';
+import type { Queue } from 'bull';
+import type { Repository} from 'typeorm';
 
 @Injectable()
 export class IngestionService {

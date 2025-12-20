@@ -228,7 +228,7 @@ export default function JobsPage() {
                       </div>
                       <div className="flex items-center">
                         <DollarSign className="w-4 h-4 mr-1" />
-                        {formatSalary(job.salaryMin, job.salaryMax)}
+                        {formatSalary(job.salary?.min, job.salary?.max)}
                       </div>
                     </div>
 

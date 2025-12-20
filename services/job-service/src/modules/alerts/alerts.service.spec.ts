@@ -1,11 +1,15 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { AlertsService } from './alerts.service';
-import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+
 import { NotFoundException } from '@nestjs/common';
+import { Test } from '@nestjs/testing';
+import { getRepositoryToken } from '@nestjs/typeorm';
+
+import { AlertsService } from './alerts.service';
 import { JobAlert, AlertFrequency } from './entities/job-alert.entity';
-import { SearchService } from '../search/search.service';
 import { RemoteType, ExperienceLevel, EmploymentType } from '../jobs/entities/job.entity';
+import { SearchService } from '../search/search.service';
+
+import type { TestingModule } from '@nestjs/testing';
+import type { Repository } from 'typeorm';
 
 describe('AlertsService', () => {
   let service: AlertsService;

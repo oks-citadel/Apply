@@ -1,8 +1,7 @@
-import { Injectable, Inject, Logger, OnModuleInit } from '@nestjs/common';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { Cache } from 'cache-manager';
+import { Injectable, Inject, Logger } from '@nestjs/common';
 import Redis from 'ioredis';
-import { ConfigService } from '@nestjs/config';
+
 import {
   CacheTTL,
   generateSearchCacheKey,
@@ -15,6 +14,10 @@ import {
   getUserRelatedCachePatterns,
   CacheKeyPrefixes,
 } from './cache-keys.util';
+
+import type { OnModuleInit } from '@nestjs/common';
+import type { ConfigService } from '@nestjs/config';
+import type { Cache } from 'cache-manager';
 
 @Injectable()
 export class RedisCacheService implements OnModuleInit {

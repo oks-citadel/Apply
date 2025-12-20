@@ -54,7 +54,9 @@ describe('Button', () => {
 
   it('does not call onPress when disabled', () => {
     const onPressMock = jest.fn();
-    const { getByText } = render(<Button title="Click Me" onPress={onPressMock} disabled />);
+    const { getByText } = render(
+      <Button title="Click Me" onPress={onPressMock} disabled />
+    );
 
     fireEvent.press(getByText('Click Me'));
 
@@ -71,9 +73,7 @@ describe('Button', () => {
   });
 
   it('shows loading indicator when loading', () => {
-    const { queryByText, UNSAFE_getByType } = render(
-      <Button title="Click Me" loading />
-    );
+    const { queryByText, UNSAFE_getByType } = render(<Button title="Click Me" loading />);
 
     // Text should not be visible when loading
     expect(queryByText('Click Me')).toBeNull();

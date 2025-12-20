@@ -1,14 +1,17 @@
-import { DataSource, DataSourceOptions } from 'typeorm';
 import { config } from 'dotenv';
+import { DataSource } from 'typeorm';
+
+import { JobAlert } from '../modules/alerts/entities/job-alert.entity';
+import { CompanyReview } from '../modules/companies/entities/company-review.entity';
+import { Company } from '../modules/companies/entities/company.entity';
+import { IngestionJob } from '../modules/ingestion/entities/ingestion-job.entity';
+import { JobSource } from '../modules/ingestion/entities/job-source.entity';
+import { RawJobListing } from '../modules/ingestion/entities/raw-job-listing.entity';
 import { Job } from '../modules/jobs/entities/job.entity';
 import { SavedJob } from '../modules/jobs/entities/saved-job.entity';
-import { Company } from '../modules/companies/entities/company.entity';
-import { CompanyReview } from '../modules/companies/entities/company-review.entity';
-import { JobAlert } from '../modules/alerts/entities/job-alert.entity';
 import { JobReport } from '../modules/reports/entities/report.entity';
-import { JobSource } from '../modules/ingestion/entities/job-source.entity';
-import { IngestionJob } from '../modules/ingestion/entities/ingestion-job.entity';
-import { RawJobListing } from '../modules/ingestion/entities/raw-job-listing.entity';
+
+import type { DataSourceOptions } from 'typeorm';
 
 config();
 

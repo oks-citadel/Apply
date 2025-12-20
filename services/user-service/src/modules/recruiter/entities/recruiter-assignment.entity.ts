@@ -9,8 +9,9 @@ import {
   JoinColumn,
   OneToMany,
 } from 'typeorm';
-import { RecruiterProfile } from './recruiter-profile.entity';
+
 import { PlacementOutcome } from './placement-outcome.entity';
+import { RecruiterProfile } from './recruiter-profile.entity';
 
 export enum AssignmentStatus {
   REQUESTED = 'requested',
@@ -204,7 +205,7 @@ export class RecruiterAssignment {
 
   // Helper methods
   calculateDuration(): number | null {
-    if (!this.started_at) return null;
+    if (!this.started_at) {return null;}
     const endDate = this.completed_at || new Date();
     return Math.ceil(
       (endDate.getTime() - this.started_at.getTime()) / (1000 * 60 * 60 * 24)
@@ -231,12 +232,12 @@ export class RecruiterAssignment {
     // Calculate progress based on milestones
     let progress = 0;
 
-    if (this.status === AssignmentStatus.ACCEPTED) progress = 10;
-    if (this.status === AssignmentStatus.IN_PROGRESS) progress = 25;
-    if (this.applications_submitted > 0) progress += 20;
-    if (this.interviews_scheduled > 0) progress += 25;
-    if (this.offers_received > 0) progress += 20;
-    if (this.status === AssignmentStatus.COMPLETED) progress = 100;
+    if (this.status === AssignmentStatus.ACCEPTED) {progress = 10;}
+    if (this.status === AssignmentStatus.IN_PROGRESS) {progress = 25;}
+    if (this.applications_submitted > 0) {progress += 20;}
+    if (this.interviews_scheduled > 0) {progress += 25;}
+    if (this.offers_received > 0) {progress += 20;}
+    if (this.status === AssignmentStatus.COMPLETED) {progress = 100;}
 
     this.progress_percentage = Math.min(progress, 100);
   }

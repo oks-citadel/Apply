@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { DetectedField } from './field-detection.engine';
-import { FieldMatch } from './semantic-matching.engine';
+
+import type { DetectedField } from './field-detection.engine';
+import type { FieldMatch } from './semantic-matching.engine';
 
 export interface ConfidenceScore {
   overall: number;
@@ -290,9 +291,9 @@ export class ConfidenceScoringEngine {
   }
 
   private getDetectionDescription(score: number): string {
-    if (score >= 80) return 'Field clearly identified';
-    if (score >= 60) return 'Field identified with moderate confidence';
-    if (score >= 40) return 'Field identification uncertain';
+    if (score >= 80) {return 'Field clearly identified';}
+    if (score >= 60) {return 'Field identified with moderate confidence';}
+    if (score >= 40) {return 'Field identification uncertain';}
     return 'Field poorly identified';
   }
 
@@ -304,9 +305,9 @@ export class ConfidenceScoringEngine {
       ai_generated: 'AI generation',
     };
 
-    if (score >= 80) return `Strong match from ${sourceLabels[source]}`;
-    if (score >= 60) return `Moderate match from ${sourceLabels[source]}`;
-    if (score >= 40) return `Weak match from ${sourceLabels[source]}`;
+    if (score >= 80) {return `Strong match from ${sourceLabels[source]}`;}
+    if (score >= 60) {return `Moderate match from ${sourceLabels[source]}`;}
+    if (score >= 40) {return `Weak match from ${sourceLabels[source]}`;}
     return `No reliable match found`;
   }
 

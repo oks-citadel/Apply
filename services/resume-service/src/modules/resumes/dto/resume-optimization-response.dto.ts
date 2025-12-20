@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { ResumeContent } from '../entities/resume.entity';
+
+import type { ResumeContent } from '../entities/resume.entity';
 
 export class OptimizationSuggestion {
   @ApiProperty({

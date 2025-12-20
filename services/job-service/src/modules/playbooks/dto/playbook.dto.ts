@@ -1,5 +1,6 @@
-import { IsEnum, IsString, IsOptional, IsBoolean, IsNumber, IsArray, IsObject, Min, Max } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsEnum, IsString, IsOptional, IsBoolean, IsNumber, IsArray, IsObject, Min, Max } from 'class-validator';
+
 import { Region, ResumeFormat, CoverLetterStyle, VisaType } from '../entities/playbook.entity';
 
 export class PlaybookResponseDto {

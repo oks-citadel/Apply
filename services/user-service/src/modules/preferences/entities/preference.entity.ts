@@ -6,6 +6,7 @@ import {
   UpdateDateColumn,
   Index,
 } from 'typeorm';
+
 import { RemotePreference, ExperienceLevel } from '../../../common/enums/subscription-tier.enum';
 
 @Entity('preferences')

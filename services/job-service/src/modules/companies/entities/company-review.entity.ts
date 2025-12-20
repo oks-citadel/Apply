@@ -8,6 +8,7 @@ import {
   JoinColumn,
   Index,
 } from 'typeorm';
+
 import { Company } from './company.entity';
 
 export enum ReviewSource {

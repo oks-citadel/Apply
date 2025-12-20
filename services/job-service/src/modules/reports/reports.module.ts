@@ -1,13 +1,14 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { ReportsController } from './reports.controller';
-import { JobReportsController } from './job-reports.controller';
-import { ReportsService } from './reports.service';
+import { JwtModule } from '@nestjs/jwt';
+import { TypeOrmModule } from '@nestjs/typeorm';
+
 import { JobReport } from './entities/report.entity';
-import { Job } from '../jobs/entities/job.entity';
+import { JobReportsController } from './job-reports.controller';
+import { ReportsController } from './reports.controller';
+import { ReportsService } from './reports.service';
 import { JwtAuthGuard, AdminGuard, RateLimitGuard } from '../../common/guards';
+import { Job } from '../jobs/entities/job.entity';
 
 @Module({
   imports: [

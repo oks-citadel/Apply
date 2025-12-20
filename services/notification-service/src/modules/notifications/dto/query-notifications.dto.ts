@@ -1,4 +1,12 @@
-import { IsOptional, IsEnum, IsString, IsInt, Min, Max, IsBoolean } from 'class-validator';
+import {
+  IsOptional,
+  IsEnum,
+  IsString,
+  IsInt,
+  Min,
+  Max,
+  IsBoolean,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import {
@@ -12,12 +20,18 @@ export class QueryNotificationsDto {
   @IsString()
   userId?: string;
 
-  @ApiPropertyOptional({ enum: NotificationType, description: 'Filter by type' })
+  @ApiPropertyOptional({
+    enum: NotificationType,
+    description: 'Filter by type',
+  })
   @IsOptional()
   @IsEnum(NotificationType)
   type?: NotificationType;
 
-  @ApiPropertyOptional({ enum: NotificationStatus, description: 'Filter by status' })
+  @ApiPropertyOptional({
+    enum: NotificationStatus,
+    description: 'Filter by status',
+  })
   @IsOptional()
   @IsEnum(NotificationStatus)
   status?: NotificationStatus;

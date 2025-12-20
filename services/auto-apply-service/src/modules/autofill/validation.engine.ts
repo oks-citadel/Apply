@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { DetectedField } from './field-detection.engine';
+
+import type { DetectedField } from './field-detection.engine';
 
 export interface ValidationResult {
   isValid: boolean;
@@ -152,7 +153,7 @@ export class ValidationEngine {
    * Format a value according to field type
    */
   formatValue(field: DetectedField, value: string): string {
-    if (!value) return value;
+    if (!value) {return value;}
 
     switch (field.type) {
       case 'phone':
@@ -434,27 +435,27 @@ export class ValidationEngine {
 
   private formatDate(value: string): string {
     const date = new Date(value);
-    if (isNaN(date.getTime())) return value;
+    if (isNaN(date.getTime())) {return value;}
     return date.toISOString().split('T')[0];
   }
 
   private formatNumber(value: string): string {
     const num = parseFloat(value.replace(/[,\$]/g, ''));
-    if (isNaN(num)) return value;
+    if (isNaN(num)) {return value;}
     return num.toLocaleString();
   }
 
   private formatSalary(value: string): string {
     const num = parseFloat(value.replace(/[,\$]/g, ''));
-    if (isNaN(num)) return value;
+    if (isNaN(num)) {return value;}
     return `$${num.toLocaleString()}`;
   }
 
   private formatLinkedInUrl(value: string): string {
-    if (!value) return value;
-    if (value.startsWith('http')) return value;
-    if (value.startsWith('www.')) return `https://${value}`;
-    if (value.startsWith('linkedin.com')) return `https://www.${value}`;
+    if (!value) {return value;}
+    if (value.startsWith('http')) {return value;}
+    if (value.startsWith('www.')) {return `https://${value}`;}
+    if (value.startsWith('linkedin.com')) {return `https://www.${value}`;}
     return value;
   }
 

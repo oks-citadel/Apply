@@ -1,27 +1,28 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
-import { Job } from '../jobs/entities/job.entity';
-import { AggregatorService } from './aggregator.service';
+import { TypeOrmModule } from '@nestjs/typeorm';
+
 import { AggregatorController } from './aggregator.controller';
+import { AggregatorService } from './aggregator.service';
 import { JobCacheService } from './cache/job-cache.service';
 
 // General Job Aggregators
-import { IndeedProvider } from './providers/indeed.provider';
-import { LinkedInProvider } from './providers/linkedin.provider';
-import { GlassdoorProvider } from './providers/glassdoor.provider';
-import { ZipRecruiterProvider } from './providers/ziprecruiter.provider';
-import { SimplyHiredProvider } from './providers/simplyhired.provider';
-import { JoobleProvider } from './providers/jooble.provider';
 import { AdzunaProvider } from './providers/adzuna.provider';
 
 // Niche / Regional Aggregators
 import { CareerJetProvider } from './providers/careerjet.provider';
-import { TalentProvider } from './providers/talent.provider';
 
 // Tech-Focused Aggregators
 import { DiceProvider } from './providers/dice.provider';
+import { GlassdoorProvider } from './providers/glassdoor.provider';
+import { IndeedProvider } from './providers/indeed.provider';
+import { JoobleProvider } from './providers/jooble.provider';
+import { LinkedInProvider } from './providers/linkedin.provider';
+import { SimplyHiredProvider } from './providers/simplyhired.provider';
+import { TalentProvider } from './providers/talent.provider';
+import { ZipRecruiterProvider } from './providers/ziprecruiter.provider';
+import { Job } from '../jobs/entities/job.entity';
 
 @Module({
   imports: [

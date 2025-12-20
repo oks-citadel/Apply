@@ -1,4 +1,4 @@
-import { Job } from '../../jobs/entities/job.entity';
+import type { Job } from '../../jobs/entities/job.entity';
 
 export interface JobProviderConfig {
   apiKey?: string;
@@ -17,6 +17,7 @@ export interface RawJobData {
   salary_min?: number;
   salary_max?: number;
   salary_currency?: string;
+  salary_period?: string; // yearly, monthly, hourly, daily
   description: string;
   requirements?: string[];
   benefits?: string[];

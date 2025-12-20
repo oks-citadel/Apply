@@ -1,9 +1,12 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, ValidationPipe } from '@nestjs/common';
-import request from 'supertest';
+import { ValidationPipe } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
+import { Test } from '@nestjs/testing';
 import { ThrottlerModule } from '@nestjs/throttler';
+import request from 'supertest';
+
+import type { INestApplication} from '@nestjs/common';
+import type { TestingModule } from '@nestjs/testing';
 
 /**
  * Comprehensive Security & Compliance Test Suite for ApplyForUs AI Platform
@@ -553,7 +556,7 @@ describe.skip('Security & Compliance Tests (E2E - requires full app setup)', () 
     });
 
     it('should validate JWT signature', async () => {
-      const tamperedToken = authToken.slice(0, -5) + 'AAAAA';
+      const tamperedToken = `${authToken.slice(0, -5)  }AAAAA`;
       await request(app.getHttpServer())
         .get('/api/v1/jobs')
         .set('Authorization', `Bearer ${tamperedToken}`)

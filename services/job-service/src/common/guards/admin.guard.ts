@@ -1,10 +1,12 @@
 import {
   Injectable,
-  CanActivate,
-  ExecutionContext,
   ForbiddenException,
 } from '@nestjs/common';
-import { Request } from 'express';
+
+import type {
+  CanActivate,
+  ExecutionContext} from '@nestjs/common';
+import type { Request } from 'express';
 
 /**
  * JWT Payload interface

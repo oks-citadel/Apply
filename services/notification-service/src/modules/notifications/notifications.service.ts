@@ -51,10 +51,21 @@ export class NotificationsService {
     return await this.notificationRepository.save(notification);
   }
 
-  async findAll(
-    query: QueryNotificationsDto,
-  ): Promise<{ data: Notification[]; total: number; page: number; limit: number }> {
-    const { userId, type, status, category, isRead, page = 1, limit = 20 } = query;
+  async findAll(query: QueryNotificationsDto): Promise<{
+    data: Notification[];
+    total: number;
+    page: number;
+    limit: number;
+  }> {
+    const {
+      userId,
+      type,
+      status,
+      category,
+      isRead,
+      page = 1,
+      limit = 20,
+    } = query;
 
     const where: FindOptionsWhere<Notification> = {};
 
@@ -201,10 +212,15 @@ export class NotificationsService {
     try {
       // Check preferences if userId is provided
       if (userId) {
-        const emailEnabled = await this.checkPreferences(userId, 'emailEnabled');
+        const emailEnabled = await this.checkPreferences(
+          userId,
+          'emailEnabled',
+        );
         if (!emailEnabled) {
           this.logger.warn(`Email notifications disabled for user ${userId}`);
-          throw new BadRequestException('Email notifications are disabled for this user');
+          throw new BadRequestException(
+            'Email notifications are disabled for this user',
+          );
         }
       }
 
@@ -345,14 +361,17 @@ export class NotificationsService {
   }
 
   async sendPush(sendPushDto: SendPushDto): Promise<Notification> {
-    const { userId, title, message, actionUrl, data, icon, image } = sendPushDto;
+    const { userId, title, message, actionUrl, data, icon, image } =
+      sendPushDto;
 
     try {
       // Check preferences
       const pushEnabled = await this.checkPreferences(userId, 'pushEnabled');
       if (!pushEnabled) {
         this.logger.warn(`Push notifications disabled for user ${userId}`);
-        throw new BadRequestException('Push notifications are disabled for this user');
+        throw new BadRequestException(
+          'Push notifications are disabled for this user',
+        );
       }
 
       // Create notification record

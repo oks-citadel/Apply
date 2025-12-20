@@ -1,10 +1,11 @@
-import { Module, forwardRef } from '@nestjs/common';
 import { BullModule } from '@nestjs/bull';
-import { QueueService } from './queue.service';
+import { Module, forwardRef } from '@nestjs/common';
+
 import { ApplicationProcessor } from './processors/application.processor';
-import { ApplicationsModule } from '../applications/applications.module';
-import { AdaptersModule } from '../adapters/adapters.module';
+import { QueueService } from './queue.service';
 import { applicationQueueConfig } from '../../config/queue.config';
+import { AdaptersModule } from '../adapters/adapters.module';
+import { ApplicationsModule } from '../applications/applications.module';
 
 @Module({
   imports: [

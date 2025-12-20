@@ -76,10 +76,12 @@ export class AuditLogService {
       logs = logs.filter((log) => log.operation === options.operation);
     }
     if (options?.startDate) {
-      logs = logs.filter((log) => log.timestamp >= options.startDate!);
+      const startDate = options.startDate;
+      logs = logs.filter((log) => log.timestamp >= startDate);
     }
     if (options?.endDate) {
-      logs = logs.filter((log) => log.timestamp <= options.endDate!);
+      const endDate = options.endDate;
+      logs = logs.filter((log) => log.timestamp <= endDate);
     }
 
     // Apply pagination

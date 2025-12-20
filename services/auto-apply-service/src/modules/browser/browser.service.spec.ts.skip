@@ -1,6 +1,10 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
+import { chromium } from 'playwright';
+
 import { BrowserService } from './browser.service';
-import { chromium, Browser, BrowserContext, Page } from 'playwright';
+
+import type { TestingModule } from '@nestjs/testing';
+import type { Browser, BrowserContext, Page } from 'playwright';
 
 jest.mock('playwright', () => ({
   chromium: {

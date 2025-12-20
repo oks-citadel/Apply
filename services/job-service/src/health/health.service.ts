@@ -1,8 +1,10 @@
 import { Injectable, HttpStatus, Logger } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
-import { DataSource } from 'typeorm';
-import { ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
+
+import type { ConfigService } from '@nestjs/config';
+import type { DataSource } from 'typeorm';
+
 
 // Inline health check utilities
 const checkDatabaseConnection = async (dataSource: DataSource) => {
@@ -63,7 +65,7 @@ export class HealthService {
       tls: redisTls ? {} : undefined,
       lazyConnect: true,
       retryStrategy: (times) => {
-        if (times > 3) return null;
+        if (times > 3) {return null;}
         return Math.min(times * 200, 1000);
       },
     });

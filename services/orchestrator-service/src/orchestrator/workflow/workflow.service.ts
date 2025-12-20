@@ -1,16 +1,19 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
+
+import { AgentType } from '../interfaces/agent.interface';
 import {
   WorkflowType,
-  WorkflowStatus,
+  WorkflowStatus
+} from '../interfaces/workflow.interface';
+
+import type { AgentResponse } from '../interfaces/agent.interface';
+import type {
   WorkflowDefinition,
   WorkflowExecution,
   WorkflowStep,
-  WorkflowStepExecution,
-  WorkflowContext,
-} from '../interfaces/workflow.interface';
-import { AgentType, AgentResponse } from '../interfaces/agent.interface';
-import { AgentClientService } from '../services/agent-client.service';
+  WorkflowContext} from '../interfaces/workflow.interface';
+import type { AgentClientService } from '../services/agent-client.service';
 
 @Injectable()
 export class WorkflowService {

@@ -1,12 +1,13 @@
 import { Module } from '@nestjs/common';
-import { WorkdayAdapter } from './workday.adapter';
+
 import { GreenhouseAdapter } from './greenhouse.adapter';
-import { LeverAdapter } from './lever.adapter';
 import { IcimsAdapter } from './icims.adapter';
-import { TaleoAdapter } from './taleo.adapter';
-import { SmartRecruitersAdapter } from './smartrecruiters.adapter';
-import { LinkedInAdapter } from './linkedin.adapter';
 import { IndeedAdapter } from './indeed.adapter';
+import { LeverAdapter } from './lever.adapter';
+import { LinkedInAdapter } from './linkedin.adapter';
+import { SmartRecruitersAdapter } from './smartrecruiters.adapter';
+import { TaleoAdapter } from './taleo.adapter';
+import { WorkdayAdapter } from './workday.adapter';
 import { BrowserModule } from '../browser/browser.module';
 import { FormMappingModule } from '../form-mapping/form-mapping.module';
 

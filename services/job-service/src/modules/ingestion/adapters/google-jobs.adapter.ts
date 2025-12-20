@@ -1,10 +1,12 @@
-import { HttpService } from '@nestjs/axios';
+
 import { BaseJobAdapter } from './base.adapter';
-import {
+
+import type {
   FetchOptions,
   FetchResult,
   NormalizedJob,
 } from '../interfaces/job-adapter.interface';
+import type { HttpService } from '@nestjs/axios';
 
 /**
  * Google Jobs (Google for Jobs) API Adapter
@@ -135,7 +137,7 @@ export class GoogleJobsAdapter extends BaseJobAdapter {
   }
 
   private mapRemoteType(postingRegion: string): 'onsite' | 'remote' | 'hybrid' {
-    if (postingRegion === 'TELECOMMUTE') return 'remote';
+    if (postingRegion === 'TELECOMMUTE') {return 'remote';}
     return 'onsite';
   }
 

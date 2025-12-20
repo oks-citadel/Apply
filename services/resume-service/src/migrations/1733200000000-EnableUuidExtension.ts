@@ -1,4 +1,4 @@
-import { MigrationInterface, QueryRunner } from 'typeorm';
+import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 export class EnableUuidExtension1733200000000 implements MigrationInterface {
   name = 'EnableUuidExtension1733200000000';

@@ -11,7 +11,7 @@ import {
   Req,
   Res,
 } from '@nestjs/common';
-import { Response } from 'express';
+import { AuthGuard } from '@nestjs/passport';
 import {
   ApiTags,
   ApiOperation,
@@ -19,25 +19,27 @@ import {
   ApiBearerAuth,
   ApiBody,
 } from '@nestjs/swagger';
-import { AuthService } from './auth.service';
-import { RegisterDto } from './dto/register.dto';
-import { LoginDto } from './dto/login.dto';
-import { TokenResponseDto } from './dto/token-response.dto';
-import { ForgotPasswordDto } from './dto/forgot-password.dto';
-import { ResetPasswordDto } from './dto/reset-password.dto';
-import { ChangePasswordDto } from './dto/change-password.dto';
-import { VerifyEmailDto } from './dto/verify-email.dto';
-import { RefreshTokenDto } from './dto/refresh-token.dto';
-import { MfaSetupResponseDto } from './dto/mfa-setup.dto';
-import { MfaVerifyDto } from './dto/mfa-verify.dto';
-import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import { Public } from '../../common/decorators/public.decorator';
-import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { User } from '../users/entities/user.entity';
 import { Throttle } from '@nestjs/throttler';
-import { AuthGuard } from '@nestjs/passport';
-import { Request } from 'express';
-import { ConfigService } from '@nestjs/config';
+
+
+import { MfaSetupResponseDto } from './dto/mfa-setup.dto';
+import { RefreshTokenDto } from './dto/refresh-token.dto';
+import { TokenResponseDto } from './dto/token-response.dto';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { Public } from '../../common/decorators/public.decorator';
+
+import type { AuthService } from './auth.service';
+import type { ChangePasswordDto } from './dto/change-password.dto';
+import type { ForgotPasswordDto } from './dto/forgot-password.dto';
+import type { LoginDto } from './dto/login.dto';
+import type { MfaVerifyDto } from './dto/mfa-verify.dto';
+import type { RegisterDto } from './dto/register.dto';
+import type { ResetPasswordDto } from './dto/reset-password.dto';
+import type { VerifyEmailDto } from './dto/verify-email.dto';
+import type { User } from '../users/entities/user.entity';
+import type { ConfigService } from '@nestjs/config';
+import type { Request , Response } from 'express';
 
 @ApiTags('Authentication')
 @Controller('auth')

@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
+
+import type { ConfigService } from '@nestjs/config';
 
 // Metrics tracking for observability
 interface RateLimitMetrics {
@@ -82,7 +83,7 @@ export class RateLimiterService {
       enableOfflineQueue: false,
       retryStrategy: (times) => {
         // After 3 retries, return null to stop retrying
-        if (times > 3) return null;
+        if (times > 3) {return null;}
         return Math.min(times * 50, 2000);
       },
     });

@@ -1,18 +1,21 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { HttpService } from '@nestjs/axios';
-import { ConfigService } from '@nestjs/config';
 import { firstValueFrom, timeout, catchError } from 'rxjs';
-import { AxiosError } from 'axios';
 import { v4 as uuidv4 } from 'uuid';
+
 import {
   AgentType,
+  AgentStatus
+} from '../interfaces/agent.interface';
+
+import type { CircuitBreakerService } from './circuit-breaker.service';
+import type {
   AgentConfig,
   AgentHealth,
-  AgentStatus,
   AgentResponse,
-  AgentRequest,
-} from '../interfaces/agent.interface';
-import { CircuitBreakerService } from './circuit-breaker.service';
+  AgentRequest} from '../interfaces/agent.interface';
+import type { HttpService } from '@nestjs/axios';
+import type { ConfigService } from '@nestjs/config';
+import type { AxiosError } from 'axios';
 
 @Injectable()
 export class AgentClientService {

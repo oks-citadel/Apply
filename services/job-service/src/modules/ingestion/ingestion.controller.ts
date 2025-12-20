@@ -12,13 +12,16 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { IngestionService } from './services/ingestion.service';
-import { DeduplicationService } from './services/deduplication.service';
-import { JobSource, SourceStatus } from './entities/job-source.entity';
+
+
 import { IngestionJob, IngestionTrigger } from './entities/ingestion-job.entity';
-import { CreateJobSourceDto } from './dto/create-source.dto';
-import { JobAdapterFactory } from './adapters/adapter.factory';
+import { JobSource, SourceStatus } from './entities/job-source.entity';
+
+import type { JobAdapterFactory } from './adapters/adapter.factory';
+import type { CreateJobSourceDto } from './dto/create-source.dto';
+import type { DeduplicationService } from './services/deduplication.service';
+import type { IngestionService } from './services/ingestion.service';
+import type { Repository } from 'typeorm';
 
 @ApiTags('Job Ingestion')
 @Controller('api/v1/ingestion')
@@ -72,8 +75,8 @@ export class IngestionController {
     @Query('provider') provider?: string,
   ) {
     const where: any = {};
-    if (status) where.status = status;
-    if (provider) where.provider = provider;
+    if (status) {where.status = status;}
+    if (provider) {where.provider = provider;}
 
     const sources = await this.jobSourceRepository.find({
       where,
@@ -203,8 +206,8 @@ export class IngestionController {
     @Query('limit') limit?: string,
   ) {
     const where: any = {};
-    if (sourceId) where.job_source_id = sourceId;
-    if (status) where.status = status;
+    if (sourceId) {where.job_source_id = sourceId;}
+    if (status) {where.status = status;}
 
     const jobs = await this.ingestionJobRepository.find({
       where,

@@ -61,10 +61,7 @@ async function bootstrap() {
 
   // Global filters and interceptors
   app.useGlobalFilters(new HttpExceptionFilter());
-  app.useGlobalInterceptors(
-    new LoggingInterceptor(),
-    new TransformInterceptor(),
-  );
+  app.useGlobalInterceptors(new LoggingInterceptor(), new TransformInterceptor());
 
   // Swagger documentation setup
   if (configService.get('nodeEnv') !== 'production') {
@@ -95,7 +92,9 @@ async function bootstrap() {
       },
     });
 
-    logger.log(`Swagger documentation available at: http://localhost:${configService.get('port', 8086)}/api/docs`);
+    logger.log(
+      `Swagger documentation available at: http://localhost:${configService.get('port', 8086)}/api/docs`,
+    );
   }
 
   // Graceful shutdown handling

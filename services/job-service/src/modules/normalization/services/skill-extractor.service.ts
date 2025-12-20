@@ -1,7 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+
 import { SkillMapping, SkillCategory } from '../entities/job-taxonomy.entity';
+
+import type { Repository } from 'typeorm';
+
 
 interface SkillExtractionResult {
   categorized_skills: {
@@ -328,15 +331,15 @@ export class SkillExtractorService {
       skills.domain.length +
       skills.certifications.length;
 
-    if (totalSkills > 5) confidence += 20;
-    else if (totalSkills > 3) confidence += 10;
-    else if (totalSkills === 0) confidence -= 30;
+    if (totalSkills > 5) {confidence += 20;}
+    else if (totalSkills > 3) {confidence += 10;}
+    else if (totalSkills === 0) {confidence -= 30;}
 
     // Increase if we found technical skills (most important)
-    if (skills.technical.length > 0) confidence += 15;
+    if (skills.technical.length > 0) {confidence += 15;}
 
     // Increase if we found domain skills
-    if (skills.domain.length > 0) confidence += 10;
+    if (skills.domain.length > 0) {confidence += 10;}
 
     // Increase if balanced across categories
     const categories = [
@@ -345,7 +348,7 @@ export class SkillExtractorService {
       skills.domain.length > 0,
     ].filter(Boolean).length;
 
-    if (categories >= 2) confidence += 5;
+    if (categories >= 2) {confidence += 5;}
 
     return Math.max(0, Math.min(100, confidence));
   }

@@ -1,14 +1,17 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { RateLimiterService } from './services/rate-limiter.service';
-import { AuditLogService } from './services/audit-log.service';
+
 import {
-  ComplianceCheckRequestDto,
-  ComplianceCheckResponseDto,
   ComplianceAction,
   Platform,
-  WarningSeverity,
-  ComplianceWarningDto,
+  WarningSeverity
 } from './dto/compliance.dto';
+
+import type {
+  ComplianceCheckRequestDto,
+  ComplianceCheckResponseDto,
+  ComplianceWarningDto} from './dto/compliance.dto';
+import type { AuditLogService } from './services/audit-log.service';
+import type { RateLimiterService } from './services/rate-limiter.service';
 
 @Injectable()
 export class ComplianceService {

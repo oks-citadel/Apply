@@ -62,7 +62,8 @@ export class NotificationsGateway
         `Client connected: ${client.id} for user ${userId}. Total connections: ${this.userSocketMap.get(userId).size}`,
       );
 
-      const unreadCount = await this.notificationsService.getUnreadCount(userId);
+      const unreadCount =
+        await this.notificationsService.getUnreadCount(userId);
       client.emit('unread-count', unreadCount);
 
       const recentNotifications = await this.notificationsService.findByUserId(
@@ -179,10 +180,13 @@ export class NotificationsGateway
     try {
       this.server.to(`user:${userId}`).emit('new-notification', notification);
 
-      const unreadCount = await this.notificationsService.getUnreadCount(userId);
+      const unreadCount =
+        await this.notificationsService.getUnreadCount(userId);
       this.server.to(`user:${userId}`).emit('unread-count', unreadCount);
 
-      this.logger.log(`Notification sent to user ${userId}: ${notification.title}`);
+      this.logger.log(
+        `Notification sent to user ${userId}: ${notification.title}`,
+      );
     } catch (error) {
       this.logger.error(
         `Error sending notification to user ${userId}: ${error.message}`,
@@ -190,19 +194,25 @@ export class NotificationsGateway
     }
   }
 
-  async broadcastToUser(userId: string, event: string, data: any): Promise<void> {
+  async broadcastToUser(
+    userId: string,
+    event: string,
+    data: any,
+  ): Promise<void> {
     this.server.to(`user:${userId}`).emit(event, data);
   }
 
   private extractUserId(client: Socket): string | null {
     try {
-      const token = client.handshake.auth?.token || client.handshake.query?.token;
+      const token =
+        client.handshake.auth?.token || client.handshake.query?.token;
 
       if (!token) {
         return null;
       }
 
-      const userId = client.handshake.auth?.userId || client.handshake.query?.userId;
+      const userId =
+        client.handshake.auth?.userId || client.handshake.query?.userId;
 
       return userId as string;
     } catch (error) {
@@ -216,7 +226,9 @@ export class NotificationsGateway
   }
 
   isUserConnected(userId: string): boolean {
-    return this.userSocketMap.has(userId) && this.userSocketMap.get(userId).size > 0;
+    return (
+      this.userSocketMap.has(userId) && this.userSocketMap.get(userId).size > 0
+    );
   }
 
   getUserConnectionCount(userId: string): number {

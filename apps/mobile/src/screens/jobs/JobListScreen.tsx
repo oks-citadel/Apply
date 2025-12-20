@@ -19,13 +19,21 @@ import { Job, EmploymentType, LocationType } from '../../types';
 
 type JobListScreenProps = NativeStackScreenProps<JobsStackParamList, 'JobsList'>;
 
-const EMPLOYMENT_TYPES: EmploymentType[] = ['full-time', 'part-time', 'contract', 'internship'];
+const EMPLOYMENT_TYPES: EmploymentType[] = [
+  'full-time',
+  'part-time',
+  'contract',
+  'internship',
+];
 const LOCATION_TYPES: LocationType[] = ['remote', 'hybrid', 'onsite'];
 
 export const JobListScreen: React.FC<JobListScreenProps> = ({ navigation }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedEmploymentType, setSelectedEmploymentType] = useState<EmploymentType | null>(null);
-  const [selectedLocationType, setSelectedLocationType] = useState<LocationType | null>(null);
+  const [selectedEmploymentType, setSelectedEmploymentType] =
+    useState<EmploymentType | null>(null);
+  const [selectedLocationType, setSelectedLocationType] = useState<LocationType | null>(
+    null
+  );
   const [page, setPage] = useState(1);
 
   const {
@@ -69,7 +77,9 @@ export const JobListScreen: React.FC<JobListScreenProps> = ({ navigation }) => {
   };
 
   const formatSalary = (salary?: { min: number; max: number; currency: string }) => {
-    if (!salary) return null;
+    if (!salary) {
+      return null;
+    }
     return `${salary.currency} ${salary.min.toLocaleString()} - ${salary.max.toLocaleString()}`;
   };
 
@@ -139,7 +149,9 @@ export const JobListScreen: React.FC<JobListScreenProps> = ({ navigation }) => {
   );
 
   const renderFooter = () => {
-    if (!isFetching) return null;
+    if (!isFetching) {
+      return null;
+    }
     return <LoadingSpinner style={styles.loadingFooter} />;
   };
 
@@ -173,9 +185,7 @@ export const JobListScreen: React.FC<JobListScreenProps> = ({ navigation }) => {
                 selectedEmploymentType === item && styles.filterChipActive,
               ]}
               onPress={() =>
-                setSelectedEmploymentType(
-                  selectedEmploymentType === item ? null : item
-                )
+                setSelectedEmploymentType(selectedEmploymentType === item ? null : item)
               }
             >
               <Text

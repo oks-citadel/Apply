@@ -1,8 +1,11 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
+
 import { LeverAdapter } from './lever.adapter';
 import { BrowserService } from '../browser/browser.service';
 import { FormMappingService } from '../form-mapping/form-mapping.service';
-import { ApplicationData, ApplicationResult } from './base.adapter';
+
+import type { ApplicationData, ApplicationResult } from './base.adapter';
+import type { TestingModule } from '@nestjs/testing';
 
 describe('LeverAdapter', () => {
   let adapter: LeverAdapter;
@@ -326,7 +329,7 @@ describe('LeverAdapter', () => {
     });
 
     it('should handle very long URLs', async () => {
-      const longUrl = 'https://jobs.lever.co/company/' + 'a'.repeat(1000);
+      const longUrl = `https://jobs.lever.co/company/${  'a'.repeat(1000)}`;
       const dataWithLongUrl = { ...mockApplicationData, jobUrl: longUrl };
 
       await adapter.apply(dataWithLongUrl);

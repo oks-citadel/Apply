@@ -8,6 +8,7 @@ import {
   IsBoolean,
   MinLength,
 } from 'class-validator';
+
 import { SectionType } from '../entities/section.entity';
 
 export class CreateSectionDto {

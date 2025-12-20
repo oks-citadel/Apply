@@ -19,14 +19,12 @@ export class ExportUtil {
     const headerRow = csvHeaders.map((header) => this.escapeCSVValue(header)).join(',');
 
     // Create CSV data rows
-    const dataRows = data.map((row) => {
-      return csvHeaders
+    const dataRows = data.map((row) => csvHeaders
         .map((header) => {
           const value = row[header];
           return this.escapeCSVValue(this.formatValue(value));
         })
-        .join(',');
-    });
+        .join(','));
 
     return [headerRow, ...dataRows].join('\n');
   }

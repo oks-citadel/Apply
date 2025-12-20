@@ -9,8 +9,9 @@ import {
   JoinColumn,
   OneToMany,
 } from 'typeorm';
-import { Tenant } from './tenant.entity';
+
 import { TenantUser } from './tenant-user.entity';
+import { Tenant } from './tenant.entity';
 
 @Entity('tenant_departments')
 @Index(['tenant_id'])

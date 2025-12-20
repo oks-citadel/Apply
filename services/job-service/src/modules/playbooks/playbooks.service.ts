@@ -1,17 +1,20 @@
 import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Playbook, Region } from './entities/playbook.entity';
+
+import { REGIONAL_PLAYBOOKS } from './config';
 import { PlaybookApplication, ApplicationStatus } from './entities/playbook-application.entity';
+import { Playbook, Region } from './entities/playbook.entity';
 import { Job, RemoteType } from '../jobs/entities/job.entity';
-import {
+
+import type {
   ApplyPlaybookDto,
   ApplyPlaybookResponseDto,
   UpdateApplicationStatusDto,
   ApplicationStatsDto,
   RecommendationResponseDto,
 } from './dto';
-import { REGIONAL_PLAYBOOKS } from './config';
+import type { Repository } from 'typeorm';
+
 
 @Injectable()
 export class PlaybooksService {
@@ -540,9 +543,9 @@ export class PlaybooksService {
 
       const stats = playbookStats.get(key)!;
       stats.total++;
-      if (app.got_interview) stats.interviews++;
-      if (app.got_offer) stats.offers++;
-      if (app.user_rating) stats.ratings.push(app.user_rating);
+      if (app.got_interview) {stats.interviews++;}
+      if (app.got_offer) {stats.offers++;}
+      if (app.user_rating) {stats.ratings.push(app.user_rating);}
     });
 
     const successRateByPlaybook = Array.from(playbookStats.values()).map(stats => ({

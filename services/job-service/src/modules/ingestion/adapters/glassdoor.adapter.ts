@@ -1,10 +1,12 @@
-import { HttpService } from '@nestjs/axios';
+
 import { BaseJobAdapter } from './base.adapter';
-import {
+
+import type {
   FetchOptions,
   FetchResult,
   NormalizedJob,
 } from '../interfaces/job-adapter.interface';
+import type { HttpService } from '@nestjs/axios';
 
 /**
  * Glassdoor API Adapter
@@ -106,7 +108,7 @@ export class GlassdoorAdapter extends BaseJobAdapter {
       companyName: rawJob.employer,
       location: rawJob.location,
       ...location,
-      remoteType: this.detectRemoteType(rawJob.location + ' ' + rawJob.jobTitle),
+      remoteType: this.detectRemoteType(`${rawJob.location  } ${  rawJob.jobTitle}`),
       description: rawJob.jobDescription || '',
       employmentType: this.mapEmploymentType(rawJob.employmentType),
       ...salary,

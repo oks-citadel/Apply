@@ -11,11 +11,15 @@ async function bootstrap() {
       serviceName: 'notification-service',
       serviceVersion: '1.0.0',
       environment: process.env.NODE_ENV || 'development',
-      azureMonitorConnectionString: process.env.APPLICATIONINSIGHTS_CONNECTION_STRING,
+      azureMonitorConnectionString:
+        process.env.APPLICATIONINSIGHTS_CONNECTION_STRING,
     });
     logger.log('Telemetry initialized successfully');
   } catch (error) {
-    logger.warn('Failed to initialize telemetry, continuing without tracing', error);
+    logger.warn(
+      'Failed to initialize telemetry, continuing without tracing',
+      error,
+    );
   }
 
   // Import NestJS modules AFTER telemetry initialization
@@ -59,7 +63,9 @@ async function bootstrap() {
   await app.listen(port);
 
   logger.log(`Notification Service is running on: http://localhost:${port}`);
-  logger.log(`Swagger documentation available at: http://localhost:${port}/api/docs`);
+  logger.log(
+    `Swagger documentation available at: http://localhost:${port}/api/docs`,
+  );
   logger.log(`WebSocket server ready at: ws://localhost:${port}/notifications`);
 }
 bootstrap();

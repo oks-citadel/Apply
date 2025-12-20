@@ -1,3 +1,4 @@
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsString,
   IsNotEmpty,
@@ -5,7 +6,7 @@ import {
   IsUUID,
   IsEnum,
 } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+
 import { AssignmentType, AssignmentPriority } from '../entities/recruiter-assignment.entity';
 
 export class EscalateApplicationDto {

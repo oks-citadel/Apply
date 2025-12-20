@@ -11,13 +11,7 @@ import {
   HttpStatus,
   Logger,
 } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiParam,
-  ApiBearerAuth,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBearerAuth } from '@nestjs/swagger';
 import { SLAService } from './services/sla.service';
 import { EligibilityCheckerService } from './services/eligibility-checker.service';
 import { ViolationHandlerService } from './services/violation-handler.service';
@@ -70,9 +64,7 @@ export class SLAController {
     status: HttpStatus.BAD_REQUEST,
     description: 'Invalid input or eligibility requirements not met',
   })
-  async createContract(
-    @Body() dto: CreateSLAContractDto,
-  ): Promise<CreateSLAResponseDto> {
+  async createContract(@Body() dto: CreateSLAContractDto): Promise<CreateSLAResponseDto> {
     this.logger.log(`POST /contracts - Creating contract for user ${dto.userId}`);
     return await this.slaService.createContract(dto);
   }
@@ -92,9 +84,7 @@ export class SLAController {
     status: HttpStatus.NOT_FOUND,
     description: 'No active SLA contract found',
   })
-  async getStatus(
-    @Param('userId') userId: string,
-  ): Promise<SLAStatusResponseDto> {
+  async getStatus(@Param('userId') userId: string): Promise<SLAStatusResponseDto> {
     this.logger.log(`GET /status/${userId} - Getting SLA status`);
     return await this.slaService.getStatus(userId);
   }
@@ -110,9 +100,7 @@ export class SLAController {
     description: 'Dashboard data retrieved successfully',
     type: SLADashboardResponseDto,
   })
-  async getDashboard(
-    @Param('userId') userId: string,
-  ): Promise<SLADashboardResponseDto> {
+  async getDashboard(@Param('userId') userId: string): Promise<SLADashboardResponseDto> {
     this.logger.log(`GET /dashboard/${userId} - Getting dashboard data`);
     return await this.slaService.getDashboard(userId);
   }
@@ -132,9 +120,7 @@ export class SLAController {
     @Param('userId') userId: string,
     @Query('tier') tier: SLATier,
   ): Promise<EligibilityCheckResponseDto> {
-    this.logger.log(
-      `GET /eligibility/${userId}?tier=${tier} - Checking eligibility`,
-    );
+    this.logger.log(`GET /eligibility/${userId}?tier=${tier} - Checking eligibility`);
     return await this.eligibilityChecker.checkEligibility(userId, tier);
   }
 
@@ -148,12 +134,8 @@ export class SLAController {
     description: 'Application tracked successfully',
     type: TrackProgressResponseDto,
   })
-  async trackApplication(
-    @Body() dto: TrackApplicationDto,
-  ): Promise<TrackProgressResponseDto> {
-    this.logger.log(
-      `POST /track-application - Tracking application ${dto.applicationId}`,
-    );
+  async trackApplication(@Body() dto: TrackApplicationDto): Promise<TrackProgressResponseDto> {
+    this.logger.log(`POST /track-application - Tracking application ${dto.applicationId}`);
     return await this.slaService.trackApplication(dto);
   }
 
@@ -167,12 +149,8 @@ export class SLAController {
     description: 'Response tracked successfully',
     type: TrackProgressResponseDto,
   })
-  async trackResponse(
-    @Body() dto: TrackResponseDto,
-  ): Promise<TrackProgressResponseDto> {
-    this.logger.log(
-      `POST /track-response - Tracking response for ${dto.applicationId}`,
-    );
+  async trackResponse(@Body() dto: TrackResponseDto): Promise<TrackProgressResponseDto> {
+    this.logger.log(`POST /track-response - Tracking response for ${dto.applicationId}`);
     return await this.slaService.trackResponse(dto);
   }
 
@@ -186,12 +164,8 @@ export class SLAController {
     description: 'Interview tracked successfully',
     type: TrackProgressResponseDto,
   })
-  async trackInterview(
-    @Body() dto: TrackInterviewDto,
-  ): Promise<TrackProgressResponseDto> {
-    this.logger.log(
-      `POST /track-interview - Tracking interview for ${dto.applicationId}`,
-    );
+  async trackInterview(@Body() dto: TrackInterviewDto): Promise<TrackProgressResponseDto> {
+    this.logger.log(`POST /track-interview - Tracking interview for ${dto.applicationId}`);
     return await this.slaService.trackInterview(dto);
   }
 
@@ -205,9 +179,7 @@ export class SLAController {
     description: 'Bulk tracking completed',
     type: BulkTrackResponseDto,
   })
-  async bulkTrackProgress(
-    @Body() dto: BulkTrackProgressDto,
-  ): Promise<BulkTrackResponseDto> {
+  async bulkTrackProgress(@Body() dto: BulkTrackProgressDto): Promise<BulkTrackResponseDto> {
     this.logger.log(`POST /track-bulk - Bulk tracking progress events`);
     return await this.slaService.bulkTrackProgress(dto);
   }
@@ -222,9 +194,7 @@ export class SLAController {
     description: 'Progress event verified successfully',
   })
   async verifyProgress(@Body() dto: VerifyProgressDto) {
-    this.logger.log(
-      `PATCH /verify-progress - Verifying progress ${dto.progressId}`,
-    );
+    this.logger.log(`PATCH /verify-progress - Verifying progress ${dto.progressId}`);
     return await this.slaService.verifyProgress(dto);
   }
 
@@ -243,9 +213,7 @@ export class SLAController {
     @Param('userId') userId: string,
     @Body() dto: ExtendSLAContractDto,
   ): Promise<SLAStatusResponseDto> {
-    this.logger.log(
-      `POST /extend/${userId} - Extending contract by ${dto.extensionDays} days`,
-    );
+    this.logger.log(`POST /extend/${userId} - Extending contract by ${dto.extensionDays} days`);
     return await this.slaService.extendContract(userId, dto);
   }
 
@@ -295,11 +263,7 @@ export class SLAController {
     @Body() body: { approvedBy: string; notes?: string },
   ) {
     this.logger.log(`POST /remedies/${remedyId}/approve - Approving remedy`);
-    return await this.violationHandler.approveRemedy(
-      remedyId,
-      body.approvedBy,
-      body.notes,
-    );
+    return await this.violationHandler.approveRemedy(remedyId, body.approvedBy, body.notes);
   }
 
   /**

@@ -27,10 +27,7 @@ const App = () => {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <QueryClientProvider client={queryClient}>
-          <StatusBar
-            barStyle="dark-content"
-            backgroundColor={theme.colors.white}
-          />
+          <StatusBar barStyle="dark-content" backgroundColor={theme.colors.white} />
           <AppNavigator />
         </QueryClientProvider>
       </SafeAreaProvider>

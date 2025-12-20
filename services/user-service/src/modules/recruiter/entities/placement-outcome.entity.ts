@@ -8,6 +8,7 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
+
 import { RecruiterAssignment } from './recruiter-assignment.entity';
 
 export enum PlacementStatus {
@@ -210,7 +211,7 @@ export class PlacementOutcome {
   }
 
   calculatePlacementFee(): number {
-    if (!this.offered_salary || !this.fee_percentage) return 0;
+    if (!this.offered_salary || !this.fee_percentage) {return 0;}
     return (this.offered_salary * this.fee_percentage) / 100;
   }
 

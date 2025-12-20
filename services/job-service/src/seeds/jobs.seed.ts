@@ -1,4 +1,6 @@
-import { Job, RemoteType, ExperienceLevel, EmploymentType, JobSource } from '../modules/jobs/entities/job.entity';
+import { RemoteType, ExperienceLevel, EmploymentType, JobSource } from '../modules/jobs/entities/job.entity';
+
+import type { Job} from '../modules/jobs/entities/job.entity';
 
 export const jobsSeedData: Partial<Job>[] = [
   {

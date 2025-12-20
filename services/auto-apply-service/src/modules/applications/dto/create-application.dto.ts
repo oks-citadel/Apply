@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsString, IsUUID, IsOptional, IsNumber, IsBoolean, IsObject, IsEnum } from 'class-validator';
+
 import { ApplicationSource } from '../entities/application.entity';
 
 export class CreateApplicationDto {

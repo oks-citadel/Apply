@@ -1,8 +1,11 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, ILike } from 'typeorm';
+import { ILike } from 'typeorm';
+
 import { Answer, QuestionCategory, AnswerType } from './entities/answer.entity';
-import { CreateAnswerDto, UpdateAnswerDto } from './dto/create-answer.dto';
+
+import type { CreateAnswerDto, UpdateAnswerDto } from './dto/create-answer.dto';
+import type { Repository} from 'typeorm';
 
 export interface MatchedAnswer {
   answer: Answer;
@@ -258,7 +261,7 @@ export class AnswerLibraryService {
     let highestScore = 0;
 
     for (const answer of answers) {
-      if (!answer.keywords || answer.keywords.length === 0) continue;
+      if (!answer.keywords || answer.keywords.length === 0) {continue;}
 
       const matchingKeywords = answer.keywords.filter(kw =>
         questionWords.has(kw.toLowerCase()) ||

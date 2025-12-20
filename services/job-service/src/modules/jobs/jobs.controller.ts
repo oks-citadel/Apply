@@ -18,14 +18,21 @@ import {
   ApiParam,
   ApiQuery,
 } from '@nestjs/swagger';
-import { JobsService } from './jobs.service';
-import { SearchJobsDto, PaginatedJobsResponseDto, JobResponseDto } from './dto/search-jobs.dto';
-import { SaveJobDto, UpdateSavedJobDto } from './dto/save-job.dto';
-import { MatchScoreDto, MatchScoreResponseDto } from './dto/match-score.dto';
+
 import { InterviewQuestionsResponseDto } from './dto/interview-questions.dto';
-import { SalaryPredictionDto, SalaryPredictionResponseDto } from './dto/salary-prediction.dto';
-import { ReportJobDto, ReportJobResponseDto } from './dto/report-job.dto';
+import { MatchScoreResponseDto } from './dto/match-score.dto';
+import { ReportJobResponseDto } from './dto/report-job.dto';
+import { SalaryPredictionResponseDto } from './dto/salary-prediction.dto';
+import { SaveJobDto } from './dto/save-job.dto';
+import { PaginatedJobsResponseDto, JobResponseDto } from './dto/search-jobs.dto';
 import { JwtAuthGuard } from '../../common/guards';
+
+import type { MatchScoreDto} from './dto/match-score.dto';
+import type { ReportJobDto} from './dto/report-job.dto';
+import type { SalaryPredictionDto} from './dto/salary-prediction.dto';
+import type { UpdateSavedJobDto } from './dto/save-job.dto';
+import type { SearchJobsDto} from './dto/search-jobs.dto';
+import type { JobsService } from './jobs.service';
 
 @ApiTags('Jobs')
 @Controller('jobs')

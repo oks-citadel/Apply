@@ -1,10 +1,12 @@
-import { HttpService } from '@nestjs/axios';
+
 import { BaseJobAdapter } from './base.adapter';
-import {
+
+import type {
   FetchOptions,
   FetchResult,
   NormalizedJob,
 } from '../interfaces/job-adapter.interface';
+import type { HttpService } from '@nestjs/axios';
 
 /**
  * USAJobs Adapter
@@ -184,14 +186,14 @@ export class USAJobsAdapter extends BaseJobAdapter {
   }
 
   private mapPayPlan(payPlan: string): any {
-    if (!payPlan) return undefined;
+    if (!payPlan) {return undefined;}
 
     // GS (General Schedule) grades mapping
     if (payPlan.startsWith('GS')) {
       const grade = parseInt(payPlan.replace('GS', ''));
-      if (grade <= 7) return 'entry';
-      if (grade <= 11) return 'mid';
-      if (grade <= 13) return 'senior';
+      if (grade <= 7) {return 'entry';}
+      if (grade <= 11) {return 'mid';}
+      if (grade <= 13) {return 'senior';}
       return 'lead';
     }
 
@@ -199,18 +201,18 @@ export class USAJobsAdapter extends BaseJobAdapter {
   }
 
   private mapEmploymentType(schedule: string): any {
-    if (!schedule) return 'full_time';
+    if (!schedule) {return 'full_time';}
 
     const lowerSchedule = schedule.toLowerCase();
-    if (lowerSchedule.includes('part')) return 'part_time';
-    if (lowerSchedule.includes('intermittent')) return 'part_time';
-    if (lowerSchedule.includes('seasonal')) return 'temporary';
+    if (lowerSchedule.includes('part')) {return 'part_time';}
+    if (lowerSchedule.includes('intermittent')) {return 'part_time';}
+    if (lowerSchedule.includes('seasonal')) {return 'temporary';}
 
     return 'full_time';
   }
 
   private parseSalary(salaryStr: string): number | undefined {
-    if (!salaryStr) return undefined;
+    if (!salaryStr) {return undefined;}
     const match = salaryStr.match(/\d+/g);
     if (match) {
       return parseInt(match.join(''));

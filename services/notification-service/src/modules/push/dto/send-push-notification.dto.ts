@@ -27,7 +27,9 @@ export class PushNotificationPayloadDto {
   @IsString()
   body: string;
 
-  @ApiPropertyOptional({ description: 'Action URL when notification is clicked' })
+  @ApiPropertyOptional({
+    description: 'Action URL when notification is clicked',
+  })
   @IsOptional()
   @IsString()
   clickAction?: string;

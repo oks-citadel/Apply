@@ -1,8 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import axios, { AxiosInstance } from 'axios';
-import { JobProvider, RawJobData, JobProviderConfig } from '../interfaces/job-provider.interface';
-import { Job, JobSource, RemoteType, ExperienceLevel, EmploymentType } from '../../jobs/entities/job.entity';
+import axios from 'axios';
+
+import { JobSource, RemoteType, ExperienceLevel, EmploymentType } from '../../jobs/entities/job.entity';
+
+import type { Job} from '../../jobs/entities/job.entity';
+import type { JobProvider, RawJobData, JobProviderConfig } from '../interfaces/job-provider.interface';
+import type { ConfigService } from '@nestjs/config';
+import type { AxiosInstance } from 'axios';
 
 /**
  * CareerJet Provider - International job aggregator
@@ -130,7 +134,7 @@ export class CareerJetProvider implements JobProvider {
   }
 
   private parseJobListings(data: any): RawJobData[] {
-    if (!data?.jobs) return [];
+    if (!data?.jobs) {return [];}
 
     return data.jobs.map((job: any) => ({
       external_id: job.url ? this.hashUrl(job.url) : `cj-${Date.now()}`,
@@ -258,11 +262,11 @@ export class CareerJetProvider implements JobProvider {
 
   private mapEmploymentType(type: string): string {
     const normalized = (type || '').toLowerCase();
-    if (normalized.includes('full') || normalized.includes('permanent')) return 'full_time';
-    if (normalized.includes('part')) return 'part_time';
-    if (normalized.includes('contract') || normalized.includes('freelance')) return 'contract';
-    if (normalized.includes('temp')) return 'temporary';
-    if (normalized.includes('intern') || normalized.includes('apprentice')) return 'internship';
+    if (normalized.includes('full') || normalized.includes('permanent')) {return 'full_time';}
+    if (normalized.includes('part')) {return 'part_time';}
+    if (normalized.includes('contract') || normalized.includes('freelance')) {return 'contract';}
+    if (normalized.includes('temp')) {return 'temporary';}
+    if (normalized.includes('intern') || normalized.includes('apprentice')) {return 'internship';}
     return 'full_time';
   }
 
@@ -280,11 +284,11 @@ export class CareerJetProvider implements JobProvider {
   private mapExperienceLevel(job: any): string {
     const title = (job.title || '').toLowerCase();
 
-    if (title.includes('senior') || title.includes('sr.')) return 'senior';
-    if (title.includes('junior') || title.includes('jr.')) return 'junior';
-    if (title.includes('entry') || title.includes('graduate') || title.includes('trainee')) return 'entry';
-    if (title.includes('lead') || title.includes('principal') || title.includes('architect')) return 'lead';
-    if (title.includes('director') || title.includes('executive') || title.includes('head of')) return 'executive';
+    if (title.includes('senior') || title.includes('sr.')) {return 'senior';}
+    if (title.includes('junior') || title.includes('jr.')) {return 'junior';}
+    if (title.includes('entry') || title.includes('graduate') || title.includes('trainee')) {return 'entry';}
+    if (title.includes('lead') || title.includes('principal') || title.includes('architect')) {return 'lead';}
+    if (title.includes('director') || title.includes('executive') || title.includes('head of')) {return 'executive';}
     return 'mid';
   }
 
@@ -301,8 +305,8 @@ export class CareerJetProvider implements JobProvider {
   }
 
   private parseSalary(value: any): number | null {
-    if (!value) return null;
-    if (typeof value === 'number') return value;
+    if (!value) {return null;}
+    if (typeof value === 'number') {return value;}
 
     const str = String(value).replace(/[$,€£¥]/g, '');
     if (str.toLowerCase().includes('k')) {

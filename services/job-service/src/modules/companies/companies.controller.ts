@@ -1,8 +1,10 @@
 import { Controller, Get, Param, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
-import { CompaniesService } from './companies.service';
-import { Company } from './entities/company.entity';
+
 import { CompanyReview } from './entities/company-review.entity';
+import { Company } from './entities/company.entity';
+
+import type { CompaniesService } from './companies.service';
 
 @ApiTags('Companies')
 @Controller('companies')

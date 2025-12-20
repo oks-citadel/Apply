@@ -1,4 +1,5 @@
 import { IsString, IsEnum, IsOptional, IsObject, IsBoolean, IsNumber, Min } from 'class-validator';
+
 import { SourceProvider, SourceType } from '../entities/job-source.entity';
 
 export class CreateJobSourceDto {

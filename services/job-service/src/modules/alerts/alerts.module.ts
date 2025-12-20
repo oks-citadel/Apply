@@ -1,12 +1,13 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { JwtModule } from '@nestjs/jwt';
+import { TypeOrmModule } from '@nestjs/typeorm';
+
 import { AlertsController } from './alerts.controller';
 import { AlertsService } from './alerts.service';
 import { JobAlert } from './entities/job-alert.entity';
-import { SearchModule } from '../search/search.module';
 import { JwtAuthGuard } from '../../common/guards';
+import { SearchModule } from '../search/search.module';
 
 @Module({
   imports: [

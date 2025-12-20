@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy } from 'passport-linkedin-oauth2';
-import { ConfigService } from '@nestjs/config';
-import { AuthService } from '../auth.service';
+
+import type { AuthService } from '../auth.service';
+import type { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class LinkedInStrategy extends PassportStrategy(Strategy, 'linkedin') {
@@ -38,7 +39,7 @@ export class LinkedInStrategy extends PassportStrategy(Strategy, 'linkedin') {
       const user = await this.authService.validateOAuthUser({
         providerId: id,
         provider: 'linkedin',
-        email: email,
+        email,
         firstName: name?.givenName || null,
         lastName: name?.familyName || null,
         profilePicture: photos && photos.length > 0 ? photos[0].value : null,

@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsArray, IsEnum, IsInt, IsOptional, IsBoolean, Min, Max, IsString } from 'class-validator';
+
 import { RemotePreference, ExperienceLevel } from '../../../common/enums/subscription-tier.enum';
 
 export class UpdatePreferenceDto {

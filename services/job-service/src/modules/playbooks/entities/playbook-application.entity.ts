@@ -8,6 +8,7 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
+
 import { Playbook } from './playbook.entity';
 
 export enum ApplicationStatus {

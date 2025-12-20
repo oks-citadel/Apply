@@ -1,10 +1,12 @@
-import { HttpService } from '@nestjs/axios';
+
 import { BaseJobAdapter } from './base.adapter';
-import {
+
+import type {
   FetchOptions,
   FetchResult,
   NormalizedJob,
 } from '../interfaces/job-adapter.interface';
+import type { HttpService } from '@nestjs/axios';
 
 /**
  * UK Civil Service Jobs Adapter
@@ -145,7 +147,7 @@ export class UKCivilServiceAdapter extends BaseJobAdapter {
   }
 
   private mapGrade(grade: string): any {
-    if (!grade) return undefined;
+    if (!grade) {return undefined;}
 
     const lowerGrade = grade.toLowerCase();
 
@@ -182,21 +184,21 @@ export class UKCivilServiceAdapter extends BaseJobAdapter {
   }
 
   private mapEmploymentType(workingPattern: string): any {
-    if (!workingPattern) return 'full_time';
+    if (!workingPattern) {return 'full_time';}
 
     const lowerPattern = workingPattern.toLowerCase();
 
-    if (lowerPattern.includes('part')) return 'part_time';
-    if (lowerPattern.includes('flexible')) return 'full_time';
-    if (lowerPattern.includes('job share')) return 'part_time';
-    if (lowerPattern.includes('fixed term')) return 'contract';
+    if (lowerPattern.includes('part')) {return 'part_time';}
+    if (lowerPattern.includes('flexible')) {return 'full_time';}
+    if (lowerPattern.includes('job share')) {return 'part_time';}
+    if (lowerPattern.includes('fixed term')) {return 'contract';}
 
     return 'full_time';
   }
 
   private parseSalary(salaryStr: string | number): number | undefined {
-    if (typeof salaryStr === 'number') return salaryStr;
-    if (!salaryStr) return undefined;
+    if (typeof salaryStr === 'number') {return salaryStr;}
+    if (!salaryStr) {return undefined;}
 
     const match = salaryStr.toString().match(/[\d,]+/);
     if (match) {

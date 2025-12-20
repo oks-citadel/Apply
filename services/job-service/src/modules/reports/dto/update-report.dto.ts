@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+
 import { ReportStatus } from '../enums/report-type.enum';
 
 export class UpdateReportDto {

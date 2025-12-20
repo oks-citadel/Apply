@@ -7,10 +7,7 @@ import { SLAModule } from '../sla/sla.module';
 import { SLAContract } from '../sla/entities/sla-contract.entity';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([AnalyticsEvent, SLAContract]),
-    SLAModule,
-  ],
+  imports: [TypeOrmModule.forFeature([AnalyticsEvent, SLAContract]), SLAModule],
   controllers: [AnalyticsController],
   providers: [AnalyticsService],
   exports: [AnalyticsService],

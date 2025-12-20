@@ -1,9 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Text, Linking } from 'react-native';
-import {
-  NavigationContainer,
-  NavigationContainerRef,
-} from '@react-navigation/native';
+import { NavigationContainer, NavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useAuthStore } from '../store/authStore';
@@ -23,10 +20,7 @@ import {
   JobsStackParamList,
   ApplicationsStackParamList,
 } from './types';
-import {
-  deepLinkingService,
-  ParsedDeepLink,
-} from '../services/deepLinking';
+import { deepLinkingService, ParsedDeepLink } from '../services/deepLinking';
 import { notificationService } from '../services/notifications';
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
@@ -275,7 +269,7 @@ export const AppNavigator = () => {
           console.log('Navigate to job:', jobId);
           navigationRef.current.navigate('Main', {
             screen: 'Jobs',
-            params: { screen: 'JobDetails', params: { jobId } }
+            params: { screen: 'JobDetails', params: { jobId } },
           } as any);
         }
       }
@@ -287,7 +281,7 @@ export const AppNavigator = () => {
           console.log('Navigate to application:', applicationId);
           navigationRef.current.navigate('Main', {
             screen: 'Applications',
-            params: { screen: 'ApplicationDetails', params: { applicationId } }
+            params: { screen: 'ApplicationDetails', params: { applicationId } },
           } as any);
         }
       }

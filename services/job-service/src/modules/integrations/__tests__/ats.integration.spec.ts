@@ -1,15 +1,17 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { HttpService } from '@nestjs/axios';
-import { ConfigService } from '@nestjs/config';
-import { Repository } from 'typeorm';
-import { getRepositoryToken } from '@nestjs/typeorm';
-import { of, throwError } from 'rxjs';
 import {
   BadRequestException,
   UnauthorizedException,
   NotFoundException,
 } from '@nestjs/common';
-import { AxiosError, AxiosResponse } from 'axios';
+import { Test, TestingModule } from '@nestjs/testing';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { of, throwError } from 'rxjs';
+
+
+import type { HttpService } from '@nestjs/axios';
+import type { ConfigService } from '@nestjs/config';
+import type { AxiosError, AxiosResponse } from 'axios';
+import type { Repository } from 'typeorm';
 
 /**
  * ATS Integration Test Suite (Workday & Greenhouse)
@@ -456,7 +458,7 @@ describe('ATS Integration', () => {
     describe('Authentication', () => {
       it('should authenticate with API key', () => {
         const headers = {
-          'Authorization': `Basic ${Buffer.from(mockGreenhouseConfig.apiKey + ':').toString('base64')}`,
+          'Authorization': `Basic ${Buffer.from(`${mockGreenhouseConfig.apiKey  }:`).toString('base64')}`,
         };
 
         expect(headers.Authorization).toContain('Basic');

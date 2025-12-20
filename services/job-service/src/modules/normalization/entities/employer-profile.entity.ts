@@ -8,6 +8,7 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
+
 import { Company } from '../../companies/entities/company.entity';
 
 export enum EmployerVerificationStatus {

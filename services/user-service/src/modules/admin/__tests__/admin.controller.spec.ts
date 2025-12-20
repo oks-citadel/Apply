@@ -1,15 +1,18 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { AdminController } from '../admin.controller';
-import { AdminService } from '../admin.service';
+import { UnauthorizedException, ForbiddenException, NotFoundException } from '@nestjs/common';
+import { Test } from '@nestjs/testing';
+
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../auth/guards/roles.guard';
-import { UnauthorizedException, ForbiddenException, NotFoundException } from '@nestjs/common';
-import { CreateUserDto } from '../dto/create-user.dto';
-import { UpdateUserDto } from '../dto/update-user.dto';
-import { UpdateSettingsDto } from '../dto/update-settings.dto';
-import { UserRole } from '../enums/user-role.enum';
-import { JobStatus } from '../enums/job-status.enum';
+import { AdminController } from '../admin.controller';
+import { AdminService } from '../admin.service';
 import { ContentStatus } from '../enums/content-status.enum';
+import { JobStatus } from '../enums/job-status.enum';
+import { UserRole } from '../enums/user-role.enum';
+
+import type { CreateUserDto } from '../dto/create-user.dto';
+import type { UpdateSettingsDto } from '../dto/update-settings.dto';
+import type { UpdateUserDto } from '../dto/update-user.dto';
+import type { TestingModule } from '@nestjs/testing';
 
 describe('AdminController', () => {
   let controller: AdminController;

@@ -1,8 +1,9 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+
 import { ApplicationsController } from './applications.controller';
-import { AutoApplyController } from './auto-apply.controller';
 import { ApplicationsService } from './applications.service';
+import { AutoApplyController } from './auto-apply.controller';
 import { Application } from './entities/application.entity';
 import { AutoApplySettings } from './entities/auto-apply-settings.entity';
 import { AutoApplyService } from './services/auto-apply.service';

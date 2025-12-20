@@ -8,8 +8,9 @@ import {
   JoinColumn,
   Index,
 } from 'typeorm';
-import { Resume } from '../../resumes/entities/resume.entity';
+
 import { AlignedResume } from './aligned-resume.entity';
+import { Resume } from '../../resumes/entities/resume.entity';
 
 export interface CoverLetterMetadata {
   targetJobTitle?: string;

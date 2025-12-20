@@ -1,9 +1,10 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { ComplianceService } from './compliance.service';
+
 import { ComplianceController } from './compliance.controller';
-import { RateLimiterService } from './services/rate-limiter.service';
+import { ComplianceService } from './compliance.service';
 import { AuditLogService } from './services/audit-log.service';
+import { RateLimiterService } from './services/rate-limiter.service';
 
 @Module({
   imports: [ConfigModule],

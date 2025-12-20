@@ -1,8 +1,11 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
+
 import { GreenhouseAdapter } from './greenhouse.adapter';
 import { BrowserService } from '../browser/browser.service';
 import { FormMappingService } from '../form-mapping/form-mapping.service';
-import { ApplicationData, ApplicationResult } from './base.adapter';
+
+import type { ApplicationData, ApplicationResult } from './base.adapter';
+import type { TestingModule } from '@nestjs/testing';
 
 describe('GreenhouseAdapter', () => {
   let adapter: GreenhouseAdapter;

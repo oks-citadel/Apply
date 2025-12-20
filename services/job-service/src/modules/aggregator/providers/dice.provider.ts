@@ -1,8 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import axios, { AxiosInstance } from 'axios';
-import { JobProvider, RawJobData, JobProviderConfig } from '../interfaces/job-provider.interface';
-import { Job, JobSource, RemoteType, ExperienceLevel, EmploymentType } from '../../jobs/entities/job.entity';
+import axios from 'axios';
+
+import { JobSource, RemoteType, ExperienceLevel, EmploymentType } from '../../jobs/entities/job.entity';
+
+import type { Job} from '../../jobs/entities/job.entity';
+import type { JobProvider, RawJobData, JobProviderConfig } from '../interfaces/job-provider.interface';
+import type { ConfigService } from '@nestjs/config';
+import type { AxiosInstance } from 'axios';
 
 /**
  * Dice Provider - Tech-focused job aggregator
@@ -126,7 +130,7 @@ export class DiceProvider implements JobProvider {
       company_logo_url: job.company?.logo || job.companyLogo || null,
       location: job.location || job.jobLocation?.displayName || '',
       remote_type: this.detectRemoteType(job),
-      description: description,
+      description,
       application_url: job.detailsPageUrl || job.applyUrl || job.url || '',
       posted_at: job.postedDate ? new Date(job.postedDate) : new Date(),
       employment_type: this.mapEmploymentType(job.employmentType || job.jobType || ''),
@@ -134,6 +138,7 @@ export class DiceProvider implements JobProvider {
       salary_min: this.parseSalary(job.salary?.min || job.salaryMin),
       salary_max: this.parseSalary(job.salary?.max || job.salaryMax),
       salary_currency: 'USD',
+      salary_period: 'yearly',
       skills: this.extractTechSkills(description, job.skills),
       metadata: {
         source_api: 'rapidapi',
@@ -147,7 +152,7 @@ export class DiceProvider implements JobProvider {
   }
 
   private parseJobListings(data: any): RawJobData[] {
-    if (!data?.data) return [];
+    if (!data?.data) {return [];}
 
     return data.data.map((job: any) => ({
       external_id: job.id || job.detailsId || '',
@@ -165,6 +170,7 @@ export class DiceProvider implements JobProvider {
       salary_min: this.parseSalary(job.salary?.min),
       salary_max: this.parseSalary(job.salary?.max),
       salary_currency: 'USD',
+      salary_period: 'yearly',
       skills: this.extractTechSkills(job.description, job.skills),
       metadata: {
         dice_id: job.id,
@@ -221,6 +227,7 @@ export class DiceProvider implements JobProvider {
       salary_min: rawJob.salary_min,
       salary_max: rawJob.salary_max,
       salary_currency: rawJob.salary_currency || 'USD',
+      salary_period: rawJob.salary_period || 'yearly',
       description: rawJob.description,
       requirements: rawJob.requirements || [],
       benefits: rawJob.benefits || [],
@@ -288,11 +295,11 @@ export class DiceProvider implements JobProvider {
 
   private mapEmploymentType(type: string): string {
     const normalized = (type || '').toLowerCase();
-    if (normalized.includes('full') || normalized.includes('perm')) return 'full_time';
-    if (normalized.includes('part')) return 'part_time';
-    if (normalized.includes('contract') || normalized.includes('c2c') || normalized.includes('corp-to-corp')) return 'contract';
-    if (normalized.includes('temp')) return 'temporary';
-    if (normalized.includes('intern')) return 'internship';
+    if (normalized.includes('full') || normalized.includes('perm')) {return 'full_time';}
+    if (normalized.includes('part')) {return 'part_time';}
+    if (normalized.includes('contract') || normalized.includes('c2c') || normalized.includes('corp-to-corp')) {return 'contract';}
+    if (normalized.includes('temp')) {return 'temporary';}
+    if (normalized.includes('intern')) {return 'internship';}
     return 'full_time';
   }
 
@@ -312,20 +319,20 @@ export class DiceProvider implements JobProvider {
     const experience = job.yearsOfExperience || job.experience;
 
     // Check title first
-    if (title.includes('senior') || title.includes('sr.') || title.includes('sr ') || title.includes('iii')) return 'senior';
-    if (title.includes('junior') || title.includes('jr.') || title.includes('jr ') || title.includes(' i ')) return 'junior';
-    if (title.includes('entry') || title.includes('associate') || title.includes('graduate')) return 'entry';
-    if (title.includes('lead') || title.includes('principal') || title.includes('staff')) return 'lead';
-    if (title.includes('director') || title.includes('executive') || title.includes('vp') || title.includes('chief')) return 'executive';
-    if (title.includes(' ii ')) return 'mid';
+    if (title.includes('senior') || title.includes('sr.') || title.includes('sr ') || title.includes('iii')) {return 'senior';}
+    if (title.includes('junior') || title.includes('jr.') || title.includes('jr ') || title.includes(' i ')) {return 'junior';}
+    if (title.includes('entry') || title.includes('associate') || title.includes('graduate')) {return 'entry';}
+    if (title.includes('lead') || title.includes('principal') || title.includes('staff')) {return 'lead';}
+    if (title.includes('director') || title.includes('executive') || title.includes('vp') || title.includes('chief')) {return 'executive';}
+    if (title.includes(' ii ')) {return 'mid';}
 
     // Check years of experience if available
     if (experience) {
       const years = parseInt(experience);
-      if (years <= 2) return 'entry';
-      if (years <= 4) return 'junior';
-      if (years <= 7) return 'mid';
-      if (years <= 10) return 'senior';
+      if (years <= 2) {return 'entry';}
+      if (years <= 4) {return 'junior';}
+      if (years <= 7) {return 'mid';}
+      if (years <= 10) {return 'senior';}
       return 'lead';
     }
 
@@ -345,8 +352,8 @@ export class DiceProvider implements JobProvider {
   }
 
   private parseSalary(value: any): number | null {
-    if (!value) return null;
-    if (typeof value === 'number') return value;
+    if (!value) {return null;}
+    if (typeof value === 'number') {return value;}
 
     const str = String(value).replace(/[$,]/g, '');
     if (str.toLowerCase().includes('k')) {
@@ -372,7 +379,7 @@ export class DiceProvider implements JobProvider {
   }
 
   private extractRequirements(description: string): string[] {
-    if (!description) return [];
+    if (!description) {return [];}
     const requirements: string[] = [];
     const lines = description.split('\n');
     let inRequirements = false;
@@ -394,7 +401,7 @@ export class DiceProvider implements JobProvider {
   }
 
   private extractBenefits(description: string): string[] {
-    if (!description) return [];
+    if (!description) {return [];}
     const benefits: string[] = [];
     const lines = description.split('\n');
     let inBenefits = false;

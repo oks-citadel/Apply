@@ -8,6 +8,7 @@ import {
   JoinColumn,
   Index,
 } from 'typeorm';
+
 import { Resume } from '../../resumes/entities/resume.entity';
 
 export interface AlignedContent {

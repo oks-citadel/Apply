@@ -1,10 +1,13 @@
 import { Injectable, NotFoundException, Logger } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, MoreThan } from 'typeorm';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { InjectRepository } from '@nestjs/typeorm';
+import { MoreThan } from 'typeorm';
+
 import { JobAlert, AlertFrequency } from './entities/job-alert.entity';
-import { CreateAlertDto, UpdateAlertDto } from './dto/create-alert.dto';
-import { SearchService } from '../search/search.service';
+
+import type { CreateAlertDto, UpdateAlertDto } from './dto/create-alert.dto';
+import type { SearchService } from '../search/search.service';
+import type { Repository} from 'typeorm';
 
 @Injectable()
 export class AlertsService {

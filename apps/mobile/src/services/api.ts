@@ -14,7 +14,8 @@ import {
 
 // Base API URL - Update this to your actual API URL
 // @ts-ignore - process.env is available in React Native via babel transform
-const API_BASE_URL = (typeof process !== 'undefined' && process.env?.API_URL) || 'http://localhost:3000/api';
+const API_BASE_URL =
+  (typeof process !== 'undefined' && process.env?.API_URL) || 'http://localhost:3000/api';
 
 // Create axios instance
 const apiClient: AxiosInstance = axios.create({
@@ -96,14 +97,12 @@ export const authApi = {
       token,
     }),
 
-  logout: (refreshToken: string) =>
-    apiClient.post('/auth/logout', { refreshToken }),
+  logout: (refreshToken: string) => apiClient.post('/auth/logout', { refreshToken }),
 
   refreshToken: (refreshToken: string) =>
     apiClient.post<{ accessToken: string }>('/auth/refresh', { refreshToken }),
 
-  forgotPassword: (email: string) =>
-    apiClient.post('/auth/forgot-password', { email }),
+  forgotPassword: (email: string) => apiClient.post('/auth/forgot-password', { email }),
 
   resetPassword: (token: string, password: string) =>
     apiClient.post('/auth/reset-password', { token, password }),
@@ -137,26 +136,18 @@ export const jobsApi = {
 
 // Applications API
 export const applicationsApi = {
-  getApplications: (params?: {
-    page?: number;
-    limit?: number;
-    status?: string;
-  }) => apiClient.get<PaginatedResponse<Application>>('/applications', { params }),
+  getApplications: (params?: { page?: number; limit?: number; status?: string }) =>
+    apiClient.get<PaginatedResponse<Application>>('/applications', { params }),
 
-  getApplicationById: (id: string) =>
-    apiClient.get<Application>(`/applications/${id}`),
+  getApplicationById: (id: string) => apiClient.get<Application>(`/applications/${id}`),
 
-  createApplication: (data: {
-    jobId: string;
-    resumeId?: string;
-    coverLetter?: string;
-  }) => apiClient.post<Application>('/applications', data),
+  createApplication: (data: { jobId: string; resumeId?: string; coverLetter?: string }) =>
+    apiClient.post<Application>('/applications', data),
 
   updateApplication: (id: string, data: Partial<Application>) =>
     apiClient.patch<Application>(`/applications/${id}`, data),
 
-  withdrawApplication: (id: string) =>
-    apiClient.post(`/applications/${id}/withdraw`),
+  withdrawApplication: (id: string) => apiClient.post(`/applications/${id}/withdraw`),
 
   getApplicationStats: () => apiClient.get<DashboardStats>('/applications/stats'),
 };
@@ -178,8 +169,7 @@ export const dashboardApi = {
 export const profileApi = {
   getProfile: () => apiClient.get<User>('/profile'),
 
-  updateProfile: (data: Partial<User>) =>
-    apiClient.patch<User>('/profile', data),
+  updateProfile: (data: Partial<User>) => apiClient.patch<User>('/profile', data),
 
   uploadAvatar: (formData: FormData) =>
     apiClient.post<{ avatarUrl: string }>('/profile/avatar', formData, {

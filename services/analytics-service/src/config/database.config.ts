@@ -7,9 +7,7 @@ import { SLAProgress } from '../modules/sla/entities/sla-progress.entity';
 import { SLAViolation } from '../modules/sla/entities/sla-violation.entity';
 import { SLARemedy } from '../modules/sla/entities/sla-remedy.entity';
 
-export const databaseConfig = (
-  configService: ConfigService,
-): TypeOrmModuleOptions => ({
+export const databaseConfig = (configService: ConfigService): TypeOrmModuleOptions => ({
   type: 'postgres',
   host: configService.get<string>('database.host'),
   port: configService.get<number>('database.port'),
@@ -19,19 +17,24 @@ export const databaseConfig = (
   entities: [AnalyticsEvent, SLAContract, SLAProgress, SLAViolation, SLARemedy],
   // Migrations configuration - run on startup in production
   migrations: [join(__dirname, '../migrations/*{.ts,.js}')],
-  migrationsRun: configService.get<string>('nodeEnv') === 'production' ||
+  migrationsRun:
+    configService.get<string>('nodeEnv') === 'production' ||
     configService.get<boolean>('database.runMigrations', false),
   migrationsTableName: 'typeorm_migrations',
   // SECURITY: Always use false in production - never allow auto-schema sync
   // Use migrations for schema changes instead
-  synchronize: configService.get<string>('nodeEnv') === 'production'
-    ? false
-    : configService.get<boolean>('database.synchronize', false),
+  synchronize:
+    configService.get<string>('nodeEnv') === 'production'
+      ? false
+      : configService.get<boolean>('database.synchronize', false),
   logging: configService.get<boolean>('database.logging'),
-  ssl: configService.get<string>('nodeEnv') === 'production' ? {
-    rejectUnauthorized: true,
-    ca: configService.get<string>('database.sslCaCert'),
-  } : false,
+  ssl:
+    configService.get<string>('nodeEnv') === 'production'
+      ? {
+          rejectUnauthorized: true,
+          ca: configService.get<string>('database.sslCaCert'),
+        }
+      : false,
   extra: {
     max: 20,
     min: 5,

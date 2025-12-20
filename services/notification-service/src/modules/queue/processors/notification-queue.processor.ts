@@ -2,7 +2,10 @@ import { Processor, Process, OnQueueError, OnQueueFailed } from '@nestjs/bull';
 import { Logger, Inject, forwardRef } from '@nestjs/common';
 import { Job } from 'bull';
 import { PushService } from '../../push/push.service';
-import { SendPushNotificationDto, PushNotificationCategory } from '../../push/dto';
+import {
+  SendPushNotificationDto,
+  PushNotificationCategory,
+} from '../../push/dto';
 
 export interface NotificationJob {
   userId: string;
@@ -39,7 +42,9 @@ export class NotificationQueueProcessor {
 
   @Process('create-notification')
   async handleCreateNotification(job: Job<NotificationJob>) {
-    this.logger.log(`Processing notification job ${job.id} for user ${job.data.userId}`);
+    this.logger.log(
+      `Processing notification job ${job.id} for user ${job.data.userId}`,
+    );
 
     try {
       const { userId, type, title, message, data } = job.data;
@@ -50,14 +55,19 @@ export class NotificationQueueProcessor {
 
       return { success: true, userId };
     } catch (error) {
-      this.logger.error(`Failed to create notification: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to create notification: ${error.message}`,
+        error.stack,
+      );
       throw error;
     }
   }
 
   @Process('send-push-notification')
   async handleSendPushNotification(job: Job<PushNotificationJobData>) {
-    this.logger.log(`Processing push notification job ${job.id} for user ${job.data.userId}`);
+    this.logger.log(
+      `Processing push notification job ${job.id} for user ${job.data.userId}`,
+    );
 
     try {
       const {
@@ -124,7 +134,10 @@ export class NotificationQueueProcessor {
         results,
       };
     } catch (error) {
-      this.logger.error(`Failed to send push notification: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to send push notification: ${error.message}`,
+        error.stack,
+      );
       throw error;
     }
   }
@@ -195,7 +208,10 @@ export class NotificationQueueProcessor {
         })),
       };
     } catch (error) {
-      this.logger.error(`Failed to send bulk push notification: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to send bulk push notification: ${error.message}`,
+        error.stack,
+      );
       throw error;
     }
   }

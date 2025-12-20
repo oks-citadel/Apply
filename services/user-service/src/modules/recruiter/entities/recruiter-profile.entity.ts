@@ -7,6 +7,7 @@ import {
   Index,
   OneToMany,
 } from 'typeorm';
+
 import { RecruiterAssignment } from './recruiter-assignment.entity';
 import { RecruiterReview } from './recruiter-review.entity';
 

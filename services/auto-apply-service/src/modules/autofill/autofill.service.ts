@@ -1,9 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Page } from 'playwright';
-import { FieldDetectionEngine, DetectedField } from './field-detection.engine';
-import { SemanticMatchingEngine, UserProfile, ResumeData, FieldMatch } from './semantic-matching.engine';
-import { ValidationEngine, ValidationResult } from './validation.engine';
-import { ConfidenceScoringEngine, ApplicationConfidence } from './confidence-scoring.engine';
+
+
+import type { ConfidenceScoringEngine, ApplicationConfidence } from './confidence-scoring.engine';
+import type { FieldDetectionEngine, DetectedField } from './field-detection.engine';
+import type { SemanticMatchingEngine, UserProfile, ResumeData, FieldMatch } from './semantic-matching.engine';
+import type { ValidationEngine, ValidationResult } from './validation.engine';
+import type { Page } from 'playwright';
 
 export interface AutofillResult {
   success: boolean;
@@ -235,7 +237,7 @@ export class AutofillService {
    * Fill a single field
    */
   private async fillField(page: Page, field: DetectedField, value: string): Promise<void> {
-    if (!value) return;
+    if (!value) {return;}
 
     try {
       const element = await page.$(field.selector);
@@ -307,7 +309,7 @@ export class AutofillService {
   private async fillCheckboxField(page: Page, selector: string, value: string): Promise<void> {
     const shouldCheck = ['yes', 'true', '1', 'checked'].includes(value.toLowerCase());
     const element = await page.$(selector);
-    if (!element) return;
+    if (!element) {return;}
 
     const isChecked = await element.isChecked();
     if (shouldCheck !== isChecked) {

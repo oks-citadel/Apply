@@ -4,7 +4,18 @@ import axios, { AxiosError } from 'axios';
 import type { User, LoginCredentials, RegisterData, AuthResponse, MfaRequiredResponse } from '@/types/auth';
 
 interface ApiErrorResponse {
-  message?: string;
+  message?: string | string[];
+  error?: string;
+  statusCode?: number;
+}
+
+// Helper to extract error message from API response
+function extractErrorMessage(data: ApiErrorResponse | undefined, fallback: string): string {
+  if (!data?.message) return fallback;
+  if (Array.isArray(data.message)) {
+    return data.message.join('. ');
+  }
+  return data.message;
 }
 
 interface AuthStore {
@@ -86,7 +97,7 @@ export const useAuthStore = create<AuthStore>()(
           return { requiresMfa: false };
         } catch (error) {
           const axiosError = error as AxiosError<ApiErrorResponse>;
-          const errorMessage = axiosError.response?.data?.message || 'Login failed. Please try again.';
+          const errorMessage = extractErrorMessage(axiosError.response?.data, 'Login failed. Please try again.');
           set({
             error: errorMessage,
             isLoading: false,
@@ -123,7 +134,7 @@ export const useAuthStore = create<AuthStore>()(
           axios.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
         } catch (error) {
           const axiosError = error as AxiosError<ApiErrorResponse>;
-          const errorMessage = axiosError.response?.data?.message || 'Invalid verification code. Please try again.';
+          const errorMessage = extractErrorMessage(axiosError.response?.data, 'Invalid verification code. Please try again.');
           set({
             error: errorMessage,
             isLoading: false,
@@ -166,7 +177,7 @@ export const useAuthStore = create<AuthStore>()(
           axios.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
         } catch (error) {
           const axiosError = error as AxiosError<ApiErrorResponse>;
-          const errorMessage = axiosError.response?.data?.message || 'Registration failed. Please try again.';
+          const errorMessage = extractErrorMessage(axiosError.response?.data, 'Registration failed. Please try again.');
           set({
             error: errorMessage,
             isLoading: false,

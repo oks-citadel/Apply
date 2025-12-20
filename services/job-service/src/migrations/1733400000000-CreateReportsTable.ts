@@ -1,4 +1,6 @@
-import { MigrationInterface, QueryRunner, Table, TableIndex, TableForeignKey } from 'typeorm';
+import { Table, TableIndex, TableForeignKey } from 'typeorm';
+
+import type { MigrationInterface, QueryRunner} from 'typeorm';
 
 export class CreateReportsTable1733400000000 implements MigrationInterface {
   name = 'CreateReportsTable1733400000000';

@@ -1,10 +1,13 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
+import { Test } from '@nestjs/testing';
+
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { TestFactory } from '../../../test/utils/test-factory';
 import { TokenResponseDto } from './dto/token-response.dto';
 import { mockConfigService } from '../../../test/utils/mock-config';
+import { TestFactory } from '../../../test/utils/test-factory';
+
+import type { TestingModule } from '@nestjs/testing';
 
 describe('AuthController', () => {
   let controller: AuthController;

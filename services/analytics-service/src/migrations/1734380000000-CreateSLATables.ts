@@ -40,10 +40,16 @@ export class CreateSLATables1734380000000 implements MigrationInterface {
     `);
 
     // Create indexes for sla_contracts
-    await queryRunner.query(`CREATE INDEX "IDX_sla_contracts_userId" ON "sla_contracts" ("userId")`);
+    await queryRunner.query(
+      `CREATE INDEX "IDX_sla_contracts_userId" ON "sla_contracts" ("userId")`,
+    );
     await queryRunner.query(`CREATE INDEX "IDX_sla_contracts_tier" ON "sla_contracts" ("tier")`);
-    await queryRunner.query(`CREATE INDEX "IDX_sla_contracts_status" ON "sla_contracts" ("status")`);
-    await queryRunner.query(`CREATE INDEX "IDX_sla_contracts_endDate" ON "sla_contracts" ("endDate")`);
+    await queryRunner.query(
+      `CREATE INDEX "IDX_sla_contracts_status" ON "sla_contracts" ("status")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "IDX_sla_contracts_endDate" ON "sla_contracts" ("endDate")`,
+    );
 
     // Create sla_progress table
     await queryRunner.query(`
@@ -74,10 +80,16 @@ export class CreateSLATables1734380000000 implements MigrationInterface {
     `);
 
     // Create indexes for sla_progress
-    await queryRunner.query(`CREATE INDEX "IDX_sla_progress_contractId" ON "sla_progress" ("contractId")`);
+    await queryRunner.query(
+      `CREATE INDEX "IDX_sla_progress_contractId" ON "sla_progress" ("contractId")`,
+    );
     await queryRunner.query(`CREATE INDEX "IDX_sla_progress_userId" ON "sla_progress" ("userId")`);
-    await queryRunner.query(`CREATE INDEX "IDX_sla_progress_eventType" ON "sla_progress" ("eventType")`);
-    await queryRunner.query(`CREATE INDEX "IDX_sla_progress_createdAt" ON "sla_progress" ("createdAt")`);
+    await queryRunner.query(
+      `CREATE INDEX "IDX_sla_progress_eventType" ON "sla_progress" ("eventType")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "IDX_sla_progress_createdAt" ON "sla_progress" ("createdAt")`,
+    );
 
     // Create sla_violations table
     await queryRunner.query(`
@@ -113,10 +125,18 @@ export class CreateSLATables1734380000000 implements MigrationInterface {
     `);
 
     // Create indexes for sla_violations
-    await queryRunner.query(`CREATE INDEX "IDX_sla_violations_contractId" ON "sla_violations" ("contractId")`);
-    await queryRunner.query(`CREATE INDEX "IDX_sla_violations_userId" ON "sla_violations" ("userId")`);
-    await queryRunner.query(`CREATE INDEX "IDX_sla_violations_violationType" ON "sla_violations" ("violationType")`);
-    await queryRunner.query(`CREATE INDEX "IDX_sla_violations_detectedAt" ON "sla_violations" ("detectedAt")`);
+    await queryRunner.query(
+      `CREATE INDEX "IDX_sla_violations_contractId" ON "sla_violations" ("contractId")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "IDX_sla_violations_userId" ON "sla_violations" ("userId")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "IDX_sla_violations_violationType" ON "sla_violations" ("violationType")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "IDX_sla_violations_detectedAt" ON "sla_violations" ("detectedAt")`,
+    );
 
     // Create sla_remedies table
     await queryRunner.query(`
@@ -154,9 +174,13 @@ export class CreateSLATables1734380000000 implements MigrationInterface {
     `);
 
     // Create indexes for sla_remedies
-    await queryRunner.query(`CREATE INDEX "IDX_sla_remedies_violationId" ON "sla_remedies" ("violationId")`);
+    await queryRunner.query(
+      `CREATE INDEX "IDX_sla_remedies_violationId" ON "sla_remedies" ("violationId")`,
+    );
     await queryRunner.query(`CREATE INDEX "IDX_sla_remedies_userId" ON "sla_remedies" ("userId")`);
-    await queryRunner.query(`CREATE INDEX "IDX_sla_remedies_remedyType" ON "sla_remedies" ("remedyType")`);
+    await queryRunner.query(
+      `CREATE INDEX "IDX_sla_remedies_remedyType" ON "sla_remedies" ("remedyType")`,
+    );
     await queryRunner.query(`CREATE INDEX "IDX_sla_remedies_status" ON "sla_remedies" ("status")`);
 
     // Add foreign key constraints
@@ -181,9 +205,15 @@ export class CreateSLATables1734380000000 implements MigrationInterface {
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     // Drop foreign key constraints
-    await queryRunner.query(`ALTER TABLE "sla_remedies" DROP CONSTRAINT "FK_sla_remedies_violation"`);
-    await queryRunner.query(`ALTER TABLE "sla_violations" DROP CONSTRAINT "FK_sla_violations_contract"`);
-    await queryRunner.query(`ALTER TABLE "sla_progress" DROP CONSTRAINT "FK_sla_progress_contract"`);
+    await queryRunner.query(
+      `ALTER TABLE "sla_remedies" DROP CONSTRAINT "FK_sla_remedies_violation"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "sla_violations" DROP CONSTRAINT "FK_sla_violations_contract"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "sla_progress" DROP CONSTRAINT "FK_sla_progress_contract"`,
+    );
 
     // Drop indexes
     await queryRunner.query(`DROP INDEX "IDX_sla_remedies_status"`);

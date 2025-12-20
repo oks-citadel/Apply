@@ -1,5 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
-import {
+
+import type { AlignedResume } from '../entities/aligned-resume.entity';
+import type {
   AlignmentAnalysis,
   SkillGapAnalysis,
   ExperienceAlignment,
@@ -7,8 +9,7 @@ import {
   AlignmentChanges,
   ImprovementSuggestions,
 } from '../entities/alignment-analysis.entity';
-import { AlignedResume } from '../entities/aligned-resume.entity';
-import { GeneratedCoverLetter } from '../entities/generated-cover-letter.entity';
+import type { GeneratedCoverLetter } from '../entities/generated-cover-letter.entity';
 
 export class AlignmentAnalysisResponseDto {
   @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })

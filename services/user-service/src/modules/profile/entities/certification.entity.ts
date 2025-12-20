@@ -7,6 +7,7 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
+
 import { Profile } from './profile.entity';
 
 @Entity('certifications')

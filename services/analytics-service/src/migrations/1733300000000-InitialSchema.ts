@@ -169,7 +169,7 @@ export class InitialSchema1733300000000 implements MigrationInterface {
           },
         ],
       }),
-      true
+      true,
     );
 
     // Create indexes on analytics_events
@@ -178,7 +178,7 @@ export class InitialSchema1733300000000 implements MigrationInterface {
       new TableIndex({
         name: 'IDX_ANALYTICS_EVENTS_EVENT_TYPE',
         columnNames: ['eventType'],
-      })
+      }),
     );
 
     await queryRunner.createIndex(
@@ -186,7 +186,7 @@ export class InitialSchema1733300000000 implements MigrationInterface {
       new TableIndex({
         name: 'IDX_ANALYTICS_EVENTS_CATEGORY',
         columnNames: ['category'],
-      })
+      }),
     );
 
     await queryRunner.createIndex(
@@ -194,7 +194,7 @@ export class InitialSchema1733300000000 implements MigrationInterface {
       new TableIndex({
         name: 'IDX_ANALYTICS_EVENTS_USER_ID',
         columnNames: ['userId'],
-      })
+      }),
     );
 
     await queryRunner.createIndex(
@@ -202,7 +202,7 @@ export class InitialSchema1733300000000 implements MigrationInterface {
       new TableIndex({
         name: 'IDX_ANALYTICS_EVENTS_TIMESTAMP',
         columnNames: ['timestamp'],
-      })
+      }),
     );
 
     await queryRunner.createIndex(
@@ -210,7 +210,7 @@ export class InitialSchema1733300000000 implements MigrationInterface {
       new TableIndex({
         name: 'IDX_ANALYTICS_EVENTS_EVENT_DATE',
         columnNames: ['eventDate'],
-      })
+      }),
     );
 
     await queryRunner.createIndex(
@@ -218,7 +218,7 @@ export class InitialSchema1733300000000 implements MigrationInterface {
       new TableIndex({
         name: 'IDX_ANALYTICS_EVENTS_EVENT_TYPE_TIMESTAMP',
         columnNames: ['eventType', 'timestamp'],
-      })
+      }),
     );
 
     await queryRunner.createIndex(
@@ -226,7 +226,7 @@ export class InitialSchema1733300000000 implements MigrationInterface {
       new TableIndex({
         name: 'IDX_ANALYTICS_EVENTS_USER_ID_TIMESTAMP',
         columnNames: ['userId', 'timestamp'],
-      })
+      }),
     );
 
     await queryRunner.createIndex(
@@ -234,7 +234,7 @@ export class InitialSchema1733300000000 implements MigrationInterface {
       new TableIndex({
         name: 'IDX_ANALYTICS_EVENTS_CATEGORY_TIMESTAMP',
         columnNames: ['category', 'timestamp'],
-      })
+      }),
     );
 
     // Add comments

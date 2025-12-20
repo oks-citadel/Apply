@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Exclude, Expose, Type } from 'class-transformer';
-import { ResumeContent } from '../entities/resume.entity';
+
+import type { ResumeContent } from '../entities/resume.entity';
 
 @Exclude()
 export class ResumeResponseDto {

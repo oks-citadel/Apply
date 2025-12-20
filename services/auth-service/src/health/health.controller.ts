@@ -1,8 +1,10 @@
 import { Controller, Get } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { SkipThrottle } from '@nestjs/throttler';
-import { HealthService } from './health.service';
+
 import { Public } from '../common/decorators/public.decorator';
+
+import type { HealthService } from './health.service';
 
 /**
  * Health Check Controller for Auth Service

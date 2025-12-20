@@ -1,6 +1,8 @@
-import { Injectable, ExecutionContext, UnauthorizedException, Logger } from '@nestjs/common';
+import { Injectable, UnauthorizedException, Logger } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { Reflector } from '@nestjs/core';
+
+import type { ExecutionContext} from '@nestjs/common';
+import type { Reflector } from '@nestjs/core';
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {
@@ -24,7 +26,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     return super.canActivate(context);
   }
 
-  handleRequest(err: any, user: any, info: any, context: ExecutionContext) {
+  handleRequest<TUser = Record<string, unknown>>(err: Error | null, user: TUser | false, info: { message?: string } | undefined, context: ExecutionContext): TUser {
     if (err || !user) {
       this.logger.warn(`Authentication failed: ${info?.message || 'Unknown error'}`);
       throw err || new UnauthorizedException('Invalid or missing authentication token');

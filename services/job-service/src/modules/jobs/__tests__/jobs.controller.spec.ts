@@ -1,10 +1,14 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { NotFoundException, BadRequestException } from '@nestjs/common';
+import { Test } from '@nestjs/testing';
+
+import { ReportReason } from '../dto/report-job.dto';
+import { SavedJobStatus } from '../dto/save-job.dto';
+import { RemoteType, ExperienceLevel, EmploymentType, JobSource } from '../entities/job.entity';
 import { JobsController } from '../jobs.controller';
 import { JobsService } from '../jobs.service';
-import { RemoteType, ExperienceLevel, EmploymentType, JobSource } from '../entities/job.entity';
-import { NotFoundException, BadRequestException } from '@nestjs/common';
-import { SavedJobStatus } from '../dto/save-job.dto';
-import { ReportReason } from '../dto/report-job.dto';
+
+
+import type { TestingModule } from '@nestjs/testing';
 
 describe('JobsController', () => {
   let controller: JobsController;

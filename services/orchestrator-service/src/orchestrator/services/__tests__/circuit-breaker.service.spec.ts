@@ -1,11 +1,13 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { CircuitBreakerService } from '../circuit-breaker.service';
+import { Test } from '@nestjs/testing';
+
 import { AgentType, AgentStatus } from '../../interfaces/agent.interface';
+import { CircuitBreakerService } from '../circuit-breaker.service';
+
+import type { TestingModule } from '@nestjs/testing';
 
 // Mock opossum module
-jest.mock('opossum', () => {
-  return jest.fn().mockImplementation((action, options) => {
-    const listeners: Record<string, Function[]> = {};
+jest.mock('opossum', () => jest.fn().mockImplementation((action, _options) => {
+    const listeners: Record<string, ((...args: unknown[]) => void)[]> = {};
 
     return {
       fire: async (...args: any[]) => {
@@ -22,7 +24,7 @@ jest.mock('opossum', () => {
           throw error;
         }
       },
-      on: (event: string, handler: Function) => {
+      on: (event: string, handler: (...args: unknown[]) => void) => {
         if (!listeners[event]) {
           listeners[event] = [];
         }
@@ -42,8 +44,7 @@ jest.mock('opossum', () => {
         fallbacks: 0,
       },
     };
-  });
-});
+  }));
 
 describe('CircuitBreakerService', () => {
   let service: CircuitBreakerService;

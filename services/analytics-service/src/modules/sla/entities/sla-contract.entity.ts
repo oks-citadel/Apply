@@ -156,10 +156,7 @@ export class SLAContract {
 
   getProgressPercentage(): number {
     if (this.guaranteedInterviews === 0) return 0;
-    return Math.min(
-      100,
-      (this.totalInterviewsScheduled / this.guaranteedInterviews) * 100
-    );
+    return Math.min(100, (this.totalInterviewsScheduled / this.guaranteedInterviews) * 100);
   }
 
   isGuaranteeMet(): boolean {
@@ -171,18 +168,10 @@ export class SLAContract {
   }
 
   isActive(): boolean {
-    return (
-      this.status === SLAStatus.ACTIVE &&
-      !this.isExpired() &&
-      this.isEligible
-    );
+    return this.status === SLAStatus.ACTIVE && !this.isExpired() && this.isEligible;
   }
 
   shouldCheckForViolation(): boolean {
-    return (
-      this.status === SLAStatus.ACTIVE &&
-      this.isExpired() &&
-      !this.isGuaranteeMet()
-    );
+    return this.status === SLAStatus.ACTIVE && this.isExpired() && !this.isGuaranteeMet();
   }
 }

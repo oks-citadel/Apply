@@ -2,21 +2,23 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
-  ForbiddenException,
   Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, IsNull } from 'typeorm';
-import { HttpService } from '@nestjs/axios';
-import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
-import { Resume } from './entities/resume.entity';
+import { IsNull } from 'typeorm';
+
 import { ResumeVersion } from './entities/resume-version.entity';
-import { CreateResumeDto } from './dto/create-resume.dto';
-import { UpdateResumeDto } from './dto/update-resume.dto';
-import { OptimizeResumeDto } from './dto/optimize-resume.dto';
-import { ResumeOptimizationResponseDto } from './dto/resume-optimization-response.dto';
-import { ParserService } from '../parser/parser.service';
+import { Resume } from './entities/resume.entity';
+
+import type { CreateResumeDto } from './dto/create-resume.dto';
+import type { OptimizeResumeDto } from './dto/optimize-resume.dto';
+import type { ResumeOptimizationResponseDto } from './dto/resume-optimization-response.dto';
+import type { UpdateResumeDto } from './dto/update-resume.dto';
+import type { ParserService } from '../parser/parser.service';
+import type { HttpService } from '@nestjs/axios';
+import type { ConfigService } from '@nestjs/config';
+import type { Repository} from 'typeorm';
 
 @Injectable()
 export class ResumesService {
@@ -263,11 +265,11 @@ export class ResumesService {
     let score = 0;
 
     // Check for key sections (40 points)
-    if (resume.content.personalInfo?.email) score += 5;
-    if (resume.content.personalInfo?.phone) score += 5;
-    if (resume.content.summary) score += 10;
-    if (resume.content.experience && resume.content.experience.length > 0) score += 10;
-    if (resume.content.education && resume.content.education.length > 0) score += 10;
+    if (resume.content.personalInfo?.email) {score += 5;}
+    if (resume.content.personalInfo?.phone) {score += 5;}
+    if (resume.content.summary) {score += 10;}
+    if (resume.content.experience && resume.content.experience.length > 0) {score += 10;}
+    if (resume.content.education && resume.content.education.length > 0) {score += 10;}
 
     // Check for skills (20 points)
     if (resume.content.skills?.technical && resume.content.skills.technical.length > 0) {
@@ -281,17 +283,17 @@ export class ResumesService {
     if (resume.content.certifications && resume.content.certifications.length > 0) {
       score += 10;
     }
-    if (resume.content.projects && resume.content.projects.length > 0) score += 10;
+    if (resume.content.projects && resume.content.projects.length > 0) {score += 10;}
 
     // Quality checks (20 points)
     if (resume.content.experience) {
       const hasAchievements = resume.content.experience.some(
         (exp) => exp.achievements && exp.achievements.length > 0,
       );
-      if (hasAchievements) score += 10;
+      if (hasAchievements) {score += 10;}
     }
 
-    if (resume.content.personalInfo?.linkedin) score += 5;
+    if (resume.content.personalInfo?.linkedin) {score += 5;}
     if (resume.content.personalInfo?.github || resume.content.personalInfo?.website) {
       score += 5;
     }
@@ -359,7 +361,7 @@ export class ResumesService {
               }
             : suggestion
         ),
-        originalScore: originalScore,
+        originalScore,
         projectedScore: aiResponse.projected_score || originalScore,
         summary: aiResponse.summary || 'Resume optimization completed successfully.',
         missingKeywords: aiResponse.missing_keywords || [],

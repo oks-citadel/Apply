@@ -73,7 +73,8 @@ export class PushNotificationTemplates {
     };
 
     const message =
-      statusMessages[data.status] || `status has been updated to ${data.status}`;
+      statusMessages[data.status] ||
+      `status has been updated to ${data.status}`;
 
     return {
       category: PushNotificationCategory.APPLICATION_UPDATE,

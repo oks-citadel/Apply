@@ -1,8 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
-import pdfParse from 'pdf-parse';
 import * as mammoth from 'mammoth';
+import pdfParse from 'pdf-parse';
 import { v4 as uuidv4 } from 'uuid';
-import { ResumeContent } from '../resumes/entities/resume.entity';
+
+import type { ResumeContent } from '../resumes/entities/resume.entity';
 
 // Local type definitions for parser
 interface PersonalInfo {
@@ -41,7 +42,7 @@ interface Education {
   achievements?: string[];
 }
 
-interface Skill {
+interface _Skill {
   id?: string;
   name: string;
   category: 'technical' | 'soft' | 'language' | 'tool' | 'other';
@@ -187,7 +188,7 @@ export class ParserService {
     const entries = experienceText.split(/(?=\d{4}\s*[-–]\s*(?:\d{4}|present))/i);
 
     for (const entry of entries) {
-      if (entry.trim().length < 20) continue;
+      if (entry.trim().length < 20) {continue;}
 
       const experience: Partial<Experience> = {
         id: uuidv4(),
@@ -241,7 +242,7 @@ export class ParserService {
     const entries = educationText.split(/(?=\d{4})/);
 
     for (const entry of entries) {
-      if (entry.trim().length < 20) continue;
+      if (entry.trim().length < 20) {continue;}
 
       const education: Partial<Education> = {
         id: uuidv4(),
@@ -316,9 +317,9 @@ export class ParserService {
       }
     }
 
-    if (technical.length > 0) result.technical = technical;
-    if (soft.length > 0) result.soft = soft;
-    if (tools.length > 0) result.tools = tools;
+    if (technical.length > 0) {result.technical = technical;}
+    if (soft.length > 0) {result.soft = soft;}
+    if (tools.length > 0) {result.tools = tools;}
 
     return Object.keys(result).length > 0 ? result : undefined;
   }
@@ -333,9 +334,9 @@ export class ParserService {
 
     const lowerSkill = skillName.toLowerCase();
 
-    if (technical.some(t => lowerSkill.includes(t))) return 'technical';
-    if (soft.some(s => lowerSkill.includes(s))) return 'soft';
-    if (tools.some(t => lowerSkill.includes(t))) return 'tool';
+    if (technical.some(t => lowerSkill.includes(t))) {return 'technical';}
+    if (soft.some(s => lowerSkill.includes(s))) {return 'soft';}
+    if (tools.some(t => lowerSkill.includes(t))) {return 'tool';}
 
     return 'other';
   }
@@ -355,7 +356,7 @@ export class ParserService {
     const lines = certsText.split('\n').map(l => l.trim()).filter(l => l);
 
     for (const line of lines) {
-      if (line.length < 5) continue;
+      if (line.length < 5) {continue;}
 
       const certification: any = {
         id: uuidv4(),
@@ -392,7 +393,7 @@ export class ParserService {
     const entries = projectsText.split(/\n(?=[A-Z])/);
 
     for (const entry of entries) {
-      if (entry.trim().length < 20) continue;
+      if (entry.trim().length < 20) {continue;}
 
       const lines = entry.split('\n').map(l => l.trim()).filter(l => l);
 

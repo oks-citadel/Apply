@@ -308,7 +308,7 @@ export class PolicyGenerator {
       .replace(/^# (.+)$/gm, '<h1>$1</h1>')
       .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
       .replace(/\*(.+?)\*/g, '<em>$1</em>')
-      .replace(/^\- (.+)$/gm, '<li>$1</li>')
+      .replace(/^- (.+)$/gm, '<li>$1</li>')
       .replace(/\n\n/g, '</p><p>')
       .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2">$1</a>');
 

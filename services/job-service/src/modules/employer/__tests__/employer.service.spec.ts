@@ -1,19 +1,23 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
+import { NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { Test } from '@nestjs/testing';
+import { getRepositoryToken } from '@nestjs/typeorm';
 import { of } from 'rxjs';
-import { EmployerService } from '../employer.service';
-import { Job, RemoteType, EmploymentType, ExperienceLevel } from '../../jobs/entities/job.entity';
-import { Company } from '../../companies/entities/company.entity';
+
+
 import { Application, ApplicationStatus } from '../../applications/entities/application.entity';
+import { Company } from '../../companies/entities/company.entity';
+import { Job, RemoteType, EmploymentType, ExperienceLevel } from '../../jobs/entities/job.entity';
+import { EmployerService } from '../employer.service';
 import { TeamMember } from '../entities/team-member.entity';
-import { CreateJobDto, UpdateJobDto } from '../dto/job.dto';
-import { UpdateApplicationStatusDto } from '../dto/application.dto';
-import { SearchCandidatesDto } from '../dto/candidate.dto';
-import { AddTeamMemberDto } from '../dto/team.dto';
+
+import type { UpdateApplicationStatusDto } from '../dto/application.dto';
+import type { SearchCandidatesDto } from '../dto/candidate.dto';
+import type { CreateJobDto, UpdateJobDto } from '../dto/job.dto';
+import type { AddTeamMemberDto } from '../dto/team.dto';
+import type { TestingModule } from '@nestjs/testing';
+import type { Repository } from 'typeorm';
 
 describe('EmployerService', () => {
   let service: EmployerService;

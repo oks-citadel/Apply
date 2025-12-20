@@ -1,8 +1,10 @@
 import { Controller, Get } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { HealthService } from './health/health.service';
-import { ServiceClientService } from './modules/engine/service-client.service';
+
 import { Public } from './common/decorators/public.decorator';
+
+import type { HealthService } from './health/health.service';
+import type { ServiceClientService } from './modules/engine/service-client.service';
 
 /**
  * Health Check Controller for Auto Apply Service

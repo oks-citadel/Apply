@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
-import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { JwtModule } from '@nestjs/jwt';
+
 import { SearchController } from './search.controller';
 import { SearchService } from './search.service';
 import { JwtAuthGuard } from '../../common/guards';

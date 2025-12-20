@@ -1,19 +1,20 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
-import { ThrottlerGuard } from '@nestjs/throttler';
+import { ThrottlerModule , ThrottlerGuard } from '@nestjs/throttler';
+import { TypeOrmModule } from '@nestjs/typeorm';
+
 import { LoggingModule, LoggingInterceptor } from '@applyforus/logging';
-import { ProfileModule } from './modules/profile/profile.module';
-import { CareerModule } from './modules/career/career.module';
-import { SkillsModule } from './modules/skills/skills.module';
-import { PreferencesModule } from './modules/preferences/preferences.module';
-import { SubscriptionModule } from './modules/subscription/subscription.module';
-import { StorageModule } from './modules/storage/storage.module';
-import { RecruiterModule } from './modules/recruiter/recruiter.module';
-import { AuthModule } from './modules/auth/auth.module';
+
 import { HealthModule } from './health/health.module';
+import { AuthModule } from './modules/auth/auth.module';
+import { CareerModule } from './modules/career/career.module';
+import { PreferencesModule } from './modules/preferences/preferences.module';
+import { ProfileModule } from './modules/profile/profile.module';
+import { RecruiterModule } from './modules/recruiter/recruiter.module';
+import { SkillsModule } from './modules/skills/skills.module';
+import { StorageModule } from './modules/storage/storage.module';
+import { SubscriptionModule } from './modules/subscription/subscription.module';
 import { TenantModule } from './modules/tenant/tenant.module';
 
 @Module({
@@ -49,7 +50,7 @@ import { TenantModule } from './modules/tenant/tenant.module';
         username: configService.get('DB_USERNAME'),
         password: configService.get('DB_PASSWORD'),
         database: configService.get('DB_DATABASE'),
-        entities: [__dirname + '/**/*.entity{.ts,.js}'],
+        entities: [`${__dirname  }/**/*.entity{.ts,.js}`],
         // SECURITY: Never use synchronize in production - it can modify schema unexpectedly
         // Always use migrations instead
         synchronize: false,

@@ -10,23 +10,27 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
-import { NormalizationService } from './services/normalization.service';
-import { EmployerCredibilityService } from './services/employer-credibility.service';
-import { QualityScorerService } from './services/quality-scorer.service';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { NormalizedJob } from './entities/normalized-job.entity';
-import { EmployerProfile } from './entities/employer-profile.entity';
-import { JobReport, ReportSeverity, ReportStatus } from './entities/job-report.entity';
+
+
 import {
-  NormalizeJobDto,
-  BatchNormalizeJobsDto,
-  ReportJobDto,
-  UpdateEmployerVerificationDto,
   QualityScoreResponseDto,
   EmployerCredibilityResponseDto,
   NormalizationResultDto,
 } from './dto/normalize-job.dto';
+import { EmployerProfile } from './entities/employer-profile.entity';
+import { JobReport, ReportSeverity, ReportStatus } from './entities/job-report.entity';
+import { NormalizedJob } from './entities/normalized-job.entity';
+
+import type {
+  NormalizeJobDto,
+  BatchNormalizeJobsDto,
+  ReportJobDto,
+  UpdateEmployerVerificationDto} from './dto/normalize-job.dto';
+import type { EmployerCredibilityService } from './services/employer-credibility.service';
+import type { NormalizationService } from './services/normalization.service';
+import type { QualityScorerService } from './services/quality-scorer.service';
+import type { Repository } from 'typeorm';
 
 @ApiTags('Job Normalization')
 @Controller('api/v1/normalize')

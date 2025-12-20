@@ -5,10 +5,13 @@ import {
   Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { User, UserStatus } from './entities/user.entity';
 import * as bcrypt from 'bcrypt';
-import { ConfigService } from '@nestjs/config';
+
+
+import { User, UserStatus } from './entities/user.entity';
+
+import type { ConfigService } from '@nestjs/config';
+import type { Repository } from 'typeorm';
 
 @Injectable()
 export class UsersService {

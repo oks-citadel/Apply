@@ -1,14 +1,15 @@
-import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { HttpModule } from '@nestjs/axios';
-import { JwtModule } from '@nestjs/jwt';
+import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { JwtModule } from '@nestjs/jwt';
+import { TypeOrmModule } from '@nestjs/typeorm';
+
+import { ResumeVersion } from './entities/resume-version.entity';
+import { Resume } from './entities/resume.entity';
 import { ResumesController } from './resumes.controller';
 import { ResumesService } from './resumes.service';
-import { Resume } from './entities/resume.entity';
-import { ResumeVersion } from './entities/resume-version.entity';
-import { ParserModule } from '../parser/parser.module';
 import { ExportModule } from '../export/export.module';
+import { ParserModule } from '../parser/parser.module';
 
 @Module({
   imports: [

@@ -1,8 +1,12 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { ValidationPipe } from '@nestjs/common';
+import { Test } from '@nestjs/testing';
 import * as request from 'supertest';
+
 import { AppModule } from '../src/app.module';
 import { TestFactory } from './utils/test-factory';
+
+import type { INestApplication} from '@nestjs/common';
+import type { TestingModule } from '@nestjs/testing';
 
 describe('AuthController (e2e)', () => {
   let app: INestApplication;
@@ -92,15 +96,13 @@ describe('AuthController (e2e)', () => {
         .expect(400);
     });
 
-    it('should fail with missing required fields', () => {
-      return request(app.getHttpServer())
+    it('should fail with missing required fields', () => request(app.getHttpServer())
         .post('/auth/register')
         .send({
           email: 'incomplete@example.com',
           // Missing password and other required fields
         })
-        .expect(400);
-    });
+        .expect(400));
   });
 
   describe('/auth/login (POST)', () => {
@@ -164,8 +166,7 @@ describe('AuthController (e2e)', () => {
   });
 
   describe('/auth/me (GET)', () => {
-    it('should get current user profile with valid token', () => {
-      return request(app.getHttpServer())
+    it('should get current user profile with valid token', () => request(app.getHttpServer())
         .get('/auth/me')
         .set('Authorization', `Bearer ${accessToken}`)
         .expect(200)
@@ -174,26 +175,20 @@ describe('AuthController (e2e)', () => {
           expect(res.body).toHaveProperty('email');
           expect(res.body).not.toHaveProperty('password');
           expect(res.body.email).toBe('e2e-test@example.com');
-        });
-    });
+        }));
 
-    it('should fail without token', () => {
-      return request(app.getHttpServer())
+    it('should fail without token', () => request(app.getHttpServer())
         .get('/auth/me')
-        .expect(401);
-    });
+        .expect(401));
 
-    it('should fail with invalid token', () => {
-      return request(app.getHttpServer())
+    it('should fail with invalid token', () => request(app.getHttpServer())
         .get('/auth/me')
         .set('Authorization', 'Bearer invalid-token')
-        .expect(401);
-    });
+        .expect(401));
   });
 
   describe('/auth/refresh (POST)', () => {
-    it('should refresh access token with valid refresh token', () => {
-      return request(app.getHttpServer())
+    it('should refresh access token with valid refresh token', () => request(app.getHttpServer())
         .post('/auth/refresh')
         .send({ refreshToken })
         .expect(200)
@@ -204,52 +199,41 @@ describe('AuthController (e2e)', () => {
           // Update tokens
           accessToken = res.body.accessToken;
           refreshToken = res.body.refreshToken;
-        });
-    });
+        }));
 
-    it('should fail with invalid refresh token', () => {
-      return request(app.getHttpServer())
+    it('should fail with invalid refresh token', () => request(app.getHttpServer())
         .post('/auth/refresh')
         .send({ refreshToken: 'invalid-refresh-token' })
-        .expect(401);
-    });
+        .expect(401));
 
-    it('should fail without refresh token', () => {
-      return request(app.getHttpServer())
+    it('should fail without refresh token', () => request(app.getHttpServer())
         .post('/auth/refresh')
         .send({})
-        .expect(400);
-    });
+        .expect(400));
   });
 
   describe('/auth/forgot-password (POST)', () => {
-    it('should send password reset email', () => {
-      return request(app.getHttpServer())
+    it('should send password reset email', () => request(app.getHttpServer())
         .post('/auth/forgot-password')
         .send({ email: 'e2e-test@example.com' })
         .expect(200)
         .expect((res) => {
           expect(res.body).toHaveProperty('message');
           expect(res.body.message).toContain('password reset link');
-        });
-    });
+        }));
 
-    it('should not reveal non-existent email', () => {
-      return request(app.getHttpServer())
+    it('should not reveal non-existent email', () => request(app.getHttpServer())
         .post('/auth/forgot-password')
         .send({ email: 'nonexistent@example.com' })
         .expect(200)
         .expect((res) => {
           expect(res.body.message).toContain('password reset link');
-        });
-    });
+        }));
 
-    it('should fail with invalid email format', () => {
-      return request(app.getHttpServer())
+    it('should fail with invalid email format', () => request(app.getHttpServer())
         .post('/auth/forgot-password')
         .send({ email: 'invalid-email' })
-        .expect(400);
-    });
+        .expect(400));
 
     it('should be rate limited', async () => {
       const requests = [];
@@ -271,8 +255,7 @@ describe('AuthController (e2e)', () => {
   });
 
   describe('/auth/mfa/setup (POST)', () => {
-    it('should setup MFA for authenticated user', () => {
-      return request(app.getHttpServer())
+    it('should setup MFA for authenticated user', () => request(app.getHttpServer())
         .post('/auth/mfa/setup')
         .set('Authorization', `Bearer ${accessToken}`)
         .expect(200)
@@ -280,33 +263,26 @@ describe('AuthController (e2e)', () => {
           expect(res.body).toHaveProperty('secret');
           expect(res.body).toHaveProperty('qrCode');
           expect(res.body).toHaveProperty('otpauthUrl');
-        });
-    });
+        }));
 
-    it('should fail without authentication', () => {
-      return request(app.getHttpServer())
+    it('should fail without authentication', () => request(app.getHttpServer())
         .post('/auth/mfa/setup')
-        .expect(401);
-    });
+        .expect(401));
   });
 
   describe('/auth/logout (POST)', () => {
-    it('should logout successfully', () => {
-      return request(app.getHttpServer())
+    it('should logout successfully', () => request(app.getHttpServer())
         .post('/auth/logout')
         .set('Authorization', `Bearer ${accessToken}`)
         .expect(200)
         .expect((res) => {
           expect(res.body).toHaveProperty('message');
           expect(res.body.message).toContain('Logged out successfully');
-        });
-    });
+        }));
 
-    it('should fail without token', () => {
-      return request(app.getHttpServer())
+    it('should fail without token', () => request(app.getHttpServer())
         .post('/auth/logout')
-        .expect(401);
-    });
+        .expect(401));
   });
 
   describe('Rate Limiting', () => {

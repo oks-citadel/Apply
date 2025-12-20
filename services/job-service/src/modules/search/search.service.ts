@@ -1,8 +1,10 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { Client } from '@elastic/elasticsearch';
-import { SearchJobsDto } from '../jobs/dto/search-jobs.dto';
-import { Job } from '../jobs/entities/job.entity';
+import { Injectable, Logger } from '@nestjs/common';
+
+import type { SearchJobsDto } from '../jobs/dto/search-jobs.dto';
+import type { Job } from '../jobs/entities/job.entity';
+import type { OnModuleInit } from '@nestjs/common';
+import type { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class SearchService implements OnModuleInit {
@@ -401,7 +403,7 @@ export class SearchService implements OnModuleInit {
             autocomplete: {
               prefix: query,
               completion: {
-                field: field,
+                field,
                 size: limit,
                 skip_duplicates: true,
               },

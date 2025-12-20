@@ -1,5 +1,5 @@
-import { IsNotEmpty, IsString, IsUUID, IsOptional, IsObject } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { IsNotEmpty, IsString, IsUUID, IsOptional, IsObject } from 'class-validator';
 
 export class AnalyzeResumeDto {
   @ApiProperty({

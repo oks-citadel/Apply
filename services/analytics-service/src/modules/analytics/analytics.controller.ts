@@ -59,40 +59,48 @@ export class AnalyticsController {
   @Get('dashboard')
   @ApiOperation({
     summary: 'Get dashboard metrics',
-    description: 'Retrieves aggregated metrics for the analytics dashboard including user counts, application stats, and trends',
+    description:
+      'Retrieves aggregated metrics for the analytics dashboard including user counts, application stats, and trends',
   })
   @ApiResponse({
     status: 200,
     description: 'Dashboard metrics retrieved successfully',
     type: DashboardMetricsDto,
   })
-  @ApiQuery({ name: 'startDate', required: false, type: String, description: 'Start date (ISO 8601)' })
+  @ApiQuery({
+    name: 'startDate',
+    required: false,
+    type: String,
+    description: 'Start date (ISO 8601)',
+  })
   @ApiQuery({ name: 'endDate', required: false, type: String, description: 'End date (ISO 8601)' })
   @ApiQuery({ name: 'userId', required: false, type: String, description: 'Filter by user ID' })
   @ApiInternalServerErrorResponse({ description: 'Failed to retrieve dashboard metrics' })
-  async getDashboardMetrics(
-    @Query() query: QueryAnalyticsDto,
-  ): Promise<DashboardMetricsDto> {
+  async getDashboardMetrics(@Query() query: QueryAnalyticsDto): Promise<DashboardMetricsDto> {
     return this.analyticsService.getDashboardMetrics(query);
   }
 
   @Get('applications')
   @ApiOperation({
     summary: 'Get application funnel statistics',
-    description: 'Retrieves application funnel data showing conversion rates from job views to applications to acceptances',
+    description:
+      'Retrieves application funnel data showing conversion rates from job views to applications to acceptances',
   })
   @ApiResponse({
     status: 200,
     description: 'Application funnel data retrieved successfully',
     type: ApplicationFunnelDto,
   })
-  @ApiQuery({ name: 'startDate', required: false, type: String, description: 'Start date (ISO 8601)' })
+  @ApiQuery({
+    name: 'startDate',
+    required: false,
+    type: String,
+    description: 'Start date (ISO 8601)',
+  })
   @ApiQuery({ name: 'endDate', required: false, type: String, description: 'End date (ISO 8601)' })
   @ApiQuery({ name: 'userId', required: false, type: String, description: 'Filter by user ID' })
   @ApiInternalServerErrorResponse({ description: 'Failed to retrieve application funnel' })
-  async getApplicationFunnel(
-    @Query() query: QueryAnalyticsDto,
-  ): Promise<ApplicationFunnelDto> {
+  async getApplicationFunnel(@Query() query: QueryAnalyticsDto): Promise<ApplicationFunnelDto> {
     return this.analyticsService.getApplicationFunnel(query);
   }
 
@@ -106,17 +114,35 @@ export class AnalyticsController {
     description: 'Recent activity retrieved successfully',
     type: PaginatedActivityDto,
   })
-  @ApiQuery({ name: 'startDate', required: false, type: String, description: 'Start date (ISO 8601)' })
+  @ApiQuery({
+    name: 'startDate',
+    required: false,
+    type: String,
+    description: 'Start date (ISO 8601)',
+  })
   @ApiQuery({ name: 'endDate', required: false, type: String, description: 'End date (ISO 8601)' })
   @ApiQuery({ name: 'userId', required: false, type: String, description: 'Filter by user ID' })
-  @ApiQuery({ name: 'eventType', required: false, type: String, description: 'Filter by event type' })
+  @ApiQuery({
+    name: 'eventType',
+    required: false,
+    type: String,
+    description: 'Filter by event type',
+  })
   @ApiQuery({ name: 'category', required: false, type: String, description: 'Filter by category' })
-  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number (default: 1)' })
-  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (default: 20, max: 100)' })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number (default: 1)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Items per page (default: 20, max: 100)',
+  })
   @ApiInternalServerErrorResponse({ description: 'Failed to retrieve activity' })
-  async getRecentActivity(
-    @Query() query: QueryAnalyticsDto,
-  ): Promise<PaginatedActivityDto> {
+  async getRecentActivity(@Query() query: QueryAnalyticsDto): Promise<PaginatedActivityDto> {
     return this.analyticsService.getRecentActivity(query);
   }
 
@@ -129,16 +155,29 @@ export class AnalyticsController {
     status: 200,
     description: 'Analytics data exported successfully',
   })
-  @ApiQuery({ name: 'format', required: false, enum: ['csv', 'json'], description: 'Export format (default: csv)' })
-  @ApiQuery({ name: 'startDate', required: false, type: String, description: 'Start date (ISO 8601)' })
+  @ApiQuery({
+    name: 'format',
+    required: false,
+    enum: ['csv', 'json'],
+    description: 'Export format (default: csv)',
+  })
+  @ApiQuery({
+    name: 'startDate',
+    required: false,
+    type: String,
+    description: 'Start date (ISO 8601)',
+  })
   @ApiQuery({ name: 'endDate', required: false, type: String, description: 'End date (ISO 8601)' })
   @ApiQuery({ name: 'userId', required: false, type: String, description: 'Filter by user ID' })
-  @ApiQuery({ name: 'eventType', required: false, type: String, description: 'Filter by event type' })
+  @ApiQuery({
+    name: 'eventType',
+    required: false,
+    type: String,
+    description: 'Filter by event type',
+  })
   @ApiQuery({ name: 'category', required: false, type: String, description: 'Filter by category' })
   @ApiInternalServerErrorResponse({ description: 'Failed to export analytics data' })
-  async exportAnalytics(
-    @Query() query: ExportAnalyticsDto,
-  ): Promise<any> {
+  async exportAnalytics(@Query() query: ExportAnalyticsDto): Promise<any> {
     return this.analyticsService.exportAnalytics(query);
   }
 

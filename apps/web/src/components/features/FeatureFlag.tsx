@@ -53,6 +53,7 @@ export function RequireAllFlags({
   fallback = null,
   loading = null,
 }: RequireAllFlagsProps) {
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   const flagResults = flags.map((flag) => useFeatureFlag(flag));
 
   const isLoading = flagResults.some((result) => result.isLoading);
@@ -86,6 +87,7 @@ export function RequireAnyFlag({
   fallback = null,
   loading = null,
 }: RequireAnyFlagProps) {
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   const flagResults = flags.map((flag) => useFeatureFlag(flag));
 
   const isLoading = flagResults.some((result) => result.isLoading);

@@ -1,13 +1,18 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { ConfigService } from '@nestjs/config';
-import { UsersService } from './users.service';
-import { getRepositoryToken } from '@nestjs/typeorm';
-import { User, UserRole, UserStatus } from './entities/user.entity';
-import { Repository } from 'typeorm';
-import { TestFactory } from '../../../test/utils/test-factory';
-import { mockRepository, mockConfigService } from '../../../test/utils/mock-config';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { Test } from '@nestjs/testing';
+import { getRepositoryToken } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
+
+import { User, UserRole, UserStatus } from './entities/user.entity';
+import { UsersService } from './users.service';
+import { mockRepository, mockConfigService } from '../../../test/utils/mock-config';
+import { TestFactory } from '../../../test/utils/test-factory';
+
+import type { TestingModule } from '@nestjs/testing';
+import type { Repository } from 'typeorm';
+
+
 
 describe('UsersService', () => {
   let service: UsersService;

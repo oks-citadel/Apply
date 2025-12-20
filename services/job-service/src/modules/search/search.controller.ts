@@ -14,8 +14,10 @@ import {
   ApiBearerAuth,
   ApiQuery,
 } from '@nestjs/swagger';
-import { SearchService } from './search.service';
+
 import { JwtAuthGuard } from '../../common/guards';
+
+import type { SearchService } from './search.service';
 
 @ApiTags('Search')
 @Controller('search')

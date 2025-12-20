@@ -1,10 +1,13 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { WorkExperience } from './entities/work-experience.entity';
+
+
 import { Education } from './entities/education.entity';
-import { CreateWorkExperienceDto, UpdateWorkExperienceDto } from './dto/create-work-experience.dto';
-import { CreateEducationDto, UpdateEducationDto } from './dto/create-education.dto';
+import { WorkExperience } from './entities/work-experience.entity';
+
+import type { CreateEducationDto, UpdateEducationDto } from './dto/create-education.dto';
+import type { CreateWorkExperienceDto, UpdateWorkExperienceDto } from './dto/create-work-experience.dto';
+import type { Repository } from 'typeorm';
 
 @Injectable()
 export class CareerService {

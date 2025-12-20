@@ -1,13 +1,17 @@
 import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, IsNull } from 'typeorm';
+import { firstValueFrom } from 'rxjs';
+import { IsNull } from 'typeorm';
+
 import { Resume } from '../../resumes/entities/resume.entity';
 import { AlignedResume } from '../entities/aligned-resume.entity';
-import { GeneratedCoverLetter, CoverLetterMetadata } from '../entities/generated-cover-letter.entity';
-import { AIServiceClient, JobRequirements } from './ai-service.client';
-import { HttpService } from '@nestjs/axios';
-import { ConfigService } from '@nestjs/config';
-import { firstValueFrom } from 'rxjs';
+import { GeneratedCoverLetter } from '../entities/generated-cover-letter.entity';
+
+import type { AIServiceClient, JobRequirements } from './ai-service.client';
+import type { CoverLetterMetadata } from '../entities/generated-cover-letter.entity';
+import type { HttpService } from '@nestjs/axios';
+import type { ConfigService } from '@nestjs/config';
+import type { Repository} from 'typeorm';
 
 interface PlaybookGuidelines {
   tone: 'professional' | 'casual' | 'enthusiastic' | 'formal';
@@ -74,8 +78,8 @@ export class CoverLetterService {
 
     // Parse job requirements
     const jobRequirements = await this.aiServiceClient.parseJobDescription(jobDesc);
-    if (jobTitle) jobRequirements.title = jobTitle;
-    if (companyName) jobRequirements.company = companyName;
+    if (jobTitle) {jobRequirements.title = jobTitle;}
+    if (companyName) {jobRequirements.company = companyName;}
 
     // Get playbook guidelines
     const playbookGuidelines = await this.getPlaybookGuidelines(playbookRegion, tone, style);
@@ -325,7 +329,7 @@ export class CoverLetterService {
     // Enforce word count limit
     const words = formatted.split(/\s+/);
     if (words.length > guidelines.maxWordCount) {
-      formatted = words.slice(0, guidelines.maxWordCount).join(' ') + '...';
+      formatted = `${words.slice(0, guidelines.maxWordCount).join(' ')  }...`;
     }
 
     return formatted;

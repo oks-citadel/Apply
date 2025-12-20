@@ -1,9 +1,11 @@
 import { Controller, Get, Put, Body, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
-import { PreferencesService } from './preferences.service';
-import { UpdatePreferenceDto } from './dto/update-preference.dto';
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+
+import type { UpdatePreferenceDto } from './dto/update-preference.dto';
+import type { PreferencesService } from './preferences.service';
 
 @ApiTags('Preferences')
 @ApiBearerAuth('JWT-auth')

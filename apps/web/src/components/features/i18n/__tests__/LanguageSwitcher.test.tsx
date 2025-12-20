@@ -2,20 +2,6 @@ import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { LanguageSwitcher } from '../LanguageSwitcher';
-import * as i18nHooks from '@/hooks/useI18n';
-
-// Mock Next.js router
-const mockPush = jest.fn();
-const mockPathname = '/dashboard';
-
-jest.mock('next/navigation', () => ({
-  useRouter: () => ({
-    push: mockPush,
-    replace: jest.fn(),
-    prefetch: jest.fn(),
-  }),
-  usePathname: () => mockPathname,
-}));
 
 // Mock i18n hook
 const mockChangeLanguage = jest.fn();
@@ -33,10 +19,26 @@ const mockUseI18n = {
   ],
 };
 
+jest.mock('@/hooks/useI18n', () => ({
+  useI18n: () => mockUseI18n,
+}));
+
+// Mock Next.js router
+const mockPush = jest.fn();
+const mockPathname = '/dashboard';
+
+jest.mock('next/navigation', () => ({
+  useRouter: () => ({
+    push: mockPush,
+    replace: jest.fn(),
+    prefetch: jest.fn(),
+  }),
+  usePathname: () => mockPathname,
+}));
+
 describe('LanguageSwitcher', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    jest.spyOn(i18nHooks, 'useI18n').mockReturnValue(mockUseI18n as any);
   });
 
   afterEach(() => {

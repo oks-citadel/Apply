@@ -1,7 +1,11 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { ValidationPipe } from '@nestjs/common';
+import { Test } from '@nestjs/testing';
 import * as request from 'supertest';
+
 import { AppModule } from '../src/app.module';
+
+import type { INestApplication} from '@nestjs/common';
+import type { TestingModule } from '@nestjs/testing';
 
 describe('ResumesController (e2e)', () => {
   let app: INestApplication;
@@ -41,8 +45,7 @@ describe('ResumesController (e2e)', () => {
   });
 
   describe('/resumes (POST)', () => {
-    it('should create a new resume', () => {
-      return request(app.getHttpServer())
+    it('should create a new resume', () => request(app.getHttpServer())
         .post('/resumes')
         .set('Authorization', `Bearer ${accessToken}`)
         .send({
@@ -62,52 +65,42 @@ describe('ResumesController (e2e)', () => {
           expect(res.body).toHaveProperty('id');
           expect(res.body.title).toBe('Software Engineer Resume');
           resumeId = res.body.id;
-        });
-    });
+        }));
 
-    it('should fail without authentication', () => {
-      return request(app.getHttpServer())
+    it('should fail without authentication', () => request(app.getHttpServer())
         .post('/resumes')
         .send({
           title: 'Test Resume',
         })
-        .expect(401);
-    });
+        .expect(401));
 
-    it('should validate required fields', () => {
-      return request(app.getHttpServer())
+    it('should validate required fields', () => request(app.getHttpServer())
         .post('/resumes')
         .set('Authorization', `Bearer ${accessToken}`)
         .send({
           // Missing title
           personalInfo: {},
         })
-        .expect(400);
-    });
+        .expect(400));
   });
 
   describe('/resumes (GET)', () => {
-    it('should get all resumes for user', () => {
-      return request(app.getHttpServer())
+    it('should get all resumes for user', () => request(app.getHttpServer())
         .get('/resumes')
         .set('Authorization', `Bearer ${accessToken}`)
         .expect(200)
         .expect((res) => {
           expect(Array.isArray(res.body)).toBe(true);
           expect(res.body.length).toBeGreaterThan(0);
-        });
-    });
+        }));
 
-    it('should fail without authentication', () => {
-      return request(app.getHttpServer())
+    it('should fail without authentication', () => request(app.getHttpServer())
         .get('/resumes')
-        .expect(401);
-    });
+        .expect(401));
   });
 
   describe('/resumes/:id (GET)', () => {
-    it('should get resume by id', () => {
-      return request(app.getHttpServer())
+    it('should get resume by id', () => request(app.getHttpServer())
         .get(`/resumes/${resumeId}`)
         .set('Authorization', `Bearer ${accessToken}`)
         .expect(200)
@@ -115,20 +108,16 @@ describe('ResumesController (e2e)', () => {
           expect(res.body.id).toBe(resumeId);
           expect(res.body).toHaveProperty('title');
           expect(res.body).toHaveProperty('personalInfo');
-        });
-    });
+        }));
 
-    it('should return 404 for non-existent resume', () => {
-      return request(app.getHttpServer())
+    it('should return 404 for non-existent resume', () => request(app.getHttpServer())
         .get('/resumes/non-existent-id')
         .set('Authorization', `Bearer ${accessToken}`)
-        .expect(404);
-    });
+        .expect(404));
   });
 
   describe('/resumes/:id (PATCH)', () => {
-    it('should update resume', () => {
-      return request(app.getHttpServer())
+    it('should update resume', () => request(app.getHttpServer())
         .patch(`/resumes/${resumeId}`)
         .set('Authorization', `Bearer ${accessToken}`)
         .send({
@@ -139,43 +128,37 @@ describe('ResumesController (e2e)', () => {
         .expect((res) => {
           expect(res.body.title).toBe('Updated Resume Title');
           expect(res.body.summary).toBe('Updated summary');
-        });
-    });
+        }));
 
-    it('should not update other users resume', () => {
+    it('should not update other users resume', () => 
       // This would require creating another user and their resume
-      return request(app.getHttpServer())
+       request(app.getHttpServer())
         .patch('/resumes/other-user-resume-id')
         .set('Authorization', `Bearer ${accessToken}`)
         .send({
           title: 'Hacked',
         })
-        .expect(404); // Should not find resume owned by current user
-    });
+        .expect(404) // Should not find resume owned by current user
+    );
   });
 
   describe('/resumes/:id/export (GET)', () => {
-    it('should export resume as PDF', () => {
-      return request(app.getHttpServer())
+    it('should export resume as PDF', () => request(app.getHttpServer())
         .get(`/resumes/${resumeId}/export?format=pdf`)
         .set('Authorization', `Bearer ${accessToken}`)
         .expect(200)
         .expect('Content-Type', /pdf/)
         .expect((res) => {
           expect(res.body).toBeInstanceOf(Buffer);
-        });
-    });
+        }));
 
-    it('should export resume as DOCX', () => {
-      return request(app.getHttpServer())
+    it('should export resume as DOCX', () => request(app.getHttpServer())
         .get(`/resumes/${resumeId}/export?format=docx`)
         .set('Authorization', `Bearer ${accessToken}`)
         .expect(200)
-        .expect('Content-Type', /wordprocessingml/);
-    });
+        .expect('Content-Type', /wordprocessingml/));
 
-    it('should export resume as HTML', () => {
-      return request(app.getHttpServer())
+    it('should export resume as HTML', () => request(app.getHttpServer())
         .get(`/resumes/${resumeId}/export?format=html`)
         .set('Authorization', `Bearer ${accessToken}`)
         .expect(200)
@@ -183,60 +166,49 @@ describe('ResumesController (e2e)', () => {
         .expect((res) => {
           expect(typeof res.text).toBe('string');
           expect(res.text).toContain('<html');
-        });
-    });
+        }));
 
-    it('should export resume as JSON', () => {
-      return request(app.getHttpServer())
+    it('should export resume as JSON', () => request(app.getHttpServer())
         .get(`/resumes/${resumeId}/export?format=json`)
         .set('Authorization', `Bearer ${accessToken}`)
         .expect(200)
         .expect('Content-Type', /json/)
         .expect((res) => {
           expect(res.body).toHaveProperty('personalInfo');
-        });
-    });
+        }));
   });
 
   describe('/resumes/:id/duplicate (POST)', () => {
-    it('should duplicate a resume', () => {
-      return request(app.getHttpServer())
+    it('should duplicate a resume', () => request(app.getHttpServer())
         .post(`/resumes/${resumeId}/duplicate`)
         .set('Authorization', `Bearer ${accessToken}`)
         .expect(201)
         .expect((res) => {
           expect(res.body.id).not.toBe(resumeId);
           expect(res.body.title).toContain('Copy');
-        });
-    });
+        }));
   });
 
   describe('/resumes/:id/primary (PATCH)', () => {
-    it('should set resume as primary', () => {
-      return request(app.getHttpServer())
+    it('should set resume as primary', () => request(app.getHttpServer())
         .patch(`/resumes/${resumeId}/primary`)
         .set('Authorization', `Bearer ${accessToken}`)
         .expect(200)
         .expect((res) => {
           expect(res.body.isPrimary).toBe(true);
-        });
-    });
+        }));
   });
 
   describe('/resumes/:id (DELETE)', () => {
-    it('should delete a resume', () => {
-      return request(app.getHttpServer())
+    it('should delete a resume', () => request(app.getHttpServer())
         .delete(`/resumes/${resumeId}`)
         .set('Authorization', `Bearer ${accessToken}`)
-        .expect(200);
-    });
+        .expect(200));
 
-    it('should return 404 after deletion', () => {
-      return request(app.getHttpServer())
+    it('should return 404 after deletion', () => request(app.getHttpServer())
         .get(`/resumes/${resumeId}`)
         .set('Authorization', `Bearer ${accessToken}`)
-        .expect(404);
-    });
+        .expect(404));
   });
 
   describe('/resumes/parse (POST)', () => {

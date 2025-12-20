@@ -70,13 +70,12 @@ export class AnalyticsService {
         .getRawOne();
 
       // Total applications
-      const totalApplicationsQuery = await this.analyticsRepository
-        .count({
-          where: {
-            eventType: EventType.APPLICATION_SUBMITTED,
-            timestamp: Between(startDate, endDate),
-          },
-        });
+      const totalApplicationsQuery = await this.analyticsRepository.count({
+        where: {
+          eventType: EventType.APPLICATION_SUBMITTED,
+          timestamp: Between(startDate, endDate),
+        },
+      });
 
       // Today's applications
       const todayStart = startOfDay(new Date());
@@ -103,9 +102,8 @@ export class AnalyticsService {
           timestamp: Between(startDate, endDate),
         },
       });
-      const successRate = totalApplicationsQuery > 0
-        ? (successfulApps / totalApplicationsQuery) * 100
-        : 0;
+      const successRate =
+        totalApplicationsQuery > 0 ? (successfulApps / totalApplicationsQuery) * 100 : 0;
 
       // Total page views
       const totalPageViews = await this.analyticsRepository.count({
@@ -122,7 +120,9 @@ export class AnalyticsService {
         .where('event.duration IS NOT NULL')
         .andWhere('event.timestamp BETWEEN :startDate AND :endDate', { startDate, endDate })
         .getRawOne();
-      const avgSessionDuration = avgDurationQuery.avg ? parseFloat(avgDurationQuery.avg) / 60000 : 0;
+      const avgSessionDuration = avgDurationQuery.avg
+        ? parseFloat(avgDurationQuery.avg) / 60000
+        : 0;
 
       // Application trend (last 7 days)
       const applicationTrend = await this.getApplicationTrend(startDate, endDate);
@@ -186,34 +186,33 @@ export class AnalyticsService {
       // Estimate applications started (could be saved + submitted)
       const applicationsStarted = jobSaves + applicationsSubmitted;
 
-      const conversionRate = jobViews > 0
-        ? (applicationsSubmitted / jobViews) * 100
-        : 0;
+      const conversionRate = jobViews > 0 ? (applicationsSubmitted / jobViews) * 100 : 0;
 
-      const successRate = applicationsSubmitted > 0
-        ? (applicationsAccepted / applicationsSubmitted) * 100
-        : 0;
+      const successRate =
+        applicationsSubmitted > 0 ? (applicationsAccepted / applicationsSubmitted) * 100 : 0;
 
       const funnelStages = [
         {
           stage: 'viewed',
           count: jobViews,
-          percentage: 100
+          percentage: 100,
         },
         {
           stage: 'saved',
           count: jobSaves,
-          percentage: jobViews > 0 ? parseFloat(((jobSaves / jobViews) * 100).toFixed(2)) : 0
+          percentage: jobViews > 0 ? parseFloat(((jobSaves / jobViews) * 100).toFixed(2)) : 0,
         },
         {
           stage: 'applied',
           count: applicationsSubmitted,
-          percentage: jobViews > 0 ? parseFloat(((applicationsSubmitted / jobViews) * 100).toFixed(2)) : 0
+          percentage:
+            jobViews > 0 ? parseFloat(((applicationsSubmitted / jobViews) * 100).toFixed(2)) : 0,
         },
         {
           stage: 'accepted',
           count: applicationsAccepted,
-          percentage: jobViews > 0 ? parseFloat(((applicationsAccepted / jobViews) * 100).toFixed(2)) : 0
+          percentage:
+            jobViews > 0 ? parseFloat(((applicationsAccepted / jobViews) * 100).toFixed(2)) : 0,
         },
       ];
 
@@ -262,7 +261,7 @@ export class AnalyticsService {
         .take(limit)
         .getManyAndCount();
 
-      const items: ActivityItemDto[] = events.map(event => ({
+      const items: ActivityItemDto[] = events.map((event) => ({
         id: event.id,
         eventType: event.eventType,
         category: event.category,
@@ -323,7 +322,10 @@ export class AnalyticsService {
     }
   }
 
-  private async getApplicationTrend(startDate: Date, endDate: Date): Promise<Array<{ date: string; count: number }>> {
+  private async getApplicationTrend(
+    startDate: Date,
+    endDate: Date,
+  ): Promise<Array<{ date: string; count: number }>> {
     const results = await this.analyticsRepository
       .createQueryBuilder('event')
       .select('DATE(event.timestamp)', 'date')
@@ -334,13 +336,16 @@ export class AnalyticsService {
       .orderBy('DATE(event.timestamp)', 'ASC')
       .getRawMany();
 
-    return results.map(r => ({
+    return results.map((r) => ({
       date: format(new Date(r.date), 'yyyy-MM-dd'),
       count: parseInt(r.count),
     }));
   }
 
-  private async getStatusDistribution(startDate: Date, endDate: Date): Promise<Record<string, number>> {
+  private async getStatusDistribution(
+    startDate: Date,
+    endDate: Date,
+  ): Promise<Record<string, number>> {
     const statusEvents = [
       EventType.APPLICATION_ACCEPTED,
       EventType.APPLICATION_REJECTED,
@@ -362,7 +367,7 @@ export class AnalyticsService {
       pending: 0,
     };
 
-    results.forEach(r => {
+    results.forEach((r) => {
       if (r.status === EventType.APPLICATION_ACCEPTED) {
         distribution.accepted = parseInt(r.count);
       } else if (r.status === EventType.APPLICATION_REJECTED) {
@@ -425,7 +430,7 @@ export class AnalyticsService {
       'Metadata',
     ];
 
-    const rows = events.map(event => [
+    const rows = events.map((event) => [
       event.id,
       event.eventType,
       event.category,
@@ -442,18 +447,21 @@ export class AnalyticsService {
 
     const csvContent = [
       headers.join(','),
-      ...rows.map(row => row.map(cell => `"${cell}"`).join(',')),
+      ...rows.map((row) => row.map((cell) => `"${cell}"`).join(',')),
     ].join('\n');
 
     return csvContent;
   }
 
-  private async getSLAMetrics(userId?: string): Promise<{
-    activeContracts: number;
-    totalInterviews: number;
-    averageProgress: number;
-    contractsAtRisk: number;
-  } | undefined> {
+  private async getSLAMetrics(userId?: string): Promise<
+    | {
+        activeContracts: number;
+        totalInterviews: number;
+        averageProgress: number;
+        contractsAtRisk: number;
+      }
+    | undefined
+  > {
     try {
       const queryBuilder = this.slaContractRepository
         .createQueryBuilder('contract')
@@ -481,7 +489,7 @@ export class AnalyticsService {
 
       const averageProgress = totalProgress / activeContracts.length;
 
-      const contractsAtRisk = activeContracts.filter(contract => {
+      const contractsAtRisk = activeContracts.filter((contract) => {
         const daysRemaining = contract.getDaysRemaining();
         const progressPercentage = contract.getProgressPercentage();
         return daysRemaining < 14 && progressPercentage < 50;

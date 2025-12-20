@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Page } from 'playwright';
+
+import type { Page } from 'playwright';
 
 interface WarmupConfig {
   browseDuration: number; // milliseconds
@@ -126,7 +127,7 @@ export class WarmupService {
 
       for (let i = 0; i < numPages && Date.now() < endTime; i++) {
         const url = warmupUrls[i % warmupUrls.length];
-        if (!url) continue;
+        if (!url) {continue;}
 
         this.logger.debug(`Warmup visit ${i + 1}/${numPages}: ${url}`);
 

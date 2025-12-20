@@ -9,11 +9,13 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
-import { CareerService } from './career.service';
-import { CreateWorkExperienceDto, UpdateWorkExperienceDto } from './dto/create-work-experience.dto';
-import { CreateEducationDto, UpdateEducationDto } from './dto/create-education.dto';
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+
+import type { CareerService } from './career.service';
+import type { CreateEducationDto, UpdateEducationDto } from './dto/create-education.dto';
+import type { CreateWorkExperienceDto, UpdateWorkExperienceDto } from './dto/create-work-experience.dto';
 
 @ApiTags('Career')
 @ApiBearerAuth('JWT-auth')

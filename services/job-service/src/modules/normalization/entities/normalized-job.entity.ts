@@ -9,6 +9,7 @@ import {
   JoinColumn,
   OneToOne,
 } from 'typeorm';
+
 import { Job } from '../../jobs/entities/job.entity';
 
 export enum SeniorityLevel {

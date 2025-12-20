@@ -1,3 +1,5 @@
+import { randomBytes } from 'crypto';
+
 import {
   Injectable,
   UnauthorizedException,
@@ -6,25 +8,27 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import { ConfigService } from '@nestjs/config';
-import { UsersService } from '../users/users.service';
-import { EmailService } from '../email/email.service';
-import { User, UserStatus, AuthProvider } from '../users/entities/user.entity';
-import { RegisterDto } from './dto/register.dto';
-import { LoginDto } from './dto/login.dto';
-import { TokenResponseDto } from './dto/token-response.dto';
-import { ForgotPasswordDto } from './dto/forgot-password.dto';
-import { ResetPasswordDto } from './dto/reset-password.dto';
-import { VerifyEmailDto } from './dto/verify-email.dto';
-import { ChangePasswordDto } from './dto/change-password.dto';
-import { MfaSetupResponseDto } from './dto/mfa-setup.dto';
-import { MfaVerifyDto } from './dto/mfa-verify.dto';
 import * as bcrypt from 'bcrypt';
-import * as speakeasy from 'speakeasy';
 import * as QRCode from 'qrcode';
-import { randomBytes } from 'crypto';
-import { JwtPayload } from './strategies/jwt.strategy';
+import * as speakeasy from 'speakeasy';
+
+import { TokenResponseDto } from './dto/token-response.dto';
+import { UserStatus, AuthProvider } from '../users/entities/user.entity';
+
+import type { EmailService } from '../email/email.service';
+import type { ChangePasswordDto } from './dto/change-password.dto';
+import type { ForgotPasswordDto } from './dto/forgot-password.dto';
+import type { LoginDto } from './dto/login.dto';
+import type { MfaSetupResponseDto } from './dto/mfa-setup.dto';
+import type { MfaVerifyDto } from './dto/mfa-verify.dto';
+import type { User} from '../users/entities/user.entity';
+import type { UsersService } from '../users/users.service';
+import type { RegisterDto } from './dto/register.dto';
+import type { ResetPasswordDto } from './dto/reset-password.dto';
+import type { VerifyEmailDto } from './dto/verify-email.dto';
+import type { JwtPayload } from './strategies/jwt.strategy';
+import type { ConfigService } from '@nestjs/config';
+import type { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class AuthService {

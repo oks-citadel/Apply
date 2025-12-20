@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsString, IsEnum, IsOptional, IsDateString } from 'class-validator';
+
 import { ApplicationStatus } from '../entities/application.entity';
 
 export class UpdateApplicationDto {

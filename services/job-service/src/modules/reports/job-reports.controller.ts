@@ -17,13 +17,16 @@ import {
   ApiParam,
   ApiQuery,
 } from '@nestjs/swagger';
-import { ReportsService } from './reports.service';
-import { CreateReportDto } from './dto/create-report.dto';
+
 import {
   ReportResponseDto,
   PaginatedReportsResponseDto,
 } from './dto/report-response.dto';
 import { JwtAuthGuard, AdminGuard, RateLimitGuard } from '../../common/guards';
+
+import type { CreateReportDto } from './dto/create-report.dto';
+import type { ReportsService } from './reports.service';
+
 
 @ApiTags('Jobs')
 @Controller('jobs')

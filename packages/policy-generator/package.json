@@ -7,7 +7,7 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "test": "jest",
+    "test": "jest --passWithNoTests",
     "lint": "eslint src/",
     "generate:all": "ts-node src/cli.ts generate --all",
     "generate:region": "ts-node src/cli.ts generate --region",

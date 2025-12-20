@@ -15,11 +15,14 @@ import {
   ApiResponse,
   ApiBearerAuth,
 } from '@nestjs/swagger';
-import { SectionsService } from './sections.service';
-import { CreateSectionDto } from './dto/create-section.dto';
-import { UpdateSectionDto } from './dto/update-section.dto';
+
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
-import { CurrentUser, JwtPayload } from '../../common/decorators/current-user.decorator';
+
+import type { CreateSectionDto } from './dto/create-section.dto';
+import type { UpdateSectionDto } from './dto/update-section.dto';
+import type { SectionsService } from './sections.service';
+import type { JwtPayload } from '../../common/decorators/current-user.decorator';
 
 @ApiTags('sections')
 @ApiBearerAuth('JWT-auth')

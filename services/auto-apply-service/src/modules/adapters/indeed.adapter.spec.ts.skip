@@ -1,8 +1,11 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
+
 import { IndeedAdapter } from './indeed.adapter';
 import { BrowserService } from '../browser/browser.service';
 import { FormMappingService } from '../form-mapping/form-mapping.service';
-import { ApplicationData, ApplicationResult } from './base.adapter';
+
+import type { ApplicationData, ApplicationResult } from './base.adapter';
+import type { TestingModule } from '@nestjs/testing';
 
 describe('IndeedAdapter', () => {
   let adapter: IndeedAdapter;
@@ -190,9 +193,9 @@ describe('IndeedAdapter', () => {
       };
 
       mockPage.$.mockImplementation((selector: string) => {
-        if (selector.includes('firstName')) return Promise.resolve(firstNameInput);
-        if (selector.includes('lastName')) return Promise.resolve(lastNameInput);
-        if (selector.includes('IndeedApplyButton')) return Promise.resolve({ click: jest.fn() });
+        if (selector.includes('firstName')) {return Promise.resolve(firstNameInput);}
+        if (selector.includes('lastName')) {return Promise.resolve(lastNameInput);}
+        if (selector.includes('IndeedApplyButton')) {return Promise.resolve({ click: jest.fn() });}
         return Promise.resolve(null);
       });
 
@@ -209,8 +212,8 @@ describe('IndeedAdapter', () => {
       };
 
       mockPage.$.mockImplementation((selector: string) => {
-        if (selector.includes('fullName')) return Promise.resolve(fullNameInput);
-        if (selector.includes('IndeedApplyButton')) return Promise.resolve({ click: jest.fn() });
+        if (selector.includes('fullName')) {return Promise.resolve(fullNameInput);}
+        if (selector.includes('IndeedApplyButton')) {return Promise.resolve({ click: jest.fn() });}
         return Promise.resolve(null);
       });
 
@@ -230,9 +233,9 @@ describe('IndeedAdapter', () => {
       };
 
       mockPage.$.mockImplementation((selector: string) => {
-        if (selector.includes('phone')) return Promise.resolve(phoneInput);
-        if (selector.includes('email')) return Promise.resolve(emailInput);
-        if (selector.includes('IndeedApplyButton')) return Promise.resolve({ click: jest.fn() });
+        if (selector.includes('phone')) {return Promise.resolve(phoneInput);}
+        if (selector.includes('email')) {return Promise.resolve(emailInput);}
+        if (selector.includes('IndeedApplyButton')) {return Promise.resolve({ click: jest.fn() });}
         return Promise.resolve(null);
       });
 
@@ -245,8 +248,8 @@ describe('IndeedAdapter', () => {
     it('should upload resume', async () => {
       const resumeInput = {};
       mockPage.$.mockImplementation((selector: string) => {
-        if (selector.includes('file')) return Promise.resolve(resumeInput);
-        if (selector.includes('IndeedApplyButton')) return Promise.resolve({ click: jest.fn() });
+        if (selector.includes('file')) {return Promise.resolve(resumeInput);}
+        if (selector.includes('IndeedApplyButton')) {return Promise.resolve({ click: jest.fn() });}
         return Promise.resolve(null);
       });
 
@@ -260,8 +263,8 @@ describe('IndeedAdapter', () => {
         click: jest.fn(),
       };
       mockPage.$.mockImplementation((selector: string) => {
-        if (selector.includes('Resume-select')) return Promise.resolve(resumeSelect);
-        if (selector.includes('IndeedApplyButton')) return Promise.resolve({ click: jest.fn() });
+        if (selector.includes('Resume-select')) {return Promise.resolve(resumeSelect);}
+        if (selector.includes('IndeedApplyButton')) {return Promise.resolve({ click: jest.fn() });}
         return Promise.resolve(null);
       });
 
@@ -331,7 +334,7 @@ describe('IndeedAdapter', () => {
         evaluate: jest.fn().mockResolvedValue('I certify that the information is correct'),
       };
       mockPage.$$.mockImplementation((selector: string) => {
-        if (selector.includes('checkbox')) return Promise.resolve([checkbox]);
+        if (selector.includes('checkbox')) {return Promise.resolve([checkbox]);}
         return Promise.resolve([]);
       });
 
@@ -346,8 +349,8 @@ describe('IndeedAdapter', () => {
         click: jest.fn(),
       };
       mockPage.$.mockImplementation((selector: string) => {
-        if (selector.includes('continue')) return Promise.resolve(continueBtn);
-        if (selector.includes('IndeedApplyButton')) return Promise.resolve({ click: jest.fn() });
+        if (selector.includes('continue')) {return Promise.resolve(continueBtn);}
+        if (selector.includes('IndeedApplyButton')) {return Promise.resolve({ click: jest.fn() });}
         return Promise.resolve(null);
       });
 
@@ -362,8 +365,8 @@ describe('IndeedAdapter', () => {
         click: jest.fn(),
       };
       mockPage.$.mockImplementation((selector: string) => {
-        if (selector.includes('submit')) return Promise.resolve(submitBtn);
-        if (selector.includes('IndeedApplyButton')) return Promise.resolve({ click: jest.fn() });
+        if (selector.includes('submit')) {return Promise.resolve(submitBtn);}
+        if (selector.includes('IndeedApplyButton')) {return Promise.resolve({ click: jest.fn() });}
         return Promise.resolve(null);
       });
 
@@ -374,8 +377,8 @@ describe('IndeedAdapter', () => {
 
     it('should detect application completion', async () => {
       mockPage.$.mockImplementation((selector: string) => {
-        if (selector.includes('PostApply')) return Promise.resolve({});
-        if (selector.includes('IndeedApplyButton')) return Promise.resolve({ click: jest.fn() });
+        if (selector.includes('PostApply')) {return Promise.resolve({});}
+        if (selector.includes('IndeedApplyButton')) {return Promise.resolve({ click: jest.fn() });}
         return Promise.resolve(null);
       });
 
@@ -488,8 +491,8 @@ describe('IndeedAdapter', () => {
         fill: jest.fn(),
       };
       mockPage.$.mockImplementation((selector: string) => {
-        if (selector.includes('Name')) return Promise.resolve(nameInput);
-        if (selector.includes('IndeedApplyButton')) return Promise.resolve({ click: jest.fn() });
+        if (selector.includes('Name')) {return Promise.resolve(nameInput);}
+        if (selector.includes('IndeedApplyButton')) {return Promise.resolve({ click: jest.fn() });}
         return Promise.resolve(null);
       });
 

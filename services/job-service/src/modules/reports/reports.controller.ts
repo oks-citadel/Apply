@@ -19,16 +19,18 @@ import {
   ApiBearerAuth,
   ApiParam,
 } from '@nestjs/swagger';
-import { ReportsService } from './reports.service';
+
 import { CreateReportDto } from './dto/create-report.dto';
-import { UpdateReportDto } from './dto/update-report.dto';
-import { QueryReportsDto } from './dto/query-reports.dto';
 import {
   ReportResponseDto,
   PaginatedReportsResponseDto,
   ReportStatsDto,
 } from './dto/report-response.dto';
 import { JwtAuthGuard, AdminGuard } from '../../common/guards';
+
+import type { QueryReportsDto } from './dto/query-reports.dto';
+import type { UpdateReportDto } from './dto/update-report.dto';
+import type { ReportsService } from './reports.service';
 
 @ApiTags('Reports')
 @Controller('reports')

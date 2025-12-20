@@ -1,12 +1,15 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+
 import {
   JobSource,
   SourceProvider,
   SourceType,
   SourceStatus,
 } from '../modules/ingestion/entities/job-source.entity';
+
+import type { Repository } from 'typeorm';
+
 
 @Injectable()
 export class JobSourcesSeeder {

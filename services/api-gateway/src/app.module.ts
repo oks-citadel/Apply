@@ -1,15 +1,16 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
-import { ThrottlerGuard } from '@nestjs/throttler';
+import { ThrottlerModule , ThrottlerGuard } from '@nestjs/throttler';
+
 import { LoggingModule, LoggingInterceptor, LogLevel } from '@applyforus/logging';
 import { TelemetryModule, PrometheusInterceptor } from '@applyforus/telemetry';
-import { ProxyModule } from './proxy/proxy.module';
-import { AuthModule } from './auth/auth.module';
-import { RateLimitModule } from './rate-limit/rate-limit.module';
-import { HealthModule } from './health/health.module';
+
 import { AppController } from './app.controller';
+import { AuthModule } from './auth/auth.module';
+import { HealthModule } from './health/health.module';
+import { ProxyModule } from './proxy/proxy.module';
+import { RateLimitModule } from './rate-limit/rate-limit.module';
 
 @Module({
   imports: [
@@ -36,11 +37,14 @@ import { AppController } from './app.controller';
       isGlobal: true,
       useFactory: (configService: ConfigService) => {
         const logLevelStr = configService.get<string>('LOG_LEVEL', 'info').toLowerCase();
-        const logLevel = logLevelStr === 'error' ? LogLevel.ERROR :
-                        logLevelStr === 'warn' ? LogLevel.WARN :
-                        logLevelStr === 'debug' ? LogLevel.DEBUG :
-                        logLevelStr === 'trace' ? LogLevel.TRACE :
-                        LogLevel.INFO;
+        const logLevelMap: Record<string, LogLevel> = {
+          error: LogLevel.ERROR,
+          warn: LogLevel.WARN,
+          debug: LogLevel.DEBUG,
+          trace: LogLevel.TRACE,
+          info: LogLevel.INFO,
+        };
+        const logLevel = logLevelMap[logLevelStr] ?? LogLevel.INFO;
 
         return {
           serviceName: 'api-gateway',

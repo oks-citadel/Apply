@@ -3,7 +3,9 @@ import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 
 // Inline health check utilities
-async function checkDatabaseConnection(dataSource: DataSource): Promise<{ status: string; message?: string }> {
+async function checkDatabaseConnection(
+  dataSource: DataSource,
+): Promise<{ status: string; message?: string }> {
   try {
     await dataSource.query('SELECT 1');
     return { status: 'ok' };
@@ -12,8 +14,12 @@ async function checkDatabaseConnection(dataSource: DataSource): Promise<{ status
   }
 }
 
-function createHealthResponse(serviceName: string, version: string, checks: Record<string, { status: string; message?: string }>) {
-  const allOk = Object.values(checks).every(check => check.status === 'ok');
+function createHealthResponse(
+  serviceName: string,
+  version: string,
+  checks: Record<string, { status: string; message?: string }>,
+) {
+  const allOk = Object.values(checks).every((check) => check.status === 'ok');
   return {
     status: allOk ? 'ok' : 'degraded',
     service: serviceName,

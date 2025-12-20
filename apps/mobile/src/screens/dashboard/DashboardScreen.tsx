@@ -73,15 +73,11 @@ export const DashboardScreen = ({ navigation }: DashboardScreenProps) => {
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.greeting}>
-            Hello, {user?.firstName || 'there'}!
-          </Text>
+          <Text style={styles.greeting}>Hello, {user?.firstName || 'there'}!</Text>
           <Text style={styles.subtitle}>Here's your job application overview</Text>
         </View>
 
@@ -118,20 +114,14 @@ export const DashboardScreen = ({ navigation }: DashboardScreenProps) => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Quick Actions</Text>
           <View style={styles.actionsGrid}>
-            <TouchableOpacity
-              style={styles.actionCard}
-              onPress={handleSearchJobs}
-            >
+            <TouchableOpacity style={styles.actionCard} onPress={handleSearchJobs}>
               <View style={styles.actionIcon}>
                 <Text style={styles.actionIconText}>🔍</Text>
               </View>
               <Text style={styles.actionLabel}>Search Jobs</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.actionCard}
-              onPress={handleViewApplications}
-            >
+            <TouchableOpacity style={styles.actionCard} onPress={handleViewApplications}>
               <View style={styles.actionIcon}>
                 <Text style={styles.actionIconText}>📝</Text>
               </View>

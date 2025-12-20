@@ -6,12 +6,7 @@ import { SLAContract } from '../entities/sla-contract.entity';
 import { SLAProgress } from '../entities/sla-progress.entity';
 import { SLAViolation } from '../entities/sla-violation.entity';
 import { SLARemedy } from '../entities/sla-remedy.entity';
-import {
-  SLATier,
-  SLAStatus,
-  ProgressEventType,
-  SLA_TIER_CONFIGS,
-} from '../enums/sla.enums';
+import { SLATier, SLAStatus, ProgressEventType, SLA_TIER_CONFIGS } from '../enums/sla.enums';
 import {
   CreateSLAContractDto,
   UpdateSLAContractDto,
@@ -57,9 +52,7 @@ export class SLAService {
   /**
    * Create new SLA contract
    */
-  async createContract(
-    dto: CreateSLAContractDto,
-  ): Promise<CreateSLAResponseDto> {
+  async createContract(dto: CreateSLAContractDto): Promise<CreateSLAResponseDto> {
     this.logger.log(`Creating SLA contract for user ${dto.userId} tier ${dto.tier}`);
 
     try {
@@ -86,9 +79,7 @@ export class SLAService {
       });
 
       if (existingContract) {
-        throw new BadRequestException(
-          'User already has an active SLA contract',
-        );
+        throw new BadRequestException('User already has an active SLA contract');
       }
 
       // Get tier configuration
@@ -96,9 +87,7 @@ export class SLAService {
 
       // Calculate dates
       const startDate = new Date();
-      const endDate = new Date(
-        startDate.getTime() + tierConfig.deadlineDays * 24 * 60 * 60 * 1000,
-      );
+      const endDate = new Date(startDate.getTime() + tierConfig.deadlineDays * 24 * 60 * 60 * 1000);
 
       // Create contract
       const contract = this.contractRepository.create({
@@ -157,9 +146,7 @@ export class SLAService {
   /**
    * Track application sent
    */
-  async trackApplication(
-    dto: TrackApplicationDto,
-  ): Promise<TrackProgressResponseDto> {
+  async trackApplication(dto: TrackApplicationDto): Promise<TrackProgressResponseDto> {
     this.logger.log(`Tracking application ${dto.applicationId} for user ${dto.userId}`);
 
     const contract = await this.getActiveContract(dto.userId);
@@ -208,9 +195,7 @@ export class SLAService {
   /**
    * Track employer response
    */
-  async trackResponse(
-    dto: TrackResponseDto,
-  ): Promise<TrackProgressResponseDto> {
+  async trackResponse(dto: TrackResponseDto): Promise<TrackProgressResponseDto> {
     this.logger.log(`Tracking response for application ${dto.applicationId}`);
 
     const contract = await this.getActiveContract(dto.userId);
@@ -254,9 +239,7 @@ export class SLAService {
   /**
    * Track interview invitation
    */
-  async trackInterview(
-    dto: TrackInterviewDto,
-  ): Promise<TrackProgressResponseDto> {
+  async trackInterview(dto: TrackInterviewDto): Promise<TrackProgressResponseDto> {
     this.logger.log(`Tracking interview for application ${dto.applicationId}`);
 
     const contract = await this.getActiveContract(dto.userId);
@@ -269,9 +252,7 @@ export class SLAService {
       },
     });
 
-    const meetsThreshold = application
-      ? application.meetsConfidenceThreshold
-      : true;
+    const meetsThreshold = application ? application.meetsConfidenceThreshold : true;
 
     const progress = this.progressRepository.create({
       contractId: contract.id,
@@ -366,9 +347,7 @@ export class SLAService {
   /**
    * Bulk track progress events
    */
-  async bulkTrackProgress(
-    dto: BulkTrackProgressDto,
-  ): Promise<BulkTrackResponseDto> {
+  async bulkTrackProgress(dto: BulkTrackProgressDto): Promise<BulkTrackResponseDto> {
     const results: {
       applications: TrackProgressResponseDto[];
       responses: TrackProgressResponseDto[];
@@ -447,9 +426,7 @@ export class SLAService {
       take: 20,
     });
 
-    const recentProgressDto = recentProgress.map((p) =>
-      this.mapToProgressSummary(p),
-    );
+    const recentProgressDto = recentProgress.map((p) => this.mapToProgressSummary(p));
 
     // Calculate analytics
     const analytics = await this.calculateAnalytics(contract);
@@ -472,16 +449,11 @@ export class SLAService {
   /**
    * Extend SLA contract
    */
-  async extendContract(
-    userId: string,
-    dto: ExtendSLAContractDto,
-  ): Promise<SLAStatusResponseDto> {
+  async extendContract(userId: string, dto: ExtendSLAContractDto): Promise<SLAStatusResponseDto> {
     const contract = await this.getActiveContract(userId);
 
     const currentEndDate = contract.getEffectiveEndDate();
-    const newEndDate = new Date(
-      currentEndDate.getTime() + dto.extensionDays * 24 * 60 * 60 * 1000,
-    );
+    const newEndDate = new Date(currentEndDate.getTime() + dto.extensionDays * 24 * 60 * 60 * 1000);
 
     contract.extensionDays += dto.extensionDays;
     contract.extendedEndDate = newEndDate;
@@ -516,10 +488,7 @@ export class SLAService {
         try {
           await this.violationHandler.detectViolation(contract);
         } catch (error) {
-          this.logger.error(
-            `Error checking violation for contract ${contract.id}:`,
-            error.stack,
-          );
+          this.logger.error(`Error checking violation for contract ${contract.id}:`, error.stack);
         }
       }
     }
@@ -548,9 +517,7 @@ export class SLAService {
   /**
    * Helper: Map contract to status DTO
    */
-  private async mapToStatusDto(
-    contract: SLAContract,
-  ): Promise<SLAStatusResponseDto> {
+  private async mapToStatusDto(contract: SLAContract): Promise<SLAStatusResponseDto> {
     const violations = await this.violationRepository.find({
       where: { contractId: contract.id },
       order: { detectedAt: 'DESC' },
@@ -618,9 +585,7 @@ export class SLAService {
   /**
    * Helper: Map progress to summary DTO
    */
-  private mapToProgressSummary(
-    progress: SLAProgress,
-  ): ProgressEventSummaryDto {
+  private mapToProgressSummary(progress: SLAProgress): ProgressEventSummaryDto {
     return {
       id: progress.id,
       eventType: progress.eventType,
@@ -636,9 +601,7 @@ export class SLAService {
   /**
    * Helper: Calculate analytics
    */
-  private async calculateAnalytics(
-    contract: SLAContract,
-  ): Promise<SLAAnalyticsDto> {
+  private async calculateAnalytics(contract: SLAContract): Promise<SLAAnalyticsDto> {
     const now = new Date();
     const daysActive = Math.ceil(
       (now.getTime() - contract.startDate.getTime()) / (1000 * 60 * 60 * 24),
@@ -647,8 +610,7 @@ export class SLAService {
     const totalDays = contract.deadlineDays + contract.extensionDays;
     const timeUtilization = ((totalDays - daysRemaining) / totalDays) * 100;
 
-    const applicationsPerDay =
-      daysActive > 0 ? contract.totalApplicationsSent / daysActive : 0;
+    const applicationsPerDay = daysActive > 0 ? contract.totalApplicationsSent / daysActive : 0;
 
     const responseRate =
       contract.totalApplicationsSent > 0
@@ -666,15 +628,10 @@ export class SLAService {
     );
 
     const projectedInterviews =
-      daysActive > 0
-        ? Math.round(
-            (contract.totalInterviewsScheduled / daysActive) * totalDays,
-          )
-        : 0;
+      daysActive > 0 ? Math.round((contract.totalInterviewsScheduled / daysActive) * totalDays) : 0;
 
     const onTrackToMeetGuarantee =
-      projectedInterviews >= contract.guaranteedInterviews ||
-      contract.isGuaranteeMet();
+      projectedInterviews >= contract.guaranteedInterviews || contract.isGuaranteeMet();
 
     // For trends, we'd query weekly aggregates
     // For now, return empty arrays
@@ -718,10 +675,7 @@ export class SLAService {
       target: targetApplications,
       current: contract.totalApplicationsSent,
       isCompleted: contract.totalApplicationsSent >= targetApplications,
-      completedAt:
-        contract.totalApplicationsSent >= targetApplications
-          ? new Date()
-          : undefined,
+      completedAt: contract.totalApplicationsSent >= targetApplications ? new Date() : undefined,
     });
 
     // Interview milestone (the main guarantee)
@@ -750,9 +704,7 @@ export class SLAService {
 
     // Application volume
     if (analytics.applicationsPerDay < 2) {
-      recommendations.push(
-        'Increase application volume to at least 2 applications per day',
-      );
+      recommendations.push('Increase application volume to at least 2 applications per day');
     }
 
     // Response rate
@@ -770,10 +722,7 @@ export class SLAService {
     }
 
     // Time urgency
-    if (
-      analytics.daysRemaining < 14 &&
-      !contract.isGuaranteeMet()
-    ) {
+    if (analytics.daysRemaining < 14 && !contract.isGuaranteeMet()) {
       const needed = contract.guaranteedInterviews - contract.totalInterviewsScheduled;
       recommendations.push(
         `Only ${analytics.daysRemaining} days remaining. You need ${needed} more interviews`,
@@ -782,9 +731,7 @@ export class SLAService {
 
     // Success message
     if (contract.isGuaranteeMet()) {
-      recommendations.push(
-        'Congratulations! You have met your interview guarantee',
-      );
+      recommendations.push('Congratulations! You have met your interview guarantee');
     }
 
     return recommendations;

@@ -1,7 +1,9 @@
-import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { Injectable, Logger } from '@nestjs/common';
 import Redis from 'ioredis';
-import { RawJobData } from '../interfaces/job-provider.interface';
+
+import type { RawJobData } from '../interfaces/job-provider.interface';
+import type { OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import type { ConfigService } from '@nestjs/config';
 
 interface CacheConfig {
   host: string;
@@ -133,7 +135,7 @@ export class JobCacheService implements OnModuleInit, OnModuleDestroy {
     provider: string,
     params: { keywords?: string; location?: string; page?: number },
   ): Promise<RawJobData[] | null> {
-    if (!this.isConnected || !this.redis) return null;
+    if (!this.isConnected || !this.redis) {return null;}
 
     try {
       const key = this.getSearchKey(provider, params);
@@ -160,7 +162,7 @@ export class JobCacheService implements OnModuleInit, OnModuleDestroy {
     params: { keywords?: string; location?: string; page?: number },
     jobs: RawJobData[],
   ): Promise<void> {
-    if (!this.isConnected || !this.redis) return;
+    if (!this.isConnected || !this.redis) {return;}
 
     try {
       const key = this.getSearchKey(provider, params);
@@ -175,7 +177,7 @@ export class JobCacheService implements OnModuleInit, OnModuleDestroy {
    * Get cached job details
    */
   async getJobDetails(provider: string, externalId: string): Promise<RawJobData | null> {
-    if (!this.isConnected || !this.redis) return null;
+    if (!this.isConnected || !this.redis) {return null;}
 
     try {
       const key = this.getDetailsKey(provider, externalId);
@@ -197,7 +199,7 @@ export class JobCacheService implements OnModuleInit, OnModuleDestroy {
    * Cache job details
    */
   async setJobDetails(provider: string, externalId: string, job: RawJobData): Promise<void> {
-    if (!this.isConnected || !this.redis) return;
+    if (!this.isConnected || !this.redis) {return;}
 
     try {
       const key = this.getDetailsKey(provider, externalId);
@@ -212,7 +214,7 @@ export class JobCacheService implements OnModuleInit, OnModuleDestroy {
    * Get cached provider health status
    */
   async getProviderHealth(provider: string): Promise<boolean | null> {
-    if (!this.isConnected || !this.redis) return null;
+    if (!this.isConnected || !this.redis) {return null;}
 
     try {
       const key = this.getHealthKey(provider);
@@ -233,7 +235,7 @@ export class JobCacheService implements OnModuleInit, OnModuleDestroy {
    * Cache provider health status
    */
   async setProviderHealth(provider: string, isHealthy: boolean): Promise<void> {
-    if (!this.isConnected || !this.redis) return;
+    if (!this.isConnected || !this.redis) {return;}
 
     try {
       const key = this.getHealthKey(provider);
@@ -247,7 +249,7 @@ export class JobCacheService implements OnModuleInit, OnModuleDestroy {
    * Invalidate all cached search results for a provider
    */
   async invalidateProviderCache(provider: string): Promise<void> {
-    if (!this.isConnected || !this.redis) return;
+    if (!this.isConnected || !this.redis) {return;}
 
     try {
       const pattern = `${this.config.keyPrefix}search:${provider.toLowerCase()}:*`;
@@ -268,7 +270,7 @@ export class JobCacheService implements OnModuleInit, OnModuleDestroy {
    * Clear all job aggregator cache
    */
   async clearAllCache(): Promise<void> {
-    if (!this.isConnected || !this.redis) return;
+    if (!this.isConnected || !this.redis) {return;}
 
     try {
       const pattern = `${this.config.keyPrefix}*`;

@@ -1,8 +1,11 @@
-import { Injectable, Logger } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bull';
-import { Queue, Job } from 'bull';
-import { ApplicationData } from '../adapters/base.adapter';
+import { Injectable, Logger } from '@nestjs/common';
+
+
 import { platformRateLimits } from '../../config/queue.config';
+
+import type { ApplicationData } from '../adapters/base.adapter';
+import type { Queue, Job } from 'bull';
 
 @Injectable()
 export class QueueService {
@@ -135,12 +138,12 @@ export class QueueService {
   }
 
   private detectPlatform(url: string): string {
-    if (url.includes('workday')) return 'workday';
-    if (url.includes('greenhouse')) return 'greenhouse';
-    if (url.includes('lever')) return 'lever';
-    if (url.includes('icims')) return 'icims';
-    if (url.includes('taleo')) return 'taleo';
-    if (url.includes('smartrecruiters')) return 'smartrecruiters';
+    if (url.includes('workday')) {return 'workday';}
+    if (url.includes('greenhouse')) {return 'greenhouse';}
+    if (url.includes('lever')) {return 'lever';}
+    if (url.includes('icims')) {return 'icims';}
+    if (url.includes('taleo')) {return 'taleo';}
+    if (url.includes('smartrecruiters')) {return 'smartrecruiters';}
     return 'default';
   }
 

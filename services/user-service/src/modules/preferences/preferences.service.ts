@@ -1,8 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+
+
 import { Preference } from './entities/preference.entity';
-import { UpdatePreferenceDto } from './dto/update-preference.dto';
+
+import type { UpdatePreferenceDto } from './dto/update-preference.dto';
+import type { Repository } from 'typeorm';
 
 @Injectable()
 export class PreferencesService {

@@ -1,5 +1,6 @@
-import { IsString, IsOptional, IsUUID, IsArray, IsObject, IsNumber, IsEnum } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsString, IsOptional, IsUUID, IsArray, IsObject, IsNumber, IsEnum } from 'class-validator';
+
 import { ReportType, ReportSeverity } from '../entities/job-report.entity';
 
 export class NormalizeJobDto {

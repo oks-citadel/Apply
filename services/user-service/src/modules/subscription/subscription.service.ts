@@ -1,11 +1,14 @@
 import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { ConfigService } from '@nestjs/config';
 import Stripe from 'stripe';
+
+
 import { Subscription } from './entities/subscription.entity';
-import { CreateCheckoutSessionDto } from './dto/create-checkout-session.dto';
 import { SubscriptionTier, SubscriptionStatus } from '../../common/enums/subscription-tier.enum';
+
+import type { CreateCheckoutSessionDto } from './dto/create-checkout-session.dto';
+import type { ConfigService } from '@nestjs/config';
+import type { Repository } from 'typeorm';
 
 @Injectable()
 export class SubscriptionService {
@@ -72,13 +75,13 @@ export class SubscriptionService {
       throw new BadRequestException('Cannot create checkout session for free tier');
     }
 
-    let subscription = await this.getSubscription(userId);
+    const subscription = await this.getSubscription(userId);
 
     // Get or create Stripe customer
     let customerId = subscription.stripe_customer_id;
     if (!customerId) {
       const customer = await this.stripe!.customers.create({
-        email: email,
+        email,
         metadata: { userId },
       });
       customerId = customer.id;

@@ -1,8 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import axios, { AxiosInstance } from 'axios';
-import { JobProvider, RawJobData, JobProviderConfig } from '../interfaces/job-provider.interface';
-import { Job, JobSource, RemoteType, ExperienceLevel, EmploymentType } from '../../jobs/entities/job.entity';
+import axios from 'axios';
+
+import { JobSource, RemoteType, ExperienceLevel, EmploymentType } from '../../jobs/entities/job.entity';
+
+import type { Job} from '../../jobs/entities/job.entity';
+import type { JobProvider, RawJobData, JobProviderConfig } from '../interfaces/job-provider.interface';
+import type { ConfigService } from '@nestjs/config';
+import type { AxiosInstance } from 'axios';
 
 @Injectable()
 export class ZipRecruiterProvider implements JobProvider {
@@ -119,7 +123,7 @@ export class ZipRecruiterProvider implements JobProvider {
   }
 
   private parseJobListings(data: any): RawJobData[] {
-    if (!data?.jobs) return [];
+    if (!data?.jobs) {return [];}
 
     return data.jobs.map((job: any) => ({
       external_id: job.id || '',
@@ -265,11 +269,11 @@ export class ZipRecruiterProvider implements JobProvider {
 
   private mapEmploymentType(type: string): string {
     const normalized = (type || '').toLowerCase();
-    if (normalized.includes('full')) return 'full_time';
-    if (normalized.includes('part')) return 'part_time';
-    if (normalized.includes('contract')) return 'contract';
-    if (normalized.includes('temp')) return 'temporary';
-    if (normalized.includes('intern')) return 'internship';
+    if (normalized.includes('full')) {return 'full_time';}
+    if (normalized.includes('part')) {return 'part_time';}
+    if (normalized.includes('contract')) {return 'contract';}
+    if (normalized.includes('temp')) {return 'temporary';}
+    if (normalized.includes('intern')) {return 'internship';}
     return 'full_time';
   }
 
@@ -286,11 +290,11 @@ export class ZipRecruiterProvider implements JobProvider {
 
   private mapExperienceLevel(level: string): string {
     const normalized = (level || '').toLowerCase();
-    if (normalized.includes('entry') || normalized.includes('junior')) return 'entry';
-    if (normalized.includes('mid')) return 'mid';
-    if (normalized.includes('senior') || normalized.includes('sr')) return 'senior';
-    if (normalized.includes('lead') || normalized.includes('principal')) return 'lead';
-    if (normalized.includes('executive') || normalized.includes('director')) return 'executive';
+    if (normalized.includes('entry') || normalized.includes('junior')) {return 'entry';}
+    if (normalized.includes('mid')) {return 'mid';}
+    if (normalized.includes('senior') || normalized.includes('sr')) {return 'senior';}
+    if (normalized.includes('lead') || normalized.includes('principal')) {return 'lead';}
+    if (normalized.includes('executive') || normalized.includes('director')) {return 'executive';}
     return 'mid';
   }
 
@@ -307,8 +311,8 @@ export class ZipRecruiterProvider implements JobProvider {
   }
 
   private parseSalary(value: any): number | null {
-    if (!value) return null;
-    if (typeof value === 'number') return value;
+    if (!value) {return null;}
+    if (typeof value === 'number') {return value;}
 
     const str = String(value).replace(/[$,]/g, '');
     if (str.toLowerCase().includes('k')) {
@@ -319,7 +323,7 @@ export class ZipRecruiterProvider implements JobProvider {
   }
 
   private extractRequirements(description: string): string[] {
-    if (!description) return [];
+    if (!description) {return [];}
 
     const requirements: string[] = [];
     const lines = description.split('\n');
@@ -343,7 +347,7 @@ export class ZipRecruiterProvider implements JobProvider {
   }
 
   private extractBenefits(description: string): string[] {
-    if (!description) return [];
+    if (!description) {return [];}
 
     const benefits: string[] = [];
     const lines = description.split('\n');
@@ -364,7 +368,7 @@ export class ZipRecruiterProvider implements JobProvider {
   }
 
   private extractSkills(description: string): string[] {
-    if (!description) return [];
+    if (!description) {return [];}
 
     const commonSkills = [
       'javascript', 'typescript', 'python', 'java', 'c#', 'c++', 'go', 'rust', 'ruby',

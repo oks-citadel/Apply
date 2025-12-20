@@ -15,12 +15,16 @@ import {
   ApiResponse,
   ApiBearerAuth,
 } from '@nestjs/swagger';
-import { UsersService } from './users.service';
+
+import { UserRole } from './entities/user.entity';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { Roles } from '../../common/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
-import { Roles } from '../../common/decorators/roles.decorator';
-import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { User, UserRole } from './entities/user.entity';
+
+import type { User} from './entities/user.entity';
+import type { UsersService } from './users.service';
+
 
 @ApiTags('users')
 @Controller('users')

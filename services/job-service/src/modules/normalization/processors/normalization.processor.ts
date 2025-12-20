@@ -1,7 +1,9 @@
 import { Processor, Process, OnQueueError, OnQueueFailed } from '@nestjs/bull';
-import { Job as BullJob } from 'bull';
 import { Logger } from '@nestjs/common';
-import { NormalizationService } from '../services/normalization.service';
+
+import type { NormalizationService } from '../services/normalization.service';
+import type { Job as BullJob } from 'bull';
+
 
 interface NormalizationJobData {
   jobId: string;

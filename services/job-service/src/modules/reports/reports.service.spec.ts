@@ -1,11 +1,14 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { NotFoundException, ConflictException } from '@nestjs/common';
-import { ReportsService } from './reports.service';
+import { Test } from '@nestjs/testing';
+import { getRepositoryToken } from '@nestjs/typeorm';
+
 import { JobReport } from './entities/report.entity';
-import { Job } from '../jobs/entities/job.entity';
 import { ReportType, ReportStatus } from './enums/report-type.enum';
+import { ReportsService } from './reports.service';
+import { Job } from '../jobs/entities/job.entity';
+
+import type { TestingModule } from '@nestjs/testing';
+import type { Repository } from 'typeorm';
 
 describe('ReportsService', () => {
   let service: ReportsService;

@@ -6,18 +6,21 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, FindOptionsWhere } from 'typeorm';
+
+
 import { JobReport } from './entities/report.entity';
+import { ReportType, ReportStatus } from './enums/report-type.enum';
 import { Job } from '../jobs/entities/job.entity';
-import { CreateReportDto } from './dto/create-report.dto';
-import { UpdateReportDto } from './dto/update-report.dto';
-import { QueryReportsDto } from './dto/query-reports.dto';
-import {
+
+import type { CreateReportDto } from './dto/create-report.dto';
+import type { QueryReportsDto } from './dto/query-reports.dto';
+import type {
   ReportResponseDto,
   PaginatedReportsResponseDto,
   ReportStatsDto,
 } from './dto/report-response.dto';
-import { ReportType, ReportStatus } from './enums/report-type.enum';
+import type { UpdateReportDto } from './dto/update-report.dto';
+import type { Repository, FindOptionsWhere } from 'typeorm';
 
 @Injectable()
 export class ReportsService {

@@ -8,6 +8,7 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
+
 import { JobSource } from './job-source.entity';
 
 export enum IngestionStatus {

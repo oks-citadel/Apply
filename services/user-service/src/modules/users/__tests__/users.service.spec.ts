@@ -1,20 +1,24 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
-import { ProfileService } from '../../profile/profile.service';
-import { Profile } from '../../profile/entities/profile.entity';
-import { CareerService } from '../../career/career.service';
-import { WorkExperience } from '../../career/entities/work-experience.entity';
-import { Education } from '../../career/entities/education.entity';
-import { SkillsService } from '../../skills/skills.service';
-import { Skill } from '../../skills/entities/skill.entity';
-import { PreferencesService } from '../../preferences/preferences.service';
-import { Preference } from '../../preferences/entities/preference.entity';
-import { UpdateProfileDto } from '../../profile/dto/update-profile.dto';
-import { CreateWorkExperienceDto } from '../../career/dto/create-work-experience.dto';
-import { CreateSkillDto } from '../../skills/dto/create-skill.dto';
+import { Test } from '@nestjs/testing';
+import { getRepositoryToken } from '@nestjs/typeorm';
+
 import { SkillProficiency } from '../../../common/enums/subscription-tier.enum';
+import { CareerService } from '../../career/career.service';
+import { Education } from '../../career/entities/education.entity';
+import { WorkExperience } from '../../career/entities/work-experience.entity';
+import { Preference } from '../../preferences/entities/preference.entity';
+import { PreferencesService } from '../../preferences/preferences.service';
+import { Profile } from '../../profile/entities/profile.entity';
+import { ProfileService } from '../../profile/profile.service';
+import { Skill } from '../../skills/entities/skill.entity';
+import { SkillsService } from '../../skills/skills.service';
+
+import type { CreateWorkExperienceDto } from '../../career/dto/create-work-experience.dto';
+import type { UpdateProfileDto } from '../../profile/dto/update-profile.dto';
+import type { CreateSkillDto } from '../../skills/dto/create-skill.dto';
+import type { TestingModule } from '@nestjs/testing';
+import type { Repository } from 'typeorm';
+
 
 // Mock StorageService
 class MockStorageService {

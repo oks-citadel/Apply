@@ -31,11 +31,7 @@ export const Card: React.FC<CardProps> = ({
 
   if (onPress) {
     return (
-      <TouchableOpacity
-        style={[cardStyle, style]}
-        onPress={onPress}
-        activeOpacity={0.8}
-      >
+      <TouchableOpacity style={[cardStyle, style]} onPress={onPress} activeOpacity={0.8}>
         {children}
       </TouchableOpacity>
     );

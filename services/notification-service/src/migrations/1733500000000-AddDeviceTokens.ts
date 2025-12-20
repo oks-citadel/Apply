@@ -127,7 +127,7 @@ export class AddDeviceTokens1733500000000 implements MigrationInterface {
           },
         ],
       }),
-      true
+      true,
     );
 
     // Create indexes on device_tokens
@@ -136,7 +136,7 @@ export class AddDeviceTokens1733500000000 implements MigrationInterface {
       new TableIndex({
         name: 'IDX_DEVICE_TOKENS_USER_ID',
         columnNames: ['user_id'],
-      })
+      }),
     );
 
     await queryRunner.createIndex(
@@ -144,7 +144,7 @@ export class AddDeviceTokens1733500000000 implements MigrationInterface {
       new TableIndex({
         name: 'IDX_DEVICE_TOKENS_TOKEN',
         columnNames: ['token'],
-      })
+      }),
     );
 
     await queryRunner.createIndex(
@@ -152,7 +152,7 @@ export class AddDeviceTokens1733500000000 implements MigrationInterface {
       new TableIndex({
         name: 'IDX_DEVICE_TOKENS_PLATFORM',
         columnNames: ['platform'],
-      })
+      }),
     );
 
     await queryRunner.createIndex(
@@ -160,7 +160,7 @@ export class AddDeviceTokens1733500000000 implements MigrationInterface {
       new TableIndex({
         name: 'IDX_DEVICE_TOKENS_STATUS',
         columnNames: ['status'],
-      })
+      }),
     );
 
     await queryRunner.createIndex(
@@ -168,7 +168,7 @@ export class AddDeviceTokens1733500000000 implements MigrationInterface {
       new TableIndex({
         name: 'IDX_DEVICE_TOKENS_USER_ID_PLATFORM',
         columnNames: ['user_id', 'platform'],
-      })
+      }),
     );
 
     await queryRunner.createIndex(
@@ -176,7 +176,7 @@ export class AddDeviceTokens1733500000000 implements MigrationInterface {
       new TableIndex({
         name: 'IDX_DEVICE_TOKENS_LAST_USED_AT',
         columnNames: ['last_used_at'],
-      })
+      }),
     );
 
     // Create unique constraint on token and platform
@@ -186,7 +186,7 @@ export class AddDeviceTokens1733500000000 implements MigrationInterface {
         name: 'UQ_DEVICE_TOKENS_TOKEN_PLATFORM',
         columnNames: ['token', 'platform'],
         isUnique: true,
-      })
+      }),
     );
 
     // Add comments
@@ -225,9 +225,18 @@ export class AddDeviceTokens1733500000000 implements MigrationInterface {
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     // Drop indexes
-    await queryRunner.dropIndex('device_tokens', 'UQ_DEVICE_TOKENS_TOKEN_PLATFORM');
-    await queryRunner.dropIndex('device_tokens', 'IDX_DEVICE_TOKENS_LAST_USED_AT');
-    await queryRunner.dropIndex('device_tokens', 'IDX_DEVICE_TOKENS_USER_ID_PLATFORM');
+    await queryRunner.dropIndex(
+      'device_tokens',
+      'UQ_DEVICE_TOKENS_TOKEN_PLATFORM',
+    );
+    await queryRunner.dropIndex(
+      'device_tokens',
+      'IDX_DEVICE_TOKENS_LAST_USED_AT',
+    );
+    await queryRunner.dropIndex(
+      'device_tokens',
+      'IDX_DEVICE_TOKENS_USER_ID_PLATFORM',
+    );
     await queryRunner.dropIndex('device_tokens', 'IDX_DEVICE_TOKENS_STATUS');
     await queryRunner.dropIndex('device_tokens', 'IDX_DEVICE_TOKENS_PLATFORM');
     await queryRunner.dropIndex('device_tokens', 'IDX_DEVICE_TOKENS_TOKEN');

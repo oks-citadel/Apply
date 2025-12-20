@@ -76,7 +76,8 @@ export class PushService implements OnModuleInit {
       const apnsKeyId = this.configService.get('APNS_KEY_ID');
       const apnsTeamId = this.configService.get('APNS_TEAM_ID');
       const apnsKey = this.configService.get('APNS_KEY');
-      const apnsProduction = this.configService.get('APNS_PRODUCTION', 'false') === 'true';
+      const apnsProduction =
+        this.configService.get('APNS_PRODUCTION', 'false') === 'true';
 
       if (!apnsKeyId || !apnsTeamId || !apnsKey) {
         this.logger.warn(
@@ -89,10 +90,14 @@ export class PushService implements OnModuleInit {
         team: apnsTeamId,
         keyId: apnsKeyId,
         signingKey: apnsKey,
-        host: apnsProduction ? 'api.push.apple.com' : 'api.sandbox.push.apple.com',
+        host: apnsProduction
+          ? 'api.push.apple.com'
+          : 'api.sandbox.push.apple.com',
       });
 
-      this.logger.log('Apple Push Notification service initialized successfully');
+      this.logger.log(
+        'Apple Push Notification service initialized successfully',
+      );
     } catch (error) {
       this.logger.error('Failed to initialize APNs:', error.message);
     }
@@ -130,7 +135,9 @@ export class PushService implements OnModuleInit {
       }
 
       await this.deviceTokenRepository.save(device);
-      this.logger.log(`Device registered: ${dto.platform} token for user ${dto.userId}`);
+      this.logger.log(
+        `Device registered: ${dto.platform} token for user ${dto.userId}`,
+      );
 
       return device;
     } catch (error) {
@@ -167,7 +174,9 @@ export class PushService implements OnModuleInit {
     });
   }
 
-  async sendPushNotification(dto: SendPushNotificationDto): Promise<PushResult[]> {
+  async sendPushNotification(
+    dto: SendPushNotificationDto,
+  ): Promise<PushResult[]> {
     const results: PushResult[] = [];
 
     try {
@@ -180,14 +189,22 @@ export class PushService implements OnModuleInit {
       });
 
       if (devices.length === 0) {
-        this.logger.warn(`No active devices found for users: ${dto.userIds.join(', ')}`);
+        this.logger.warn(
+          `No active devices found for users: ${dto.userIds.join(', ')}`,
+        );
         return results;
       }
 
       // Group devices by platform
-      const androidDevices = devices.filter((d) => d.platform === DevicePlatform.ANDROID);
-      const iosDevices = devices.filter((d) => d.platform === DevicePlatform.IOS);
-      const webDevices = devices.filter((d) => d.platform === DevicePlatform.WEB);
+      const androidDevices = devices.filter(
+        (d) => d.platform === DevicePlatform.ANDROID,
+      );
+      const iosDevices = devices.filter(
+        (d) => d.platform === DevicePlatform.IOS,
+      );
+      const webDevices = devices.filter(
+        (d) => d.platform === DevicePlatform.WEB,
+      );
 
       // Send to Android and Web (via FCM)
       if (androidDevices.length > 0 || webDevices.length > 0) {
@@ -265,7 +282,9 @@ export class PushService implements OnModuleInit {
     };
 
     try {
-      const response = await admin.messaging(this.fcmApp).sendEachForMulticast(message);
+      const response = await admin
+        .messaging(this.fcmApp)
+        .sendEachForMulticast(message);
 
       response.responses.forEach((resp, idx) => {
         const device = devices[idx];
@@ -346,7 +365,10 @@ export class PushService implements OnModuleInit {
           token: device.token,
         });
       } catch (error) {
-        this.logger.error(`APNs send error for token ${device.token}:`, error.message);
+        this.logger.error(
+          `APNs send error for token ${device.token}:`,
+          error.message,
+        );
         results.push({
           success: false,
           platform: device.platform,
@@ -357,7 +379,9 @@ export class PushService implements OnModuleInit {
     }
 
     const successCount = results.filter((r) => r.success).length;
-    this.logger.log(`APNs: Sent ${successCount}/${devices.length} notifications`);
+    this.logger.log(
+      `APNs: Sent ${successCount}/${devices.length} notifications`,
+    );
 
     return results;
   }

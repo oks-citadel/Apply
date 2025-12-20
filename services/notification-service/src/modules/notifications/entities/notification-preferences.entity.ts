@@ -67,7 +67,7 @@ export class NotificationPreferences {
     type: 'enum',
     enum: ['immediate', 'hourly', 'daily', 'weekly'],
     default: 'immediate',
-    name: 'digest_frequency'
+    name: 'digest_frequency',
   })
   digestFrequency: string;
 

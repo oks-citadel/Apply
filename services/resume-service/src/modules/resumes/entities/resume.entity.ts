@@ -9,8 +9,9 @@ import {
   JoinColumn,
   Index,
 } from 'typeorm';
-import { Template } from '../../templates/entities/template.entity';
+
 import { ResumeVersion } from './resume-version.entity';
+import { Template } from '../../templates/entities/template.entity';
 
 export interface ResumeContent {
   personalInfo?: {

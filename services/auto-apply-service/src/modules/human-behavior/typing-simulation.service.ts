@@ -1,6 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Page } from 'playwright';
-import { TimingService } from './timing.service';
+
+import type { TimingService } from './timing.service';
+import type { Page } from 'playwright';
+
 
 interface TypingConfig {
   baseSpeed: number; // characters per minute

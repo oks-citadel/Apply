@@ -12,19 +12,23 @@ import {
   ParseUUIDPipe,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery } from '@nestjs/swagger';
-import { PlaybooksService } from './playbooks.service';
+
 import {
   PlaybookResponseDto,
   PlaybookSummaryDto,
-  RecommendPlaybookDto,
   RecommendationResponseDto,
-  ApplyPlaybookDto,
   ApplyPlaybookResponseDto,
-  UpdateApplicationStatusDto,
   ApplicationStatsDto,
 } from './dto';
-import { Playbook, Region } from './entities/playbook.entity';
 import { PlaybookApplication } from './entities/playbook-application.entity';
+import { Region } from './entities/playbook.entity';
+
+import type {
+  RecommendPlaybookDto,
+  ApplyPlaybookDto,
+  UpdateApplicationStatusDto} from './dto';
+import type { Playbook} from './entities/playbook.entity';
+import type { PlaybooksService } from './playbooks.service';
 
 @ApiTags('Playbooks')
 @Controller('api/v1/playbooks')

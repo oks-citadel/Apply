@@ -1,5 +1,6 @@
-import { User, UserRole, UserStatus, AuthProvider } from '../../src/modules/users/entities/user.entity';
 import * as bcrypt from 'bcrypt';
+
+import { User, UserRole, UserStatus, AuthProvider } from '../../src/modules/users/entities/user.entity';
 
 export class TestFactory {
   /**
@@ -142,7 +143,7 @@ export class TestFactory {
    * Create a test token
    */
   static createToken(): string {
-    return 'test-token-' + Math.random().toString(36).substring(7);
+    return `test-token-${  Math.random().toString(36).substring(7)}`;
   }
 
   /**

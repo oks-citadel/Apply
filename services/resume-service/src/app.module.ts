@@ -1,19 +1,20 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
-import { ThrottlerGuard } from '@nestjs/throttler';
+import { ThrottlerModule , ThrottlerGuard } from '@nestjs/throttler';
+import { TypeOrmModule } from '@nestjs/typeorm';
+
 import { LoggingModule, LoggingInterceptor } from '@applyforus/logging';
+
 import { appConfig, validationSchema } from './config/app.config';
 import { dataSourceOptions } from './config/database.config';
+import { HealthModule } from './health/health.module';
+import { AlignmentModule } from './modules/alignment/alignment.module';
+import { ExportModule } from './modules/export/export.module';
+import { ParserModule } from './modules/parser/parser.module';
 import { ResumesModule } from './modules/resumes/resumes.module';
 import { SectionsModule } from './modules/sections/sections.module';
 import { TemplatesModule } from './modules/templates/templates.module';
-import { ParserModule } from './modules/parser/parser.module';
-import { ExportModule } from './modules/export/export.module';
-import { AlignmentModule } from './modules/alignment/alignment.module';
-import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
@@ -21,7 +22,7 @@ import { HealthModule } from './health/health.module';
     ConfigModule.forRoot({
       isGlobal: true,
       load: [appConfig],
-      validationSchema: validationSchema,
+      validationSchema,
       validationOptions: {
         allowUnknown: true,
         abortEarly: false,
@@ -45,7 +46,7 @@ import { HealthModule } from './health/health.module';
     // Database
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
+      useFactory: (_configService: ConfigService) => ({
         ...dataSourceOptions,
         autoLoadEntities: true,
       }),

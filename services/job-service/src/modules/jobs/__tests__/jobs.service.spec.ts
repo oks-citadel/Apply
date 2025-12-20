@@ -1,15 +1,20 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { JobsService } from '../jobs.service';
-import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { HttpService } from '@nestjs/axios';
-import { ConfigService } from '@nestjs/config';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { Test } from '@nestjs/testing';
+import { getRepositoryToken } from '@nestjs/typeorm';
 import { of, throwError } from 'rxjs';
+
+
+import { RedisCacheService } from '../../../common/cache';
+import { SavedJobStatus } from '../dto/save-job.dto';
 import { Job, RemoteType, ExperienceLevel, EmploymentType, JobSource } from '../entities/job.entity';
 import { SavedJob } from '../entities/saved-job.entity';
-import { RedisCacheService } from '../../../common/cache';
-import { SaveJobDto, SavedJobStatus, UpdateSavedJobDto } from '../dto/save-job.dto';
+import { JobsService } from '../jobs.service';
+
+import type { SaveJobDto, UpdateSavedJobDto } from '../dto/save-job.dto';
+import type { TestingModule } from '@nestjs/testing';
+import type { Repository } from 'typeorm';
 
 describe('JobsService', () => {
   let service: JobsService;
@@ -125,7 +130,7 @@ describe('JobsService', () => {
 
   const mockConfigService = {
     get: jest.fn((key: string) => {
-      if (key === 'AI_SERVICE_URL') return 'http://ai-service:3000';
+      if (key === 'AI_SERVICE_URL') {return 'http://ai-service:3000';}
       return null;
     }),
   };

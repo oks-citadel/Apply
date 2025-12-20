@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Page } from 'playwright';
+
+import type { Page } from 'playwright';
 
 interface Point {
   x: number;
@@ -108,10 +109,10 @@ export class MouseMovementService {
     const clickDuration = 50 + Math.random() * 100;
 
     const element = await page.$(selector);
-    if (!element) return;
+    if (!element) {return;}
 
     const box = await element.boundingBox();
-    if (!box) return;
+    if (!box) {return;}
 
     const clickX = box.x + box.width * (0.3 + Math.random() * 0.4);
     const clickY = box.y + box.height * (0.3 + Math.random() * 0.4);
@@ -269,10 +270,10 @@ export class MouseMovementService {
     await this.moveToElement(page, selector);
 
     const element = await page.$(selector);
-    if (!element) return;
+    if (!element) {return;}
 
     const box = await element.boundingBox();
-    if (!box) return;
+    if (!box) {return;}
 
     const clickX = box.x + box.width / 2;
     const clickY = box.y + box.height / 2;
@@ -302,7 +303,7 @@ export class MouseMovementService {
     const sourceBox = await source.boundingBox();
     const targetBox = await target.boundingBox();
 
-    if (!sourceBox || !targetBox) return;
+    if (!sourceBox || !targetBox) {return;}
 
     const sourceCenter = {
       x: sourceBox.x + sourceBox.width / 2,

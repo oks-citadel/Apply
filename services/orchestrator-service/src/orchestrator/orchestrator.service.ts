@@ -1,18 +1,23 @@
-import { Injectable, Logger } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bull';
-import { Queue } from 'bull';
+import { Injectable, Logger } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
+
 import {
-  OrchestrateRequestDto,
-  OrchestrateResponseDto,
   TaskType,
   Priority,
 } from './dto/orchestrate.dto';
-import { WorkflowService } from './workflow/workflow.service';
-import { AgentClientService } from './services/agent-client.service';
-import { CircuitBreakerService } from './services/circuit-breaker.service';
-import { WorkflowType, WorkflowStatus, WorkflowExecution } from './interfaces/workflow.interface';
-import { AgentType, AgentHealth } from './interfaces/agent.interface';
+import { WorkflowType, WorkflowStatus } from './interfaces/workflow.interface';
+
+
+import type {
+  OrchestrateRequestDto,
+  OrchestrateResponseDto} from './dto/orchestrate.dto';
+import type { AgentType, AgentHealth } from './interfaces/agent.interface';
+import type { WorkflowExecution } from './interfaces/workflow.interface';
+import type { AgentClientService } from './services/agent-client.service';
+import type { CircuitBreakerService } from './services/circuit-breaker.service';
+import type { WorkflowService } from './workflow/workflow.service';
+import type { Queue } from 'bull';
 
 interface TaskExecution {
   id: string;
@@ -236,7 +241,7 @@ export class OrchestratorService {
   }
 
   private getAgentStatesFromWorkflow(
-    execution: WorkflowExecution,
+    _execution: WorkflowExecution,
   ): Record<string, { status: string; last_run?: Date }> {
     // Extract agent states from workflow execution
     return this.getAgentStates();

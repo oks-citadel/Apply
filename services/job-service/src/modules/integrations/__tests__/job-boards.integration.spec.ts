@@ -1,15 +1,17 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { HttpService } from '@nestjs/axios';
-import { ConfigService } from '@nestjs/config';
-import { Repository } from 'typeorm';
-import { getRepositoryToken } from '@nestjs/typeorm';
-import { of, throwError } from 'rxjs';
 import {
   BadRequestException,
   UnauthorizedException,
   InternalServerErrorException,
 } from '@nestjs/common';
-import { AxiosError, AxiosResponse } from 'axios';
+import { Test, TestingModule } from '@nestjs/testing';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { of, throwError } from 'rxjs';
+
+
+import type { HttpService } from '@nestjs/axios';
+import type { ConfigService } from '@nestjs/config';
+import type { AxiosError, AxiosResponse } from 'axios';
+import type { Repository } from 'typeorm';
 
 /**
  * Job Boards Integration Test Suite (Indeed & Glassdoor)

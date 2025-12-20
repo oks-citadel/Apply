@@ -87,7 +87,9 @@ export class EmailService {
     });
   }
 
-  private async loadTemplate(templateName: string): Promise<handlebars.TemplateDelegate> {
+  private async loadTemplate(
+    templateName: string,
+  ): Promise<handlebars.TemplateDelegate> {
     // Check cache first
     if (this.templateCache.has(templateName)) {
       return this.templateCache.get(templateName);
@@ -165,10 +167,15 @@ export class EmailService {
   }
 
   async sendWelcomeEmail(to: string, name: string): Promise<any> {
-    return this.sendTemplatedEmail(to, 'Welcome to Job Apply Platform!', 'welcome', {
-      name,
-      dashboardUrl: `${this.frontendUrl}/dashboard`,
-    });
+    return this.sendTemplatedEmail(
+      to,
+      'Welcome to Job Apply Platform!',
+      'welcome',
+      {
+        name,
+        dashboardUrl: `${this.frontendUrl}/dashboard`,
+      },
+    );
   }
 
   async sendVerificationEmail(
@@ -196,10 +203,15 @@ export class EmailService {
   ): Promise<any> {
     const resetUrl = `${this.frontendUrl}/reset-password?token=${resetToken}`;
 
-    return this.sendTemplatedEmail(to, 'Reset Your Password', 'password-reset', {
-      name,
-      resetUrl,
-    });
+    return this.sendTemplatedEmail(
+      to,
+      'Reset Your Password',
+      'password-reset',
+      {
+        name,
+        resetUrl,
+      },
+    );
   }
 
   async sendApplicationStatusEmail(
@@ -330,7 +342,8 @@ export class EmailService {
       'Update your LinkedIn profile regularly and keep it consistent with your resume.',
     ];
 
-    const randomTip = jobSearchTips[Math.floor(Math.random() * jobSearchTips.length)];
+    const randomTip =
+      jobSearchTips[Math.floor(Math.random() * jobSearchTips.length)];
 
     return this.sendTemplatedEmail(
       to,

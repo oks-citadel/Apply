@@ -101,13 +101,19 @@ export class ActivityItemDto {
   @ApiPropertyOptional({ example: '123e4567-e89b-12d3-a456-426614174001', description: 'User ID' })
   userId?: string;
 
-  @ApiPropertyOptional({ example: 'John Doe applied to Software Engineer position', description: 'Description' })
+  @ApiPropertyOptional({
+    example: 'John Doe applied to Software Engineer position',
+    description: 'Description',
+  })
   description?: string;
 
   @ApiProperty({ example: '2024-01-15T10:30:00Z', description: 'Timestamp' })
   timestamp: string;
 
-  @ApiPropertyOptional({ example: { company: 'Tech Corp', position: 'Software Engineer' }, description: 'Metadata' })
+  @ApiPropertyOptional({
+    example: { company: 'Tech Corp', position: 'Software Engineer' },
+    description: 'Metadata',
+  })
   metadata?: Record<string, any>;
 }
 

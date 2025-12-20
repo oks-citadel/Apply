@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsEnum, IsOptional, IsArray, IsBoolean, IsNumber, Min, Max, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
+import { IsString, IsEnum, IsOptional, IsArray, IsBoolean, IsNumber, Min, Max, ValidateNested } from 'class-validator';
+
 import { QuestionCategory, AnswerType } from '../entities/answer.entity';
 
 export class CreateAnswerDto {

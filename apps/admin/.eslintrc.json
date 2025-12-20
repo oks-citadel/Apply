@@ -1,7 +1,18 @@
 {
+  "root": true,
   "extends": "next/core-web-vitals",
   "rules": {
     "react/no-unescaped-entities": "off",
     "@next/next/no-img-element": "off"
-  }
+  },
+  "overrides": [
+    {
+      "files": ["**/__tests__/**", "**/*.test.tsx", "**/*.test.ts", "**/*.spec.tsx", "**/*.spec.ts"],
+      "rules": {
+        "react/display-name": "off",
+        "arrow-body-style": "off"
+      }
+    }
+  ],
+  "ignorePatterns": ["node_modules/", ".next/", "out/", "**/*.d.ts"]
 }

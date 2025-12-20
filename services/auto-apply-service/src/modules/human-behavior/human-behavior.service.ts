@@ -1,9 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Page } from 'playwright';
-import { TimingService } from './timing.service';
-import { TypingSimulationService } from './typing-simulation.service';
-import { MouseMovementService } from './mouse-movement.service';
-import { RateLimiterService } from './rate-limiter.service';
+
+
+import type { MouseMovementService } from './mouse-movement.service';
+import type { RateLimiterService } from './rate-limiter.service';
+import type { TimingService } from './timing.service';
+import type { TypingSimulationService } from './typing-simulation.service';
+import type { Page } from 'playwright';
 
 interface FormField {
   selector: string;
@@ -162,7 +164,7 @@ export class HumanBehaviorService {
     config: HumanBehaviorConfig,
   ): Promise<void> {
     const element = await page.$(selector);
-    if (!element) return;
+    if (!element) {return;}
 
     const isChecked = await element.isChecked();
     if (isChecked !== shouldCheck) {
@@ -207,7 +209,7 @@ export class HumanBehaviorService {
    */
   private async scrollToElement(page: Page, selector: string): Promise<void> {
     const element = await page.$(selector);
-    if (!element) return;
+    if (!element) {return;}
 
     const isInViewport = await element.isVisible();
     if (!isInViewport) {
@@ -294,10 +296,10 @@ export class HumanBehaviorService {
    */
   async simulateReading(page: Page, contentSelector: string): Promise<void> {
     const element = await page.$(contentSelector);
-    if (!element) return;
+    if (!element) {return;}
 
     const content = await element.textContent();
-    if (!content) return;
+    if (!content) {return;}
 
     const readingTime = this.timingService.getReadingTime(content.length);
     this.logger.debug(`Simulating reading for ${Math.round(readingTime / 1000)}s`);

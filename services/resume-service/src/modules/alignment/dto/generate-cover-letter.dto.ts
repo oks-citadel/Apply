@@ -1,5 +1,5 @@
-import { IsNotEmpty, IsString, IsUUID, IsOptional, IsEnum } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { IsNotEmpty, IsString, IsUUID, IsOptional, IsEnum } from 'class-validator';
 
 export class GenerateCoverLetterDto {
   @ApiProperty({

@@ -16,13 +16,16 @@ import {
   ApiParam,
   ApiQuery,
 } from '@nestjs/swagger';
-import { ComplianceService } from './compliance.service';
+
 import {
-  ComplianceCheckRequestDto,
   ComplianceCheckResponseDto,
   Platform,
   AuditLogEntryDto,
 } from './dto/compliance.dto';
+
+import type { ComplianceService } from './compliance.service';
+import type {
+  ComplianceCheckRequestDto} from './dto/compliance.dto';
 
 @ApiTags('compliance')
 @ApiBearerAuth()

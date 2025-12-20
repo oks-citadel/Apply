@@ -8,10 +8,13 @@ import {
   HttpException,
   HttpStatus,
 } from '@nestjs/common';
-import { Request, Response } from 'express';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import { ProxyService } from './proxy.service';
+
+
 import { JwtAuthGuard } from '../auth/jwt.guard';
+
+import type { ProxyService } from './proxy.service';
+import type { Request, Response } from 'express';
 
 @ApiTags('proxy')
 @Controller('api')
@@ -124,7 +127,7 @@ export class ProxyController {
     serviceName: string,
     req: Request,
     res: Response,
-    requireAuth: boolean = true,
+    _requireAuth: boolean = true,
   ) {
     try {
       // Extract path after service prefix

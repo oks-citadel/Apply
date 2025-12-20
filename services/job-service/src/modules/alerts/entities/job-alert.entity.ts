@@ -6,6 +6,7 @@ import {
   UpdateDateColumn,
   Index,
 } from 'typeorm';
+
 import { RemoteType, ExperienceLevel, EmploymentType } from '../../jobs/entities/job.entity';
 
 export enum AlertFrequency {

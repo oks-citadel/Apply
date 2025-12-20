@@ -1,7 +1,8 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { AnswerLibraryService } from './answer-library.service';
+
 import { AnswerLibraryController } from './answer-library.controller';
+import { AnswerLibraryService } from './answer-library.service';
 import { Answer } from './entities/answer.entity';
 
 @Module({

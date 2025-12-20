@@ -1,14 +1,13 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import ProfileForm from '../ProfileForm';
 
 // Mock axios
-vi.mock('axios');
+jest.mock('axios');
 
 // Mock useRouter
-const mockPush = vi.fn();
+const mockPush = jest.fn();
 const mockRouter = {
   push: mockPush,
   pathname: '/profile/edit',
@@ -16,7 +15,7 @@ const mockRouter = {
   asPath: '/profile/edit',
 };
 
-vi.mock('next/navigation', () => ({
+jest.mock('next/navigation', () => ({
   useRouter: () => mockRouter,
 }));
 
@@ -41,7 +40,7 @@ describe('ProfileForm', () => {
   });
 
   afterEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   const mockProfile = {
@@ -208,7 +207,7 @@ describe('ProfileForm', () => {
 
   describe('Form Submission', () => {
     it('should submit form with valid data', async () => {
-      const onSubmit = vi.fn();
+      const onSubmit = jest.fn();
       render(<ProfileForm onSubmit={onSubmit} />, { wrapper: createWrapper() });
 
       await user.type(screen.getByLabelText(/full name/i), 'Jane Smith');
@@ -234,7 +233,7 @@ describe('ProfileForm', () => {
     });
 
     it('should handle partial updates', async () => {
-      const onSubmit = vi.fn();
+      const onSubmit = jest.fn();
       render(<ProfileForm initialData={mockProfile} onSubmit={onSubmit} />, { wrapper: createWrapper() });
 
       const fullNameInput = screen.getByDisplayValue('John Doe');
@@ -279,7 +278,7 @@ describe('ProfileForm', () => {
     });
 
     it('should show error message on submission failure', async () => {
-      const onSubmit = vi.fn().mockRejectedValue(new Error('Network error'));
+      const onSubmit = jest.fn().mockRejectedValue(new Error('Network error'));
       render(<ProfileForm onSubmit={onSubmit} />, { wrapper: createWrapper() });
 
       await user.type(screen.getByLabelText(/full name/i), 'John Doe');
@@ -413,7 +412,7 @@ describe('ProfileForm', () => {
 
   describe('Data Persistence', () => {
     it('should save draft to localStorage on change', async () => {
-      const setItemSpy = vi.spyOn(Storage.prototype, 'setItem');
+      const setItemSpy = jest.spyOn(Storage.prototype, 'setItem');
       render(<ProfileForm />, { wrapper: createWrapper() });
 
       await user.type(screen.getByLabelText(/full name/i), 'John Doe');
@@ -437,7 +436,7 @@ describe('ProfileForm', () => {
     });
 
     it('should clear draft from localStorage on successful submission', async () => {
-      const removeItemSpy = vi.spyOn(Storage.prototype, 'removeItem');
+      const removeItemSpy = jest.spyOn(Storage.prototype, 'removeItem');
       render(<ProfileForm />, { wrapper: createWrapper() });
 
       await user.type(screen.getByLabelText(/full name/i), 'John Doe');

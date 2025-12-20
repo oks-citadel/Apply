@@ -1,4 +1,4 @@
-import { AgentType, AgentResponse } from './agent.interface';
+import type { AgentType, AgentResponse } from './agent.interface';
 
 export enum WorkflowType {
   JOB_DISCOVERY = 'job_discovery',

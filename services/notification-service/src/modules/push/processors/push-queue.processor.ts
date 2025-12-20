@@ -71,7 +71,9 @@ export class PushQueueProcessor {
 
   @Process('send-push')
   async handleSendPush(job: Job<PushNotificationJob>) {
-    this.logger.log(`Processing push notification job ${job.id} for ${job.data.userIds.length} users`);
+    this.logger.log(
+      `Processing push notification job ${job.id} for ${job.data.userIds.length} users`,
+    );
 
     try {
       const dto: SendPushNotificationDto = {
@@ -97,14 +99,19 @@ export class PushQueueProcessor {
         results,
       };
     } catch (error) {
-      this.logger.error(`Failed to send push notification: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to send push notification: ${error.message}`,
+        error.stack,
+      );
       throw error;
     }
   }
 
   @Process('send-job-match-push')
   async handleJobMatchPush(job: Job<JobMatchPushJob>) {
-    this.logger.log(`Processing job match push job ${job.id} for user ${job.data.userId}`);
+    this.logger.log(
+      `Processing job match push job ${job.id} for user ${job.data.userId}`,
+    );
 
     try {
       const template = PushNotificationTemplates.jobMatch({
@@ -126,7 +133,10 @@ export class PushQueueProcessor {
 
       return { success: true, results };
     } catch (error) {
-      this.logger.error(`Failed to send job match push: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to send job match push: ${error.message}`,
+        error.stack,
+      );
       throw error;
     }
   }
@@ -153,7 +163,9 @@ export class PushQueueProcessor {
       };
 
       const results = await this.pushService.sendPushNotification(dto);
-      this.logger.log(`Application status push sent to user ${job.data.userId}`);
+      this.logger.log(
+        `Application status push sent to user ${job.data.userId}`,
+      );
 
       return { success: true, results };
     } catch (error) {
@@ -189,7 +201,9 @@ export class PushQueueProcessor {
       };
 
       const results = await this.pushService.sendPushNotification(dto);
-      this.logger.log(`Interview reminder push sent to user ${job.data.userId}`);
+      this.logger.log(
+        `Interview reminder push sent to user ${job.data.userId}`,
+      );
 
       return { success: true, results };
     } catch (error) {
@@ -203,7 +217,9 @@ export class PushQueueProcessor {
 
   @Process('send-message-push')
   async handleMessagePush(job: Job<MessagePushJob>) {
-    this.logger.log(`Processing message push job ${job.id} for user ${job.data.userId}`);
+    this.logger.log(
+      `Processing message push job ${job.id} for user ${job.data.userId}`,
+    );
 
     try {
       const template = PushNotificationTemplates.messageReceived({
@@ -224,7 +240,10 @@ export class PushQueueProcessor {
 
       return { success: true, results };
     } catch (error) {
-      this.logger.error(`Failed to send message push: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to send message push: ${error.message}`,
+        error.stack,
+      );
       throw error;
     }
   }
@@ -262,7 +281,10 @@ export class PushQueueProcessor {
         totalFailed: results.length - successCount,
       };
     } catch (error) {
-      this.logger.error(`Failed to send bulk push: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to send bulk push: ${error.message}`,
+        error.stack,
+      );
       throw error;
     }
   }

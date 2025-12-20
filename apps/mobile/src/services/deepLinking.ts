@@ -306,22 +306,14 @@ export class DeepLinkingService {
    * Navigate to email verification screen
    */
   public buildVerifyEmailLink(token: string): string {
-    return this.buildDeepLink(
-      DeepLinkRoutes.VERIFY_EMAIL,
-      undefined,
-      { token }
-    );
+    return this.buildDeepLink(DeepLinkRoutes.VERIFY_EMAIL, undefined, { token });
   }
 
   /**
    * Navigate to password reset screen
    */
   public buildResetPasswordLink(token: string): string {
-    return this.buildDeepLink(
-      DeepLinkRoutes.RESET_PASSWORD,
-      undefined,
-      { token }
-    );
+    return this.buildDeepLink(DeepLinkRoutes.RESET_PASSWORD, undefined, { token });
   }
 
   /**
@@ -329,10 +321,7 @@ export class DeepLinkingService {
    */
   public getLinkingConfig() {
     const config = {
-      prefixes: [
-        DeepLinkSchemes.app + '://',
-        ...Object.values(UniversalLinks),
-      ],
+      prefixes: [DeepLinkSchemes.app + '://', ...Object.values(UniversalLinks)],
       config: {
         screens: {
           Auth: {
@@ -503,4 +492,3 @@ export const useDeepLinking = () => {
     buildLink,
   };
 };
-

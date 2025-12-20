@@ -1,13 +1,15 @@
+import { HttpModule } from '@nestjs/axios';
+import { BullModule } from '@nestjs/bull';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { BullModule } from '@nestjs/bull';
-import { HttpModule } from '@nestjs/axios';
-import { TerminusModule } from '@nestjs/terminus';
 import { APP_INTERCEPTOR } from '@nestjs/core';
-import { LoggingModule, LoggingInterceptor } from '@applyforus/logging';
-import { OrchestratorModule } from './orchestrator/orchestrator.module';
+import { TerminusModule } from '@nestjs/terminus';
+
+import { LoggingModule, LoggingInterceptor, LogLevel } from '@applyforus/logging';
+
 import { ComplianceModule } from './agents/compliance/compliance.module';
 import { HealthModule } from './health/health.module';
+import { OrchestratorModule } from './orchestrator/orchestrator.module';
 
 @Module({
   imports: [
@@ -20,14 +22,24 @@ import { HealthModule } from './health/health.module';
     // Logging module
     LoggingModule.forRootAsync({
       isGlobal: true,
-      useFactory: (configService: ConfigService) => ({
-        serviceName: 'orchestrator-service',
-        environment: configService.get<string>('NODE_ENV', 'development'),
-        version: configService.get<string>('SERVICE_VERSION', '1.0.0'),
-        appInsightsKey: configService.get<string>('APPLICATIONINSIGHTS_INSTRUMENTATION_KEY'),
-        enableConsole: true,
-        logLevel: configService.get<string>('LOG_LEVEL', 'info') as any,
-      }),
+      useFactory: (configService: ConfigService) => {
+        const logLevelStr = configService.get<string>('LOG_LEVEL', 'info').toLowerCase();
+        const logLevelMap: Record<string, LogLevel> = {
+          error: LogLevel.ERROR,
+          warn: LogLevel.WARN,
+          debug: LogLevel.DEBUG,
+          trace: LogLevel.TRACE,
+          info: LogLevel.INFO,
+        };
+        return {
+          serviceName: 'orchestrator-service',
+          environment: configService.get<string>('NODE_ENV', 'development'),
+          version: configService.get<string>('SERVICE_VERSION', '1.0.0'),
+          appInsightsKey: configService.get<string>('APPLICATIONINSIGHTS_INSTRUMENTATION_KEY'),
+          enableConsole: true,
+          logLevel: logLevelMap[logLevelStr] ?? LogLevel.INFO,
+        };
+      },
       inject: [ConfigService],
     }),
 

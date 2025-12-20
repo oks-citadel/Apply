@@ -6,25 +6,37 @@ import { TextEncoder, TextDecoder } from 'util';
 global.TextEncoder = TextEncoder;
 global.TextDecoder = TextDecoder;
 
-// Polyfill TransformStream for Playwright-related imports
-if (typeof global.TransformStream === 'undefined') {
-  global.TransformStream = class TransformStream {
-    constructor() {
-      this.readable = {};
-      this.writable = {};
-    }
-  };
+// Polyfill ReadableStream BEFORE undici (undici requires it)
+if (typeof global.ReadableStream === 'undefined') {
+  const { ReadableStream } = require('stream/web');
+  global.ReadableStream = ReadableStream;
 }
 
-// Polyfill ReadableStream if needed
-if (typeof global.ReadableStream === 'undefined') {
-  global.ReadableStream = class ReadableStream {
-    constructor() {}
-    getReader() {
-      return { read: async () => ({ done: true, value: undefined }) };
-    }
-  };
+// Polyfill TransformStream for Playwright-related imports
+if (typeof global.TransformStream === 'undefined') {
+  const { TransformStream } = require('stream/web');
+  global.TransformStream = TransformStream;
 }
+
+// Polyfill WritableStream for undici
+if (typeof global.WritableStream === 'undefined') {
+  const { WritableStream } = require('stream/web');
+  global.WritableStream = WritableStream;
+}
+
+// Polyfill MessageChannel and MessagePort for undici
+if (typeof global.MessageChannel === 'undefined') {
+  const { MessageChannel, MessagePort } = require('worker_threads');
+  global.MessageChannel = MessageChannel;
+  global.MessagePort = MessagePort;
+}
+
+// Polyfill fetch API globals for MSW
+const { Response, Request, Headers, fetch } = require('undici');
+global.Response = Response;
+global.Request = Request;
+global.Headers = Headers;
+global.fetch = fetch;
 
 // Mock axios
 const mockAxiosInstance = {

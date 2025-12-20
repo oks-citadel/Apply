@@ -8,8 +8,9 @@ import {
   OneToOne,
   JoinColumn,
 } from 'typeorm';
-import { LicenseType } from '../enums/tenant-type.enum';
+
 import { Tenant } from './tenant.entity';
+import { LicenseType } from '../enums/tenant-type.enum';
 
 @Entity('tenant_licenses')
 @Index(['tenant_id'], { unique: true })

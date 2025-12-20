@@ -29,9 +29,7 @@ const TABS: Array<{ key: ApplicationStatus | 'all'; label: string }> = [
   { key: 'rejected', label: 'Rejected' },
 ];
 
-export const ApplicationsScreen: React.FC<ApplicationsScreenProps> = ({
-  navigation,
-}) => {
+export const ApplicationsScreen: React.FC<ApplicationsScreenProps> = ({ navigation }) => {
   const [selectedTab, setSelectedTab] = useState<ApplicationStatus | 'all'>('all');
   const [page, setPage] = useState(1);
   const queryClient = useQueryClient();
@@ -181,7 +179,9 @@ export const ApplicationsScreen: React.FC<ApplicationsScreenProps> = ({
   );
 
   const renderFooter = () => {
-    if (!isFetching) return null;
+    if (!isFetching) {
+      return null;
+    }
     return <LoadingSpinner style={styles.loadingFooter} />;
   };
 
@@ -196,20 +196,14 @@ export const ApplicationsScreen: React.FC<ApplicationsScreenProps> = ({
           keyExtractor={(item) => item.key}
           renderItem={({ item }) => (
             <TouchableOpacity
-              style={[
-                styles.tab,
-                selectedTab === item.key && styles.tabActive,
-              ]}
+              style={[styles.tab, selectedTab === item.key && styles.tabActive]}
               onPress={() => {
                 setSelectedTab(item.key);
                 setPage(1);
               }}
             >
               <Text
-                style={[
-                  styles.tabText,
-                  selectedTab === item.key && styles.tabTextActive,
-                ]}
+                style={[styles.tabText, selectedTab === item.key && styles.tabTextActive]}
               >
                 {item.label}
               </Text>

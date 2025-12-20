@@ -1,9 +1,10 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+
+import { PlaybookApplication } from './entities/playbook-application.entity';
+import { Playbook } from './entities/playbook.entity';
 import { PlaybooksController } from './playbooks.controller';
 import { PlaybooksService } from './playbooks.service';
-import { Playbook } from './entities/playbook.entity';
-import { PlaybookApplication } from './entities/playbook-application.entity';
 import { Job } from '../jobs/entities/job.entity';
 
 @Module({

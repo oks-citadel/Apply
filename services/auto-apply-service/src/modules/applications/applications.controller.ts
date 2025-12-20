@@ -19,12 +19,14 @@ import {
   ApiParam,
   ApiQuery,
 } from '@nestjs/swagger';
-import { ApplicationsService } from './applications.service';
-import { CreateApplicationDto } from './dto/create-application.dto';
-import { UpdateApplicationDto, UpdateStatusDto } from './dto/update-application.dto';
-import { QueryApplicationDto } from './dto/query-application.dto';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+
 import { User } from '../../common/decorators/user.decorator';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { ApplicationsService } from './applications.service';
+
+import type { CreateApplicationDto } from './dto/create-application.dto';
+import type { QueryApplicationDto } from './dto/query-application.dto';
+import type { UpdateApplicationDto, UpdateStatusDto } from './dto/update-application.dto';
 
 @ApiTags('Applications')
 @ApiBearerAuth('JWT-auth')

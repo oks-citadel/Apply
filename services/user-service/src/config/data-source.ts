@@ -1,23 +1,26 @@
-import { DataSource, DataSourceOptions } from 'typeorm';
 import { config } from 'dotenv';
-import { Profile } from '../modules/profile/entities/profile.entity';
-import { WorkExperience } from '../modules/career/entities/work-experience.entity';
+import { DataSource } from 'typeorm';
+
 import { Education } from '../modules/career/entities/education.entity';
-import { Skill } from '../modules/skills/entities/skill.entity';
+import { WorkExperience } from '../modules/career/entities/work-experience.entity';
 import { Preference } from '../modules/preferences/entities/preference.entity';
-import { Subscription } from '../modules/subscription/entities/subscription.entity';
 import { Certification } from '../modules/profile/entities/certification.entity';
-import { RecruiterProfile } from '../modules/recruiter/entities/recruiter-profile.entity';
+import { Profile } from '../modules/profile/entities/profile.entity';
+import { PlacementOutcome } from '../modules/recruiter/entities/placement-outcome.entity';
 import { RecruiterAssignment } from '../modules/recruiter/entities/recruiter-assignment.entity';
+import { RecruiterProfile } from '../modules/recruiter/entities/recruiter-profile.entity';
 import { RecruiterRevenue } from '../modules/recruiter/entities/recruiter-revenue.entity';
 import { RecruiterReview } from '../modules/recruiter/entities/recruiter-review.entity';
-import { PlacementOutcome } from '../modules/recruiter/entities/placement-outcome.entity';
-import { Tenant } from '../modules/tenant/entities/tenant.entity';
-import { TenantUser } from '../modules/tenant/entities/tenant-user.entity';
-import { TenantDepartment } from '../modules/tenant/entities/tenant-department.entity';
-import { TenantLicense } from '../modules/tenant/entities/tenant-license.entity';
+import { Skill } from '../modules/skills/entities/skill.entity';
+import { Subscription } from '../modules/subscription/entities/subscription.entity';
 import { Cohort } from '../modules/tenant/entities/cohort.entity';
 import { PlacementTracking } from '../modules/tenant/entities/placement-tracking.entity';
+import { TenantDepartment } from '../modules/tenant/entities/tenant-department.entity';
+import { TenantLicense } from '../modules/tenant/entities/tenant-license.entity';
+import { TenantUser } from '../modules/tenant/entities/tenant-user.entity';
+import { Tenant } from '../modules/tenant/entities/tenant.entity';
+
+import type { DataSourceOptions } from 'typeorm';
 
 config();
 

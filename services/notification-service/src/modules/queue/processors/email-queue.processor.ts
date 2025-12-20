@@ -71,7 +71,12 @@ export class EmailQueueProcessor {
       const { to, subject, template, templateData, body, isHtml } = job.data;
 
       if (template && templateData) {
-        await this.emailService.sendTemplatedEmail(to, subject, template, templateData);
+        await this.emailService.sendTemplatedEmail(
+          to,
+          subject,
+          template,
+          templateData,
+        );
       } else if (body) {
         await this.emailService.sendEmail(to, subject, body, isHtml);
       } else {
@@ -88,7 +93,9 @@ export class EmailQueueProcessor {
 
   @Process('send-welcome-email')
   async handleWelcomeEmail(job: Job<WelcomeEmailJob>) {
-    this.logger.log(`Processing welcome email job ${job.id} for ${job.data.email}`);
+    this.logger.log(
+      `Processing welcome email job ${job.id} for ${job.data.email}`,
+    );
 
     try {
       const { email, name } = job.data;
@@ -97,30 +104,44 @@ export class EmailQueueProcessor {
       this.logger.log(`Welcome email sent successfully to ${email}`);
       return { success: true, recipient: email };
     } catch (error) {
-      this.logger.error(`Failed to send welcome email: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to send welcome email: ${error.message}`,
+        error.stack,
+      );
       throw error;
     }
   }
 
   @Process('send-verification-email')
   async handleVerificationEmail(job: Job<VerificationEmailJob>) {
-    this.logger.log(`Processing verification email job ${job.id} for ${job.data.email}`);
+    this.logger.log(
+      `Processing verification email job ${job.id} for ${job.data.email}`,
+    );
 
     try {
       const { email, name, verificationToken } = job.data;
-      await this.emailService.sendVerificationEmail(email, name, verificationToken);
+      await this.emailService.sendVerificationEmail(
+        email,
+        name,
+        verificationToken,
+      );
 
       this.logger.log(`Verification email sent successfully to ${email}`);
       return { success: true, recipient: email };
     } catch (error) {
-      this.logger.error(`Failed to send verification email: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to send verification email: ${error.message}`,
+        error.stack,
+      );
       throw error;
     }
   }
 
   @Process('send-password-reset-email')
   async handlePasswordResetEmail(job: Job<PasswordResetEmailJob>) {
-    this.logger.log(`Processing password reset email job ${job.id} for ${job.data.email}`);
+    this.logger.log(
+      `Processing password reset email job ${job.id} for ${job.data.email}`,
+    );
 
     try {
       const { email, name, resetToken } = job.data;
@@ -129,14 +150,19 @@ export class EmailQueueProcessor {
       this.logger.log(`Password reset email sent successfully to ${email}`);
       return { success: true, recipient: email };
     } catch (error) {
-      this.logger.error(`Failed to send password reset email: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to send password reset email: ${error.message}`,
+        error.stack,
+      );
       throw error;
     }
   }
 
   @Process('send-application-status-email')
   async handleApplicationStatusEmail(job: Job<ApplicationStatusEmailJob>) {
-    this.logger.log(`Processing application status email job ${job.id} for ${job.data.email}`);
+    this.logger.log(
+      `Processing application status email job ${job.id} for ${job.data.email}`,
+    );
 
     try {
       const { email, name, jobTitle, companyName, status, message } = job.data;
@@ -152,14 +178,19 @@ export class EmailQueueProcessor {
       this.logger.log(`Application status email sent successfully to ${email}`);
       return { success: true, recipient: email };
     } catch (error) {
-      this.logger.error(`Failed to send application status email: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to send application status email: ${error.message}`,
+        error.stack,
+      );
       throw error;
     }
   }
 
   @Process('send-weekly-digest-email')
   async handleWeeklyDigestEmail(job: Job<WeeklyDigestEmailJob>) {
-    this.logger.log(`Processing weekly digest email job ${job.id} for ${job.data.email}`);
+    this.logger.log(
+      `Processing weekly digest email job ${job.id} for ${job.data.email}`,
+    );
 
     try {
       const { email, name, digestData } = job.data;
@@ -168,7 +199,10 @@ export class EmailQueueProcessor {
       this.logger.log(`Weekly digest email sent successfully to ${email}`);
       return { success: true, recipient: email };
     } catch (error) {
-      this.logger.error(`Failed to send weekly digest email: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to send weekly digest email: ${error.message}`,
+        error.stack,
+      );
       throw error;
     }
   }

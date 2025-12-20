@@ -1,4 +1,6 @@
-import { MigrationInterface, QueryRunner, TableColumn, Table, TableIndex, TableForeignKey } from 'typeorm';
+import { TableColumn, Table, TableIndex, TableForeignKey } from 'typeorm';
+
+import type { MigrationInterface, QueryRunner} from 'typeorm';
 
 export class AddSubscriptionAndAITracking1733280000000 implements MigrationInterface {
   name = 'AddSubscriptionAndAITracking1733280000000';

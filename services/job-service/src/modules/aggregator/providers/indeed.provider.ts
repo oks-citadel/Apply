@@ -1,8 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import axios, { AxiosInstance } from 'axios';
-import { JobProvider, RawJobData, JobProviderConfig } from '../interfaces/job-provider.interface';
-import { Job, JobSource, RemoteType, ExperienceLevel, EmploymentType } from '../../jobs/entities/job.entity';
+import axios from 'axios';
+
+import { JobSource, RemoteType, ExperienceLevel, EmploymentType } from '../../jobs/entities/job.entity';
+
+import type { Job} from '../../jobs/entities/job.entity';
+import type { JobProvider, RawJobData, JobProviderConfig } from '../interfaces/job-provider.interface';
+import type { ConfigService } from '@nestjs/config';
+import type { AxiosInstance } from 'axios';
 
 @Injectable()
 export class IndeedProvider implements JobProvider {
@@ -115,6 +119,7 @@ export class IndeedProvider implements JobProvider {
       salary_min: this.parseSalary(job.salary_min || job.salary?.min),
       salary_max: this.parseSalary(job.salary_max || job.salary?.max),
       salary_currency: 'USD',
+      salary_period: 'yearly',
       metadata: {
         source_api: 'rapidapi',
         indeed_apply: job.indeed_apply === true,
@@ -125,7 +130,7 @@ export class IndeedProvider implements JobProvider {
   }
 
   private parseJobListings(data: any): RawJobData[] {
-    if (!data?.results) return [];
+    if (!data?.results) {return [];}
 
     return data.results.map((job: any) => ({
       external_id: job.jobkey || job.id || '',
@@ -143,6 +148,7 @@ export class IndeedProvider implements JobProvider {
       salary_min: this.parseSalary(job.salary_min || job.salary?.min),
       salary_max: this.parseSalary(job.salary_max || job.salary?.max),
       salary_currency: 'USD',
+      salary_period: 'yearly',
       metadata: {
         indeed_job_key: job.jobkey,
         sponsored: job.sponsored,
@@ -198,6 +204,7 @@ export class IndeedProvider implements JobProvider {
       salary_min: rawJob.salary_min,
       salary_max: rawJob.salary_max,
       salary_currency: rawJob.salary_currency || 'USD',
+      salary_period: rawJob.salary_period || 'yearly',
       description: rawJob.description,
       requirements: rawJob.requirements || [],
       benefits: rawJob.benefits || [],
@@ -263,11 +270,11 @@ export class IndeedProvider implements JobProvider {
 
   private mapEmploymentType(type: string): string {
     const normalized = (type || '').toLowerCase();
-    if (normalized.includes('full')) return 'full_time';
-    if (normalized.includes('part')) return 'part_time';
-    if (normalized.includes('contract')) return 'contract';
-    if (normalized.includes('temp')) return 'temporary';
-    if (normalized.includes('intern')) return 'internship';
+    if (normalized.includes('full')) {return 'full_time';}
+    if (normalized.includes('part')) {return 'part_time';}
+    if (normalized.includes('contract')) {return 'contract';}
+    if (normalized.includes('temp')) {return 'temporary';}
+    if (normalized.includes('intern')) {return 'internship';}
     return 'full_time';
   }
 
@@ -284,11 +291,11 @@ export class IndeedProvider implements JobProvider {
 
   private mapExperienceLevel(level: string): string {
     const normalized = (level || '').toLowerCase();
-    if (normalized.includes('entry') || normalized.includes('junior')) return 'entry';
-    if (normalized.includes('mid')) return 'mid';
-    if (normalized.includes('senior') || normalized.includes('sr')) return 'senior';
-    if (normalized.includes('lead') || normalized.includes('principal')) return 'lead';
-    if (normalized.includes('executive') || normalized.includes('director')) return 'executive';
+    if (normalized.includes('entry') || normalized.includes('junior')) {return 'entry';}
+    if (normalized.includes('mid')) {return 'mid';}
+    if (normalized.includes('senior') || normalized.includes('sr')) {return 'senior';}
+    if (normalized.includes('lead') || normalized.includes('principal')) {return 'lead';}
+    if (normalized.includes('executive') || normalized.includes('director')) {return 'executive';}
     return 'mid';
   }
 
@@ -305,8 +312,8 @@ export class IndeedProvider implements JobProvider {
   }
 
   private parseSalary(value: any): number | null {
-    if (!value) return null;
-    if (typeof value === 'number') return value;
+    if (!value) {return null;}
+    if (typeof value === 'number') {return value;}
 
     // Parse string salary like "$100,000" or "100k"
     const str = String(value).replace(/[$,]/g, '');
@@ -318,7 +325,7 @@ export class IndeedProvider implements JobProvider {
   }
 
   private extractRequirements(description: string): string[] {
-    if (!description) return [];
+    if (!description) {return [];}
 
     const requirements: string[] = [];
     const lines = description.split('\n');
@@ -342,7 +349,7 @@ export class IndeedProvider implements JobProvider {
   }
 
   private extractBenefits(description: string): string[] {
-    if (!description) return [];
+    if (!description) {return [];}
 
     const benefits: string[] = [];
     const lines = description.split('\n');
@@ -363,7 +370,7 @@ export class IndeedProvider implements JobProvider {
   }
 
   private extractSkills(description: string): string[] {
-    if (!description) return [];
+    if (!description) {return [];}
 
     const commonSkills = [
       'javascript', 'typescript', 'python', 'java', 'c#', 'c++', 'go', 'rust', 'ruby',

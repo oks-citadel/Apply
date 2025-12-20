@@ -22,7 +22,9 @@ import { HealthModule } from './health/health.module';
         serviceName: 'notification-service',
         environment: configService.get<string>('NODE_ENV', 'development'),
         version: configService.get<string>('SERVICE_VERSION', '1.0.0'),
-        appInsightsKey: configService.get<string>('APPLICATIONINSIGHTS_INSTRUMENTATION_KEY'),
+        appInsightsKey: configService.get<string>(
+          'APPLICATIONINSIGHTS_INSTRUMENTATION_KEY',
+        ),
         enableConsole: true,
         logLevel: configService.get<string>('LOG_LEVEL', 'info') as any,
       }),
@@ -53,17 +55,21 @@ import { HealthModule } from './health/health.module';
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
         // Migrations configuration - run on startup in production
         migrations: [join(__dirname, './migrations/*{.ts,.js}')],
-        migrationsRun: configService.get('NODE_ENV') === 'production' ||
+        migrationsRun:
+          configService.get('NODE_ENV') === 'production' ||
           configService.get('RUN_MIGRATIONS') === 'true',
         migrationsTableName: 'typeorm_migrations',
         // SECURITY: Never use synchronize in production - it can modify schema unexpectedly
         // Always use migrations instead
         synchronize: false,
         logging: configService.get('NODE_ENV') === 'development',
-        ssl: configService.get('NODE_ENV') === 'production' ? {
-          rejectUnauthorized: true,
-          ca: configService.get('DB_SSL_CA_CERT'),
-        } : false,
+        ssl:
+          configService.get('NODE_ENV') === 'production'
+            ? {
+                rejectUnauthorized: true,
+                ca: configService.get('DB_SSL_CA_CERT'),
+              }
+            : false,
         extra: {
           max: 20,
           min: 5,

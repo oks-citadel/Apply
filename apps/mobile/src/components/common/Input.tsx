@@ -81,13 +81,8 @@ export const Input: React.FC<InputProps> = ({
         />
 
         {secureTextEntry && (
-          <TouchableOpacity
-            style={styles.rightIcon}
-            onPress={togglePasswordVisibility}
-          >
-            <Text style={styles.eyeIcon}>
-              {isPasswordVisible ? '👁️' : '👁️‍🗨️'}
-            </Text>
+          <TouchableOpacity style={styles.rightIcon} onPress={togglePasswordVisibility}>
+            <Text style={styles.eyeIcon}>{isPasswordVisible ? '👁️' : '👁️‍🗨️'}</Text>
           </TouchableOpacity>
         )}
 

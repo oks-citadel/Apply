@@ -1,8 +1,10 @@
 #!/usr/bin/env ts-node
-import { DataSource } from 'typeorm';
+import * as path from 'path';
+
 import { Logger } from '@nestjs/common';
 import { config } from 'dotenv';
-import * as path from 'path';
+import { DataSource } from 'typeorm';
+
 
 // Load environment variables
 config();

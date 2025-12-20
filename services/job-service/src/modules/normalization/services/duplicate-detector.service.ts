@@ -1,9 +1,13 @@
+import * as crypto from 'crypto';
+
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+
+
 import { Job } from '../../jobs/entities/job.entity';
 import { NormalizedJob } from '../entities/normalized-job.entity';
-import * as crypto from 'crypto';
+
+import type { Repository } from 'typeorm';
 
 interface DuplicateDetectionResult {
   is_duplicate: boolean;
@@ -252,8 +256,8 @@ export class DuplicateDetectorService {
    * Calculate string similarity using Levenshtein distance
    */
   private calculateStringSimilarity(str1: string, str2: string): number {
-    if (str1 === str2) return 1;
-    if (!str1 || !str2) return 0;
+    if (str1 === str2) {return 1;}
+    if (!str1 || !str2) {return 0;}
 
     const len1 = str1.length;
     const len2 = str2.length;
@@ -262,11 +266,11 @@ export class DuplicateDetectorService {
     const minLen = Math.min(len1, len2);
     const maxLen = Math.max(len1, len2);
 
-    if (maxLen === 0) return 1;
+    if (maxLen === 0) {return 1;}
 
     let matches = 0;
     for (let i = 0; i < minLen; i++) {
-      if (str1[i] === str2[i]) matches++;
+      if (str1[i] === str2[i]) {matches++;}
     }
 
     return matches / maxLen;
@@ -280,7 +284,7 @@ export class DuplicateDetectorService {
     const phrases1 = this.extractKeyPhrases(desc1);
     const phrases2 = this.extractKeyPhrases(desc2);
 
-    if (phrases1.length === 0 || phrases2.length === 0) return 0;
+    if (phrases1.length === 0 || phrases2.length === 0) {return 0;}
 
     // Calculate Jaccard similarity
     const intersection = phrases1.filter((p) => phrases2.includes(p)).length;
@@ -323,7 +327,7 @@ export class DuplicateDetectorService {
     const overlapStart = Math.max(range1Min, range2Min);
     const overlapEnd = Math.min(range1Max, range2Max);
 
-    if (overlapStart > overlapEnd) return 0; // No overlap
+    if (overlapStart > overlapEnd) {return 0;} // No overlap
 
     const overlap = overlapEnd - overlapStart;
     const range1 = range1Max - range1Min || 1;
@@ -394,7 +398,7 @@ export class DuplicateDetectorService {
    * Normalize text for comparison
    */
   private normalizeText(text: string): string {
-    if (!text) return '';
+    if (!text) {return '';}
 
     return text
       .toLowerCase()

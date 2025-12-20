@@ -1,8 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { EmployerProfile, EmployerVerificationStatus, EmployerRiskLevel } from '../entities/employer-profile.entity';
+
+
 import { Company } from '../../companies/entities/company.entity';
+import { EmployerProfile, EmployerVerificationStatus, EmployerRiskLevel } from '../entities/employer-profile.entity';
+
+import type { Repository } from 'typeorm';
 
 interface CredibilityUpdateResult {
   credibility_score: number;
@@ -58,7 +61,7 @@ export class EmployerCredibilityService {
         review_quality: reviewQuality,
         job_history: jobHistory,
         response_rate: responseRate,
-        transparency: transparency,
+        transparency,
       };
 
       // Calculate overall credibility score
@@ -95,14 +98,14 @@ export class EmployerCredibilityService {
    * Calculate company age score (0-20 points)
    */
   private calculateCompanyAgeScore(profile: EmployerProfile): number {
-    if (!profile.company_age_years) return 5; // Neutral score for unknown age
+    if (!profile.company_age_years) {return 5;} // Neutral score for unknown age
 
     const age = profile.company_age_years;
 
-    if (age >= 10) return 20; // Well-established
-    if (age >= 5) return 15; // Established
-    if (age >= 3) return 12; // Growing
-    if (age >= 1) return 8; // Startup
+    if (age >= 10) {return 20;} // Well-established
+    if (age >= 5) {return 15;} // Established
+    if (age >= 3) {return 12;} // Growing
+    if (age >= 1) {return 8;} // Startup
     return 5; // Very new
   }
 
@@ -119,22 +122,22 @@ export class EmployerCredibilityService {
       // Domain age bonus
       if (profile.domain_registered_date) {
         const domainAge = this.getYearsSince(profile.domain_registered_date);
-        if (domainAge >= 5) score += 2;
+        if (domainAge >= 5) {score += 2;}
       }
     }
 
     // Active website (2 points)
-    if (profile.has_active_website) score += 2;
+    if (profile.has_active_website) {score += 2;}
 
     // LinkedIn presence (3 points)
     if (profile.has_linkedin_page) {
       score += 2;
-      if (profile.linkedin_followers && profile.linkedin_followers > 1000) score += 1;
+      if (profile.linkedin_followers && profile.linkedin_followers > 1000) {score += 1;}
     }
 
     // Review site presence (3 points)
-    if (profile.has_glassdoor_profile) score += 1.5;
-    if (profile.has_indeed_profile) score += 1.5;
+    if (profile.has_glassdoor_profile) {score += 1.5;}
+    if (profile.has_indeed_profile) {score += 1.5;}
 
     return Math.min(score, 15);
   }
@@ -148,20 +151,20 @@ export class EmployerCredibilityService {
     // Glassdoor reviews
     if (profile.glassdoor_review_count > 0) {
       // Review count (5 points)
-      if (profile.glassdoor_review_count >= 100) score += 5;
-      else if (profile.glassdoor_review_count >= 50) score += 4;
-      else if (profile.glassdoor_review_count >= 20) score += 3;
-      else if (profile.glassdoor_review_count >= 10) score += 2;
-      else score += 1;
+      if (profile.glassdoor_review_count >= 100) {score += 5;}
+      else if (profile.glassdoor_review_count >= 50) {score += 4;}
+      else if (profile.glassdoor_review_count >= 20) {score += 3;}
+      else if (profile.glassdoor_review_count >= 10) {score += 2;}
+      else {score += 1;}
 
       // Rating quality (10 points)
       if (profile.glassdoor_rating) {
         const rating = Number(profile.glassdoor_rating);
-        if (rating >= 4.5) score += 10;
-        else if (rating >= 4.0) score += 8;
-        else if (rating >= 3.5) score += 6;
-        else if (rating >= 3.0) score += 4;
-        else if (rating >= 2.5) score += 2;
+        if (rating >= 4.5) {score += 10;}
+        else if (rating >= 4.0) {score += 8;}
+        else if (rating >= 3.5) {score += 6;}
+        else if (rating >= 3.0) {score += 4;}
+        else if (rating >= 2.5) {score += 2;}
       }
 
       // CEO approval (5 points)
@@ -192,19 +195,19 @@ export class EmployerCredibilityService {
     let score = 0;
 
     // Total jobs posted (5 points)
-    if (profile.total_jobs_posted >= 50) score += 5;
-    else if (profile.total_jobs_posted >= 20) score += 4;
-    else if (profile.total_jobs_posted >= 10) score += 3;
-    else if (profile.total_jobs_posted >= 5) score += 2;
-    else if (profile.total_jobs_posted > 0) score += 1;
+    if (profile.total_jobs_posted >= 50) {score += 5;}
+    else if (profile.total_jobs_posted >= 20) {score += 4;}
+    else if (profile.total_jobs_posted >= 10) {score += 3;}
+    else if (profile.total_jobs_posted >= 5) {score += 2;}
+    else if (profile.total_jobs_posted > 0) {score += 1;}
 
     // Job fill rate (8 points)
     if (profile.job_fill_rate) {
       const fillRate = Number(profile.job_fill_rate);
-      if (fillRate >= 0.7) score += 8;
-      else if (fillRate >= 0.5) score += 6;
-      else if (fillRate >= 0.3) score += 4;
-      else score += 2;
+      if (fillRate >= 0.7) {score += 8;}
+      else if (fillRate >= 0.5) {score += 6;}
+      else if (fillRate >= 0.3) {score += 4;}
+      else {score += 2;}
     }
 
     // Posting consistency (7 points)
@@ -213,13 +216,13 @@ export class EmployerCredibilityService {
       const recentActivity = this.getMonthsSince(profile.last_job_posted_at);
 
       // Long posting history
-      if (postingHistory >= 12) score += 4;
-      else if (postingHistory >= 6) score += 2;
+      if (postingHistory >= 12) {score += 4;}
+      else if (postingHistory >= 6) {score += 2;}
 
       // Recent activity
-      if (recentActivity <= 1) score += 3;
-      else if (recentActivity <= 3) score += 2;
-      else if (recentActivity <= 6) score += 1;
+      if (recentActivity <= 1) {score += 3;}
+      else if (recentActivity <= 3) {score += 2;}
+      else if (recentActivity <= 6) {score += 1;}
     }
 
     return Math.min(score, 20);
@@ -240,11 +243,11 @@ export class EmployerCredibilityService {
     // Response time (5 points)
     if (profile.avg_response_time_days) {
       const responseTime = profile.avg_response_time_days;
-      if (responseTime <= 3) score += 5;
-      else if (responseTime <= 7) score += 4;
-      else if (responseTime <= 14) score += 3;
-      else if (responseTime <= 30) score += 2;
-      else score += 1;
+      if (responseTime <= 3) {score += 5;}
+      else if (responseTime <= 7) {score += 4;}
+      else if (responseTime <= 14) {score += 3;}
+      else if (responseTime <= 30) {score += 2;}
+      else {score += 1;}
     }
 
     // Penalize for ghosting
@@ -268,10 +271,10 @@ export class EmployerCredibilityService {
     }
 
     // Detailed descriptions (3 points)
-    if (profile.posts_detailed_descriptions) score += 3;
+    if (profile.posts_detailed_descriptions) {score += 3;}
 
     // Responsiveness (3 points)
-    if (profile.responds_to_inquiries) score += 3;
+    if (profile.responds_to_inquiries) {score += 3;}
 
     return Math.min(score, 10);
   }
@@ -356,7 +359,7 @@ export class EmployerCredibilityService {
 
     const profile = this.employerProfileRepository.create({
       company_id: companyId,
-      company: company,
+      company,
       credibility_score: 50, // Default neutral score
       verification_status: EmployerVerificationStatus.UNVERIFIED,
       risk_level: EmployerRiskLevel.LOW,

@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Job } from '../../jobs/entities/job.entity';
+
+import type { Job } from '../../jobs/entities/job.entity';
 
 interface QualityScoreResult {
   quality_score: number; // 0-100
@@ -73,11 +74,11 @@ export class QualityScorerService {
     const description = job.description || '';
 
     // Must be at least 300 characters
-    if (description.length < 300) return false;
+    if (description.length < 300) {return false;}
 
     // Should have multiple paragraphs or sections
     const paragraphs = description.split(/\n\n|\n/).filter((p) => p.trim().length > 50);
-    if (paragraphs.length < 3) return false;
+    if (paragraphs.length < 3) {return false;}
 
     return true;
   }
@@ -102,10 +103,10 @@ export class QualityScorerService {
   private hasCompanyInfo(job: Job): boolean {
     let score = 0;
 
-    if (job.company_id) score += 40;
-    if (job.company_name) score += 20;
-    if (job.company_logo_url) score += 20;
-    if (job.company?.description) score += 20;
+    if (job.company_id) {score += 40;}
+    if (job.company_name) {score += 20;}
+    if (job.company_logo_url) {score += 20;}
+    if (job.company?.description) {score += 20;}
 
     return score >= 60;
   }
@@ -114,7 +115,7 @@ export class QualityScorerService {
    * Calculate readability score for description
    */
   private calculateReadability(description: string): number {
-    if (!description) return 0;
+    if (!description) {return 0;}
 
     let score = 50; // Base score
 
@@ -212,16 +213,16 @@ export class QualityScorerService {
     let score = 0;
 
     // Salary information (15 points)
-    if (signals.has_salary) score += 15;
+    if (signals.has_salary) {score += 15;}
 
     // Detailed description (20 points)
-    if (signals.has_detailed_description) score += 20;
+    if (signals.has_detailed_description) {score += 20;}
 
     // Clear requirements (15 points)
-    if (signals.has_clear_requirements) score += 15;
+    if (signals.has_clear_requirements) {score += 15;}
 
     // Company information (15 points)
-    if (signals.has_company_info) score += 15;
+    if (signals.has_company_info) {score += 15;}
 
     // Description length (10 points)
     if (signals.description_length > 500) {

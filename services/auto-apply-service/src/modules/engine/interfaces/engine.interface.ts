@@ -1,4 +1,4 @@
-import { ApplicationStatusEnum, QueueStatusEnum } from '../dto/application-status.dto';
+import type { ApplicationStatusEnum, QueueStatusEnum } from '../dto/application-status.dto';
 
 export interface JobData {
   id: string;

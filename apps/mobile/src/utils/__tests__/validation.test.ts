@@ -1,9 +1,4 @@
-import {
-  emailRegex,
-  validators,
-  sanitizeInput,
-  validateForm,
-} from '../validation';
+import { emailRegex, validators, sanitizeInput, validateForm } from '../validation';
 
 describe('validation utilities', () => {
   describe('emailRegex', () => {
@@ -61,11 +56,15 @@ describe('validation utilities', () => {
     });
 
     it('returns error when confirmPassword is empty', () => {
-      expect(validators.confirmPassword('password123', '')).toBe('Please confirm your password');
+      expect(validators.confirmPassword('password123', '')).toBe(
+        'Please confirm your password'
+      );
     });
 
     it('returns error when passwords do not match', () => {
-      expect(validators.confirmPassword('password123', 'password456')).toBe('Passwords do not match');
+      expect(validators.confirmPassword('password123', 'password456')).toBe(
+        'Passwords do not match'
+      );
     });
   });
 
@@ -90,7 +89,9 @@ describe('validation utilities', () => {
     });
 
     it('returns error for short value', () => {
-      expect(validators.minLength('hi', 5, 'Field')).toBe('Field must be at least 5 characters');
+      expect(validators.minLength('hi', 5, 'Field')).toBe(
+        'Field must be at least 5 characters'
+      );
     });
   });
 
@@ -101,7 +102,9 @@ describe('validation utilities', () => {
     });
 
     it('returns error for long value', () => {
-      expect(validators.maxLength('hello world', 5, 'Field')).toBe('Field must be at most 5 characters');
+      expect(validators.maxLength('hello world', 5, 'Field')).toBe(
+        'Field must be at most 5 characters'
+      );
     });
   });
 

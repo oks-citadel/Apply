@@ -9,8 +9,9 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiQuery, ApiResponse, ApiParam } from '@nestjs/swagger';
-import { AggregatorService, AggregationSummary } from './aggregator.service';
-import { RawJobData } from './interfaces/job-provider.interface';
+
+import type { AggregatorService, AggregationSummary } from './aggregator.service';
+import type { RawJobData } from './interfaces/job-provider.interface';
 
 @ApiTags('Job Aggregation')
 @Controller('aggregator')

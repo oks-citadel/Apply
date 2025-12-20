@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 import {
   IsString,
   IsEnum,
@@ -7,9 +8,9 @@ import {
   IsArray,
   ValidateNested,
 } from 'class-validator';
-import { Type } from 'class-transformer';
-import { WorkflowType, WorkflowStatus } from '../interfaces/workflow.interface';
+
 import { AgentType } from '../interfaces/agent.interface';
+import { WorkflowType, WorkflowStatus } from '../interfaces/workflow.interface';
 
 export class ExecuteWorkflowDto {
   @ApiProperty({ enum: WorkflowType, description: 'Type of workflow to execute' })

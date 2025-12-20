@@ -1,20 +1,23 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { WorkExperience } from '../career/entities/work-experience.entity';
-import { Education } from '../career/entities/education.entity';
-import { Skill } from '../skills/entities/skill.entity';
+
+
 import { Certification } from './entities/certification.entity';
-import {
-  CreateWorkExperienceDto,
-  UpdateWorkExperienceDto,
-} from './dto/work-experience.dto';
-import { CreateEducationDto, UpdateEducationDto } from './dto/education.dto';
-import { CreateSkillDto, UpdateSkillDto } from './dto/skill.dto';
-import {
+import { Education } from '../career/entities/education.entity';
+import { WorkExperience } from '../career/entities/work-experience.entity';
+import { Skill } from '../skills/entities/skill.entity';
+
+import type {
   CreateCertificationDto,
   UpdateCertificationDto,
 } from './dto/certification.dto';
+import type { CreateEducationDto, UpdateEducationDto } from './dto/education.dto';
+import type { CreateSkillDto, UpdateSkillDto } from './dto/skill.dto';
+import type {
+  CreateWorkExperienceDto,
+  UpdateWorkExperienceDto,
+} from './dto/work-experience.dto';
+import type { Repository } from 'typeorm';
 
 @Injectable()
 export class ProfileSectionsService {

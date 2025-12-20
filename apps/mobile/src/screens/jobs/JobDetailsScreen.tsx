@@ -42,10 +42,7 @@ export const JobDetailsScreen: React.FC<JobDetailsScreenProps> = ({
       Alert.alert('Success', 'Job saved successfully');
     },
     onError: (error: any) => {
-      Alert.alert(
-        'Error',
-        error.response?.data?.message || 'Failed to save job'
-      );
+      Alert.alert('Error', error.response?.data?.message || 'Failed to save job');
     },
   });
 
@@ -56,30 +53,22 @@ export const JobDetailsScreen: React.FC<JobDetailsScreenProps> = ({
       Alert.alert('Success', 'Job removed from saved');
     },
     onError: (error: any) => {
-      Alert.alert(
-        'Error',
-        error.response?.data?.message || 'Failed to remove saved job'
-      );
+      Alert.alert('Error', error.response?.data?.message || 'Failed to remove saved job');
     },
   });
 
   const applyMutation = useMutation({
-    mutationFn: (jobId: string) =>
-      applicationsApi.createApplication({ jobId }),
+    mutationFn: (jobId: string) => applicationsApi.createApplication({ jobId }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['applications'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
-      Alert.alert(
-        'Success',
-        'Application submitted successfully',
-        [
-          {
-            text: 'View Applications',
-            onPress: () => navigation.navigate('JobsList'),
-          },
-          { text: 'OK' },
-        ]
-      );
+      Alert.alert('Success', 'Application submitted successfully', [
+        {
+          text: 'View Applications',
+          onPress: () => navigation.navigate('JobsList'),
+        },
+        { text: 'OK' },
+      ]);
     },
     onError: (error: any) => {
       Alert.alert(
@@ -106,21 +95,19 @@ export const JobDetailsScreen: React.FC<JobDetailsScreenProps> = ({
   };
 
   const handleApply = () => {
-    Alert.alert(
-      'Apply to Job',
-      'Are you sure you want to apply to this position?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Apply',
-          onPress: () => applyMutation.mutate(jobId),
-        },
-      ]
-    );
+    Alert.alert('Apply to Job', 'Are you sure you want to apply to this position?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Apply',
+        onPress: () => applyMutation.mutate(jobId),
+      },
+    ]);
   };
 
   const formatSalary = (salary?: { min: number; max: number; currency: string }) => {
-    if (!salary) return 'Not specified';
+    if (!salary) {
+      return 'Not specified';
+    }
     return `${salary.currency} ${salary.min.toLocaleString()} - ${salary.max.toLocaleString()}`;
   };
 
@@ -135,10 +122,7 @@ export const JobDetailsScreen: React.FC<JobDetailsScreenProps> = ({
       <SafeAreaView style={styles.container}>
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>Job not found</Text>
-          <TouchableOpacity
-            style={styles.button}
-            onPress={() => navigation.goBack()}
-          >
+          <TouchableOpacity style={styles.button} onPress={() => navigation.goBack()}>
             <Text style={styles.buttonText}>Go Back</Text>
           </TouchableOpacity>
         </View>
@@ -151,9 +135,7 @@ export const JobDetailsScreen: React.FC<JobDetailsScreenProps> = ({
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         {/* Job Header */}
         <Card style={styles.headerCard} elevation="sm">

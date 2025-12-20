@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsBoolean, IsOptional, IsNumber, IsArray, IsUUID, ValidateNested, Min } from 'class-validator';
 import { Type } from 'class-transformer';
+import { IsString, IsBoolean, IsOptional, IsNumber, IsArray, IsUUID, ValidateNested, Min } from 'class-validator';
 
 export class AutoApplyFiltersDto {
   @ApiPropertyOptional({

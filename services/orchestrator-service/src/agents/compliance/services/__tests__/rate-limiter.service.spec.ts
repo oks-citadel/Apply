@@ -1,11 +1,13 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
-import { RateLimiterService } from '../rate-limiter.service';
+import { Test } from '@nestjs/testing';
+
 import { Platform } from '../../dto/compliance.dto';
+import { RateLimiterService } from '../rate-limiter.service';
+
+import type { TestingModule } from '@nestjs/testing';
 
 // Mock ioredis
-jest.mock('ioredis', () => {
-  return jest.fn().mockImplementation(() => ({
+jest.mock('ioredis', () => jest.fn().mockImplementation(() => ({
     get: jest.fn(),
     set: jest.fn(),
     incr: jest.fn(),
@@ -19,12 +21,11 @@ jest.mock('ioredis', () => {
     })),
     on: jest.fn(),
     connect: jest.fn().mockResolvedValue(true),
-  }));
-});
+  })));
 
 describe('RateLimiterService', () => {
   let service: RateLimiterService;
-  let configService: ConfigService;
+  let _configService: ConfigService;
 
   const mockConfigService = {
     get: jest.fn((key: string, defaultValue?: any) => {
@@ -49,7 +50,7 @@ describe('RateLimiterService', () => {
     }).compile();
 
     service = module.get<RateLimiterService>(RateLimiterService);
-    configService = module.get<ConfigService>(ConfigService);
+    _configService = module.get<ConfigService>(ConfigService);
 
     jest.clearAllMocks();
   });

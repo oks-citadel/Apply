@@ -1,7 +1,8 @@
 import { Logger } from '@nestjs/common';
+
+import type { BrowserService } from '../browser/browser.service';
+import type { FormMappingService } from '../form-mapping/form-mapping.service';
 import type { Page } from 'playwright';
-import { BrowserService } from '../browser/browser.service';
-import { FormMappingService } from '../form-mapping/form-mapping.service';
 
 export interface ApplicationData {
   userId: string;

@@ -1,20 +1,31 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { AuthService } from './auth.service';
-import { AuthController } from './auth.controller';
-import { UsersService } from '../users/users.service';
-import { JwtService } from '@nestjs/jwt';
-import { ConfigService } from '@nestjs/config';
-import { EmailService } from '../email/email.service';
 import {
   BadRequestException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { TestFactory } from '../../../test/utils/test-factory';
-import { User, AuthProvider, UserStatus } from '../users/entities/user.entity';
-import { Response, Request } from 'express';
+import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
+import { Test } from '@nestjs/testing';
+
+
+import { AuthController } from './auth.controller';
+import { AuthService } from './auth.service';
+import { GitHubStrategy } from './strategies/github.strategy';
 import { GoogleStrategy } from './strategies/google.strategy';
 import { LinkedInStrategy } from './strategies/linkedin.strategy';
-import { GitHubStrategy } from './strategies/github.strategy';
+import { TestFactory } from '../../../test/utils/test-factory';
+import { EmailService } from '../email/email.service';
+import { User, AuthProvider, UserStatus } from '../users/entities/user.entity';
+import { UsersService } from '../users/users.service';
+
+
+
+
+
+
+import type { TestingModule } from '@nestjs/testing';
+import type { Response, Request } from 'express';
+
+
 
 /**
  * Comprehensive OAuth Testing Suite
@@ -984,7 +995,7 @@ describe('OAuth Integration Tests', () => {
 
       it('should not set secure flag in test environment', async () => {
         mockConfigService.get.mockImplementation((key: string, defaultValue?: any) => {
-          if (key === 'nodeEnv') return 'test';
+          if (key === 'nodeEnv') {return 'test';}
           const config: Record<string, any> = {
             frontendUrl: 'http://localhost:3000',
           };

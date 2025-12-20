@@ -1,8 +1,14 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { TypeOrmModule, getRepositoryToken } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
-import { ConfigModule } from '@nestjs/config';
 import * as os from 'os';
+
+import { ConfigModule } from '@nestjs/config';
+import { Test } from '@nestjs/testing';
+import { TypeOrmModule, getRepositoryToken } from '@nestjs/typeorm';
+import { DataSource } from 'typeorm';
+
+import type { TestingModule } from '@nestjs/testing';
+import type { Repository} from 'typeorm';
+
+
 
 /**
  * Database Performance Test Suite for Job Service
@@ -389,8 +395,7 @@ describe('Database Performance Tests', () => {
 
       const transactions = Array.from(
         { length: concurrentTransactions },
-        async (_, i) => {
-          return dataSource.transaction(async (manager) => {
+        async (_, i) => dataSource.transaction(async (manager) => {
             const job = await manager.findOne(Job, {
               where: { id: `test-job-${i % 5}` },
             });
@@ -399,8 +404,7 @@ describe('Database Performance Tests', () => {
               job.salary = job.salary + 100;
               await manager.save(job);
             }
-          });
-        },
+          }),
       );
 
       await Promise.all(transactions);
@@ -507,8 +511,8 @@ describe('Database Performance Tests', () => {
           platform: os.platform(),
           arch: os.arch(),
           cpus: os.cpus().length,
-          freeMemory: (os.freemem() / 1024 / 1024 / 1024).toFixed(2) + 'GB',
-          totalMemory: (os.totalmem() / 1024 / 1024 / 1024).toFixed(2) + 'GB',
+          freeMemory: `${(os.freemem() / 1024 / 1024 / 1024).toFixed(2)  }GB`,
+          totalMemory: `${(os.totalmem() / 1024 / 1024 / 1024).toFixed(2)  }GB`,
         },
       };
 

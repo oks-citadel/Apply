@@ -1,12 +1,14 @@
 import {
-  Injectable,
+  Injectable
+} from '@nestjs/common';
+import { classToPlain } from 'class-transformer';
+import { map } from 'rxjs/operators';
+
+import type {
   NestInterceptor,
   ExecutionContext,
-  CallHandler,
-} from '@nestjs/common';
-import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
-import { classToPlain } from 'class-transformer';
+  CallHandler} from '@nestjs/common';
+import type { Observable } from 'rxjs';
 
 export interface Response<T> {
   data: T;

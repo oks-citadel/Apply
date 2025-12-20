@@ -1,7 +1,8 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsEnum, IsString, IsNumber, Min } from 'class-validator';
-import { ApplicationStatus } from '../entities/application.entity';
 import { Type } from 'class-transformer';
+import { IsOptional, IsEnum, IsString, IsNumber, Min } from 'class-validator';
+
+import { ApplicationStatus } from '../entities/application.entity';
 
 export class QueryApplicationDto {
   @ApiPropertyOptional({

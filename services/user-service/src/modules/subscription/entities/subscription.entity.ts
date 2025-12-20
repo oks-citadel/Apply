@@ -6,6 +6,7 @@ import {
   UpdateDateColumn,
   Index,
 } from 'typeorm';
+
 import { SubscriptionTier, SubscriptionStatus } from '../../../common/enums/subscription-tier.enum';
 
 @Entity('subscriptions')

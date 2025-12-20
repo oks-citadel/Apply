@@ -1,26 +1,33 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { Job, JobSource } from '../jobs/entities/job.entity';
-import { JobProvider, RawJobData } from './interfaces/job-provider.interface';
-import { JobCacheService } from './cache/job-cache.service';
+import { InjectRepository } from '@nestjs/typeorm';
+
+
 
 // General Job Aggregators
-import { IndeedProvider } from './providers/indeed.provider';
-import { LinkedInProvider } from './providers/linkedin.provider';
-import { GlassdoorProvider } from './providers/glassdoor.provider';
-import { ZipRecruiterProvider } from './providers/ziprecruiter.provider';
-import { SimplyHiredProvider } from './providers/simplyhired.provider';
-import { JoobleProvider } from './providers/jooble.provider';
-import { AdzunaProvider } from './providers/adzuna.provider';
 
 // Niche / Regional Aggregators
-import { CareerJetProvider } from './providers/careerjet.provider';
-import { TalentProvider } from './providers/talent.provider';
 
 // Tech-Focused Aggregators
-import { DiceProvider } from './providers/dice.provider';
+
+
+
+import { Job, JobSource } from '../jobs/entities/job.entity';
+
+import type { JobCacheService } from './cache/job-cache.service';
+import type { JobProvider, RawJobData } from './interfaces/job-provider.interface';
+import type { AdzunaProvider } from './providers/adzuna.provider';
+import type { CareerJetProvider } from './providers/careerjet.provider';
+import type { DiceProvider } from './providers/dice.provider';
+import type { GlassdoorProvider } from './providers/glassdoor.provider';
+import type { IndeedProvider } from './providers/indeed.provider';
+import type { JoobleProvider } from './providers/jooble.provider';
+import type { LinkedInProvider } from './providers/linkedin.provider';
+import type { SimplyHiredProvider } from './providers/simplyhired.provider';
+import type { TalentProvider } from './providers/talent.provider';
+import type { ZipRecruiterProvider } from './providers/ziprecruiter.provider';
+import type { OnModuleInit } from '@nestjs/common';
+import type { Repository } from 'typeorm';
 
 export interface AggregationResult {
   provider: string;
@@ -180,8 +187,8 @@ export class AggregatorService implements OnModuleInit {
       for (const rawJob of rawJobs) {
         try {
           const { inserted, updated } = await this.upsertJob(provider, rawJob);
-          if (inserted) result.jobsInserted++;
-          if (updated) result.jobsUpdated++;
+          if (inserted) {result.jobsInserted++;}
+          if (updated) {result.jobsUpdated++;}
         } catch (error) {
           this.logger.warn(`Error processing job ${rawJob.external_id}: ${error.message}`);
           result.errors.push(`Job ${rawJob.external_id}: ${error.message}`);

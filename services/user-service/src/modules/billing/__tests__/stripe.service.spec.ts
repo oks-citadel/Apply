@@ -1,10 +1,13 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
-import Stripe from 'stripe';
-import { SubscriptionService } from '../subscription.service';
+import { Test } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Subscription } from '../entities/subscription.entity';
+import Stripe from 'stripe';
+
 import { SubscriptionTier, SubscriptionStatus } from '../../../common/enums/subscription-tier.enum';
+import { Subscription } from '../entities/subscription.entity';
+import { SubscriptionService } from '../subscription.service';
+
+import type { TestingModule } from '@nestjs/testing';
 
 /**
  * Stripe Integration Tests

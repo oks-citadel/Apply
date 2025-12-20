@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+
 import { ReportType, ReportStatus } from '../enums/report-type.enum';
 
 export class ReportResponseDto {

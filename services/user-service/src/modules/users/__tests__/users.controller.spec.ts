@@ -1,19 +1,23 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
-import { ProfileController } from '../../profile/profile.controller';
-import { ProfileService } from '../../profile/profile.service';
+import { Test } from '@nestjs/testing';
+
+import { SkillProficiency } from '../../../common/enums/subscription-tier.enum';
 import { CareerController } from '../../career/career.controller';
 import { CareerService } from '../../career/career.service';
-import { SkillsController } from '../../skills/skills.controller';
-import { SkillsService } from '../../skills/skills.service';
+import { UpdateEducationDto } from '../../career/dto/create-education.dto';
 import { PreferencesController } from '../../preferences/preferences.controller';
 import { PreferencesService } from '../../preferences/preferences.service';
-import { UpdateProfileDto } from '../../profile/dto/update-profile.dto';
-import { CreateWorkExperienceDto, UpdateWorkExperienceDto } from '../../career/dto/create-work-experience.dto';
-import { CreateEducationDto, UpdateEducationDto } from '../../career/dto/create-education.dto';
-import { CreateSkillDto, UpdateSkillDto } from '../../skills/dto/create-skill.dto';
-import { UpdatePreferenceDto } from '../../preferences/dto/update-preference.dto';
-import { SkillProficiency } from '../../../common/enums/subscription-tier.enum';
+import { ProfileController } from '../../profile/profile.controller';
+import { ProfileService } from '../../profile/profile.service';
+import { SkillsController } from '../../skills/skills.controller';
+import { SkillsService } from '../../skills/skills.service';
+
+import type { CreateEducationDto} from '../../career/dto/create-education.dto';
+import type { CreateWorkExperienceDto, UpdateWorkExperienceDto } from '../../career/dto/create-work-experience.dto';
+import type { UpdatePreferenceDto } from '../../preferences/dto/update-preference.dto';
+import type { UpdateProfileDto } from '../../profile/dto/update-profile.dto';
+import type { CreateSkillDto, UpdateSkillDto } from '../../skills/dto/create-skill.dto';
+import type { TestingModule } from '@nestjs/testing';
 
 describe('Profile Controller', () => {
   let controller: ProfileController;

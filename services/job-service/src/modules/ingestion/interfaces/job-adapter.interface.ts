@@ -1,4 +1,4 @@
-import { JobSource } from '../entities/job-source.entity';
+import type { JobSource } from '../entities/job-source.entity';
 
 /**
  * Normalized job data structure returned by all adapters

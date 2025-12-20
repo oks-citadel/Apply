@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Page, ElementHandle } from 'playwright';
+
+import type { Page, ElementHandle } from 'playwright';
 
 export interface DetectedField {
   id: string;
@@ -348,7 +349,7 @@ export class FieldDetectionEngine {
       const label = await page.$(`label[for="${attributes.id}"]`);
       if (label) {
         const text = await label.textContent();
-        if (text) return text.trim();
+        if (text) {return text.trim();}
       }
     }
 
@@ -360,7 +361,7 @@ export class FieldDetectionEngine {
       }
       return '';
     });
-    if (parentLabel) return parentLabel;
+    if (parentLabel) {return parentLabel;}
 
     // Try nearby text
     const nearbyText = await element.evaluate((el: Element) => {
@@ -381,7 +382,7 @@ export class FieldDetectionEngine {
 
       return '';
     });
-    if (nearbyText) return nearbyText;
+    if (nearbyText) {return nearbyText;}
 
     // Fall back to name or placeholder
     return attributes.name || attributes.placeholder || '';
@@ -467,20 +468,20 @@ export class FieldDetectionEngine {
     let confidence = 50; // Base confidence
 
     // Boost for having an ID
-    if (attributes.id) confidence += 15;
+    if (attributes.id) {confidence += 15;}
 
     // Boost for having a name
-    if (attributes.name) confidence += 10;
+    if (attributes.name) {confidence += 10;}
 
     // Boost for having a clear label
-    if (label && label.length > 2) confidence += 15;
+    if (label && label.length > 2) {confidence += 15;}
 
     // Boost for recognized category
-    if (category !== 'unknown') confidence += 10;
+    if (category !== 'unknown') {confidence += 10;}
 
     // Boost for semantic HTML attributes
-    if (attributes.autocomplete) confidence += 5;
-    if (attributes['aria-label']) confidence += 5;
+    if (attributes.autocomplete) {confidence += 5;}
+    if (attributes['aria-label']) {confidence += 5;}
 
     return Math.min(100, confidence);
   }

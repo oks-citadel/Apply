@@ -23,7 +23,9 @@ export class UpdatePreferencesDto {
   @IsBoolean()
   emailPasswordReset?: boolean;
 
-  @ApiPropertyOptional({ description: 'Enable application status update emails' })
+  @ApiPropertyOptional({
+    description: 'Enable application status update emails',
+  })
   @IsOptional()
   @IsBoolean()
   emailApplicationStatus?: boolean;
@@ -49,7 +51,9 @@ export class UpdatePreferencesDto {
   @IsBoolean()
   pushEnabled?: boolean;
 
-  @ApiPropertyOptional({ description: 'Enable application status push notifications' })
+  @ApiPropertyOptional({
+    description: 'Enable application status push notifications',
+  })
   @IsOptional()
   @IsBoolean()
   pushApplicationStatus?: boolean;
@@ -70,7 +74,9 @@ export class UpdatePreferencesDto {
   @IsBoolean()
   smsEnabled?: boolean;
 
-  @ApiPropertyOptional({ description: 'Enable application status SMS notifications' })
+  @ApiPropertyOptional({
+    description: 'Enable application status SMS notifications',
+  })
   @IsOptional()
   @IsBoolean()
   smsApplicationStatus?: boolean;

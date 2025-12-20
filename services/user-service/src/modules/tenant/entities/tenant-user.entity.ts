@@ -8,9 +8,10 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
-import { UserRole } from '../enums/tenant-type.enum';
-import { Tenant } from './tenant.entity';
+
 import { TenantDepartment } from './tenant-department.entity';
+import { Tenant } from './tenant.entity';
+import { UserRole } from '../enums/tenant-type.enum';
 
 @Entity('tenant_users')
 @Index(['tenant_id', 'user_id'], { unique: true })

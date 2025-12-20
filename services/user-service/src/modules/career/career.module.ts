@@ -1,9 +1,10 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+
 import { CareerController } from './career.controller';
 import { CareerService } from './career.service';
-import { WorkExperience } from './entities/work-experience.entity';
 import { Education } from './entities/education.entity';
+import { WorkExperience } from './entities/work-experience.entity';
 
 @Module({
   imports: [TypeOrmModule.forFeature([WorkExperience, Education])],

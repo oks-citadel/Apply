@@ -1,5 +1,5 @@
-import { IsOptional, IsUrl, IsString, Matches, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
+import { IsOptional, IsUrl, IsString, Matches, ValidateNested } from 'class-validator';
 
 export class SSOSettingsDto {
   @IsOptional()

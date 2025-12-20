@@ -1,4 +1,6 @@
-import { MigrationInterface, QueryRunner, Table, TableIndex, TableForeignKey } from 'typeorm';
+import { Table, TableIndex, TableForeignKey } from 'typeorm';
+
+import type { MigrationInterface, QueryRunner} from 'typeorm';
 
 export class CreateAlignmentTables1734287000000 implements MigrationInterface {
   name = 'CreateAlignmentTables1734287000000';

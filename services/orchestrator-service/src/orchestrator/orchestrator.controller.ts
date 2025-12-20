@@ -15,18 +15,23 @@ import {
   ApiBearerAuth,
   ApiParam,
 } from '@nestjs/swagger';
-import { OrchestratorService } from './orchestrator.service';
-import { WorkflowService } from './workflow/workflow.service';
+
 import {
-  OrchestrateRequestDto,
   OrchestrateResponseDto,
 } from './dto/orchestrate.dto';
 import {
-  ExecuteWorkflowDto,
   WorkflowExecutionDto,
 } from './dto/workflow.dto';
+import { AgentType } from './interfaces/agent.interface';
 import { WorkflowType } from './interfaces/workflow.interface';
-import { AgentType, AgentHealth } from './interfaces/agent.interface';
+
+import type {
+  OrchestrateRequestDto} from './dto/orchestrate.dto';
+import type {
+  ExecuteWorkflowDto} from './dto/workflow.dto';
+import type { AgentHealth } from './interfaces/agent.interface';
+import type { OrchestratorService } from './orchestrator.service';
+import type { WorkflowService } from './workflow/workflow.service';
 
 @ApiTags('orchestration')
 @ApiBearerAuth()

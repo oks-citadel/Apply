@@ -7,26 +7,30 @@ import {
   Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In, LessThan, MoreThanOrEqual } from 'typeorm';
-import {
-  RecruiterProfile,
-  RecruiterStatus,
-  RecruiterTier,
-} from './entities/recruiter-profile.entity';
+import { In, LessThan, MoreThanOrEqual } from 'typeorm';
+
+
+import { PlacementOutcome, PlacementStatus } from './entities/placement-outcome.entity';
 import {
   RecruiterAssignment,
   AssignmentStatus,
   AssignmentType,
 } from './entities/recruiter-assignment.entity';
-import { PlacementOutcome, PlacementStatus } from './entities/placement-outcome.entity';
-import { RecruiterReview, ReviewStatus } from './entities/recruiter-review.entity';
+import {
+  RecruiterProfile,
+  RecruiterStatus,
+  RecruiterTier,
+} from './entities/recruiter-profile.entity';
 import { RecruiterRevenue, RevenueType, RevenueStatus } from './entities/recruiter-revenue.entity';
-import { RegisterRecruiterDto } from './dto/register-recruiter.dto';
-import { AssignRecruiterDto } from './dto/assign-recruiter.dto';
-import { EscalateApplicationDto } from './dto/escalate-application.dto';
-import { SearchRecruitersDto } from './dto/search-recruiters.dto';
-import { CreateReviewDto } from './dto/create-review.dto';
-import { UpdateAssignmentDto } from './dto/update-assignment.dto';
+import { RecruiterReview, ReviewStatus } from './entities/recruiter-review.entity';
+
+import type { AssignRecruiterDto } from './dto/assign-recruiter.dto';
+import type { CreateReviewDto } from './dto/create-review.dto';
+import type { EscalateApplicationDto } from './dto/escalate-application.dto';
+import type { RegisterRecruiterDto } from './dto/register-recruiter.dto';
+import type { SearchRecruitersDto } from './dto/search-recruiters.dto';
+import type { UpdateAssignmentDto } from './dto/update-assignment.dto';
+import type { Repository} from 'typeorm';
 
 @Injectable()
 export class RecruiterService {
@@ -497,7 +501,7 @@ export class RecruiterService {
       where: { id: recruiterId },
     });
 
-    if (!recruiter) return;
+    if (!recruiter) {return;}
 
     recruiter.total_placements += 1;
     if (successful) {
@@ -536,7 +540,7 @@ export class RecruiterService {
       where: { id: recruiterId },
     });
 
-    if (!recruiter) return;
+    if (!recruiter) {return;}
 
     const reviews = await this.reviewRepo.find({
       where: {
@@ -545,7 +549,7 @@ export class RecruiterService {
       },
     });
 
-    if (reviews.length === 0) return;
+    if (reviews.length === 0) {return;}
 
     const totalRating = reviews.reduce((sum, r) => sum + r.rating, 0);
     recruiter.average_rating = totalRating / reviews.length;

@@ -1,4 +1,6 @@
-import { User, UserRole, UserStatus, AuthProvider } from '../../src/modules/users/entities/user.entity';
+import { UserRole, UserStatus, AuthProvider } from '../../src/modules/users/entities/user.entity';
+
+import type { User} from '../../src/modules/users/entities/user.entity';
 
 export const mockUsers: User[] = [
   {

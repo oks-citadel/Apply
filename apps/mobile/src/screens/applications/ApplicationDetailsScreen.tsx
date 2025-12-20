@@ -82,7 +82,9 @@ export const ApplicationDetailsScreen: React.FC<ApplicationDetailsScreenProps> =
   };
 
   const formatSalary = (salary?: { min: number; max: number; currency: string }) => {
-    if (!salary) return 'Not specified';
+    if (!salary) {
+      return 'Not specified';
+    }
     return `${salary.currency} ${salary.min.toLocaleString()} - ${salary.max.toLocaleString()}`;
   };
 
@@ -111,7 +113,12 @@ export const ApplicationDetailsScreen: React.FC<ApplicationDetailsScreenProps> =
       },
     ];
 
-    if (application.status === 'reviewing' || application.status === 'interview' || application.status === 'approved' || application.status === 'rejected') {
+    if (
+      application.status === 'reviewing' ||
+      application.status === 'interview' ||
+      application.status === 'approved' ||
+      application.status === 'rejected'
+    ) {
       events.push({
         title: 'Under Review',
         date: application.updatedAt,
@@ -165,10 +172,7 @@ export const ApplicationDetailsScreen: React.FC<ApplicationDetailsScreenProps> =
       <SafeAreaView style={styles.container}>
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>Application not found</Text>
-          <TouchableOpacity
-            style={styles.button}
-            onPress={() => navigation.goBack()}
-          >
+          <TouchableOpacity style={styles.button} onPress={() => navigation.goBack()}>
             <Text style={styles.buttonText}>Go Back</Text>
           </TouchableOpacity>
         </View>
@@ -183,9 +187,7 @@ export const ApplicationDetailsScreen: React.FC<ApplicationDetailsScreenProps> =
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         {/* Application Header */}
         <Card style={styles.headerCard} elevation="sm">

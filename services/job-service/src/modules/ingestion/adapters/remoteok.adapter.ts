@@ -1,10 +1,12 @@
-import { HttpService } from '@nestjs/axios';
+
 import { BaseJobAdapter } from './base.adapter';
-import {
+
+import type {
   FetchOptions,
   FetchResult,
   NormalizedJob,
 } from '../interfaces/job-adapter.interface';
+import type { HttpService } from '@nestjs/axios';
 
 /**
  * RemoteOK Adapter
@@ -119,11 +121,11 @@ export class RemoteOKAdapter extends BaseJobAdapter {
   private detectEmploymentType(title: string): any {
     const lowerTitle = title.toLowerCase();
 
-    if (lowerTitle.includes('intern')) return 'internship';
+    if (lowerTitle.includes('intern')) {return 'internship';}
     if (lowerTitle.includes('contract') || lowerTitle.includes('freelance'))
-      return 'contract';
+      {return 'contract';}
     if (lowerTitle.includes('part-time') || lowerTitle.includes('part time'))
-      return 'part_time';
+      {return 'part_time';}
 
     return 'full_time';
   }

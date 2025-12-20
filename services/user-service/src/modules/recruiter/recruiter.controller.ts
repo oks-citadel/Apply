@@ -18,14 +18,17 @@ import {
   ApiBearerAuth,
   ApiParam,
 } from '@nestjs/swagger';
+
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
-import { RecruiterService } from './recruiter.service';
-import { RegisterRecruiterDto } from './dto/register-recruiter.dto';
-import { AssignRecruiterDto } from './dto/assign-recruiter.dto';
-import { EscalateApplicationDto } from './dto/escalate-application.dto';
-import { SearchRecruitersDto } from './dto/search-recruiters.dto';
-import { CreateReviewDto } from './dto/create-review.dto';
-import { UpdateAssignmentDto } from './dto/update-assignment.dto';
+
+import type { AssignRecruiterDto } from './dto/assign-recruiter.dto';
+import type { CreateReviewDto } from './dto/create-review.dto';
+import type { EscalateApplicationDto } from './dto/escalate-application.dto';
+import type { RegisterRecruiterDto } from './dto/register-recruiter.dto';
+import type { SearchRecruitersDto } from './dto/search-recruiters.dto';
+import type { UpdateAssignmentDto } from './dto/update-assignment.dto';
+import type { RecruiterService } from './recruiter.service';
+
 
 @ApiTags('Recruiters')
 @Controller('api/v1/recruiters')

@@ -144,7 +144,7 @@ export class InitialSchema1733300000000 implements MigrationInterface {
           },
         ],
       }),
-      true
+      true,
     );
 
     // Create indexes on notifications
@@ -153,7 +153,7 @@ export class InitialSchema1733300000000 implements MigrationInterface {
       new TableIndex({
         name: 'IDX_NOTIFICATIONS_USER_ID',
         columnNames: ['user_id'],
-      })
+      }),
     );
 
     await queryRunner.createIndex(
@@ -161,7 +161,7 @@ export class InitialSchema1733300000000 implements MigrationInterface {
       new TableIndex({
         name: 'IDX_NOTIFICATIONS_STATUS',
         columnNames: ['status'],
-      })
+      }),
     );
 
     await queryRunner.createIndex(
@@ -169,7 +169,7 @@ export class InitialSchema1733300000000 implements MigrationInterface {
       new TableIndex({
         name: 'IDX_NOTIFICATIONS_USER_ID_CREATED_AT',
         columnNames: ['user_id', 'created_at'],
-      })
+      }),
     );
 
     await queryRunner.createIndex(
@@ -177,7 +177,7 @@ export class InitialSchema1733300000000 implements MigrationInterface {
       new TableIndex({
         name: 'IDX_NOTIFICATIONS_STATUS_CREATED_AT',
         columnNames: ['status', 'created_at'],
-      })
+      }),
     );
 
     await queryRunner.createIndex(
@@ -185,7 +185,7 @@ export class InitialSchema1733300000000 implements MigrationInterface {
       new TableIndex({
         name: 'IDX_NOTIFICATIONS_TYPE',
         columnNames: ['type'],
-      })
+      }),
     );
 
     await queryRunner.createIndex(
@@ -193,7 +193,7 @@ export class InitialSchema1733300000000 implements MigrationInterface {
       new TableIndex({
         name: 'IDX_NOTIFICATIONS_PRIORITY',
         columnNames: ['priority'],
-      })
+      }),
     );
 
     await queryRunner.createIndex(
@@ -201,7 +201,7 @@ export class InitialSchema1733300000000 implements MigrationInterface {
       new TableIndex({
         name: 'IDX_NOTIFICATIONS_CATEGORY',
         columnNames: ['category'],
-      })
+      }),
     );
 
     await queryRunner.createIndex(
@@ -209,7 +209,7 @@ export class InitialSchema1733300000000 implements MigrationInterface {
       new TableIndex({
         name: 'IDX_NOTIFICATIONS_IS_READ',
         columnNames: ['is_read'],
-      })
+      }),
     );
 
     await queryRunner.createIndex(
@@ -217,7 +217,7 @@ export class InitialSchema1733300000000 implements MigrationInterface {
       new TableIndex({
         name: 'IDX_NOTIFICATIONS_EXPIRES_AT',
         columnNames: ['expires_at'],
-      })
+      }),
     );
 
     // Add comments
@@ -256,13 +256,22 @@ export class InitialSchema1733300000000 implements MigrationInterface {
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     // Drop indexes
-    await queryRunner.dropIndex('notifications', 'IDX_NOTIFICATIONS_EXPIRES_AT');
+    await queryRunner.dropIndex(
+      'notifications',
+      'IDX_NOTIFICATIONS_EXPIRES_AT',
+    );
     await queryRunner.dropIndex('notifications', 'IDX_NOTIFICATIONS_IS_READ');
     await queryRunner.dropIndex('notifications', 'IDX_NOTIFICATIONS_CATEGORY');
     await queryRunner.dropIndex('notifications', 'IDX_NOTIFICATIONS_PRIORITY');
     await queryRunner.dropIndex('notifications', 'IDX_NOTIFICATIONS_TYPE');
-    await queryRunner.dropIndex('notifications', 'IDX_NOTIFICATIONS_STATUS_CREATED_AT');
-    await queryRunner.dropIndex('notifications', 'IDX_NOTIFICATIONS_USER_ID_CREATED_AT');
+    await queryRunner.dropIndex(
+      'notifications',
+      'IDX_NOTIFICATIONS_STATUS_CREATED_AT',
+    );
+    await queryRunner.dropIndex(
+      'notifications',
+      'IDX_NOTIFICATIONS_USER_ID_CREATED_AT',
+    );
     await queryRunner.dropIndex('notifications', 'IDX_NOTIFICATIONS_STATUS');
     await queryRunner.dropIndex('notifications', 'IDX_NOTIFICATIONS_USER_ID');
 

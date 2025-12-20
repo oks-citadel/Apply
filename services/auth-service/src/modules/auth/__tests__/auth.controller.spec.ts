@@ -1,22 +1,26 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { AuthController } from '../auth.controller';
-import { AuthService } from '../auth.service';
-import { RegisterDto } from '../dto/register.dto';
-import { LoginDto } from '../dto/login.dto';
-import { ForgotPasswordDto } from '../dto/forgot-password.dto';
-import { ResetPasswordDto } from '../dto/reset-password.dto';
-import { VerifyEmailDto } from '../dto/verify-email.dto';
-import { RefreshTokenDto } from '../dto/refresh-token.dto';
-import { MfaVerifyDto } from '../dto/mfa-verify.dto';
-import { TokenResponseDto } from '../dto/token-response.dto';
-import { MfaSetupResponseDto } from '../dto/mfa-setup.dto';
-import { User, UserRole, UserStatus, AuthProvider } from '../../users/entities/user.entity';
 import {
   UnauthorizedException,
   ConflictException,
   BadRequestException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { Test } from '@nestjs/testing';
+
+import { User, UserRole, UserStatus, AuthProvider } from '../../users/entities/user.entity';
+import { AuthController } from '../auth.controller';
+import { AuthService } from '../auth.service';
+import { RefreshTokenDto } from '../dto/refresh-token.dto';
+
+
+import type { ForgotPasswordDto } from '../dto/forgot-password.dto';
+import type { LoginDto } from '../dto/login.dto';
+import type { MfaSetupResponseDto } from '../dto/mfa-setup.dto';
+import type { MfaVerifyDto } from '../dto/mfa-verify.dto';
+import type { RegisterDto } from '../dto/register.dto';
+import type { ResetPasswordDto } from '../dto/reset-password.dto';
+import type { TokenResponseDto } from '../dto/token-response.dto';
+import type { VerifyEmailDto } from '../dto/verify-email.dto';
+import type { TestingModule } from '@nestjs/testing';
 
 // Helper function to create mock user with proper getters and methods
 function createMockUser(overrides: Partial<User> = {}): User {
@@ -883,7 +887,7 @@ describe('AuthController', () => {
     });
 
     it('should handle extremely long email addresses', async () => {
-      const longEmail = 'a'.repeat(300) + '@example.com';
+      const longEmail = `${'a'.repeat(300)  }@example.com`;
       const registerDto: RegisterDto = {
         email: longEmail,
         password: 'SecurePass123!',
@@ -912,7 +916,7 @@ describe('AuthController', () => {
     it('should handle password with maximum allowed length', async () => {
       const registerDto: RegisterDto = {
         email: 'test@example.com',
-        password: 'A1@' + 'a'.repeat(125),
+        password: `A1@${  'a'.repeat(125)}`,
       };
 
       mockAuthService.register.mockResolvedValue(mockTokenResponse);

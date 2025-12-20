@@ -1,8 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+
+
 import { JobTitleMapping } from '../entities/job-taxonomy.entity';
 import { SeniorityLevel, FunctionCategory } from '../entities/normalized-job.entity';
+
+import type { Repository } from 'typeorm';
 
 interface TitleNormalizationResult {
   standardized_title: string;
@@ -224,10 +227,10 @@ export class TitleNormalizerService {
     }
 
     // Default heuristics
-    if (title.match(/\b(i|1)\b/)) return SeniorityLevel.JUNIOR;
-    if (title.match(/\b(ii|2)\b/)) return SeniorityLevel.MID;
-    if (title.match(/\b(iii|3)\b/)) return SeniorityLevel.SENIOR;
-    if (title.match(/\b(iv|4)\b/)) return SeniorityLevel.LEAD;
+    if (title.match(/\b(i|1)\b/)) {return SeniorityLevel.JUNIOR;}
+    if (title.match(/\b(ii|2)\b/)) {return SeniorityLevel.MID;}
+    if (title.match(/\b(iii|3)\b/)) {return SeniorityLevel.SENIOR;}
+    if (title.match(/\b(iv|4)\b/)) {return SeniorityLevel.LEAD;}
 
     return undefined; // Let ML model decide
   }
@@ -326,19 +329,19 @@ export class TitleNormalizerService {
     let confidence = 50; // Base confidence
 
     // Increase if seniority was detected
-    if (result.seniority) confidence += 15;
+    if (result.seniority) {confidence += 15;}
 
     // Increase if function category is specific (not OTHER)
-    if (result.functionCategory !== FunctionCategory.OTHER) confidence += 20;
+    if (result.functionCategory !== FunctionCategory.OTHER) {confidence += 20;}
 
     // Increase if title is common/standard
     const isStandardTitle = this.isStandardTitle(rawTitle);
-    if (isStandardTitle) confidence += 15;
+    if (isStandardTitle) {confidence += 15;}
 
     // Decrease if title is very short or very long
     const titleLength = rawTitle.split(' ').length;
-    if (titleLength < 2) confidence -= 10;
-    if (titleLength > 8) confidence -= 10;
+    if (titleLength < 2) {confidence -= 10;}
+    if (titleLength > 8) {confidence -= 10;}
 
     return Math.max(0, Math.min(100, confidence));
   }

@@ -5,14 +5,17 @@ import {
   Body,
   UseGuards,
   Req,
-  Headers,
-  RawBodyRequest,
+  Headers
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
-import { SubscriptionService } from './subscription.service';
-import { CreateCheckoutSessionDto } from './dto/create-checkout-session.dto';
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+
+import type { CreateCheckoutSessionDto } from './dto/create-checkout-session.dto';
+import type { SubscriptionService } from './subscription.service';
+import type {
+  RawBodyRequest} from '@nestjs/common';
 
 @ApiTags('Subscription')
 @Controller('users/subscription')

@@ -283,7 +283,8 @@ export class NotificationService {
     response: Notifications.NotificationResponse
   ): void => {
     console.log('Notification response:', response);
-    const data = response.notification.request.content.data as unknown as NotificationData;
+    const data = response.notification.request.content
+      .data as unknown as NotificationData;
 
     // Navigate based on notification type
     this.navigateFromNotification(data);
@@ -308,9 +309,7 @@ export class NotificationService {
   /**
    * Send a local notification
    */
-  public async sendLocalNotification(
-    notificationData: NotificationData
-  ): Promise<void> {
+  public async sendLocalNotification(notificationData: NotificationData): Promise<void> {
     try {
       await Notifications.scheduleNotificationAsync({
         content: {
@@ -492,4 +491,3 @@ export const useNotifications = () => {
     requestPermission,
   };
 };
-

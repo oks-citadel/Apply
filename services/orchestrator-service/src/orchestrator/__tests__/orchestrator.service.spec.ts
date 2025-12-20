@@ -1,21 +1,28 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { getQueueToken } from '@nestjs/bull';
-import { Queue } from 'bull';
-import { OrchestratorService } from '../orchestrator.service';
-import { WorkflowService } from '../workflow/workflow.service';
-import { AgentClientService } from '../services/agent-client.service';
-import { CircuitBreakerService } from '../services/circuit-breaker.service';
+import { Test } from '@nestjs/testing';
+
+
 import {
-  OrchestrateRequestDto,
   TaskType,
   Priority,
 } from '../dto/orchestrate.dto';
+import { AgentType, AgentStatus } from '../interfaces/agent.interface';
 import {
   WorkflowType,
-  WorkflowStatus,
-  WorkflowExecution,
+  WorkflowStatus
 } from '../interfaces/workflow.interface';
-import { AgentType, AgentHealth, AgentStatus } from '../interfaces/agent.interface';
+import { OrchestratorService } from '../orchestrator.service';
+import { AgentClientService } from '../services/agent-client.service';
+import { CircuitBreakerService } from '../services/circuit-breaker.service';
+import { WorkflowService } from '../workflow/workflow.service';
+
+import type {
+  OrchestrateRequestDto} from '../dto/orchestrate.dto';
+import type { AgentHealth} from '../interfaces/agent.interface';
+import type {
+  WorkflowExecution} from '../interfaces/workflow.interface';
+import type { TestingModule } from '@nestjs/testing';
+import type { Queue } from 'bull';
 
 describe('OrchestratorService', () => {
   let service: OrchestratorService;
@@ -144,7 +151,7 @@ describe('OrchestratorService', () => {
       mockCircuitBreaker.getAllStats.mockReturnValue({});
       mockWorkflowService.executeWorkflow.mockResolvedValue(mockWorkflowExecution);
 
-      const result = await service.orchestrate(applyRequest);
+      const _result = await service.orchestrate(applyRequest);
 
       expect(workflowService.executeWorkflow).toHaveBeenCalledWith(
         WorkflowType.APPLICATION,
@@ -168,7 +175,7 @@ describe('OrchestratorService', () => {
       mockCircuitBreaker.getAllStats.mockReturnValue({});
       mockWorkflowService.executeWorkflow.mockResolvedValue(mockWorkflowExecution);
 
-      const result = await service.orchestrate(prepareRequest);
+      const _result = await service.orchestrate(prepareRequest);
 
       expect(workflowService.executeWorkflow).toHaveBeenCalledWith(
         WorkflowType.INTERVIEW_PREP,
@@ -192,7 +199,7 @@ describe('OrchestratorService', () => {
       mockCircuitBreaker.getAllStats.mockReturnValue({});
       mockWorkflowService.executeWorkflow.mockResolvedValue(mockWorkflowExecution);
 
-      const result = await service.orchestrate(analyzeRequest);
+      const _result = await service.orchestrate(analyzeRequest);
 
       expect(workflowService.executeWorkflow).toHaveBeenCalledWith(
         WorkflowType.ANALYTICS_OPTIMIZATION,

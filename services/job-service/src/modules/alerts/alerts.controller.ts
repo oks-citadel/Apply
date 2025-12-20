@@ -18,10 +18,12 @@ import {
   ApiBearerAuth,
   ApiParam,
 } from '@nestjs/swagger';
-import { AlertsService } from './alerts.service';
-import { CreateAlertDto, UpdateAlertDto } from './dto/create-alert.dto';
+
 import { JobAlert } from './entities/job-alert.entity';
 import { JwtAuthGuard } from '../../common/guards';
+
+import type { AlertsService } from './alerts.service';
+import type { CreateAlertDto, UpdateAlertDto } from './dto/create-alert.dto';
 
 @ApiTags('Alerts')
 @Controller('jobs/alerts')

@@ -1,15 +1,18 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { JobsService } from '../jobs.service';
-import { ReportsService } from '../../reports/reports.service';
-import { Repository } from 'typeorm';
+import { HttpService } from '@nestjs/axios';
+import { NotFoundException, BadRequestException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { Test } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
+
+import { ReportType } from '../../reports/enums/report-type.enum';
+import { ReportsService } from '../../reports/reports.service';
+import { SearchService } from '../../search/search.service';
 import { Job } from '../entities/job.entity';
 import { SavedJob } from '../entities/saved-job.entity';
-import { SearchService } from '../../search/search.service';
-import { HttpService } from '@nestjs/axios';
-import { ConfigService } from '@nestjs/config';
-import { NotFoundException, BadRequestException } from '@nestjs/common';
-import { ReportType } from '../../reports/enums/report-type.enum';
+import { JobsService } from '../jobs.service';
+
+import type { TestingModule } from '@nestjs/testing';
+import type { Repository } from 'typeorm';
 
 describe('JobsService - Report Functionality', () => {
   let service: JobsService;
@@ -59,7 +62,7 @@ describe('JobsService - Report Functionality', () => {
 
   const mockConfigService = {
     get: jest.fn((key: string) => {
-      if (key === 'AI_SERVICE_URL') return 'http://ai-service:8000';
+      if (key === 'AI_SERVICE_URL') {return 'http://ai-service:8000';}
       return null;
     }),
   };

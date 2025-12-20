@@ -1,11 +1,17 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { BadRequestException } from '@nestjs/common';
+import { Test } from '@nestjs/testing';
+
+
 import { ApplicationsController } from './applications.controller';
 import { ApplicationsService } from './applications.service';
-import { CreateApplicationDto } from './dto/create-application.dto';
-import { UpdateApplicationDto, UpdateStatusDto } from './dto/update-application.dto';
-import { QueryApplicationDto } from './dto/query-application.dto';
-import { Application, ApplicationStatus } from './entities/application.entity';
-import { BadRequestException } from '@nestjs/common';
+import { ApplicationStatus } from './entities/application.entity';
+
+import type { CreateApplicationDto } from './dto/create-application.dto';
+import type { QueryApplicationDto } from './dto/query-application.dto';
+import type { UpdateApplicationDto, UpdateStatusDto } from './dto/update-application.dto';
+import type { Application} from './entities/application.entity';
+import type { TestingModule } from '@nestjs/testing';
+
 
 describe('ApplicationsController', () => {
   let controller: ApplicationsController;

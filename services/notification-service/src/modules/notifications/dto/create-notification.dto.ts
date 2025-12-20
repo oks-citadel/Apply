@@ -1,4 +1,10 @@
-import { IsString, IsEnum, IsOptional, IsObject, IsDateString } from 'class-validator';
+import {
+  IsString,
+  IsEnum,
+  IsOptional,
+  IsObject,
+  IsDateString,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   NotificationType,
@@ -22,7 +28,10 @@ export class CreateNotificationDto {
   @IsString()
   message: string;
 
-  @ApiPropertyOptional({ enum: NotificationPriority, description: 'Priority level' })
+  @ApiPropertyOptional({
+    enum: NotificationPriority,
+    description: 'Priority level',
+  })
   @IsOptional()
   @IsEnum(NotificationPriority)
   priority?: NotificationPriority;

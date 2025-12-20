@@ -1,9 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Job } from '../modules/jobs/entities/job.entity';
-import { Company } from '../modules/companies/entities/company.entity';
+
 import { jobsSeedData } from './jobs.seed';
+import { Company } from '../modules/companies/entities/company.entity';
+import { Job } from '../modules/jobs/entities/job.entity';
+
+import type { Repository } from 'typeorm';
+
 
 @Injectable()
 export class SeederService {

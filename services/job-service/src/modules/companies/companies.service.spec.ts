@@ -1,11 +1,15 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { CompaniesService } from './companies.service';
-import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository, SelectQueryBuilder } from 'typeorm';
 import { NotFoundException } from '@nestjs/common';
-import { Company } from './entities/company.entity';
+import { Test } from '@nestjs/testing';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { SelectQueryBuilder } from 'typeorm';
+
+import { CompaniesService } from './companies.service';
 import { CompanyReview } from './entities/company-review.entity';
+import { Company } from './entities/company.entity';
 import { Job, EmploymentType } from '../jobs/entities/job.entity';
+
+import type { TestingModule } from '@nestjs/testing';
+import type { Repository} from 'typeorm';
 
 describe('CompaniesService', () => {
   let service: CompaniesService;

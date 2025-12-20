@@ -1,10 +1,12 @@
-import { HttpService } from '@nestjs/axios';
+
 import { BaseJobAdapter } from './base.adapter';
-import {
+
+import type {
   FetchOptions,
   FetchResult,
   NormalizedJob,
 } from '../interfaces/job-adapter.interface';
+import type { HttpService } from '@nestjs/axios';
 
 /**
  * ZipRecruiter API Adapter
@@ -85,7 +87,7 @@ export class ZipRecruiterAdapter extends BaseJobAdapter {
       companyName: rawJob.hiring_company?.name || rawJob.company,
       location: rawJob.location,
       ...location,
-      remoteType: this.detectRemoteType(rawJob.location + ' ' + rawJob.name),
+      remoteType: this.detectRemoteType(`${rawJob.location  } ${  rawJob.name}`),
       description: rawJob.snippet || rawJob.job_description || '',
       employmentType: this.mapEmploymentType(rawJob.employment_type),
       ...salary,

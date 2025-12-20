@@ -1,22 +1,26 @@
 import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { ApplicationsService } from '../applications/applications.service';
-import { QueueService } from '../queue/queue.service';
-import { RateLimiterService } from '../rate-limiter/rate-limiter.service';
-import { CaptchaService } from '../captcha/captcha.service';
-import { AnswerLibraryService } from '../answer-library/answer-library.service';
+
+
+import { ApplicationStatusEnum } from './dto/application-status.dto';
 import { Application, ApplicationStatus } from '../applications/entities/application.entity';
-import { WorkdayAdapter } from '../adapters/workday.adapter';
-import { GreenhouseAdapter } from '../adapters/greenhouse.adapter';
-import { LeverAdapter } from '../adapters/lever.adapter';
-import { IcimsAdapter } from '../adapters/icims.adapter';
-import { TaleoAdapter } from '../adapters/taleo.adapter';
-import { SmartRecruitersAdapter } from '../adapters/smartrecruiters.adapter';
-import { LinkedInAdapter } from '../adapters/linkedin.adapter';
-import { IndeedAdapter } from '../adapters/indeed.adapter';
-import { BaseATSAdapter, ApplicationData, ApplicationResult } from '../adapters/base.adapter';
-import {
+
+import type { BaseATSAdapter, ApplicationData, ApplicationResult } from '../adapters/base.adapter';
+import type { GreenhouseAdapter } from '../adapters/greenhouse.adapter';
+import type { IcimsAdapter } from '../adapters/icims.adapter';
+import type { IndeedAdapter } from '../adapters/indeed.adapter';
+import type { LeverAdapter } from '../adapters/lever.adapter';
+import type { LinkedInAdapter } from '../adapters/linkedin.adapter';
+import type { SmartRecruitersAdapter } from '../adapters/smartrecruiters.adapter';
+import type { TaleoAdapter } from '../adapters/taleo.adapter';
+import type { WorkdayAdapter } from '../adapters/workday.adapter';
+import type { AnswerLibraryService } from '../answer-library/answer-library.service';
+import type { ApplicationsService } from '../applications/applications.service';
+import type { CaptchaService } from '../captcha/captcha.service';
+import type { QueueService } from '../queue/queue.service';
+import type { RateLimiterService } from '../rate-limiter/rate-limiter.service';
+import type { QueueStatusEnum } from './dto/application-status.dto';
+import type {
   JobData,
   UserProfile,
   Resume,
@@ -28,7 +32,7 @@ import {
   VerificationResult,
   ApplicationStatusInfo,
 } from './interfaces/engine.interface';
-import { ApplicationStatusEnum, QueueStatusEnum } from './dto/application-status.dto';
+import type { Repository } from 'typeorm';
 
 @Injectable()
 export class EngineService {
@@ -632,11 +636,11 @@ export class EngineService {
   private categorizeError(error: any): SubmissionResult['errorType'] {
     const message = error.message?.toLowerCase() || '';
 
-    if (message.includes('captcha')) return 'captcha';
-    if (message.includes('rate limit')) return 'rate_limit';
-    if (message.includes('form') || message.includes('field')) return 'invalid_form';
-    if (message.includes('network') || message.includes('timeout')) return 'network';
-    if (message.includes('auth') || message.includes('login')) return 'authentication';
+    if (message.includes('captcha')) {return 'captcha';}
+    if (message.includes('rate limit')) {return 'rate_limit';}
+    if (message.includes('form') || message.includes('field')) {return 'invalid_form';}
+    if (message.includes('network') || message.includes('timeout')) {return 'network';}
+    if (message.includes('auth') || message.includes('login')) {return 'authentication';}
 
     return 'unknown';
   }

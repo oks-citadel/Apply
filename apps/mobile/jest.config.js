@@ -8,8 +8,10 @@ module.exports = {
   ],
   moduleNameMapper: {
     // Mock React Native polyfills to avoid Flow syntax errors
-    '^@react-native/js-polyfills/error-guard$': '<rootDir>/__mocks__/@react-native/js-polyfills/error-guard.js',
-    '^@react-native/js-polyfills/Object.es8$': '<rootDir>/__mocks__/@react-native/js-polyfills/Object.es8.js',
+    '^@react-native/js-polyfills/error-guard$':
+      '<rootDir>/__mocks__/@react-native/js-polyfills/error-guard.js',
+    '^@react-native/js-polyfills/Object.es8$':
+      '<rootDir>/__mocks__/@react-native/js-polyfills/Object.es8.js',
     // Path aliases
     '^@/(.*)$': '<rootDir>/src/$1',
     '^@components/(.*)$': '<rootDir>/src/components/$1',
@@ -22,11 +24,7 @@ module.exports = {
     '^@hooks/(.*)$': '<rootDir>/src/hooks/$1',
     '^@theme/(.*)$': '<rootDir>/src/theme/$1',
   },
-  collectCoverageFrom: [
-    'src/**/*.{ts,tsx}',
-    '!src/**/*.d.ts',
-    '!src/types/**',
-  ],
+  collectCoverageFrom: ['src/**/*.{ts,tsx}', '!src/**/*.d.ts', '!src/types/**'],
   coverageThreshold: {
     global: {
       branches: 50,

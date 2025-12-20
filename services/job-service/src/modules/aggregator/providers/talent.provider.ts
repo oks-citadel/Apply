@@ -1,8 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import axios, { AxiosInstance } from 'axios';
-import { JobProvider, RawJobData, JobProviderConfig } from '../interfaces/job-provider.interface';
-import { Job, JobSource, RemoteType, ExperienceLevel, EmploymentType } from '../../jobs/entities/job.entity';
+import axios from 'axios';
+
+import { JobSource, RemoteType, ExperienceLevel, EmploymentType } from '../../jobs/entities/job.entity';
+
+import type { Job} from '../../jobs/entities/job.entity';
+import type { JobProvider, RawJobData, JobProviderConfig } from '../interfaces/job-provider.interface';
+import type { ConfigService } from '@nestjs/config';
+import type { AxiosInstance } from 'axios';
 
 /**
  * Talent.com Provider (formerly Neuvoo)
@@ -51,7 +55,7 @@ export class TalentProvider implements JobProvider {
           l: params?.location,
           page: params?.page || 1,
           limit: params?.limit || 25,
-          country: country,
+          country,
           api_key: this.config.apiKey,
         },
       });
@@ -127,7 +131,7 @@ export class TalentProvider implements JobProvider {
   }
 
   private parseJobListings(data: any): RawJobData[] {
-    if (!data?.jobs && !data?.results) return [];
+    if (!data?.jobs && !data?.results) {return [];}
     const jobs = data.jobs || data.results || [];
 
     return jobs.map((job: any) => ({
@@ -274,11 +278,11 @@ export class TalentProvider implements JobProvider {
 
   private mapEmploymentType(type: string): string {
     const normalized = (type || '').toLowerCase();
-    if (normalized.includes('full') || normalized.includes('permanent')) return 'full_time';
-    if (normalized.includes('part')) return 'part_time';
-    if (normalized.includes('contract') || normalized.includes('freelance')) return 'contract';
-    if (normalized.includes('temp')) return 'temporary';
-    if (normalized.includes('intern')) return 'internship';
+    if (normalized.includes('full') || normalized.includes('permanent')) {return 'full_time';}
+    if (normalized.includes('part')) {return 'part_time';}
+    if (normalized.includes('contract') || normalized.includes('freelance')) {return 'contract';}
+    if (normalized.includes('temp')) {return 'temporary';}
+    if (normalized.includes('intern')) {return 'internship';}
     return 'full_time';
   }
 
@@ -296,11 +300,11 @@ export class TalentProvider implements JobProvider {
   private mapExperienceLevel(job: any): string {
     const title = (job.title || '').toLowerCase();
 
-    if (title.includes('senior') || title.includes('sr.')) return 'senior';
-    if (title.includes('junior') || title.includes('jr.')) return 'junior';
-    if (title.includes('entry') || title.includes('graduate')) return 'entry';
-    if (title.includes('lead') || title.includes('principal')) return 'lead';
-    if (title.includes('director') || title.includes('executive')) return 'executive';
+    if (title.includes('senior') || title.includes('sr.')) {return 'senior';}
+    if (title.includes('junior') || title.includes('jr.')) {return 'junior';}
+    if (title.includes('entry') || title.includes('graduate')) {return 'entry';}
+    if (title.includes('lead') || title.includes('principal')) {return 'lead';}
+    if (title.includes('director') || title.includes('executive')) {return 'executive';}
     return 'mid';
   }
 
@@ -317,8 +321,8 @@ export class TalentProvider implements JobProvider {
   }
 
   private parseSalary(value: any): number | null {
-    if (!value) return null;
-    if (typeof value === 'number') return value;
+    if (!value) {return null;}
+    if (typeof value === 'number') {return value;}
 
     const str = String(value).replace(/[$,€£¥]/g, '');
     if (str.toLowerCase().includes('k')) {
@@ -329,7 +333,7 @@ export class TalentProvider implements JobProvider {
   }
 
   private extractRequirements(description: string): string[] {
-    if (!description) return [];
+    if (!description) {return [];}
     const requirements: string[] = [];
     const lines = description.split('\n');
     let inRequirements = false;
@@ -351,7 +355,7 @@ export class TalentProvider implements JobProvider {
   }
 
   private extractBenefits(description: string): string[] {
-    if (!description) return [];
+    if (!description) {return [];}
     const benefits: string[] = [];
     const lines = description.split('\n');
     let inBenefits = false;
@@ -370,7 +374,7 @@ export class TalentProvider implements JobProvider {
   }
 
   private extractSkills(description: string): string[] {
-    if (!description) return [];
+    if (!description) {return [];}
     const commonSkills = [
       'javascript', 'typescript', 'python', 'java', 'c#', 'c++', 'go', 'rust', 'ruby',
       'react', 'angular', 'vue', 'node.js', 'express', 'django', 'flask',

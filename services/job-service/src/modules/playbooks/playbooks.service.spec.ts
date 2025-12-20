@@ -1,11 +1,14 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
-import { PlaybooksService } from './playbooks.service';
-import { Playbook, Region } from './entities/playbook.entity';
+import { Test } from '@nestjs/testing';
+import { getRepositoryToken } from '@nestjs/typeorm';
+
 import { PlaybookApplication, ApplicationStatus } from './entities/playbook-application.entity';
+import { Playbook, Region } from './entities/playbook.entity';
+import { PlaybooksService } from './playbooks.service';
 import { Job, RemoteType } from '../jobs/entities/job.entity';
+
+import type { TestingModule } from '@nestjs/testing';
+import type { Repository } from 'typeorm';
 
 describe('PlaybooksService', () => {
   let service: PlaybooksService;

@@ -17,11 +17,14 @@ import {
   ApiBearerAuth,
   ApiParam,
 } from '@nestjs/swagger';
-import { AutoApplyService } from './services/auto-apply.service';
-import { UpdateAutoApplySettingsDto } from './dto/auto-apply-settings.dto';
-import { QueueService } from '../queue/queue.service';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+
 import { User } from '../../common/decorators/user.decorator';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+
+import type { UpdateAutoApplySettingsDto } from './dto/auto-apply-settings.dto';
+import type { AutoApplyService } from './services/auto-apply.service';
+import type { QueueService } from '../queue/queue.service';
+
 
 @ApiTags('Auto-Apply')
 @ApiBearerAuth('JWT-auth')

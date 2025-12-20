@@ -1,13 +1,18 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { I18nService } from '../i18n.service';
-import { Repository } from 'typeorm';
-import { getRepositoryToken } from '@nestjs/typeorm';
-import { UserLocalePreference } from '../entities/user-locale-preference.entity';
+import { HttpService } from '@nestjs/axios';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { HttpService } from '@nestjs/axios';
+import { Test } from '@nestjs/testing';
+import { getRepositoryToken } from '@nestjs/typeorm';
 import { of, throwError } from 'rxjs';
-import { AxiosResponse } from 'axios';
+
+import { UserLocalePreference } from '../entities/user-locale-preference.entity';
+import { I18nService } from '../i18n.service';
+
+
+
+import type { TestingModule } from '@nestjs/testing';
+import type { AxiosResponse } from 'axios';
+import type { Repository } from 'typeorm';
 
 describe('I18nService', () => {
   let service: I18nService;

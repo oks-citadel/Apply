@@ -1,13 +1,18 @@
 import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, IsNull } from 'typeorm';
-import { Resume } from '../../resumes/entities/resume.entity';
-import { AlignedResume, AlignedContent } from '../entities/aligned-resume.entity';
-import { AlignmentAnalysis, AlignmentChanges } from '../entities/alignment-analysis.entity';
-import { AIServiceClient, JobRequirements, ResumeRewriteSuggestion } from './ai-service.client';
-import { HttpService } from '@nestjs/axios';
-import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
+import { IsNull } from 'typeorm';
+
+import { Resume } from '../../resumes/entities/resume.entity';
+import { AlignedResume } from '../entities/aligned-resume.entity';
+import { AlignmentAnalysis } from '../entities/alignment-analysis.entity';
+
+import type { AIServiceClient, JobRequirements, ResumeRewriteSuggestion } from './ai-service.client';
+import type { AlignedContent } from '../entities/aligned-resume.entity';
+import type { AlignmentChanges } from '../entities/alignment-analysis.entity';
+import type { HttpService } from '@nestjs/axios';
+import type { ConfigService } from '@nestjs/config';
+import type { Repository} from 'typeorm';
 
 @Injectable()
 export class ResumeAlignmentService {
@@ -52,8 +57,8 @@ export class ResumeAlignmentService {
 
     // Parse job requirements using AI
     const jobRequirements = await this.aiServiceClient.parseJobDescription(jobDesc);
-    if (jobTitle) jobRequirements.title = jobTitle;
-    if (companyName) jobRequirements.company = companyName;
+    if (jobTitle) {jobRequirements.title = jobTitle;}
+    if (companyName) {jobRequirements.company = companyName;}
 
     // Analyze match
     const matchResult = await this.aiServiceClient.analyzeResumeMatch(resume.content, jobRequirements);
@@ -147,8 +152,8 @@ export class ResumeAlignmentService {
 
     // Parse job requirements
     const jobRequirements = await this.aiServiceClient.parseJobDescription(jobDesc);
-    if (jobTitle) jobRequirements.title = jobTitle;
-    if (companyName) jobRequirements.company = companyName;
+    if (jobTitle) {jobRequirements.title = jobTitle;}
+    if (companyName) {jobRequirements.company = companyName;}
 
     // Get rewrite suggestions from AI
     const rewriteSuggestions = await this.aiServiceClient.generateRewriteSuggestions(
@@ -381,14 +386,14 @@ export class ResumeAlignmentService {
   }
 
   private determineRecommendation(score: number): 'strong-fit' | 'good-fit' | 'moderate-fit' | 'weak-fit' | 'poor-fit' {
-    if (score >= 85) return 'strong-fit';
-    if (score >= 70) return 'good-fit';
-    if (score >= 50) return 'moderate-fit';
-    if (score >= 30) return 'weak-fit';
+    if (score >= 85) {return 'strong-fit';}
+    if (score >= 70) {return 'good-fit';}
+    if (score >= 50) {return 'moderate-fit';}
+    if (score >= 30) {return 'weak-fit';}
     return 'poor-fit';
   }
 
-  private generateMatchExplanation(score: number, recommendation: string): string {
+  private generateMatchExplanation(score: number, _recommendation: string): string {
     if (score >= 85) {
       return 'You are a strong fit for this role based on your experience, skills, and qualifications.';
     } else if (score >= 70) {
@@ -515,12 +520,12 @@ export class ResumeAlignmentService {
   }
 
   private async createAnalysisWithChanges(
-    userId: string,
-    baseResumeId: string,
-    alignedResumeId: string,
-    jobDescription: string,
-    jobRequirements: JobRequirements,
-    alignmentChanges: AlignmentChanges,
+    _userId: string,
+    _baseResumeId: string,
+    _alignedResumeId: string,
+    _jobDescription: string,
+    _jobRequirements: JobRequirements,
+    _alignmentChanges: AlignmentChanges,
   ): Promise<void> {
     // Analysis is created separately via analyzeResumeFit
     // This method could update an existing analysis with changes
@@ -542,10 +547,10 @@ export class ResumeAlignmentService {
   }
 
   private determineSeniority(years: number): string {
-    if (years < 2) return 'entry';
-    if (years < 5) return 'mid';
-    if (years < 10) return 'senior';
-    if (years < 15) return 'lead';
+    if (years < 2) {return 'entry';}
+    if (years < 5) {return 'mid';}
+    if (years < 10) {return 'senior';}
+    if (years < 15) {return 'lead';}
     return 'executive';
   }
 
@@ -561,7 +566,7 @@ export class ResumeAlignmentService {
   }
 
   private aggregateSuggestions(analyses: AlignmentAnalysis[]): any[] {
-    const allSuggestions: any[] = [];
+    const _allSuggestions: any[] = [];
     const skillCounts = new Map<string, number>();
 
     for (const analysis of analyses) {

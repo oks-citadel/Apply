@@ -1,10 +1,12 @@
-import { HttpService } from '@nestjs/axios';
+
 import { BaseJobAdapter } from './base.adapter';
-import {
+
+import type {
   FetchOptions,
   FetchResult,
   NormalizedJob,
 } from '../interfaces/job-adapter.interface';
+import type { HttpService } from '@nestjs/axios';
 
 /**
  * LinkedIn Jobs API Adapter
@@ -196,9 +198,9 @@ export class LinkedInAdapter extends BaseJobAdapter {
       (Date.now() - startDate.getTime()) / (1000 * 60 * 60 * 24),
     );
 
-    if (daysDiff <= 1) return 'r86400'; // Past 24 hours
-    if (daysDiff <= 7) return 'r604800'; // Past week
-    if (daysDiff <= 30) return 'r2592000'; // Past month
+    if (daysDiff <= 1) {return 'r86400';} // Past 24 hours
+    if (daysDiff <= 7) {return 'r604800';} // Past week
+    if (daysDiff <= 30) {return 'r2592000';} // Past month
     return '';
   }
 

@@ -22,10 +22,12 @@ import {
   ApiBody,
   ApiHeader,
 } from '@nestjs/swagger';
-import { ApplicationsService } from './applications.service';
+
 import { CreateApplicationDto } from './dto/create-application.dto';
 import { UpdateApplicationDto, UpdateStatusDto } from './dto/update-application.dto';
-import { QueryApplicationDto } from './dto/query-application.dto';
+
+import type { ApplicationsService } from './applications.service';
+import type { QueryApplicationDto } from './dto/query-application.dto';
 
 @ApiTags('Applications')
 @ApiBearerAuth('JWT-auth')
