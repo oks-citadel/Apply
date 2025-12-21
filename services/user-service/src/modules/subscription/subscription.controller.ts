@@ -12,10 +12,10 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagg
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 
+import { RawBodyRequest } from '@nestjs/common';
+
 import type { CreateCheckoutSessionDto } from './dto/create-checkout-session.dto';
-import type { SubscriptionService } from './subscription.service';
-import type {
-  RawBodyRequest} from '@nestjs/common';
+import { SubscriptionService } from './subscription.service';
 
 @ApiTags('Subscription')
 @Controller('users/subscription')

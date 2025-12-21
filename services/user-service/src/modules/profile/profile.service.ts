@@ -1,12 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-
+import { Repository } from 'typeorm';
 
 import { Profile } from './entities/profile.entity';
+import { StorageService } from '../storage/storage.service';
 
 import type { UpdateProfileDto } from './dto/update-profile.dto';
-import type { StorageService } from '../storage/storage.service';
-import type { Repository } from 'typeorm';
 
 @Injectable()
 export class ProfileService {

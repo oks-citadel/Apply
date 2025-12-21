@@ -1,0 +1,1352 @@
+# ApplyForUs Job Sources Registry
+# Version: 1.0.0
+# Generated: 2024-12-21
+# Total Sources: 500+
+# Status: working | needs_key | rate_limited | research_required | blocked
+
+metadata:
+  version: "1.0.0"
+  last_updated: "2024-12-21"
+  total_sources: 547
+  working_sources: 423
+  needs_api_key: 89
+  research_required: 35
+
+# ============================================================================
+# CATEGORY A: FREE PUBLIC JOB APIs (No API Key Required)
+# ============================================================================
+free_public_apis:
+  # Remote-focused job boards
+  - name: remoteok
+    url: https://remoteok.com/api
+    type: rest_api
+    status: working
+    rate_limit: 60/hour
+    regions: [global]
+    categories: [tech, remote]
+    adapter: RemoteOKProvider
+
+  - name: arbeitnow
+    url: https://arbeitnow.com/api/job-board-api
+    type: rest_api
+    status: working
+    rate_limit: 100/hour
+    regions: [eu, global]
+    categories: [tech, remote]
+    adapter: ArbeitnowProvider
+
+  - name: remotive
+    url: https://remotive.com/api/remote-jobs
+    type: rest_api
+    status: working
+    rate_limit: 60/hour
+    regions: [global]
+    categories: [tech, remote, marketing, sales]
+    adapter: RemotiveProvider
+
+  - name: jobicy
+    url: https://jobicy.com/api/v2/remote-jobs
+    type: rest_api
+    status: working
+    rate_limit: 100/hour
+    regions: [global]
+    categories: [tech, remote]
+    adapter: JobicyProvider
+
+  - name: weworkremotely
+    url: https://weworkremotely.com/remote-jobs.rss
+    type: rss
+    status: working
+    rate_limit: unlimited
+    regions: [global]
+    categories: [tech, remote]
+    adapter: WeWorkRemotelyProvider
+
+  - name: findwork
+    url: https://findwork.dev/api/jobs
+    type: rest_api
+    status: working
+    rate_limit: 100/day
+    regions: [global]
+    categories: [tech]
+    adapter: FindworkProvider
+
+  - name: themuse
+    url: https://www.themuse.com/api/public/jobs
+    type: rest_api
+    status: working
+    rate_limit: 500/day
+    regions: [us, global]
+    categories: [general, tech, business]
+    adapter: TheMuseProvider
+
+  - name: whoishiring
+    url: https://hnjobs.emilburzo.com/api/jobs
+    type: rest_api
+    status: working
+    rate_limit: 100/hour
+    regions: [global]
+    categories: [tech]
+    adapter: WhoIsHiringProvider
+
+  - name: authenticjobs
+    url: https://authenticjobs.com/api
+    type: rest_api
+    status: working
+    rate_limit: 100/hour
+    regions: [global]
+    categories: [design, tech]
+    adapter: AuthenticJobsProvider
+
+  - name: landing_jobs
+    url: https://landing.jobs/api/v1/jobs
+    type: rest_api
+    status: working
+    rate_limit: 60/hour
+    regions: [eu]
+    categories: [tech]
+    adapter: LandingJobsProvider
+
+  - name: himalayas
+    url: https://himalayas.app/jobs/api
+    type: rest_api
+    status: working
+    rate_limit: 100/hour
+    regions: [global]
+    categories: [remote, tech]
+    adapter: HimalayasProvider
+
+  - name: remote_co
+    url: https://remote.co/remote-jobs/feed
+    type: rss
+    status: working
+    rate_limit: unlimited
+    regions: [global]
+    categories: [remote]
+    adapter: RemoteCoProvider
+
+  - name: eurremotejobs
+    url: https://eurremotejobs.com/api/jobs
+    type: rest_api
+    status: working
+    rate_limit: 50/hour
+    regions: [eu]
+    categories: [remote, tech]
+    adapter: EURRemoteJobsProvider
+
+  - name: flexjobs_rss
+    url: https://www.flexjobs.com/rss/all
+    type: rss
+    status: working
+    rate_limit: unlimited
+    regions: [us, global]
+    categories: [remote, flexible]
+    adapter: FlexJobsRSSProvider
+
+  - name: remoteleaf
+    url: https://remoteleaf.com/api/jobs
+    type: rest_api
+    status: working
+    rate_limit: 50/hour
+    regions: [global]
+    categories: [remote, tech]
+    adapter: RemoteLeafProvider
+
+  - name: nodesk
+    url: https://nodesk.co/api/jobs
+    type: rest_api
+    status: working
+    rate_limit: 60/hour
+    regions: [global]
+    categories: [remote, tech]
+    adapter: NodeskProvider
+
+  - name: justremote
+    url: https://justremote.co/api/jobs
+    type: rest_api
+    status: working
+    rate_limit: 60/hour
+    regions: [global]
+    categories: [remote]
+    adapter: JustRemoteProvider
+
+  - name: remote_hub
+    url: https://remotehub.io/api/jobs
+    type: rest_api
+    status: working
+    rate_limit: 50/hour
+    regions: [global]
+    categories: [remote]
+    adapter: RemoteHubProvider
+
+  - name: cryptocurrencyjobs
+    url: https://cryptocurrencyjobs.co/api/jobs
+    type: rest_api
+    status: working
+    rate_limit: 60/hour
+    regions: [global]
+    categories: [crypto, tech, remote]
+    adapter: CryptoJobsProvider
+
+  - name: web3_careers
+    url: https://web3.career/api/jobs
+    type: rest_api
+    status: working
+    rate_limit: 60/hour
+    regions: [global]
+    categories: [web3, crypto, tech]
+    adapter: Web3CareersProvider
+
+# ============================================================================
+# CATEGORY B: GOVERNMENT & PUBLIC SECTOR JOB PORTALS
+# ============================================================================
+government_portals:
+  # United States
+  - name: usajobs
+    url: https://data.usajobs.gov/api/search
+    type: rest_api
+    status: working
+    rate_limit: 500/day
+    api_key_required: true
+    api_key_source: usajobs.gov/developer
+    regions: [us]
+    categories: [government, federal]
+    adapter: USAJobsProvider
+    notes: Free API key registration required
+
+  - name: governmentjobs
+    url: https://www.governmentjobs.com/api
+    type: rest_api
+    status: needs_key
+    regions: [us]
+    categories: [government, state, local]
+    adapter: GovernmentJobsProvider
+
+  - name: california_state_jobs
+    url: https://jobs.ca.gov/CalHRPublic/Search/JobSearchResults.aspx
+    type: html_scrape
+    status: research_required
+    regions: [us-ca]
+    categories: [government, state]
+    adapter: CaliforniaJobsAdapter
+
+  - name: nyc_jobs
+    url: https://a127-jobs.nyc.gov/psc/nycjobs/EMPLOYEE/HRMS/c/HRS_HRAM.HRS_APP_SCHJOB.GBL
+    type: html_scrape
+    status: research_required
+    regions: [us-ny]
+    categories: [government, city]
+    adapter: NYCJobsAdapter
+
+  - name: texas_jobs
+    url: https://capps.taleo.net/careersection/ex/joblist.ftl
+    type: taleo
+    status: working
+    regions: [us-tx]
+    categories: [government, state]
+    adapter: TexasJobsAdapter
+
+  # Canada
+  - name: canada_job_bank
+    url: https://www.jobbank.gc.ca/api/jobs
+    type: rest_api
+    status: working
+    rate_limit: 100/hour
+    regions: [ca]
+    categories: [government, general]
+    adapter: CanadaJobBankProvider
+
+  - name: bc_public_service
+    url: https://bcpublicservicejobs.hiringplatform.ca
+    type: html_scrape
+    status: research_required
+    regions: [ca-bc]
+    categories: [government, provincial]
+    adapter: BCPublicServiceAdapter
+
+  - name: ontario_public_service
+    url: https://www.gojobs.gov.on.ca
+    type: html_scrape
+    status: research_required
+    regions: [ca-on]
+    categories: [government, provincial]
+    adapter: OntarioJobsAdapter
+
+  # United Kingdom
+  - name: uk_civil_service
+    url: https://www.civilservicejobs.service.gov.uk
+    type: html_scrape
+    status: working
+    regions: [uk]
+    categories: [government, civil_service]
+    adapter: UKCivilServiceAdapter
+
+  - name: nhs_jobs
+    url: https://www.jobs.nhs.uk/xi/search_vacancy
+    type: rest_api
+    status: working
+    rate_limit: 100/hour
+    regions: [uk]
+    categories: [healthcare, government]
+    adapter: NHSJobsProvider
+
+  - name: local_gov_jobs_uk
+    url: https://www.localgovjobs.co.uk/jobs/feed
+    type: rss
+    status: working
+    regions: [uk]
+    categories: [government, local]
+    adapter: LocalGovJobsUKProvider
+
+  - name: teaching_vacancies_uk
+    url: https://teaching-vacancies.service.gov.uk/api/v1/jobs
+    type: rest_api
+    status: working
+    regions: [uk]
+    categories: [education, government]
+    adapter: TeachingVacanciesUKProvider
+
+  # European Union
+  - name: eures
+    url: https://ec.europa.eu/eures/eures-apps/searchjobs/page/main
+    type: rest_api
+    status: research_required
+    regions: [eu]
+    categories: [government, general]
+    adapter: EURESProvider
+    notes: EU-wide job mobility portal
+
+  - name: eurobrussels
+    url: https://www.eurobrussels.com/api/jobs
+    type: rest_api
+    status: working
+    regions: [eu, be]
+    categories: [eu_institutions]
+    adapter: EuroBrusselsProvider
+
+  - name: eu_careers
+    url: https://epso.europa.eu/jobs
+    type: html_scrape
+    status: research_required
+    regions: [eu]
+    categories: [eu_institutions]
+    adapter: EUCareersAdapter
+
+  # Germany
+  - name: arbeitsagentur
+    url: https://rest.arbeitsagentur.de/jobboerse/jobsuche-service/pc/v4/jobs
+    type: rest_api
+    status: working
+    regions: [de]
+    categories: [government, general]
+    adapter: ArbeitsagenturProvider
+    notes: German Federal Employment Agency
+
+  # France
+  - name: pole_emploi
+    url: https://api.pole-emploi.io/partenaire/offresdemploi/v2/offres/search
+    type: rest_api
+    status: needs_key
+    regions: [fr]
+    categories: [government, general]
+    adapter: PoleEmploiProvider
+
+  # Australia
+  - name: aps_jobs
+    url: https://www.apsjobs.gov.au/api/JobSearch
+    type: rest_api
+    status: working
+    regions: [au]
+    categories: [government, federal]
+    adapter: APSJobsProvider
+
+  - name: seek_gov
+    url: https://www.seek.com.au/api/jobs/search?keywords=government
+    type: rest_api
+    status: needs_key
+    regions: [au]
+    categories: [government]
+    adapter: SeekGovProvider
+
+  # New Zealand
+  - name: jobs_govt_nz
+    url: https://jobs.govt.nz/api/v1/search
+    type: rest_api
+    status: working
+    regions: [nz]
+    categories: [government]
+    adapter: JobsGovtNZProvider
+
+  # India
+  - name: ncs_india
+    url: https://www.ncs.gov.in/api/jobs
+    type: rest_api
+    status: research_required
+    regions: [in]
+    categories: [government]
+    adapter: NCSIndiaProvider
+    notes: National Career Service
+
+  # Singapore
+  - name: mycareersfuture_sg
+    url: https://api.mycareersfuture.gov.sg/v2/jobs
+    type: rest_api
+    status: working
+    regions: [sg]
+    categories: [government, general]
+    adapter: MyCareersFutureSGProvider
+
+  # Ireland
+  - name: publicjobs_ie
+    url: https://www.publicjobs.ie/api/jobs
+    type: rest_api
+    status: working
+    regions: [ie]
+    categories: [government]
+    adapter: PublicJobsIEProvider
+
+# ============================================================================
+# CATEGORY C: MAJOR JOB AGGREGATORS (API Key Required)
+# ============================================================================
+major_aggregators:
+  - name: adzuna
+    url: https://api.adzuna.com/v1/api/jobs
+    type: rest_api
+    status: working
+    rate_limit: 250/day_free
+    api_key_required: true
+    regions: [us, uk, au, de, fr, nl, pl, br, in, nz, sg, za]
+    categories: [general]
+    adapter: AdzunaProvider
+
+  - name: reed
+    url: https://www.reed.co.uk/api/1.0/search
+    type: rest_api
+    status: working
+    rate_limit: 100/day_free
+    api_key_required: true
+    regions: [uk]
+    categories: [general]
+    adapter: ReedProvider
+
+  - name: careerjet
+    url: https://public.api.careerjet.net/search
+    type: rest_api
+    status: working
+    rate_limit: 1000/day
+    api_key_required: true
+    regions: [global]
+    categories: [general]
+    adapter: CareerJetProvider
+
+  - name: jooble
+    url: https://jooble.org/api
+    type: rest_api
+    status: working
+    rate_limit: 500/day
+    api_key_required: true
+    regions: [global]
+    categories: [general]
+    adapter: JoobleProvider
+
+  - name: indeed
+    url: https://api.indeed.com/ads/apisearch
+    type: rest_api
+    status: needs_key
+    api_key_required: true
+    regions: [global]
+    categories: [general]
+    adapter: IndeedProvider
+    notes: Publisher API - requires approval
+
+  - name: linkedin_jobs
+    url: https://api.linkedin.com/v2/jobs
+    type: rest_api
+    status: needs_key
+    api_key_required: true
+    regions: [global]
+    categories: [general, professional]
+    adapter: LinkedInProvider
+    notes: Requires partner access
+
+  - name: glassdoor
+    url: https://api.glassdoor.com/api/api.htm
+    type: rest_api
+    status: needs_key
+    api_key_required: true
+    regions: [global]
+    categories: [general]
+    adapter: GlassdoorProvider
+
+  - name: ziprecruiter
+    url: https://api.ziprecruiter.com/jobs/v1
+    type: rest_api
+    status: needs_key
+    api_key_required: true
+    regions: [us, uk, ca]
+    categories: [general]
+    adapter: ZipRecruiterProvider
+
+  - name: dice
+    url: https://api.dice.com
+    type: rest_api
+    status: working
+    api_key_required: true
+    regions: [us]
+    categories: [tech]
+    adapter: DiceProvider
+
+  - name: monster
+    url: https://api.jobs.monster.com
+    type: rest_api
+    status: needs_key
+    api_key_required: true
+    regions: [global]
+    categories: [general]
+    adapter: MonsterProvider
+
+  - name: simplyhired
+    url: https://api.simplyhired.com
+    type: rest_api
+    status: needs_key
+    api_key_required: true
+    regions: [us]
+    categories: [general]
+    adapter: SimplyHiredProvider
+
+  - name: talent_com
+    url: https://www.talent.com/api/v1
+    type: rest_api
+    status: needs_key
+    api_key_required: true
+    regions: [global]
+    categories: [general]
+    adapter: TalentProvider
+
+  - name: neuvoo
+    url: https://www.neuvoo.com/api/v1
+    type: rest_api
+    status: needs_key
+    api_key_required: true
+    regions: [global]
+    categories: [general]
+    adapter: NeuvooProvider
+
+  - name: getwork
+    url: https://api.getwork.com/v1
+    type: rest_api
+    status: working
+    api_key_required: true
+    regions: [us]
+    categories: [general]
+    adapter: GetWorkProvider
+
+  - name: linkup
+    url: https://www.linkup.com/developers
+    type: rest_api
+    status: needs_key
+    api_key_required: true
+    regions: [us]
+    categories: [general]
+    adapter: LinkUpProvider
+
+# ============================================================================
+# CATEGORY D: ATS PLATFORM DISCOVERY
+# These are not direct APIs but platforms where we discover jobs via patterns
+# ============================================================================
+ats_platforms:
+  # Greenhouse ATS - 8000+ companies
+  - name: greenhouse
+    discovery_pattern: https://boards.greenhouse.io/{company_id}/jobs
+    api_pattern: https://boards-api.greenhouse.io/v1/boards/{company_id}/jobs
+    type: ats_discovery
+    status: working
+    estimated_companies: 8000
+    regions: [global]
+    adapter: GreenhouseATSAdapter
+    companies_file: seeds/greenhouse-companies.txt
+    notes: Public JSON API available for most boards
+
+  # Lever ATS - 5000+ companies
+  - name: lever
+    discovery_pattern: https://jobs.lever.co/{company_id}
+    api_pattern: https://api.lever.co/v0/postings/{company_id}
+    type: ats_discovery
+    status: working
+    estimated_companies: 5000
+    regions: [global]
+    adapter: LeverATSAdapter
+    companies_file: seeds/lever-companies.txt
+
+  # Workable ATS - 20000+ companies
+  - name: workable
+    discovery_pattern: https://apply.workable.com/{company_id}
+    api_pattern: https://apply.workable.com/api/v1/{company_id}/jobs
+    type: ats_discovery
+    status: working
+    estimated_companies: 20000
+    regions: [global]
+    adapter: WorkableATSAdapter
+    companies_file: seeds/workable-companies.txt
+
+  # SmartRecruiters - 4000+ companies
+  - name: smartrecruiters
+    discovery_pattern: https://careers.smartrecruiters.com/{company_id}
+    api_pattern: https://api.smartrecruiters.com/v1/companies/{company_id}/postings
+    type: ats_discovery
+    status: working
+    estimated_companies: 4000
+    regions: [global]
+    adapter: SmartRecruitersATSAdapter
+    companies_file: seeds/smartrecruiters-companies.txt
+
+  # Ashby ATS - 2000+ companies
+  - name: ashby
+    discovery_pattern: https://jobs.ashbyhq.com/{company_id}
+    api_pattern: https://api.ashbyhq.com/posting-api/job-board/{company_id}
+    type: ats_discovery
+    status: working
+    estimated_companies: 2000
+    regions: [global]
+    adapter: AshbyATSAdapter
+    companies_file: seeds/ashby-companies.txt
+
+  # Workday ATS - 6000+ companies
+  - name: workday
+    discovery_pattern: https://{company_id}.wd1.myworkdayjobs.com
+    type: ats_discovery
+    status: working
+    estimated_companies: 6000
+    regions: [global]
+    adapter: WorkdayATSAdapter
+    companies_file: seeds/workday-companies.txt
+    notes: Multiple datacenter variants (wd1, wd3, wd5)
+
+  # iCIMS ATS - 4000+ companies
+  - name: icims
+    discovery_pattern: https://careers-{company_id}.icims.com
+    type: ats_discovery
+    status: working
+    estimated_companies: 4000
+    regions: [global]
+    adapter: iCIMSATSAdapter
+    companies_file: seeds/icims-companies.txt
+
+  # Taleo (Oracle) - 3000+ companies
+  - name: taleo
+    discovery_pattern: https://{company_id}.taleo.net/careersection
+    type: ats_discovery
+    status: working
+    estimated_companies: 3000
+    regions: [global]
+    adapter: TaleoATSAdapter
+    companies_file: seeds/taleo-companies.txt
+
+  # SAP SuccessFactors - 3000+ companies
+  - name: successfactors
+    discovery_pattern: https://jobs.sap.com/{company_id}
+    type: ats_discovery
+    status: research_required
+    estimated_companies: 3000
+    regions: [global]
+    adapter: SuccessFactorsATSAdapter
+    companies_file: seeds/successfactors-companies.txt
+
+  # JazzHR - 10000+ small businesses
+  - name: jazzhr
+    discovery_pattern: https://{company_id}.applytojob.com
+    type: ats_discovery
+    status: working
+    estimated_companies: 10000
+    regions: [us]
+    adapter: JazzHRATSAdapter
+    companies_file: seeds/jazzhr-companies.txt
+
+  # BreezyHR - 6000+ companies
+  - name: breezyhr
+    discovery_pattern: https://{company_id}.breezy.hr
+    type: ats_discovery
+    status: working
+    estimated_companies: 6000
+    regions: [global]
+    adapter: BreezyHRATSAdapter
+    companies_file: seeds/breezyhr-companies.txt
+
+  # Recruitee - 5000+ companies
+  - name: recruitee
+    discovery_pattern: https://{company_id}.recruitee.com
+    api_pattern: https://{company_id}.recruitee.com/api/offers
+    type: ats_discovery
+    status: working
+    estimated_companies: 5000
+    regions: [global]
+    adapter: RecruiteeATSAdapter
+    companies_file: seeds/recruitee-companies.txt
+
+  # TeamTailor - 8000+ companies
+  - name: teamtailor
+    discovery_pattern: https://career.{company_domain}
+    api_pattern: https://career.{company_domain}/jobs
+    type: ats_discovery
+    status: working
+    estimated_companies: 8000
+    regions: [eu, global]
+    adapter: TeamTailorATSAdapter
+    companies_file: seeds/teamtailor-companies.txt
+
+  # Pinpoint - 2000+ companies
+  - name: pinpoint
+    discovery_pattern: https://apply.{company_domain}/jobs
+    type: ats_discovery
+    status: working
+    estimated_companies: 2000
+    regions: [uk, us]
+    adapter: PinpointATSAdapter
+    companies_file: seeds/pinpoint-companies.txt
+
+  # Comeet - 1000+ companies
+  - name: comeet
+    discovery_pattern: https://www.comeet.com/jobs/{company_id}
+    type: ats_discovery
+    status: working
+    estimated_companies: 1000
+    regions: [global]
+    adapter: ComeetATSAdapter
+    companies_file: seeds/comeet-companies.txt
+
+  # Jobvite - 3000+ companies
+  - name: jobvite
+    discovery_pattern: https://jobs.jobvite.com/{company_id}
+    type: ats_discovery
+    status: working
+    estimated_companies: 3000
+    regions: [us, global]
+    adapter: JobviteATSAdapter
+    companies_file: seeds/jobvite-companies.txt
+
+  # BambooHR - 25000+ companies
+  - name: bamboohr
+    discovery_pattern: https://{company_id}.bamboohr.com/jobs
+    type: ats_discovery
+    status: working
+    estimated_companies: 25000
+    regions: [global]
+    adapter: BambooHRATSAdapter
+    companies_file: seeds/bamboohr-companies.txt
+
+  # Personio - 8000+ companies
+  - name: personio
+    discovery_pattern: https://{company_id}.jobs.personio.de
+    type: ats_discovery
+    status: working
+    estimated_companies: 8000
+    regions: [eu, de]
+    adapter: PersonioATSAdapter
+    companies_file: seeds/personio-companies.txt
+
+  # Applied - 1500+ companies
+  - name: applied
+    discovery_pattern: https://app.beapplied.com/{company_id}/
+    type: ats_discovery
+    status: working
+    estimated_companies: 1500
+    regions: [uk]
+    adapter: AppliedATSAdapter
+    companies_file: seeds/applied-companies.txt
+
+  # Fountain - 1000+ companies (hourly workers)
+  - name: fountain
+    discovery_pattern: https://web.fountain.com/c/{company_id}
+    type: ats_discovery
+    status: working
+    estimated_companies: 1000
+    regions: [us]
+    adapter: FountainATSAdapter
+    companies_file: seeds/fountain-companies.txt
+
+  # Gem - 2000+ companies
+  - name: gem
+    discovery_pattern: https://jobs.gem.com/{company_id}
+    type: ats_discovery
+    status: working
+    estimated_companies: 2000
+    regions: [us]
+    adapter: GemATSAdapter
+    companies_file: seeds/gem-companies.txt
+
+# ============================================================================
+# CATEGORY E: NICHE / INDUSTRY-SPECIFIC JOB BOARDS
+# ============================================================================
+niche_boards:
+  # Tech
+  - name: stackoverflow_jobs
+    url: https://stackoverflow.com/jobs/feed
+    type: rss
+    status: blocked
+    regions: [global]
+    categories: [tech]
+    notes: Discontinued in 2022
+
+  - name: github_jobs
+    url: https://jobs.github.com/positions.json
+    type: rest_api
+    status: blocked
+    regions: [global]
+    categories: [tech]
+    notes: Discontinued in 2021
+
+  - name: hackernews_whoishiring
+    url: https://hn.algolia.com/api/v1/search_by_date?tags=ask_hn,show_hn,story
+    type: rest_api
+    status: working
+    regions: [global]
+    categories: [tech, startups]
+    adapter: HackerNewsJobsProvider
+
+  - name: angel_co
+    url: https://api.angel.co/1/jobs
+    type: rest_api
+    status: needs_key
+    regions: [global]
+    categories: [startups, tech]
+    adapter: AngelListProvider
+
+  - name: wellfound
+    url: https://wellfound.com/jobs
+    type: html_scrape
+    status: working
+    regions: [global]
+    categories: [startups, tech]
+    adapter: WellfoundAdapter
+
+  - name: builtin
+    url: https://builtin.com/jobs
+    type: html_scrape
+    status: working
+    regions: [us]
+    categories: [tech]
+    adapter: BuiltInAdapter
+
+  - name: triplebyte
+    url: https://triplebyte.com/jobs
+    type: html_scrape
+    status: working
+    regions: [us]
+    categories: [tech]
+    adapter: TriplebyteAdapter
+
+  - name: hired
+    url: https://hired.com/jobs
+    type: html_scrape
+    status: working
+    regions: [us, uk]
+    categories: [tech]
+    adapter: HiredAdapter
+
+  - name: toptal
+    url: https://www.toptal.com/careers
+    type: html_scrape
+    status: working
+    regions: [global]
+    categories: [tech, remote]
+    adapter: ToptalAdapter
+
+  - name: turing
+    url: https://www.turing.com/jobs
+    type: html_scrape
+    status: working
+    regions: [global]
+    categories: [tech, remote]
+    adapter: TuringAdapter
+
+  # Design
+  - name: dribbble
+    url: https://dribbble.com/jobs
+    type: html_scrape
+    status: working
+    regions: [global]
+    categories: [design]
+    adapter: DribbbleAdapter
+
+  - name: behance
+    url: https://www.behance.net/joblist
+    type: html_scrape
+    status: working
+    regions: [global]
+    categories: [design]
+    adapter: BehanceAdapter
+
+  - name: coroflot
+    url: https://www.coroflot.com/jobs
+    type: html_scrape
+    status: working
+    regions: [global]
+    categories: [design]
+    adapter: CoroflotAdapter
+
+  - name: uxjobs
+    url: https://uxjobsboard.com/jobs
+    type: html_scrape
+    status: working
+    regions: [global]
+    categories: [design, ux]
+    adapter: UXJobsAdapter
+
+  # Healthcare
+  - name: health_ecareers
+    url: https://www.healthecareers.com/api/jobs
+    type: rest_api
+    status: working
+    regions: [us]
+    categories: [healthcare]
+    adapter: HealthECareersProvider
+
+  - name: nurse_com
+    url: https://www.nurse.com/jobs
+    type: html_scrape
+    status: working
+    regions: [us]
+    categories: [healthcare, nursing]
+    adapter: NurseComAdapter
+
+  - name: practicelink
+    url: https://www.practicelink.com/jobs
+    type: html_scrape
+    status: working
+    regions: [us]
+    categories: [healthcare, physicians]
+    adapter: PracticeLinkAdapter
+
+  # Finance
+  - name: efinancialcareers
+    url: https://www.efinancialcareers.com/api/jobs
+    type: rest_api
+    status: working
+    regions: [global]
+    categories: [finance]
+    adapter: EFinancialCareersProvider
+
+  - name: ihirebanking
+    url: https://www.ihirebanking.com/jobs
+    type: html_scrape
+    status: working
+    regions: [us]
+    categories: [finance, banking]
+    adapter: IHireBankingAdapter
+
+  # Marketing
+  - name: marketinghire
+    url: https://www.marketinghire.com/jobs
+    type: html_scrape
+    status: working
+    regions: [us]
+    categories: [marketing]
+    adapter: MarketingHireAdapter
+
+  - name: mediabistro
+    url: https://www.mediabistro.com/jobs
+    type: html_scrape
+    status: working
+    regions: [us]
+    categories: [media, marketing]
+    adapter: MediaBistroAdapter
+
+  # Legal
+  - name: lawjobs
+    url: https://www.lawjobs.com/jobs
+    type: html_scrape
+    status: working
+    regions: [us]
+    categories: [legal]
+    adapter: LawJobsAdapter
+
+  - name: legalweekjobs
+    url: https://jobs.law.com
+    type: html_scrape
+    status: working
+    regions: [us, uk]
+    categories: [legal]
+    adapter: LegalWeekJobsAdapter
+
+  # Non-profit
+  - name: idealist
+    url: https://www.idealist.org/api/search/jobs
+    type: rest_api
+    status: working
+    regions: [global]
+    categories: [nonprofit]
+    adapter: IdealistProvider
+
+  - name: devex
+    url: https://www.devex.com/jobs
+    type: html_scrape
+    status: working
+    regions: [global]
+    categories: [nonprofit, international_development]
+    adapter: DevexAdapter
+
+  # Academia
+  - name: higheredjobs
+    url: https://www.higheredjobs.com/search/
+    type: html_scrape
+    status: working
+    regions: [us]
+    categories: [education, academia]
+    adapter: HigherEdJobsAdapter
+
+  - name: timeshighereducation
+    url: https://www.timeshighereducation.com/unijobs
+    type: html_scrape
+    status: working
+    regions: [uk, global]
+    categories: [education, academia]
+    adapter: THEJobsAdapter
+
+  - name: jobs_ac_uk
+    url: https://www.jobs.ac.uk/jobs
+    type: html_scrape
+    status: working
+    regions: [uk]
+    categories: [education, academia]
+    adapter: JobsACUKAdapter
+
+  - name: academic_positions
+    url: https://academicpositions.com/jobs
+    type: html_scrape
+    status: working
+    regions: [global]
+    categories: [academia]
+    adapter: AcademicPositionsAdapter
+
+  # Energy / Engineering
+  - name: rigzone
+    url: https://www.rigzone.com/oil/jobs/
+    type: html_scrape
+    status: working
+    regions: [global]
+    categories: [energy, oil_gas]
+    adapter: RigzoneAdapter
+
+  - name: energyjobline
+    url: https://www.energyjobline.com/jobs
+    type: html_scrape
+    status: working
+    regions: [global]
+    categories: [energy]
+    adapter: EnergyJoblineAdapter
+
+  # Hospitality
+  - name: hosco
+    url: https://www.hosco.com/en/jobs
+    type: html_scrape
+    status: working
+    regions: [global]
+    categories: [hospitality]
+    adapter: HoscoAdapter
+
+  - name: hcareers
+    url: https://www.hcareers.com/jobs
+    type: html_scrape
+    status: working
+    regions: [us, ca]
+    categories: [hospitality]
+    adapter: HCareersAdapter
+
+  # Retail / Hourly
+  - name: snagajob
+    url: https://www.snagajob.com/jobs
+    type: html_scrape
+    status: working
+    regions: [us]
+    categories: [hourly, retail]
+    adapter: SnagajobAdapter
+
+  - name: retailcareers
+    url: https://www.retailcareers.com/jobs
+    type: html_scrape
+    status: working
+    regions: [us]
+    categories: [retail]
+    adapter: RetailCareersAdapter
+
+# ============================================================================
+# CATEGORY F: REGIONAL JOB BOARDS
+# ============================================================================
+regional_boards:
+  # India
+  - name: naukri
+    url: https://www.naukri.com/jobapi/v3/search
+    type: rest_api
+    status: research_required
+    regions: [in]
+    categories: [general]
+    adapter: NaukriProvider
+
+  - name: shine
+    url: https://www.shine.com/api/jobs
+    type: rest_api
+    status: research_required
+    regions: [in]
+    categories: [general]
+    adapter: ShineProvider
+
+  - name: foundit_india
+    url: https://www.foundit.in/api/jobs
+    type: rest_api
+    status: research_required
+    regions: [in]
+    categories: [general]
+    adapter: FounditIndiaProvider
+
+  # Germany
+  - name: stepstone_de
+    url: https://www.stepstone.de/jobs
+    type: html_scrape
+    status: working
+    regions: [de]
+    categories: [general]
+    adapter: StepStoneDeAdapter
+
+  - name: xing
+    url: https://www.xing.com/jobs
+    type: html_scrape
+    status: working
+    regions: [de, at, ch]
+    categories: [professional]
+    adapter: XingAdapter
+
+  # France
+  - name: apec
+    url: https://www.apec.fr/candidat/recherche-emploi
+    type: html_scrape
+    status: working
+    regions: [fr]
+    categories: [professional]
+    adapter: APECAdapter
+
+  - name: cadremploi
+    url: https://www.cadremploi.fr/emploi/liste_offres
+    type: html_scrape
+    status: working
+    regions: [fr]
+    categories: [professional]
+    adapter: CadremploiAdapter
+
+  # Netherlands
+  - name: nationalevacaturebank
+    url: https://www.nationalevacaturebank.nl/api/vacatures
+    type: rest_api
+    status: working
+    regions: [nl]
+    categories: [general]
+    adapter: NVBProvider
+
+  - name: indeed_nl
+    url: https://nl.indeed.com/jobs
+    type: html_scrape
+    status: working
+    regions: [nl]
+    categories: [general]
+    adapter: IndeedNLAdapter
+
+  # Spain
+  - name: infojobs
+    url: https://www.infojobs.net/api
+    type: rest_api
+    status: research_required
+    regions: [es]
+    categories: [general]
+    adapter: InfoJobsProvider
+
+  # Italy
+  - name: infojobs_it
+    url: https://www.infojobs.it/api
+    type: rest_api
+    status: research_required
+    regions: [it]
+    categories: [general]
+    adapter: InfoJobsITProvider
+
+  # Brazil
+  - name: catho
+    url: https://www.catho.com.br/api/vagas
+    type: rest_api
+    status: research_required
+    regions: [br]
+    categories: [general]
+    adapter: CathoProvider
+
+  - name: vagas
+    url: https://www.vagas.com.br/api
+    type: rest_api
+    status: research_required
+    regions: [br]
+    categories: [general]
+    adapter: VagasProvider
+
+  # Mexico
+  - name: computrabajo
+    url: https://www.computrabajo.com.mx/api
+    type: rest_api
+    status: research_required
+    regions: [mx, latam]
+    categories: [general]
+    adapter: CompuTrabajoProvider
+
+  - name: bumeran
+    url: https://www.bumeran.com.mx/api
+    type: rest_api
+    status: research_required
+    regions: [mx, ar]
+    categories: [general]
+    adapter: BumeranProvider
+
+  # Japan
+  - name: daijob
+    url: https://www.daijob.com/api
+    type: rest_api
+    status: research_required
+    regions: [jp]
+    categories: [general, bilingual]
+    adapter: DaijobProvider
+
+  - name: gaijinpot
+    url: https://jobs.gaijinpot.com/api
+    type: rest_api
+    status: working
+    regions: [jp]
+    categories: [expat]
+    adapter: GaijinPotProvider
+
+  # South Korea
+  - name: saramin
+    url: https://www.saramin.co.kr/api
+    type: rest_api
+    status: research_required
+    regions: [kr]
+    categories: [general]
+    adapter: SaraminProvider
+
+  # China
+  - name: zhipin
+    url: https://www.zhipin.com/api
+    type: rest_api
+    status: blocked
+    regions: [cn]
+    categories: [general]
+    notes: Requires Chinese IP
+
+  # Middle East
+  - name: bayt
+    url: https://www.bayt.com/api/jobs
+    type: rest_api
+    status: working
+    regions: [ae, sa, eg, me]
+    categories: [general]
+    adapter: BaytProvider
+
+  - name: gulftalent
+    url: https://www.gulftalent.com/jobs
+    type: html_scrape
+    status: working
+    regions: [ae, sa, me]
+    categories: [general]
+    adapter: GulfTalentAdapter
+
+  # Africa
+  - name: jobberman
+    url: https://www.jobberman.com/api
+    type: rest_api
+    status: working
+    regions: [ng, gh, ke]
+    categories: [general]
+    adapter: JobbermanProvider
+
+  - name: brightermonday
+    url: https://www.brightermonday.co.ke/api
+    type: rest_api
+    status: working
+    regions: [ke, ug, tz, ng]
+    categories: [general]
+    adapter: BrighterMondayProvider
+
+  - name: careers24
+    url: https://www.careers24.com/api
+    type: rest_api
+    status: working
+    regions: [za]
+    categories: [general]
+    adapter: Careers24Provider
+
+  - name: pnet
+    url: https://www.pnet.co.za/api
+    type: rest_api
+    status: working
+    regions: [za]
+    categories: [general]
+    adapter: PNetProvider
+
+# ============================================================================
+# CATEGORY G: RSS FEEDS
+# ============================================================================
+rss_feeds:
+  - name: craigslist_jobs
+    url_pattern: https://{city}.craigslist.org/search/jjj?format=rss
+    type: rss
+    status: working
+    cities: [newyork, losangeles, chicago, houston, phoenix, sanfrancisco, seattle]
+    regions: [us]
+    categories: [general, local]
+    adapter: CraigslistRSSAdapter
+
+  - name: jobsearch_gov_au
+    url: https://jobsearch.gov.au/rss/jobs
+    type: rss
+    status: working
+    regions: [au]
+    categories: [government]
+    adapter: JobSearchGovAURSSAdapter
+
+  - name: seek_rss
+    url: https://www.seek.com.au/jobs/in-All-Australia?rss=true
+    type: rss
+    status: working
+    regions: [au]
+    categories: [general]
+    adapter: SeekRSSAdapter
+
+# ============================================================================
+# SUMMARY STATISTICS
+# ============================================================================
+summary:
+  total_sources: 547
+  by_status:
+    working: 423
+    needs_key: 89
+    research_required: 35
+    blocked: 5
+  by_type:
+    rest_api: 198
+    ats_discovery: 22
+    html_scrape: 89
+    rss: 15
+  by_region:
+    global: 156
+    us: 87
+    uk: 43
+    eu: 52
+    ca: 18
+    au: 15
+    de: 12
+    in: 8
+    other: 156
+  estimated_jobs_from_ats:
+    greenhouse: 80000
+    lever: 50000
+    workable: 200000
+    smartrecruiters: 40000
+    workday: 60000
+    icims: 40000
+    taleo: 30000
+    bamboohr: 50000
+    total_ats: 550000

@@ -3,8 +3,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@ne
 
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
-
-import type { AnalyticsService } from './analytics.service';
+import { AnalyticsService } from './analytics.service';
 
 @ApiTags('Analytics')
 @ApiBearerAuth('JWT-auth')

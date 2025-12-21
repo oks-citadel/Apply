@@ -8,6 +8,20 @@ import type { Job} from '../../jobs/entities/job.entity';
 import type { JobProvider, RawJobData, JobProviderConfig } from '../interfaces/job-provider.interface';
 import type { AxiosInstance } from 'axios';
 
+/**
+ * Circuit Breaker States
+ */
+enum CircuitState {
+  CLOSED = 'CLOSED',     // Normal operation
+  OPEN = 'OPEN',         // Failing - reject requests
+  HALF_OPEN = 'HALF_OPEN' // Testing if service recovered
+}
+
+/**
+ * Adzuna Provider with Rate Limiting and Circuit Breaker
+ * FREE tier: 250 calls/day
+ * API Documentation: https://developer.adzuna.com/
+ */
 @Injectable()
 export class AdzunaProvider implements JobProvider {
   private readonly logger = new Logger(AdzunaProvider.name);
@@ -15,6 +29,20 @@ export class AdzunaProvider implements JobProvider {
   private readonly config: JobProviderConfig;
   private readonly appId: string;
   private readonly appKey: string;
+
+  // Rate limiting
+  private requestQueue: number[] = [];
+  private readonly rateLimitWindow = 60000; // 1 minute in ms
+  private readonly maxRequestsPerWindow: number;
+
+  // Circuit breaker
+  private circuitState: CircuitState = CircuitState.CLOSED;
+  private failureCount = 0;
+  private lastFailureTime: number = 0;
+  private readonly failureThreshold = 5;
+  private readonly resetTimeout = 60000; // 1 minute
+  private readonly halfOpenMaxRequests = 3;
+  private halfOpenRequests = 0;
 
   constructor(private readonly configService: ConfigService) {
     this.appId = this.configService.get('ADZUNA_APP_ID', '');
@@ -25,6 +53,8 @@ export class AdzunaProvider implements JobProvider {
       rateLimitPerMinute: this.configService.get('ADZUNA_RATE_LIMIT', 250),
       timeout: this.configService.get('ADZUNA_TIMEOUT', 30000),
     };
+
+    this.maxRequestsPerWindow = this.config.rateLimitPerMinute;
 
     this.httpClient = axios.create({
       baseURL: this.config.apiUrl,
@@ -39,6 +69,101 @@ export class AdzunaProvider implements JobProvider {
     return 'Adzuna';
   }
 
+  /**
+   * Rate Limiting: Check if we can make a request
+   */
+  private async checkRateLimit(): Promise<void> {
+    const now = Date.now();
+
+    // Remove requests outside the current window
+    this.requestQueue = this.requestQueue.filter(time => now - time < this.rateLimitWindow);
+
+    if (this.requestQueue.length >= this.maxRequestsPerWindow) {
+      const oldestRequest = this.requestQueue[0];
+      const waitTime = this.rateLimitWindow - (now - oldestRequest);
+
+      this.logger.warn(`Rate limit reached for Adzuna. Waiting ${waitTime}ms`, {
+        provider: 'Adzuna',
+        current_requests: this.requestQueue.length,
+        max_requests: this.maxRequestsPerWindow,
+        wait_time_ms: waitTime,
+      });
+
+      await new Promise(resolve => setTimeout(resolve, waitTime));
+      return this.checkRateLimit();
+    }
+
+    this.requestQueue.push(now);
+  }
+
+  /**
+   * Circuit Breaker: Check if we should allow the request
+   */
+  private checkCircuitBreaker(): void {
+    const now = Date.now();
+
+    if (this.circuitState === CircuitState.OPEN) {
+      if (now - this.lastFailureTime >= this.resetTimeout) {
+        this.logger.log('Circuit breaker transitioning to HALF_OPEN', {
+          provider: 'Adzuna',
+          previous_state: 'OPEN',
+          failure_count: this.failureCount,
+        });
+        this.circuitState = CircuitState.HALF_OPEN;
+        this.halfOpenRequests = 0;
+      } else {
+        throw new Error(`Circuit breaker OPEN for Adzuna. Service temporarily unavailable.`);
+      }
+    }
+
+    if (this.circuitState === CircuitState.HALF_OPEN && this.halfOpenRequests >= this.halfOpenMaxRequests) {
+      throw new Error(`Circuit breaker HALF_OPEN limit reached for Adzuna.`);
+    }
+  }
+
+  /**
+   * Record successful request
+   */
+  private recordSuccess(): void {
+    if (this.circuitState === CircuitState.HALF_OPEN) {
+      this.logger.log('Circuit breaker transitioning to CLOSED', {
+        provider: 'Adzuna',
+        previous_state: 'HALF_OPEN',
+      });
+      this.circuitState = CircuitState.CLOSED;
+      this.failureCount = 0;
+      this.halfOpenRequests = 0;
+    }
+  }
+
+  /**
+   * Record failed request
+   */
+  private recordFailure(error: any): void {
+    this.failureCount++;
+    this.lastFailureTime = Date.now();
+
+    if (this.circuitState === CircuitState.HALF_OPEN) {
+      this.logger.warn('Circuit breaker opening due to failure in HALF_OPEN state', {
+        provider: 'Adzuna',
+        error: error.message,
+      });
+      this.circuitState = CircuitState.OPEN;
+      this.halfOpenRequests = 0;
+      return;
+    }
+
+    if (this.failureCount >= this.failureThreshold) {
+      this.logger.error('Circuit breaker OPENING due to failure threshold', {
+        provider: 'Adzuna',
+        failure_count: this.failureCount,
+        threshold: this.failureThreshold,
+        error: error.message,
+      });
+      this.circuitState = CircuitState.OPEN;
+    }
+  }
+
   async fetchJobs(params?: {
     keywords?: string;
     location?: string;
@@ -46,8 +171,30 @@ export class AdzunaProvider implements JobProvider {
     page?: number;
     country?: string;
   }): Promise<RawJobData[]> {
+    const startTime = Date.now();
+
     try {
+      // Check circuit breaker
+      this.checkCircuitBreaker();
+
+      // Apply rate limiting
+      await this.checkRateLimit();
+
+      if (this.circuitState === CircuitState.HALF_OPEN) {
+        this.halfOpenRequests++;
+      }
+
       const country = params?.country || 'us';
+
+      this.logger.log('Fetching jobs from Adzuna', {
+        provider: 'Adzuna',
+        keywords: params?.keywords,
+        location: params?.location,
+        country,
+        page: params?.page || 1,
+        circuit_state: this.circuitState,
+      });
+
       const response = await this.httpClient.get(`/${country}/search/${params?.page || 1}`, {
         params: {
           app_id: this.appId,
@@ -59,9 +206,31 @@ export class AdzunaProvider implements JobProvider {
         },
       });
 
-      return this.parseJobListings(response.data);
+      const jobs = this.parseJobListings(response.data);
+      const duration = Date.now() - startTime;
+
+      this.logger.log('Successfully fetched jobs from Adzuna', {
+        provider: 'Adzuna',
+        job_count: jobs.length,
+        duration_ms: duration,
+        circuit_state: this.circuitState,
+      });
+
+      this.recordSuccess();
+      return jobs;
     } catch (error) {
-      this.logger.error(`Adzuna API error: ${error.message}`);
+      const duration = Date.now() - startTime;
+      this.recordFailure(error);
+
+      this.logger.error('Adzuna API error', {
+        provider: 'Adzuna',
+        error: error.message,
+        duration_ms: duration,
+        circuit_state: this.circuitState,
+        failure_count: this.failureCount,
+      });
+
+      // Fallback to RapidAPI
       return this.fetchJobsViaRapidAPI(params);
     }
   }

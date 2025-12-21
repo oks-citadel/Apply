@@ -93,10 +93,9 @@ import { NormalizationModule } from './modules/normalization/normalization.modul
           EmployerProfile,
           JobReport,
         ],
-        // Migrations configuration - run on startup in production
+        // Migrations configuration - DISABLED due to CREATE INDEX CONCURRENTLY issue
         migrations: [join(__dirname, './migrations/*{.ts,.js}')],
-        migrationsRun: configService.get('NODE_ENV') === 'production' ||
-          configService.get('RUN_MIGRATIONS') === 'true',
+        migrationsRun: false, // Disabled - run manually if needed
         migrationsTableName: 'typeorm_migrations',
         // Disable synchronize - tables created manually to avoid TypeORM index duplication bug
         synchronize: false,
@@ -141,8 +140,8 @@ import { NormalizationModule } from './modules/normalization/normalization.modul
       maxRedirects: 5,
     }),
 
-    // Redis Cache Module for job search caching
-    RedisCacheModule,
+    // Redis Cache Module - temporarily disabled for debugging
+    // RedisCacheModule,
 
     // Core feature modules - re-enabled
     HealthModule,
@@ -151,7 +150,7 @@ import { NormalizationModule } from './modules/normalization/normalization.modul
     IngestionModule,
     NormalizationModule,
 
-    // Job Aggregator for real-time worldwide job fetching (10 providers)
+    // Job Aggregator - enabled for real-time job fetching
     AggregatorModule,
 
     // Optional feature modules - disabled until needed

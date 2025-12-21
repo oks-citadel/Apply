@@ -20,9 +20,11 @@ import { WeWorkRemotelyProvider } from './providers/weworkremotely.provider';
 
 // Niche / Regional Aggregators
 import { CareerJetProvider } from './providers/careerjet.provider';
+import { ReedProvider } from './providers/reed.provider';
 
 // Tech-Focused Aggregators
 import { DiceProvider } from './providers/dice.provider';
+import { FindWorkProvider } from './providers/findwork.provider';
 import { GlassdoorProvider } from './providers/glassdoor.provider';
 import { IndeedProvider } from './providers/indeed.provider';
 import { JoobleProvider } from './providers/jooble.provider';
@@ -54,8 +56,10 @@ import { Job } from '../jobs/entities/job.entity';
     // Niche / Regional Aggregators
     CareerJetProvider,
     TalentProvider,
+    ReedProvider,
     // Tech-Focused Aggregators
     DiceProvider,
+    FindWorkProvider,
     // FREE APIs - No API key required (prioritized)
     RemoteOKProvider,
     ArbeitnowProvider,

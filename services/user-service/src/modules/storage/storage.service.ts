@@ -1,6 +1,6 @@
 import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand, HeadObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import { Injectable, Logger, BadRequestException, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, Inject, Logger, BadRequestException, InternalServerErrorException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -30,7 +30,7 @@ export class StorageService {
   private readonly maxFileSize: number;
   private readonly allowedImageTypes: string[];
 
-  constructor(private readonly configService: ConfigService) {
+  constructor(@Inject(ConfigService) private readonly configService: ConfigService) {
     this.region = this.configService.get<string>('AWS_REGION', 'us-east-1');
     this.bucketName = this.configService.get<string>('AWS_S3_BUCKET', 'job-apply-platform-user-uploads');
     this.profilePhotosPrefix = this.configService.get<string>('AWS_S3_PROFILE_PHOTOS_PREFIX', 'profile-photos/');

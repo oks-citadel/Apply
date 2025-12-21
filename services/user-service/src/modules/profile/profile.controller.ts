@@ -16,6 +16,8 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiConsumes } from '
 
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { ProfileSectionsService } from './profile-sections.service';
+import { ProfileService } from './profile.service';
 
 import type {
   CreateCertificationDto,
@@ -28,8 +30,6 @@ import type {
   CreateWorkExperienceDto,
   UpdateWorkExperienceDto,
 } from './dto/work-experience.dto';
-import type { ProfileSectionsService } from './profile-sections.service';
-import type { ProfileService } from './profile.service';
 
 
 

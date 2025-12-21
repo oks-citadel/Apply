@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type, Transform } from 'class-transformer';
-import { IsOptional, IsString, IsNumber, IsEnum, IsBoolean, IsArray, Min, Max } from 'class-validator';
+import { IsOptional, IsString, IsNumber, IsEnum, IsBoolean, IsArray, Min, Max, IsIn } from 'class-validator';
 
 import { RemoteType, ExperienceLevel, EmploymentType } from '../entities/job.entity';
 
@@ -97,7 +97,7 @@ export class SearchJobsDto {
 
   @ApiPropertyOptional({ description: 'Sort order', enum: ['asc', 'desc'], default: 'desc' })
   @IsOptional()
-  @IsEnum(['asc', 'desc'])
+  @IsIn(['asc', 'desc'])
   sort_order?: 'asc' | 'desc' = 'desc';
 
   @ApiPropertyOptional({ description: 'Cursor for pagination' })

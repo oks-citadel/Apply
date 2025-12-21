@@ -1,8 +1,7 @@
-import { Injectable, Logger, ForbiddenException } from '@nestjs/common';
+import { Injectable, Logger, ForbiddenException, NestMiddleware } from '@nestjs/common';
+import { Request, Response, NextFunction } from 'express';
 
-import type { TenantService } from '../tenant.service';
-import type { NestMiddleware} from '@nestjs/common';
-import type { Request, Response, NextFunction } from 'express';
+import { TenantService } from '../tenant.service';
 
 /**
  * Middleware to ensure tenant isolation and data security

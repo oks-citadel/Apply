@@ -10,6 +10,8 @@ export * from './adzuna.provider';
 // Niche / Regional Aggregators
 export * from './careerjet.provider';
 export * from './talent.provider';
+export * from './reed.provider';
 
 // Tech-Focused Aggregators
 export * from './dice.provider';
+export * from './findwork.provider';

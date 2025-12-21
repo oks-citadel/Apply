@@ -27,11 +27,11 @@ import { SaveJobDto } from './dto/save-job.dto';
 import { PaginatedJobsResponseDto, JobResponseDto } from './dto/search-jobs.dto';
 import { JwtAuthGuard } from '../../common/guards';
 
-import type { MatchScoreDto} from './dto/match-score.dto';
-import type { ReportJobDto} from './dto/report-job.dto';
-import type { SalaryPredictionDto} from './dto/salary-prediction.dto';
-import type { UpdateSavedJobDto } from './dto/save-job.dto';
-import type { SearchJobsDto} from './dto/search-jobs.dto';
+import { MatchScoreDto } from './dto/match-score.dto';
+import { ReportJobDto } from './dto/report-job.dto';
+import { SalaryPredictionDto } from './dto/salary-prediction.dto';
+import { UpdateSavedJobDto } from './dto/save-job.dto';
+import { SearchJobsDto } from './dto/search-jobs.dto';
 import { JobsService } from './jobs.service';
 
 @ApiTags('Jobs')

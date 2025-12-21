@@ -52,6 +52,7 @@ async function bootstrap() {
     ? corsOrigins.split(',').map(o => o.trim())
     : [
         'https://applyforus.com',
+        'https://www.applyforus.com',
         'https://dev.applyforus.com',
         'http://localhost:3000', // For local development
       ];

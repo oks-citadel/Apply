@@ -2,13 +2,12 @@ import {
   Injectable,
   ForbiddenException,
   Logger,
-} from '@nestjs/common';
-
-import type { TenantService } from '../tenant.service';
-import type {
   CanActivate,
-  ExecutionContext} from '@nestjs/common';
-import type { Reflector } from '@nestjs/core';
+  ExecutionContext,
+} from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
+
+import { TenantService } from '../tenant.service';
 
 export const REQUIRED_FEATURE = 'required_feature';
 export const REQUIRED_LICENSE = 'required_license';

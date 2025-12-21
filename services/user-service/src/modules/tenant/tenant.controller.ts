@@ -14,10 +14,12 @@ import {
   Logger,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
-
+import { Response } from 'express';
 
 import { TenantLicenseGuard } from './guards/tenant-license.guard';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { TenantService } from './tenant.service';
+import { ExportUtil } from './utils/export.util';
 
 import type { AnalyticsQueryDto } from './dto/analytics-query.dto';
 import type { BulkImportUsersDto } from './dto/bulk-import-users.dto';
@@ -26,9 +28,6 @@ import type { CreatePlacementDto } from './dto/create-placement.dto';
 import type { CreateTenantDto } from './dto/create-tenant.dto';
 import type { UpdateBrandingDto } from './dto/update-branding.dto';
 import type { UpdateTenantDto } from './dto/update-tenant.dto';
-import type { TenantService } from './tenant.service';
-import type { ExportUtil } from './utils/export.util';
-import type { Response } from 'express';
 
 @ApiTags('Tenants')
 @Controller('api/v1/tenants')

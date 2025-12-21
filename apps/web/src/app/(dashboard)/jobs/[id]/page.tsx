@@ -197,7 +197,7 @@ export default function JobDetailPage({ params }: { params: { id: string } }) {
   if (error || !job) {
     return (
       <div className="space-y-6">
-        <Link href="/dashboard/jobs">
+        <Link href="/jobs">
           <Button variant="ghost" size="sm">
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Jobs
@@ -222,7 +222,7 @@ export default function JobDetailPage({ params }: { params: { id: string } }) {
     <div className="space-y-6">
       {/* Header with Back Button and Actions */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <Link href="/dashboard/jobs">
+        <Link href="/jobs">
           <Button variant="ghost" size="sm">
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Jobs
@@ -535,7 +535,7 @@ export default function JobDetailPage({ params }: { params: { id: string } }) {
                 {similarJobs.map((similarJob) => (
                   <Link
                     key={similarJob.id}
-                    href={`/dashboard/jobs/${similarJob.id}`}
+                    href={`/jobs/${similarJob.id}`}
                     className="block p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                   >
                     <h4 className="font-medium text-gray-900 dark:text-white mb-1">

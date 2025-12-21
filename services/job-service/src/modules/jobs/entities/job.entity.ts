@@ -44,6 +44,8 @@ export enum JobSource {
   THEMUSE = 'themuse',
   JOBICY = 'jobicy',
   WEWORKREMOTELY = 'weworkremotely',
+  REED = 'reed',
+  FINDWORK = 'findwork',
 
   // Direct / Internal
   DIRECT = 'direct',

@@ -71,9 +71,55 @@ export const jobsApi = {
    */
   searchJobs: async (filters: JobSearchFilters): Promise<JobSearchResponse> => {
     try {
-      const response = await apiClient.get<BackendJobsResponse>('/jobs/search', {
-        params: filters,
-      });
+      // Transform frontend filter names to backend parameter names
+      // Backend expects 'keywords' but frontend uses 'query'
+      const params: Record<string, any> = {};
+
+      // Map query -> keywords (frontend uses 'query', backend expects 'keywords')
+      if (filters.query && filters.query.trim()) {
+        params.keywords = filters.query.trim();
+      }
+
+      // Pass through other parameters, filtering out empty values
+      if (filters.location && filters.location.trim()) {
+        params.location = filters.location.trim();
+      }
+      if (filters.locationType && filters.locationType.length > 0) {
+        // Map frontend locationType to backend remote_type
+        const remoteTypeMap: Record<string, string> = {
+          'remote': 'full_remote',
+          'hybrid': 'hybrid',
+          'onsite': 'onsite',
+        };
+        params.remote_type = filters.locationType.map(lt => remoteTypeMap[lt] || lt);
+      }
+      if (filters.employmentType && filters.employmentType.length > 0) {
+        params.employment_type = filters.employmentType;
+      }
+      if (filters.experienceLevel && filters.experienceLevel.length > 0) {
+        params.experience_level = filters.experienceLevel;
+      }
+      if (filters.industry && filters.industry.length > 0) {
+        params.industry = filters.industry;
+      }
+      if (filters.salaryMin !== undefined && filters.salaryMin > 0) {
+        params.salary_min = filters.salaryMin;
+      }
+      if (filters.salaryMax !== undefined && filters.salaryMax > 0) {
+        params.salary_max = filters.salaryMax;
+      }
+      if (filters.skills && filters.skills.length > 0) {
+        params.skills = filters.skills;
+      }
+      if (filters.postedWithin) {
+        params.posted_within = filters.postedWithin;
+      }
+
+      // Pagination
+      params.page = filters.page || 1;
+      params.limit = filters.limit || 10;
+
+      const response = await apiClient.get<BackendJobsResponse>('/jobs/search', { params });
       return transformJobsResponse(response.data);
     } catch (error) {
       throw handleApiError(error);

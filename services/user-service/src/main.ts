@@ -86,7 +86,8 @@ async function bootstrap() {
   });
 
   // Compression
-  app.use(compression.default());
+  const compressionFn = compression.default || compression;
+  app.use(compressionFn());
 
   // No global prefix - ingress routes /users to this service directly
   // app.setGlobalPrefix('api/v1');

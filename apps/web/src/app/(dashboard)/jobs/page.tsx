@@ -259,14 +259,14 @@ export default function JobsPage() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => router.push(`/dashboard/jobs/${job.id}`)}
+                          onClick={() => router.push(`/jobs/${job.id}`)}
                         >
                           <ExternalLink className="w-4 h-4 mr-2" />
                           View Details
                         </Button>
                         <Button
                           size="sm"
-                          onClick={() => router.push(`/dashboard/jobs/${job.id}`)}
+                          onClick={() => router.push(`/jobs/${job.id}`)}
                         >
                           Apply Now
                         </Button>

@@ -1,8 +1,7 @@
-import { Injectable, Logger, HttpException, HttpStatus } from '@nestjs/common';
+import { Injectable, Logger, HttpException, HttpStatus, NestMiddleware } from '@nestjs/common';
+import { Request, Response, NextFunction } from 'express';
 
-import type { TenantService } from '../tenant.service';
-import type { NestMiddleware} from '@nestjs/common';
-import type { Request, Response, NextFunction } from 'express';
+import { TenantService } from '../tenant.service';
 
 /**
  * Per-tenant rate limiting middleware

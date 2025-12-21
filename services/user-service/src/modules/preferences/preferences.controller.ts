@@ -3,9 +3,9 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagg
 
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { PreferencesService } from './preferences.service';
 
 import type { UpdatePreferenceDto } from './dto/update-preference.dto';
-import type { PreferencesService } from './preferences.service';
 
 @ApiTags('Preferences')
 @ApiBearerAuth('JWT-auth')

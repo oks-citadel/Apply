@@ -12,9 +12,9 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagg
 
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { SkillsService } from './skills.service';
 
 import type { CreateSkillDto, UpdateSkillDto } from './dto/create-skill.dto';
-import type { SkillsService } from './skills.service';
 
 @ApiTags('Skills')
 @ApiBearerAuth('JWT-auth')
