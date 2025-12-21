@@ -301,7 +301,7 @@ export default function JobReportsPage() {
                               <Eye className="w-4 h-4" />
                             </Button>
                             {report.job && (
-                              <Link href={`/dashboard/jobs/${report.jobId}`} target="_blank">
+                              <Link href={`/jobs/${report.jobId}`} target="_blank">
                                 <Button variant="ghost" size="sm">
                                   <ExternalLink className="w-4 h-4" />
                                 </Button>

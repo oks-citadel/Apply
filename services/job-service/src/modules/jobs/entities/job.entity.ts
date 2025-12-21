@@ -47,6 +47,20 @@ export enum JobSource {
   REED = 'reed',
   FINDWORK = 'findwork',
 
+  // Government Job Portals
+  USAJOBS = 'usajobs',
+  CANADA_JOB_BANK = 'canada_job_bank',
+
+  // ATS Platforms
+  GREENHOUSE = 'greenhouse',
+  LEVER = 'lever',
+  WORKABLE = 'workable',
+  SMARTRECRUITERS = 'smartrecruiters',
+  ASHBY = 'ashby',
+  BAMBOOHR = 'bamboohr',
+  RECRUITEE = 'recruitee',
+  BREEZYHR = 'breezyhr',
+
   // Direct / Internal
   DIRECT = 'direct',
 }

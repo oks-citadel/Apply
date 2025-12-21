@@ -79,7 +79,7 @@ export const PROTECTED_ATTRIBUTES = [
 /**
  * User Consent Record
  */
-interface UserConsent {
+export interface UserConsent {
   userId: string;
   purpose: DataPurpose;
   status: ConsentStatus;
@@ -94,7 +94,7 @@ interface UserConsent {
 /**
  * Data Subject Request
  */
-interface DataSubjectRequest {
+export interface DataSubjectRequest {
   id: string;
   userId: string;
   type: DataSubjectRequestType;
@@ -108,7 +108,7 @@ interface DataSubjectRequest {
 /**
  * Compliance Audit Log
  */
-interface ComplianceAuditLog {
+export interface ComplianceAuditLog {
   id: string;
   userId: string;
   action: string;
@@ -123,7 +123,7 @@ interface ComplianceAuditLog {
 /**
  * Region-specific Policy Configuration
  */
-interface RegionPolicy {
+export interface RegionPolicy {
   region: ComplianceRegion;
   regulations: string[];
   consentRequired: DataPurpose[];

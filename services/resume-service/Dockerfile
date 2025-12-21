@@ -36,12 +36,11 @@ COPY --from=builder --chown=nodejs:nodejs /app/services/resume-service/package.j
 USER nodejs
 ENV NODE_ENV=production
 ENV PORT=8083
+ENV NODE_PATH=/app/node_modules
 EXPOSE 8083
-
-WORKDIR /app/services/resume-service
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
     CMD curl -f http://localhost:8083/health || exit 1
 
 ENTRYPOINT ["dumb-init", "--"]
-CMD ["node", "dist/main.js"]
+CMD ["node", "/app/services/resume-service/dist/main.js"]
