@@ -6,8 +6,8 @@ import { LessThanOrEqual } from 'typeorm';
 import { IngestionTrigger } from '../entities/ingestion-job.entity';
 import { JobSource, SourceStatus } from '../entities/job-source.entity';
 
-import type { DeduplicationService } from './deduplication.service';
-import type { IngestionService } from './ingestion.service';
+import { DeduplicationService } from './deduplication.service';
+import { IngestionService } from './ingestion.service';
 import type { Repository} from 'typeorm';
 
 @Injectable()

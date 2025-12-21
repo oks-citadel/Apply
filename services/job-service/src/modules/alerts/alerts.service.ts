@@ -6,7 +6,7 @@ import { MoreThan } from 'typeorm';
 import { JobAlert, AlertFrequency } from './entities/job-alert.entity';
 
 import type { CreateAlertDto, UpdateAlertDto } from './dto/create-alert.dto';
-import type { SearchService } from '../search/search.service';
+import { SearchService } from '../search/search.service';
 import type { Repository} from 'typeorm';
 
 @Injectable()

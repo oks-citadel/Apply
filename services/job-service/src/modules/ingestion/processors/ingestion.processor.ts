@@ -1,7 +1,7 @@
 import { Processor, Process } from '@nestjs/bull';
 import { Logger } from '@nestjs/common';
 
-import type { IngestionService } from '../services/ingestion.service';
+import { IngestionService } from '../services/ingestion.service';
 import type { Job } from 'bull';
 
 

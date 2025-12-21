@@ -1,7 +1,7 @@
 import { Controller, Get } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 
-import type { HealthService } from './health.service';
+import { HealthService } from './health.service';
 
 /**
  * Health Check Controller for Job Service

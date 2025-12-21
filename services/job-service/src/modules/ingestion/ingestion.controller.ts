@@ -17,10 +17,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { IngestionJob, IngestionTrigger } from './entities/ingestion-job.entity';
 import { JobSource, SourceStatus } from './entities/job-source.entity';
 
-import type { JobAdapterFactory } from './adapters/adapter.factory';
+import { JobAdapterFactory } from './adapters/adapter.factory';
 import type { CreateJobSourceDto } from './dto/create-source.dto';
-import type { DeduplicationService } from './services/deduplication.service';
-import type { IngestionService } from './services/ingestion.service';
+import { DeduplicationService } from './services/deduplication.service';
+import { IngestionService } from './services/ingestion.service';
 import type { Repository } from 'typeorm';
 
 @ApiTags('Job Ingestion')

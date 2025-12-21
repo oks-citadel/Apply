@@ -30,7 +30,7 @@ import { JwtAuthGuard, AdminGuard } from '../../common/guards';
 
 import type { QueryReportsDto } from './dto/query-reports.dto';
 import type { UpdateReportDto } from './dto/update-report.dto';
-import type { ReportsService } from './reports.service';
+import { ReportsService } from './reports.service';
 
 @ApiTags('Reports')
 @Controller('reports')

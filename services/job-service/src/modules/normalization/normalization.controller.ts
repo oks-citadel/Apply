@@ -27,9 +27,9 @@ import type {
   BatchNormalizeJobsDto,
   ReportJobDto,
   UpdateEmployerVerificationDto} from './dto/normalize-job.dto';
-import type { EmployerCredibilityService } from './services/employer-credibility.service';
-import type { NormalizationService } from './services/normalization.service';
-import type { QualityScorerService } from './services/quality-scorer.service';
+import { EmployerCredibilityService } from './services/employer-credibility.service';
+import { NormalizationService } from './services/normalization.service';
+import { QualityScorerService } from './services/quality-scorer.service';
 import type { Repository } from 'typeorm';
 
 @ApiTags('Job Normalization')

@@ -25,7 +25,7 @@ import {
 import { JwtAuthGuard, AdminGuard, RateLimitGuard } from '../../common/guards';
 
 import type { CreateReportDto } from './dto/create-report.dto';
-import type { ReportsService } from './reports.service';
+import { ReportsService } from './reports.service';
 
 
 @ApiTags('Jobs')

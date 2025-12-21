@@ -28,7 +28,7 @@ import type {
   ApplyPlaybookDto,
   UpdateApplicationStatusDto} from './dto';
 import type { Playbook} from './entities/playbook.entity';
-import type { PlaybooksService } from './playbooks.service';
+import { PlaybooksService } from './playbooks.service';
 
 @ApiTags('Playbooks')
 @Controller('api/v1/playbooks')

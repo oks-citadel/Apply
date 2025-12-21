@@ -10,7 +10,7 @@ import { Job } from './entities/job.entity';
 import { SavedJob } from './entities/saved-job.entity';
 
 import type { SearchJobsDto, PaginatedJobsResponseDto, JobResponseDto } from './dto/search-jobs.dto';
-import type { SearchService } from '../search/search.service';
+import { SearchService } from '../search/search.service';
 import type { SaveJobDto} from './dto/save-job.dto';
 import type { Repository} from 'typeorm';
 

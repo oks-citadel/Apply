@@ -10,7 +10,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiQuery, ApiResponse, ApiParam } from '@nestjs/swagger';
 
-import type { AggregatorService, AggregationSummary } from './aggregator.service';
+import { AggregatorService, AggregationSummary } from './aggregator.service';
 import type { RawJobData } from './interfaces/job-provider.interface';
 
 @ApiTags('Job Aggregation')

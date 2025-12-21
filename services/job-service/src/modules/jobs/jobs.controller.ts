@@ -32,7 +32,7 @@ import type { ReportJobDto} from './dto/report-job.dto';
 import type { SalaryPredictionDto} from './dto/salary-prediction.dto';
 import type { UpdateSavedJobDto } from './dto/save-job.dto';
 import type { SearchJobsDto} from './dto/search-jobs.dto';
-import type { JobsService } from './jobs.service';
+import { JobsService } from './jobs.service';
 
 @ApiTags('Jobs')
 @Controller('jobs')

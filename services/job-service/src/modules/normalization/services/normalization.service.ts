@@ -8,12 +8,12 @@ import { Job } from '../../jobs/entities/job.entity';
 import { EmployerProfile } from '../entities/employer-profile.entity';
 import { NormalizedJob, ApplicationComplexity } from '../entities/normalized-job.entity';
 
-import type { DuplicateDetectorService } from './duplicate-detector.service';
-import type { EmployerCredibilityService } from './employer-credibility.service';
-import type { FraudDetectorService } from './fraud-detector.service';
-import type { QualityScorerService } from './quality-scorer.service';
-import type { SkillExtractorService } from './skill-extractor.service';
-import type { TitleNormalizerService } from './title-normalizer.service';
+import { DuplicateDetectorService } from './duplicate-detector.service';
+import { EmployerCredibilityService } from './employer-credibility.service';
+import { FraudDetectorService } from './fraud-detector.service';
+import { QualityScorerService } from './quality-scorer.service';
+import { SkillExtractorService } from './skill-extractor.service';
+import { TitleNormalizerService } from './title-normalizer.service';
 import type { NormalizationResultDto } from '../dto/normalize-job.dto';
 import type { Repository } from 'typeorm';
 

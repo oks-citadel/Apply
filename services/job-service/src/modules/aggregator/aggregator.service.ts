@@ -14,18 +14,18 @@ import { InjectRepository } from '@nestjs/typeorm';
 
 import { Job, JobSource } from '../jobs/entities/job.entity';
 
-import type { JobCacheService } from './cache/job-cache.service';
+import { JobCacheService } from './cache/job-cache.service';
 import type { JobProvider, RawJobData } from './interfaces/job-provider.interface';
-import type { AdzunaProvider } from './providers/adzuna.provider';
-import type { CareerJetProvider } from './providers/careerjet.provider';
-import type { DiceProvider } from './providers/dice.provider';
-import type { GlassdoorProvider } from './providers/glassdoor.provider';
-import type { IndeedProvider } from './providers/indeed.provider';
-import type { JoobleProvider } from './providers/jooble.provider';
-import type { LinkedInProvider } from './providers/linkedin.provider';
-import type { SimplyHiredProvider } from './providers/simplyhired.provider';
-import type { TalentProvider } from './providers/talent.provider';
-import type { ZipRecruiterProvider } from './providers/ziprecruiter.provider';
+import { AdzunaProvider } from './providers/adzuna.provider';
+import { CareerJetProvider } from './providers/careerjet.provider';
+import { DiceProvider } from './providers/dice.provider';
+import { GlassdoorProvider } from './providers/glassdoor.provider';
+import { IndeedProvider } from './providers/indeed.provider';
+import { JoobleProvider } from './providers/jooble.provider';
+import { LinkedInProvider } from './providers/linkedin.provider';
+import { SimplyHiredProvider } from './providers/simplyhired.provider';
+import { TalentProvider } from './providers/talent.provider';
+import { ZipRecruiterProvider } from './providers/ziprecruiter.provider';
 import type { OnModuleInit } from '@nestjs/common';
 import type { Repository } from 'typeorm';
 

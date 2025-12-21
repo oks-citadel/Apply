@@ -4,7 +4,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/
 import { CompanyReview } from './entities/company-review.entity';
 import { Company } from './entities/company.entity';
 
-import type { CompaniesService } from './companies.service';
+import { CompaniesService } from './companies.service';
 
 @ApiTags('Companies')
 @Controller('companies')

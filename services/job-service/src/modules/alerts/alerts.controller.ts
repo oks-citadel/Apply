@@ -22,7 +22,7 @@ import {
 import { JobAlert } from './entities/job-alert.entity';
 import { JwtAuthGuard } from '../../common/guards';
 
-import type { AlertsService } from './alerts.service';
+import { AlertsService } from './alerts.service';
 import type { CreateAlertDto, UpdateAlertDto } from './dto/create-alert.dto';
 
 @ApiTags('Alerts')

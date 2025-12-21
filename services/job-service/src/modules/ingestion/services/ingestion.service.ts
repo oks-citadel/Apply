@@ -19,8 +19,8 @@ import {
   ProcessingStatus,
 } from '../entities/raw-job-listing.entity';
 
-import type { DeduplicationService } from './deduplication.service';
-import type { JobAdapterFactory } from '../adapters/adapter.factory';
+import { DeduplicationService } from './deduplication.service';
+import { JobAdapterFactory } from '../adapters/adapter.factory';
 import type { FetchOptions, NormalizedJob } from '../interfaces/job-adapter.interface';
 import type { Queue } from 'bull';
 import type { Repository} from 'typeorm';
