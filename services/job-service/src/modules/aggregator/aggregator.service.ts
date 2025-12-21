@@ -26,6 +26,13 @@ import { LinkedInProvider } from './providers/linkedin.provider';
 import { SimplyHiredProvider } from './providers/simplyhired.provider';
 import { TalentProvider } from './providers/talent.provider';
 import { ZipRecruiterProvider } from './providers/ziprecruiter.provider';
+// FREE APIs - No API key required
+import { RemoteOKProvider } from './providers/remoteok.provider';
+import { ArbeitnowProvider } from './providers/arbeitnow.provider';
+import { RemotiveProvider } from './providers/remotive.provider';
+import { TheMuseProvider } from './providers/themuse.provider';
+import { JobicyProvider } from './providers/jobicy.provider';
+import { WeWorkRemotelyProvider } from './providers/weworkremotely.provider';
 import type { OnModuleInit } from '@nestjs/common';
 import type { Repository } from 'typeorm';
 
@@ -70,6 +77,13 @@ export class AggregatorService implements OnModuleInit {
     private readonly talentProvider: TalentProvider,
     // Tech-Focused Aggregators
     private readonly diceProvider: DiceProvider,
+    // FREE APIs - No API key required (prioritized for immediate results)
+    private readonly remoteOKProvider: RemoteOKProvider,
+    private readonly arbeitnowProvider: ArbeitnowProvider,
+    private readonly remotiveProvider: RemotiveProvider,
+    private readonly theMuseProvider: TheMuseProvider,
+    private readonly jobicyProvider: JobicyProvider,
+    private readonly weWorkRemotelyProvider: WeWorkRemotelyProvider,
   ) {}
 
   async onModuleInit() {
@@ -88,6 +102,14 @@ export class AggregatorService implements OnModuleInit {
 
     // Tech-Focused Aggregators
     this.registerProvider(this.diceProvider);
+
+    // FREE APIs - No API key required (these should work immediately!)
+    this.registerProvider(this.remoteOKProvider);
+    this.registerProvider(this.arbeitnowProvider);
+    this.registerProvider(this.remotiveProvider);
+    this.registerProvider(this.theMuseProvider);
+    this.registerProvider(this.jobicyProvider);
+    this.registerProvider(this.weWorkRemotelyProvider);
 
     this.logger.log(`Registered ${this.providers.size} job providers: ${Array.from(this.providers.keys()).join(', ')}`);
   }

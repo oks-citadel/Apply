@@ -20,12 +20,16 @@ export const jobKeys = {
 
 /**
  * Search jobs with filters
+ * Automatically polls every 30 seconds for real-time updates
  */
 export function useJobs(filters?: JobSearchFilters) {
   return useQuery({
     queryKey: jobKeys.list(filters),
     queryFn: () => jobsApi.searchJobs(filters || {}),
-    staleTime: 2 * 60 * 1000, // 2 minutes
+    staleTime: 30 * 1000, // 30 seconds - data becomes stale quickly for real-time feel
+    refetchInterval: 30 * 1000, // Poll every 30 seconds for new jobs
+    refetchIntervalInBackground: false, // Don't poll when tab is inactive
+    refetchOnWindowFocus: true, // Refetch when user returns to tab
     placeholderData: (previousData) => previousData, // Keep previous data while fetching new data
   });
 }

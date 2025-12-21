@@ -37,6 +37,14 @@ export enum JobSource {
   DICE = 'dice',
   STACKOVERFLOW = 'stackoverflow',
 
+  // FREE APIs - No API key required
+  REMOTEOK = 'remoteok',
+  ARBEITNOW = 'arbeitnow',
+  REMOTIVE = 'remotive',
+  THEMUSE = 'themuse',
+  JOBICY = 'jobicy',
+  WEWORKREMOTELY = 'weworkremotely',
+
   // Direct / Internal
   DIRECT = 'direct',
 }

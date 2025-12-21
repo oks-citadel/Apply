@@ -10,6 +10,14 @@ import { JobCacheService } from './cache/job-cache.service';
 // General Job Aggregators
 import { AdzunaProvider } from './providers/adzuna.provider';
 
+// FREE APIs - No API key required
+import { ArbeitnowProvider } from './providers/arbeitnow.provider';
+import { RemoteOKProvider } from './providers/remoteok.provider';
+import { RemotiveProvider } from './providers/remotive.provider';
+import { TheMuseProvider } from './providers/themuse.provider';
+import { JobicyProvider } from './providers/jobicy.provider';
+import { WeWorkRemotelyProvider } from './providers/weworkremotely.provider';
+
 // Niche / Regional Aggregators
 import { CareerJetProvider } from './providers/careerjet.provider';
 
@@ -48,6 +56,13 @@ import { Job } from '../jobs/entities/job.entity';
     TalentProvider,
     // Tech-Focused Aggregators
     DiceProvider,
+    // FREE APIs - No API key required (prioritized)
+    RemoteOKProvider,
+    ArbeitnowProvider,
+    RemotiveProvider,
+    TheMuseProvider,
+    JobicyProvider,
+    WeWorkRemotelyProvider,
   ],
   exports: [AggregatorService, JobCacheService],
 })

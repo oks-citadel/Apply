@@ -14,7 +14,7 @@ import { AggregatorService, AggregationSummary } from './aggregator.service';
 import type { RawJobData } from './interfaces/job-provider.interface';
 
 @ApiTags('Job Aggregation')
-@Controller('aggregator')
+@Controller('jobs/aggregator')
 export class AggregatorController {
   constructor(private readonly aggregatorService: AggregatorService) {}
 
