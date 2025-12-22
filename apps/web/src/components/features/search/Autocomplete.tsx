@@ -59,19 +59,22 @@ export function Autocomplete({
       <input
         ref={inputRef}
         type="text"
+        role="combobox"
         value={inputValue}
         onChange={handleInputChange}
         placeholder={placeholder}
         aria-label="Search"
         aria-autocomplete="list"
         aria-expanded={isOpen}
+        aria-controls="autocomplete-listbox"
       />
       {isOpen && filteredSuggestions.length > 0 && (
-        <ul role="listbox" className="absolute w-full bg-white border shadow-lg">
+        <ul id="autocomplete-listbox" role="listbox" className="absolute w-full bg-white border shadow-lg">
           {filteredSuggestions.map((suggestion, index) => (
             <li
               key={index}
               role="option"
+              aria-selected={suggestion === inputValue}
               onClick={() => handleSelect(suggestion)}
               className="px-4 py-2 cursor-pointer hover:bg-gray-100"
             >

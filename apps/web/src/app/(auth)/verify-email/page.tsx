@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useState, Suspense, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import axios from 'axios';
@@ -18,19 +18,9 @@ function VerifyEmailContent() {
   const [verificationState, setVerificationState] = useState<'loading' | 'success' | 'error'>('loading');
   const [errorMessage, setErrorMessage] = useState<string>('');
 
-  useEffect(() => {
-    if (!token) {
-      setVerificationState('error');
-      setErrorMessage('Verification token is missing. Please check your email for the correct link.');
-      return;
-    }
-
-    verifyEmail(token);
-  }, [token]);
-
-  const verifyEmail = async (verificationToken: string) => {
+  const verifyEmail = useCallback(async (verificationToken: string) => {
     try {
-      const response = await axios.post(`${API_BASE_URL}/auth/verify-email`, {
+      await axios.post(`${API_BASE_URL}/auth/verify-email`, {
         token: verificationToken,
       });
 
@@ -46,7 +36,17 @@ function VerifyEmailContent() {
       const message = axiosError.response?.data?.message || 'Email verification failed. The link may be invalid or expired.';
       setErrorMessage(message);
     }
-  };
+  }, [router]);
+
+  useEffect(() => {
+    if (!token) {
+      setVerificationState('error');
+      setErrorMessage('Verification token is missing. Please check your email for the correct link.');
+      return;
+    }
+
+    verifyEmail(token);
+  }, [token, verifyEmail]);
 
   if (verificationState === 'loading') {
     return (
