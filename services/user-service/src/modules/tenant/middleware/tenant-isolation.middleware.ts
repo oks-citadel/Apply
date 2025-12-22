@@ -3,8 +3,20 @@ import { Request, Response, NextFunction } from 'express';
 
 import { TenantService } from '../tenant.service';
 
+// Extend Express Request to include user from JWT auth
+interface AuthenticatedRequest extends Request {
+  user?: {
+    id: string;
+    sub: string;
+    email?: string;
+    role?: string;
+  };
+  tenant?: any;
+}
+
 /**
  * Middleware to ensure tenant isolation and data security
+ * Verifies that authenticated users have access to the requested tenant
  */
 @Injectable()
 export class TenantIsolationMiddleware implements NestMiddleware {
@@ -12,7 +24,7 @@ export class TenantIsolationMiddleware implements NestMiddleware {
 
   constructor(private readonly tenantService: TenantService) {}
 
-  async use(req: Request, res: Response, next: NextFunction) {
+  async use(req: AuthenticatedRequest, res: Response, next: NextFunction) {
     // Extract tenant ID from various sources
     const tenantId =
       req.params.id ||
@@ -38,16 +50,29 @@ export class TenantIsolationMiddleware implements NestMiddleware {
         throw new ForbiddenException('Tenant license has expired');
       }
 
-      // TODO: Verify user has access to this tenant
-      // This would check if the authenticated user is a member of the tenant
-      // const userId = req.user?.id;
-      // const hasAccess = await this.tenantService.userHasAccessToTenant(userId, tenantId);
-      // if (!hasAccess) {
-      //   throw new ForbiddenException('You do not have access to this tenant');
-      // }
+      // Verify user has access to this tenant (if user is authenticated)
+      // Skip for service-to-service calls using API keys
+      const isServiceCall = req.headers['x-api-key'] || req.headers['x-service-auth'];
+
+      if (!isServiceCall && req.user) {
+        const userId = req.user.id || req.user.sub;
+
+        if (userId) {
+          const hasAccess = await this.tenantService.userHasAccessToTenant(userId, tenantId as string);
+
+          if (!hasAccess) {
+            this.logger.warn(`Access denied: User ${userId} attempted to access tenant ${tenantId}`);
+            throw new ForbiddenException('You do not have access to this tenant');
+          }
+
+          // Attach user's tenant role to request for authorization
+          const userRole = await this.tenantService.getUserTenantRole(userId, tenantId as string);
+          req['tenantRole'] = userRole;
+        }
+      }
 
       // Attach tenant to request for downstream use
-      req['tenant'] = tenant;
+      req.tenant = tenant;
 
       next();
     } catch (error) {

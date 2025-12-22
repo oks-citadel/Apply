@@ -10,7 +10,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Between, MoreThan } from 'typeorm';
+import { In, Between, MoreThan, Repository } from 'typeorm';
 
 import { AnalyticsType, TimeRange } from './dto/analytics-query.dto';
 import { PlacementTracking } from './entities/placement-tracking.entity';
@@ -20,14 +20,13 @@ import { TenantUser } from './entities/tenant-user.entity';
 import { Tenant } from './entities/tenant.entity';
 import { TenantStatus, LicenseType } from './enums/tenant-type.enum';
 
-import type { AnalyticsQueryDto} from './dto/analytics-query.dto';
+import type { AnalyticsQueryDto } from './dto/analytics-query.dto';
 import type { BulkImportUsersDto } from './dto/bulk-import-users.dto';
 import type { CreateDepartmentDto } from './dto/create-department.dto';
 import type { CreatePlacementDto } from './dto/create-placement.dto';
 import type { CreateTenantDto } from './dto/create-tenant.dto';
 import type { UpdateBrandingDto } from './dto/update-branding.dto';
 import type { UpdateTenantDto } from './dto/update-tenant.dto';
-import type { Repository} from 'typeorm';
 
 @Injectable()
 export class TenantService {
@@ -290,6 +289,41 @@ export class TenantService {
     }
 
     return tenant;
+  }
+
+  /**
+   * Check if a user has access to a tenant
+   * Returns true if user is a member of the tenant with active status
+   */
+  async userHasAccessToTenant(userId: string, tenantId: string): Promise<boolean> {
+    if (!userId || !tenantId) {
+      return false;
+    }
+
+    const tenantUser = await this.tenantUserRepository.findOne({
+      where: {
+        user_id: userId,
+        tenant_id: tenantId,
+        is_active: true,
+      },
+    });
+
+    return !!tenantUser;
+  }
+
+  /**
+   * Get user's role within a tenant
+   */
+  async getUserTenantRole(userId: string, tenantId: string): Promise<string | null> {
+    const tenantUser = await this.tenantUserRepository.findOne({
+      where: {
+        user_id: userId,
+        tenant_id: tenantId,
+        is_active: true,
+      },
+    });
+
+    return tenantUser?.role || null;
   }
 
   /**
