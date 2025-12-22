@@ -4,10 +4,10 @@ version = "1.0.0"
 description = "AI Service for ApplyForUs - Job matching and resume optimization"
 requires-python = ">=3.11"
 dependencies = [
-    "fastapi==0.109.0",
-    "uvicorn[standard]==0.27.0",
-    "pydantic==2.5.3",
-    "pydantic-settings==2.1.0",
+    "fastapi==0.127.0",
+    "uvicorn[standard]==0.40.0",
+    "pydantic==2.12.5",
+    "pydantic-settings==2.12.0",
     "openai==1.10.0",
     "anthropic==0.18.0",
     "pinecone-client==3.0.0",
