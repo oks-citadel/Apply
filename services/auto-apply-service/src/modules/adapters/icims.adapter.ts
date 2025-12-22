@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
 
 import { BaseATSAdapter } from './base.adapter';
+import { BrowserService } from '../browser/browser.service';
+import { FormMappingService } from '../form-mapping/form-mapping.service';
 
 import type { ApplicationData, ApplicationResult } from './base.adapter';
-import type { BrowserService } from '../browser/browser.service';
-import type { FormMappingService } from '../form-mapping/form-mapping.service';
 
 @Injectable()
 export class IcimsAdapter extends BaseATSAdapter {

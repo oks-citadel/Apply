@@ -1,9 +1,8 @@
 import { Injectable, HttpStatus, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectDataSource } from '@nestjs/typeorm';
 import Redis from 'ioredis';
-
-import type { ConfigService } from '@nestjs/config';
-import type { DataSource } from 'typeorm';
+import { DataSource } from 'typeorm';
 
 // Inline health check utilities
 async function checkDatabaseConnection(dataSource: DataSource): Promise<{ status: string; message?: string }> {

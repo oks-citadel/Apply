@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 
-import type { ConfigService } from '@nestjs/config';
 import type { Page } from 'playwright';
 
 

@@ -7,13 +7,13 @@ import {
   WorkflowStatus
 } from '../interfaces/workflow.interface';
 
+import { AgentClientService } from '../services/agent-client.service';
 import type { AgentResponse } from '../interfaces/agent.interface';
 import type {
   WorkflowDefinition,
   WorkflowExecution,
   WorkflowStep,
   WorkflowContext} from '../interfaces/workflow.interface';
-import type { AgentClientService } from '../services/agent-client.service';
 
 @Injectable()
 export class WorkflowService {

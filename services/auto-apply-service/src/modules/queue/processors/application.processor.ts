@@ -1,16 +1,15 @@
 import { Process, Processor } from '@nestjs/bull';
 import { Logger } from '@nestjs/common';
 
-
+import { GreenhouseAdapter } from '../../adapters/greenhouse.adapter';
+import { IcimsAdapter } from '../../adapters/icims.adapter';
+import { LeverAdapter } from '../../adapters/lever.adapter';
+import { SmartRecruitersAdapter } from '../../adapters/smartrecruiters.adapter';
+import { TaleoAdapter } from '../../adapters/taleo.adapter';
+import { WorkdayAdapter } from '../../adapters/workday.adapter';
+import { ApplicationsService } from '../../applications/applications.service';
 
 import type { ApplicationData } from '../../adapters/base.adapter';
-import type { GreenhouseAdapter } from '../../adapters/greenhouse.adapter';
-import type { IcimsAdapter } from '../../adapters/icims.adapter';
-import type { LeverAdapter } from '../../adapters/lever.adapter';
-import type { SmartRecruitersAdapter } from '../../adapters/smartrecruiters.adapter';
-import type { TaleoAdapter } from '../../adapters/taleo.adapter';
-import type { WorkdayAdapter } from '../../adapters/workday.adapter';
-import type { ApplicationsService } from '../../applications/applications.service';
 import type { Job } from 'bull';
 
 @Processor('application-queue')

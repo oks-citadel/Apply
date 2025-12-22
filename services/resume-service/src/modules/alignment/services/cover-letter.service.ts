@@ -1,17 +1,17 @@
 import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
+import { HttpService } from '@nestjs/axios';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { firstValueFrom } from 'rxjs';
-import { IsNull } from 'typeorm';
+import { IsNull, Repository } from 'typeorm';
 
 import { Resume } from '../../resumes/entities/resume.entity';
 import { AlignedResume } from '../entities/aligned-resume.entity';
 import { GeneratedCoverLetter } from '../entities/generated-cover-letter.entity';
 
-import type { AIServiceClient, JobRequirements } from './ai-service.client';
+import { AIServiceClient } from './ai-service.client';
+import type { JobRequirements } from './ai-service.client';
 import type { CoverLetterMetadata } from '../entities/generated-cover-letter.entity';
-import type { HttpService } from '@nestjs/axios';
-import type { ConfigService } from '@nestjs/config';
-import type { Repository} from 'typeorm';
 
 interface PlaybookGuidelines {
   tone: 'professional' | 'casual' | 'enthusiastic' | 'formal';

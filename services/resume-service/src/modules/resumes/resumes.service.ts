@@ -11,14 +11,15 @@ import { IsNull } from 'typeorm';
 import { ResumeVersion } from './entities/resume-version.entity';
 import { Resume } from './entities/resume.entity';
 
+import { HttpService } from '@nestjs/axios';
+import { ConfigService } from '@nestjs/config';
+import { Repository } from 'typeorm';
+
+import { ParserService } from '../parser/parser.service';
 import type { CreateResumeDto } from './dto/create-resume.dto';
 import type { OptimizeResumeDto } from './dto/optimize-resume.dto';
 import type { ResumeOptimizationResponseDto } from './dto/resume-optimization-response.dto';
 import type { UpdateResumeDto } from './dto/update-resume.dto';
-import type { ParserService } from '../parser/parser.service';
-import type { HttpService } from '@nestjs/axios';
-import type { ConfigService } from '@nestjs/config';
-import type { Repository} from 'typeorm';
 
 @Injectable()
 export class ResumesService {

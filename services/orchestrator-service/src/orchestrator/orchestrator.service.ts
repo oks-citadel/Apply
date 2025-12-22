@@ -9,15 +9,16 @@ import {
 import { WorkflowType, WorkflowStatus } from './interfaces/workflow.interface';
 
 
+import { Queue } from 'bull';
+
+import { AgentClientService } from './services/agent-client.service';
+import { CircuitBreakerService } from './services/circuit-breaker.service';
+import { WorkflowService } from './workflow/workflow.service';
 import type {
   OrchestrateRequestDto,
   OrchestrateResponseDto} from './dto/orchestrate.dto';
 import type { AgentType, AgentHealth } from './interfaces/agent.interface';
 import type { WorkflowExecution } from './interfaces/workflow.interface';
-import type { AgentClientService } from './services/agent-client.service';
-import type { CircuitBreakerService } from './services/circuit-breaker.service';
-import type { WorkflowService } from './workflow/workflow.service';
-import type { Queue } from 'bull';
 
 interface TaskExecution {
   id: string;

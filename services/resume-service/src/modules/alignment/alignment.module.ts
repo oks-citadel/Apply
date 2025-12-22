@@ -1,5 +1,6 @@
 import { HttpModule } from '@nestjs/axios';
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { AlignmentController } from './alignment.controller';
@@ -13,6 +14,7 @@ import { Resume } from '../resumes/entities/resume.entity';
 
 @Module({
   imports: [
+    ConfigModule,
     TypeOrmModule.forFeature([
       AlignedResume,
       GeneratedCoverLetter,

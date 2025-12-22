@@ -1,8 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { HttpService } from '@nestjs/axios';
+import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
-
-import type { HttpService } from '@nestjs/axios';
-import type { ConfigService } from '@nestjs/config';
 
 export interface JobRequirements {
   title: string;

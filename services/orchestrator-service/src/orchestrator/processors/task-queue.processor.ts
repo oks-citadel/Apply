@@ -1,9 +1,9 @@
 import { Process, Processor, OnQueueActive, OnQueueCompleted, OnQueueFailed } from '@nestjs/bull';
 import { Logger } from '@nestjs/common';
 
+import { OrchestratorService } from '../orchestrator.service';
 
 import type { OrchestrateRequestDto } from '../dto/orchestrate.dto';
-import type { OrchestratorService } from '../orchestrator.service';
 import type { Job } from 'bull';
 
 interface TaskJobData {

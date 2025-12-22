@@ -7,14 +7,15 @@ import {
   AgentStatus
 } from '../interfaces/agent.interface';
 
-import type { CircuitBreakerService } from './circuit-breaker.service';
+import { HttpService } from '@nestjs/axios';
+import { ConfigService } from '@nestjs/config';
+
+import { CircuitBreakerService } from './circuit-breaker.service';
 import type {
   AgentConfig,
   AgentHealth,
   AgentResponse,
   AgentRequest} from '../interfaces/agent.interface';
-import type { HttpService } from '@nestjs/axios';
-import type { ConfigService } from '@nestjs/config';
 import type { AxiosError } from 'axios';
 
 @Injectable()

@@ -1,13 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { MoreThanOrEqual } from 'typeorm';
+import { MoreThanOrEqual, Repository } from 'typeorm';
 
 import { Application, ApplicationSource } from '../entities/application.entity';
 import { AutoApplySettings } from '../entities/auto-apply-settings.entity';
 
-import type { QueueService } from '../../queue/queue.service';
+import { QueueService } from '../../queue/queue.service';
 import type { UpdateAutoApplySettingsDto, AutoApplyStatusDto } from '../dto/auto-apply-settings.dto';
-import type { Repository} from 'typeorm';
 
 @Injectable()
 export class AutoApplyService {
