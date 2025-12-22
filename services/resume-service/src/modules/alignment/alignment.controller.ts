@@ -20,12 +20,12 @@ import {
 } from './dto/alignment-response.dto';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { CoverLetterService } from './services/cover-letter.service';
+import { ResumeAlignmentService } from './services/resume-alignment.service';
 
 import type { AnalyzeResumeDto } from './dto/analyze-resume.dto';
 import type { GenerateAlignedResumeDto } from './dto/generate-aligned-resume.dto';
 import type { GenerateCoverLetterDto } from './dto/generate-cover-letter.dto';
-import type { CoverLetterService } from './services/cover-letter.service';
-import type { ResumeAlignmentService } from './services/resume-alignment.service';
 
 
 

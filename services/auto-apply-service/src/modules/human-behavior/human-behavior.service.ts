@@ -1,10 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 
+import { MouseMovementService } from './mouse-movement.service';
+import { RateLimiterService } from './rate-limiter.service';
+import { TimingService } from './timing.service';
+import { TypingSimulationService } from './typing-simulation.service';
 
-import type { MouseMovementService } from './mouse-movement.service';
-import type { RateLimiterService } from './rate-limiter.service';
-import type { TimingService } from './timing.service';
-import type { TypingSimulationService } from './typing-simulation.service';
 import type { Page } from 'playwright';
 
 interface FormField {

@@ -1,10 +1,14 @@
 import { Injectable, Logger } from '@nestjs/common';
 
+import { ConfidenceScoringEngine } from './confidence-scoring.engine';
+import { FieldDetectionEngine } from './field-detection.engine';
+import { SemanticMatchingEngine } from './semantic-matching.engine';
+import { ValidationEngine } from './validation.engine';
 
-import type { ConfidenceScoringEngine, ApplicationConfidence } from './confidence-scoring.engine';
-import type { FieldDetectionEngine, DetectedField } from './field-detection.engine';
-import type { SemanticMatchingEngine, UserProfile, ResumeData, FieldMatch } from './semantic-matching.engine';
-import type { ValidationEngine, ValidationResult } from './validation.engine';
+import type { ApplicationConfidence } from './confidence-scoring.engine';
+import type { DetectedField } from './field-detection.engine';
+import type { UserProfile, ResumeData, FieldMatch } from './semantic-matching.engine';
+import type { ValidationResult } from './validation.engine';
 import type { Page } from 'playwright';
 
 export interface AutofillResult {

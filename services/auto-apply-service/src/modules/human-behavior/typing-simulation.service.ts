@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 
-import type { TimingService } from './timing.service';
+import { TimingService } from './timing.service';
+
 import type { Page } from 'playwright';
 
 

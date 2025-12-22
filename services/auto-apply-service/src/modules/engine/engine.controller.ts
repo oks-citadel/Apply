@@ -32,16 +32,17 @@ import { User } from '../../common/decorators/user.decorator';
 import { ApplicationStatus, ApplicationSource } from '../applications/entities/application.entity';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
+import { EngineService } from './engine.service';
+import { ServiceClientService } from './service-client.service';
+import { ApplicationsService } from '../applications/applications.service';
+import { QueueService } from '../queue/queue.service';
+
 import type {
   StartApplicationDto,
   BatchApplicationDto,
   RetryApplicationDto,
 } from './dto/start-application.dto';
-import type { EngineService } from './engine.service';
 import type { JobData, UserProfile, Resume, CoverLetter } from './interfaces/engine.interface';
-import type { ServiceClientService } from './service-client.service';
-import type { ApplicationsService } from '../applications/applications.service';
-import type { QueueService } from '../queue/queue.service';
 
 @ApiTags('Engine')
 @ApiBearerAuth('JWT-auth')

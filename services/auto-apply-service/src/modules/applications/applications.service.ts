@@ -1,13 +1,12 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-
+import { Repository } from 'typeorm';
 
 import { Application, ApplicationStatus } from './entities/application.entity';
 
 import type { CreateApplicationDto } from './dto/create-application.dto';
 import type { QueryApplicationDto } from './dto/query-application.dto';
 import type { UpdateApplicationDto, UpdateStatusDto } from './dto/update-application.dto';
-import type { Repository } from 'typeorm';
 
 @Injectable()
 export class ApplicationsService {

@@ -32,13 +32,13 @@ import { ResumeOptimizationResponseDto } from './dto/resume-optimization-respons
 import { ResumeResponseDto, ResumeListResponseDto } from './dto/resume-response.dto';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { ResumesService } from './resumes.service';
+import { ExportService } from '../export/export.service';
 
 import type { CreateResumeDto } from './dto/create-resume.dto';
 import type { OptimizeResumeDto } from './dto/optimize-resume.dto';
 import type { UpdateResumeDto } from './dto/update-resume.dto';
-import type { ResumesService } from './resumes.service';
 import type { JwtPayload } from '../../common/decorators/current-user.decorator';
-import type { ExportService } from '../export/export.service';
 import type { Response } from 'express';
 
 @ApiTags('resumes')

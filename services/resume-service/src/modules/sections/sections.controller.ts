@@ -18,10 +18,10 @@ import {
 
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { SectionsService } from './sections.service';
 
 import type { CreateSectionDto } from './dto/create-section.dto';
 import type { UpdateSectionDto } from './dto/update-section.dto';
-import type { SectionsService } from './sections.service';
 import type { JwtPayload } from '../../common/decorators/current-user.decorator';
 
 @ApiTags('sections')

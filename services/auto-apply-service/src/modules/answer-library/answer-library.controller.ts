@@ -25,9 +25,11 @@ import { QuestionCategory } from './entities/answer.entity';
 import { User } from '../../common/decorators/user.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
-import type { AnswerLibraryService, MatchedAnswer } from './answer-library.service';
+import { AnswerLibraryService } from './answer-library.service';
+
+import type { MatchedAnswer } from './answer-library.service';
 import type { CreateAnswerDto, UpdateAnswerDto, BulkCreateAnswersDto } from './dto/create-answer.dto';
-import type { Answer} from './entities/answer.entity';
+import type { Answer } from './entities/answer.entity';
 
 @ApiTags('Answer Library')
 @ApiBearerAuth('JWT-auth')

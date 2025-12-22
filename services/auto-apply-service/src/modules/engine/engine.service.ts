@@ -5,20 +5,23 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { ApplicationStatusEnum } from './dto/application-status.dto';
 import { Application, ApplicationStatus } from '../applications/entities/application.entity';
 
+import { Repository } from 'typeorm';
+
+import { GreenhouseAdapter } from '../adapters/greenhouse.adapter';
+import { IcimsAdapter } from '../adapters/icims.adapter';
+import { IndeedAdapter } from '../adapters/indeed.adapter';
+import { LeverAdapter } from '../adapters/lever.adapter';
+import { LinkedInAdapter } from '../adapters/linkedin.adapter';
+import { SmartRecruitersAdapter } from '../adapters/smartrecruiters.adapter';
+import { TaleoAdapter } from '../adapters/taleo.adapter';
+import { WorkdayAdapter } from '../adapters/workday.adapter';
+import { AnswerLibraryService } from '../answer-library/answer-library.service';
+import { ApplicationsService } from '../applications/applications.service';
+import { CaptchaService } from '../captcha/captcha.service';
+import { QueueService } from '../queue/queue.service';
+import { RateLimiterService } from '../rate-limiter/rate-limiter.service';
+
 import type { BaseATSAdapter, ApplicationData, ApplicationResult } from '../adapters/base.adapter';
-import type { GreenhouseAdapter } from '../adapters/greenhouse.adapter';
-import type { IcimsAdapter } from '../adapters/icims.adapter';
-import type { IndeedAdapter } from '../adapters/indeed.adapter';
-import type { LeverAdapter } from '../adapters/lever.adapter';
-import type { LinkedInAdapter } from '../adapters/linkedin.adapter';
-import type { SmartRecruitersAdapter } from '../adapters/smartrecruiters.adapter';
-import type { TaleoAdapter } from '../adapters/taleo.adapter';
-import type { WorkdayAdapter } from '../adapters/workday.adapter';
-import type { AnswerLibraryService } from '../answer-library/answer-library.service';
-import type { ApplicationsService } from '../applications/applications.service';
-import type { CaptchaService } from '../captcha/captcha.service';
-import type { QueueService } from '../queue/queue.service';
-import type { RateLimiterService } from '../rate-limiter/rate-limiter.service';
 import type { QueueStatusEnum } from './dto/application-status.dto';
 import type {
   JobData,
@@ -32,7 +35,6 @@ import type {
   VerificationResult,
   ApplicationStatusInfo,
 } from './interfaces/engine.interface';
-import type { Repository } from 'typeorm';
 
 @Injectable()
 export class EngineService {

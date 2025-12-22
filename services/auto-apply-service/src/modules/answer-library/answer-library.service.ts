@@ -1,11 +1,10 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ILike } from 'typeorm';
+import { ILike, Repository } from 'typeorm';
 
 import { Answer, QuestionCategory, AnswerType } from './entities/answer.entity';
 
 import type { CreateAnswerDto, UpdateAnswerDto } from './dto/create-answer.dto';
-import type { Repository} from 'typeorm';
 
 export interface MatchedAnswer {
   answer: Answer;

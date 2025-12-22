@@ -22,8 +22,8 @@ import {
   Platform,
   AuditLogEntryDto,
 } from './dto/compliance.dto';
+import { ComplianceService } from './compliance.service';
 
-import type { ComplianceService } from './compliance.service';
 import type {
   ComplianceCheckRequestDto} from './dto/compliance.dto';
 

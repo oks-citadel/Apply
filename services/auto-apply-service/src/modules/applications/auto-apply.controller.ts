@@ -20,10 +20,10 @@ import {
 
 import { User } from '../../common/decorators/user.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { AutoApplyService } from './services/auto-apply.service';
+import { QueueService } from '../queue/queue.service';
 
 import type { UpdateAutoApplySettingsDto } from './dto/auto-apply-settings.dto';
-import type { AutoApplyService } from './services/auto-apply.service';
-import type { QueueService } from '../queue/queue.service';
 
 
 @ApiTags('Auto-Apply')
