@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 env:
-  ACR_LOGIN_SERVER: applyforusacr.azurecr.io
+  ACR_LOGIN_SERVER: acrunifiedhealthdev2.azurecr.io
   IMAGE_PREFIX: applyai
   PNPM_VERSION: '8.15.0'
 
