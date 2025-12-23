@@ -1,5 +1,5 @@
 # Base stage
-FROM python:3.11-slim AS base
+FROM python:3.11-slim@sha256:ce81dc539f0aedc9114cae640f8352fad83d37461c24a3615b01f081d0c0f43a AS base
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
@@ -43,7 +43,7 @@ ARG SERVICE_NAME
 RUN echo "Building ${SERVICE_NAME}"
 
 # Production stage
-FROM python:3.11-slim AS production
+FROM python:3.11-slim@sha256:ce81dc539f0aedc9114cae640f8352fad83d37461c24a3615b01f081d0c0f43a AS production
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \

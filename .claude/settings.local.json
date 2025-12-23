@@ -751,7 +751,21 @@
       "Bash(\"/c/Program Files/Docker/Docker/resources/bin/docker.exe\" push applyforusacr.azurecr.io/applyai-auto-apply-service:v4.0.0)",
       "Bash(\"/c/Program Files/Docker/Docker/resources/bin/docker.exe\" push applyforusacr.azurecr.io/applyai-notification-service:v4.0.0)",
       "Bash(\"/c/Program Files/Docker/Docker/resources/bin/docker.exe\" push applyforusacr.azurecr.io/applyai-resume-service:v4.0.0)",
-      "Bash(\"/c/Program Files/Docker/Docker/resources/bin/docker.exe\" build -t applyforusacr.azurecr.io/applyai-resume-service:v4.0.1 -f services/resume-service/Dockerfile \"C:\\\\Users\\\\kogun\\\\OneDrive\\\\Documents\\\\Job-Apply-Platform\")"
+      "Bash(\"/c/Program Files/Docker/Docker/resources/bin/docker.exe\" build -t applyforusacr.azurecr.io/applyai-resume-service:v4.0.1 -f services/resume-service/Dockerfile \"C:\\\\Users\\\\kogun\\\\OneDrive\\\\Documents\\\\Job-Apply-Platform\")",
+      "Bash(tasklist:*)",
+      "Bash(MSYS_NO_PATHCONV=1 GH_TOKEN=\"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\" gh api repos/oks-citadel/Apply/contents/.github/workflows/build-images.yml --jq '.content')",
+      "Bash(MSYS_NO_PATHCONV=1 GH_TOKEN=\"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\" gh run list --repo oks-citadel/Apply --workflow \"Build Docker Images\" --limit 3)",
+      "Bash(MSYS_NO_PATHCONV=1 GH_TOKEN=\"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\" gh api repos/oks-citadel/Apply/actions/runs/20447707817 --jq '{status: .status, conclusion: .conclusion, message: .message}')",
+      "Bash(MSYS_NO_PATHCONV=1 GH_TOKEN=\"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\" gh api repos/oks-citadel/Apply --jq '{visibility: .visibility, private: .private}')",
+      "Bash(AZURE_DEVOPS_EXT_PAT=\"AYhpMYbwfVyMuLVU54Xx4H7lRi6a3ZvPTf7z8yT6k6v5yXoeX9nlJQQJ99BLACAAAAAAAAAAAAASAZDO3hzv\" az devops service-endpoint list --org https://dev.azure.com/citadelcloudmanagement --project ApplyPlatform -o table)",
+      "Bash(AZURE_DEVOPS_EXT_PAT=\"AYhpMYbwfVyMuLVU54Xx4H7lRi6a3ZvPTf7z8yT6k6v5yXoeX9nlJQQJ99BLACAAAAAAAAAAAAASAZDO3hzv\" az pipelines runs show --id 1004 --org https://dev.azure.com/citadelcloudmanagement --project ApplyPlatform --query \"validationResults\" -o json)",
+      "Bash(AZURE_DEVOPS_EXT_PAT=\"AYhpMYbwfVyMuLVU54Xx4H7lRi6a3ZvPTf7z8yT6k6v5yXoeX9nlJQQJ99BLACAAAAAAAAAAAAASAZDO3hzv\" az devops service-endpoint show:*)",
+      "Bash(\"/c/Program Files/Docker/Docker/resources/bin/docker.exe\" build -t acrunifiedhealthdev2.azurecr.io/applyai-ai-service:latest -f services/ai-service/Dockerfile .)",
+      "Bash(\"/c/Program Files/Docker/Docker/resources/bin/docker.exe\" images --filter \"reference=acrunifiedhealthdev2.azurecr.io/*\" --format \"table {{.Repository}}\\\\t{{.Tag}}\\\\t{{.Size}}\\\\t{{.CreatedAt}}\")",
+      "Bash(\"/c/Program Files/Docker/Docker/resources/bin/docker.exe\" push acrunifiedhealthdev2.azurecr.io/applyai-analytics-service:latest)",
+      "Bash(for repo in applyai-web applyai-auth-service applyai-user-service applyai-job-service applyai-analytics-service applyai-notification-service applyai-ai-service applyai-orchestrator-service applyai-payment-service applyai-resume-service applyai-auto-apply-service)",
+      "Bash(timeout:*)",
+      "Bash(then echo \"  NO TESTS: $mod\")"
     ],
     "deny": [],
     "ask": []

@@ -11,6 +11,11 @@ import {
   Settings,
   X,
   ChevronRight,
+  Sparkles,
+  BarChart3,
+  Bell,
+  User,
+  Zap,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 
@@ -41,9 +46,24 @@ const navigation = [
     icon: FileText,
   },
   {
-    name: 'Interview Prep',
-    href: '/interview-prep',
-    icon: MessageSquare,
+    name: 'AI Tools',
+    href: '/ai-tools',
+    icon: Sparkles,
+  },
+  {
+    name: 'Auto Apply',
+    href: '/auto-apply',
+    icon: Zap,
+  },
+  {
+    name: 'Analytics',
+    href: '/analytics',
+    icon: BarChart3,
+  },
+  {
+    name: 'Profile',
+    href: '/profile',
+    icon: User,
   },
   {
     name: 'Settings',
@@ -133,16 +153,17 @@ export function Sidebar({ open, onClose }: SidebarProps) {
               Need Help?
             </h3>
             <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
-              Check our documentation and guides
+              Have questions? Contact our support team
             </p>
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full"
-              onClick={() => window.open('/docs', '_blank')}
-            >
-              View Docs
-            </Button>
+            <Link href="/contact">
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full"
+              >
+                Contact Support
+              </Button>
+            </Link>
           </div>
         </div>
       </aside>

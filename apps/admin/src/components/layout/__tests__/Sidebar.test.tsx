@@ -28,6 +28,8 @@ jest.mock('lucide-react', () => ({
   Database: () => <span data-testid="database-icon">DatabaseIcon</span>,
   Bell: () => <span data-testid="bell-icon">BellIcon</span>,
   FileText: () => <span data-testid="file-text-icon">FileTextIcon</span>,
+  CreditCard: () => <span data-testid="credit-card-icon">CreditCardIcon</span>,
+  HeartPulse: () => <span data-testid="heart-pulse-icon">HeartPulseIcon</span>,
 }));
 
 describe('Sidebar', () => {
@@ -54,8 +56,10 @@ describe('Sidebar', () => {
     const expectedItems = [
       'Dashboard',
       'Users',
+      'Subscriptions',
       'Services',
       'Analytics',
+      'Platform Health',
       'Feature Flags',
       'Audit Logs',
       'Notifications',

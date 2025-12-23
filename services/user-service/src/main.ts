@@ -130,6 +130,9 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
 
+  // Graceful shutdown handling
+  app.enableShutdownHooks();
+
   const port = configService.get('PORT', 8082);
   await app.listen(port);
 

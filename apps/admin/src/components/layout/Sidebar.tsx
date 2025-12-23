@@ -16,6 +16,8 @@ import {
   Database,
   Bell,
   FileText,
+  CreditCard,
+  HeartPulse,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -38,6 +40,11 @@ const navigationItems: NavItem[] = [
     icon: Users,
   },
   {
+    name: 'Subscriptions',
+    href: '/subscriptions',
+    icon: CreditCard,
+  },
+  {
     name: 'Services',
     href: '/services',
     icon: Activity,
@@ -46,6 +53,11 @@ const navigationItems: NavItem[] = [
     name: 'Analytics',
     href: '/analytics',
     icon: BarChart3,
+  },
+  {
+    name: 'Platform Health',
+    href: '/health',
+    icon: HeartPulse,
   },
   {
     name: 'Feature Flags',
@@ -111,7 +123,7 @@ export function Sidebar() {
       <nav className="flex-1 overflow-y-auto py-4 px-3">
         <div className="space-y-1">
           {navigationItems.map((item) => {
-            const isActive = pathname === item.href;
+            const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
             const Icon = item.icon;
 
             return (

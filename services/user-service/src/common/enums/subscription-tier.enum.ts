@@ -1,8 +1,15 @@
 export enum SubscriptionTier {
+  // Free tier
   FREE = 'free',
+  FREEMIUM = 'freemium',
+  // Paid tiers - aligned with frontend pricing
+  STARTER = 'starter',
   BASIC = 'basic',
   PRO = 'pro',
+  PROFESSIONAL = 'professional',
+  ADVANCED_CAREER = 'advanced_career',
   ENTERPRISE = 'enterprise',
+  EXECUTIVE_ELITE = 'executive_elite',
 }
 
 export enum SubscriptionStatus {

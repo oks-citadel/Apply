@@ -13,7 +13,7 @@
 # -----------------------------------------------------------------------------
 # Pinned Python 3.11 Slim with SHA256 digest
 # Update digest: docker pull python:3.11-slim && docker inspect python:3.11-slim | jq -r '.[0].RepoDigests[0]'
-FROM python:3.11-slim@sha256:ad4db0df957c2f83f87f5babc957e1d7c2ab821b6fcc1bbef4b8ff8cf1f2e13f AS builder
+FROM python:3.11-slim@sha256:ce81dc539f0aedc9114cae640f8352fad83d37461c24a3615b01f081d0c0f43a AS builder
 
 WORKDIR /app
 
@@ -43,7 +43,7 @@ RUN pip install --no-cache-dir --upgrade pip==24.0 setuptools==69.5.1 wheel==0.4
 # Stage 2: Production Runtime - Minimal and Secure
 # -----------------------------------------------------------------------------
 # Pinned Python 3.11 Slim with SHA256 digest (same as builder)
-FROM python:3.11-slim@sha256:ad4db0df957c2f83f87f5babc957e1d7c2ab821b6fcc1bbef4b8ff8cf1f2e13f AS production
+FROM python:3.11-slim@sha256:ce81dc539f0aedc9114cae640f8352fad83d37461c24a3615b01f081d0c0f43a AS production
 
 WORKDIR /app
 

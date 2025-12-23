@@ -2,7 +2,7 @@ import { Controller, Get, Param, HttpStatus, HttpException } from '@nestjs/commo
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { SkipThrottle } from '@nestjs/throttler';
 
-import type { HealthService, AggregatedHealth, ServiceHealth } from './health.service';
+import type { HealthService, AggregatedHealth, ServiceHealth, IntegrationsHealthResponse } from './health.service';
 
 @ApiTags('health')
 @SkipThrottle()
@@ -146,6 +146,112 @@ export class HealthController {
     const health = await this.healthService.getServiceHealth(serviceName);
 
     if (health.status === 'unhealthy' || health.status === 'unknown') {
+      throw new HttpException(health, HttpStatus.SERVICE_UNAVAILABLE);
+    }
+
+    return health;
+  }
+
+  /**
+   * Health check for external integrations (OAuth, payments, etc.)
+   */
+  @Get('integrations')
+  @ApiOperation({ summary: 'Health check for external integrations' })
+  @ApiResponse({
+    status: 200,
+    description: 'Health status of external integrations',
+    schema: {
+      type: 'object',
+      properties: {
+        status: {
+          type: 'string',
+          enum: ['healthy', 'degraded', 'unhealthy'],
+          example: 'healthy',
+        },
+        timestamp: { type: 'string', format: 'date-time' },
+        integrations: {
+          type: 'object',
+          properties: {
+            oauth: {
+              type: 'object',
+              properties: {
+                google: {
+                  type: 'object',
+                  properties: {
+                    status: { type: 'string', enum: ['healthy', 'unhealthy', 'unknown'] },
+                    responseTime: { type: 'number' },
+                    lastChecked: { type: 'string', format: 'date-time' },
+                  },
+                },
+                linkedin: {
+                  type: 'object',
+                  properties: {
+                    status: { type: 'string', enum: ['healthy', 'unhealthy', 'unknown'] },
+                    responseTime: { type: 'number' },
+                    lastChecked: { type: 'string', format: 'date-time' },
+                  },
+                },
+                github: {
+                  type: 'object',
+                  properties: {
+                    status: { type: 'string', enum: ['healthy', 'unhealthy', 'unknown'] },
+                    responseTime: { type: 'number' },
+                    lastChecked: { type: 'string', format: 'date-time' },
+                  },
+                },
+              },
+            },
+            external: {
+              type: 'object',
+              properties: {
+                stripe: {
+                  type: 'object',
+                  properties: {
+                    status: { type: 'string', enum: ['healthy', 'unhealthy', 'unknown'] },
+                    responseTime: { type: 'number' },
+                    lastChecked: { type: 'string', format: 'date-time' },
+                  },
+                },
+                sendgrid: {
+                  type: 'object',
+                  properties: {
+                    status: { type: 'string', enum: ['healthy', 'unhealthy', 'unknown'] },
+                    responseTime: { type: 'number' },
+                    lastChecked: { type: 'string', format: 'date-time' },
+                  },
+                },
+                redis: {
+                  type: 'object',
+                  properties: {
+                    status: { type: 'string', enum: ['healthy', 'unhealthy', 'degraded', 'unknown'] },
+                    responseTime: { type: 'number' },
+                    lastChecked: { type: 'string', format: 'date-time' },
+                  },
+                },
+              },
+            },
+          },
+        },
+        summary: {
+          type: 'object',
+          properties: {
+            total: { type: 'number', example: 6 },
+            healthy: { type: 'number', example: 5 },
+            unhealthy: { type: 'number', example: 0 },
+            unknown: { type: 'number', example: 1 },
+          },
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 503,
+    description: 'One or more integrations are unhealthy',
+  })
+  async getIntegrationsHealth(): Promise<IntegrationsHealthResponse> {
+    const health = await this.healthService.getIntegrationsHealth();
+
+    if (health.status === 'unhealthy') {
       throw new HttpException(health, HttpStatus.SERVICE_UNAVAILABLE);
     }
 

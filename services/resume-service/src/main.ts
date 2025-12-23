@@ -146,6 +146,9 @@ async function bootstrap() {
     });
   });
 
+  // Graceful shutdown handling
+  app.enableShutdownHooks();
+
   await app.listen(port);
 
   logger.log(`Resume Service is running on: http://localhost:${port}/${apiPrefix}`);

@@ -1,15 +1,19 @@
-# ACR Build ignore file
+# ACR build ignore file - minimal exclusions
 .git
+.github
+.azure
+.vscode
+
+# Exclude mobile and extension apps (not deployed to cloud)
 apps/mobile
-apps/mobile/**
-# Exclude all node_modules - Dockerfile does pnpm install
-node_modules
-**/node_modules
-**/.turbo
-**/.next
-**/dist
-**/*.log
+apps/extension
+
 # Exclude test files
-**/*.spec.ts
-**/*.test.ts
+**/coverage
 **/__tests__
+
+# Exclude infrastructure files
+infrastructure/
+terraform/
+ops/
+postman/

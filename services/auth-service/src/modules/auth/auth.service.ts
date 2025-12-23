@@ -14,6 +14,7 @@ import * as speakeasy from 'speakeasy';
 
 import { TokenResponseDto } from './dto/token-response.dto';
 import { UserStatus, AuthProvider } from '../users/entities/user.entity';
+import { AuditService } from '../../common/services/audit.service';
 
 import type { EmailService } from '../email/email.service';
 import type { ChangePasswordDto } from './dto/change-password.dto';
@@ -45,6 +46,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly emailService: EmailService,
+    private readonly auditService: AuditService,
   ) {
     this.maxLoginAttempts = this.configService.get<number>(
       'security.maxLoginAttempts',
@@ -127,6 +129,9 @@ export class AuthService {
     // Generate tokens
     const tokens = await this.generateTokens(user);
 
+    // Audit log: Registration
+    this.auditService.logRegistration(user.id, user.email);
+
     this.logger.log(`User registered successfully: ${user.id}`);
 
     return new TokenResponseDto(
@@ -146,11 +151,15 @@ export class AuthService {
     // Find user
     const user = await this.usersService.findByEmail(loginDto.email);
     if (!user) {
+      // Audit log: Failed login (user not found)
+      this.auditService.logLoginFailure(loginDto.email, 'User not found', ip);
       throw new UnauthorizedException('Invalid credentials');
     }
 
     // Check if account is locked
     if (user.isLocked) {
+      // Audit log: Account locked
+      this.auditService.logAccountLocked(user.id, user.email, 'Account locked due to failed login attempts');
       throw new UnauthorizedException(
         `Account is locked until ${user.lockedUntil.toISOString()}. Please try again later.`,
       );
@@ -158,6 +167,8 @@ export class AuthService {
 
     // Check if user has a password (OAuth users might not)
     if (!user.password) {
+      // Audit log: OAuth user tried password login
+      this.auditService.logLoginFailure(loginDto.email, 'OAuth user tried password login', ip);
       throw new UnauthorizedException(
         'This account uses social login. Please sign in with your social provider.',
       );
@@ -171,16 +182,22 @@ export class AuthService {
 
     if (!isPasswordValid) {
       await this.usersService.incrementLoginAttempts(user.id);
+      // Audit log: Invalid password
+      this.auditService.logLoginFailure(loginDto.email, 'Invalid password', ip);
       throw new UnauthorizedException('Invalid credentials');
     }
 
     // Check if user is suspended
     if (user.status === UserStatus.SUSPENDED) {
+      // Audit log: Suspended account login attempt
+      this.auditService.logLoginFailure(loginDto.email, 'Account suspended', ip);
       throw new UnauthorizedException('Account has been suspended');
     }
 
     // Check if user is inactive
     if (user.status === UserStatus.INACTIVE) {
+      // Audit log: Inactive account login attempt
+      this.auditService.logLoginFailure(loginDto.email, 'Account inactive', ip);
       throw new UnauthorizedException('Account is inactive');
     }
 
@@ -192,6 +209,8 @@ export class AuthService {
 
       const isMfaValid = await this.verifyMfaToken(user, loginDto.mfaToken);
       if (!isMfaValid) {
+        // Audit log: MFA verification failed
+        this.auditService.logMfaVerificationFailed(user.id);
         throw new UnauthorizedException('Invalid MFA token');
       }
     }
@@ -206,6 +225,9 @@ export class AuthService {
 
     // Generate tokens
     const tokens = await this.generateTokens(user);
+
+    // Audit log: Successful login
+    this.auditService.logLoginSuccess(user.id, user.email, ip);
 
     this.logger.log(`User logged in successfully: ${user.id}`);
 
@@ -225,6 +247,9 @@ export class AuthService {
 
     // Invalidate refresh token
     await this.usersService.updateRefreshToken(userId, null);
+
+    // Audit log: Logout
+    this.auditService.logLogout(userId);
 
     this.logger.log(`User logged out successfully: ${userId}`);
 
@@ -389,6 +414,9 @@ export class AuthService {
     // Invalidate all existing refresh tokens for security
     await this.usersService.updateRefreshToken(userId, null);
 
+    // Audit log: Password change
+    this.auditService.logPasswordChange(userId, user.email);
+
     this.logger.log(`Password changed successfully for user: ${userId}`);
 
     return { message: 'Password has been changed successfully. Please login again.' };
@@ -419,6 +447,9 @@ export class AuthService {
 
     // Verify email
     await this.usersService.verifyEmail(user.id);
+
+    // Audit log: Email verified
+    this.auditService.logEmailVerified(user.id, user.email);
 
     // Send welcome email
     try {
@@ -591,6 +622,9 @@ export class AuthService {
     // Generate QR code
     const qrCode = await QRCode.toDataURL(secret.otpauth_url);
 
+    // Audit log: MFA setup
+    this.auditService.logMfaSetup(userId);
+
     this.logger.log(`MFA setup initiated for user: ${userId}`);
 
     return {
@@ -632,6 +666,9 @@ export class AuthService {
     // Enable MFA
     await this.usersService.enableMfa(userId);
 
+    // Audit log: MFA enabled
+    this.auditService.logMfaEnabled(userId);
+
     this.logger.log(`MFA enabled successfully for user: ${userId}`);
 
     return { message: 'MFA enabled successfully' };
@@ -644,6 +681,9 @@ export class AuthService {
     this.logger.log(`Disabling MFA for user: ${userId}`);
 
     await this.usersService.disableMfa(userId);
+
+    // Audit log: MFA disabled
+    this.auditService.logMfaDisabled(userId);
 
     this.logger.log(`MFA disabled successfully for user: ${userId}`);
 
@@ -670,6 +710,9 @@ export class AuthService {
       providerId: null,
       authProvider: AuthProvider.LOCAL,
     });
+
+    // Audit log: OAuth disconnect
+    this.auditService.logOAuthDisconnect(userId);
 
     this.logger.log(`OAuth disconnected successfully for user: ${userId}`);
 

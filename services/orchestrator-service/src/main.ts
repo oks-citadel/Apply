@@ -59,6 +59,9 @@ async function bootstrap() {
   SwaggerModule.setup('api/docs', app, document);
 
   const port = process.env.PORT || 8089;
+  // Graceful shutdown handling
+  app.enableShutdownHooks();
+
   await app.listen(port);
 
   logger.log(`Orchestrator Service running on port ${port}`);

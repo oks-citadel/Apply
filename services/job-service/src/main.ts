@@ -130,6 +130,9 @@ async function bootstrap() {
     },
   });
 
+  // Graceful shutdown handling
+  app.enableShutdownHooks();
+
   await app.listen(port);
 
   logger.log('=====================================================');

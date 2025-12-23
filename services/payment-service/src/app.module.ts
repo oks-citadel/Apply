@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { StripeModule } from './modules/stripe/stripe.module';
@@ -71,6 +73,19 @@ import { typeOrmConfig } from './common/config/typeorm.config';
     // Logging
     LoggingModule,
 
+    // Rate limiting module
+    ThrottlerModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => [
+        {
+          name: 'default',
+          ttl: configService.get<number>('THROTTLE_TTL', 60000),
+          limit: configService.get<number>('THROTTLE_LIMIT', 100),
+        },
+      ],
+    }),
+
     // Feature modules
     StripeModule,
     FlutterwaveModule,
@@ -79,6 +94,12 @@ import { typeOrmConfig } from './common/config/typeorm.config';
     SubscriptionsModule,
     InvoicesModule,
     HealthModule,
+  ],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
   ],
 })
 export class AppModule {}

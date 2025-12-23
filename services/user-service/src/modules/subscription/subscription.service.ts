@@ -308,9 +308,13 @@ export class SubscriptionService {
 
   private getPriceIdForTier(tier: SubscriptionTier): string {
     const priceIds = {
+      [SubscriptionTier.STARTER]: this.configService.get('STRIPE_STARTER_PRICE_ID'),
       [SubscriptionTier.BASIC]: this.configService.get('STRIPE_BASIC_PRICE_ID'),
       [SubscriptionTier.PRO]: this.configService.get('STRIPE_PRO_PRICE_ID'),
+      [SubscriptionTier.PROFESSIONAL]: this.configService.get('STRIPE_PROFESSIONAL_PRICE_ID'),
+      [SubscriptionTier.ADVANCED_CAREER]: this.configService.get('STRIPE_ADVANCED_CAREER_PRICE_ID'),
       [SubscriptionTier.ENTERPRISE]: this.configService.get('STRIPE_ENTERPRISE_PRICE_ID'),
+      [SubscriptionTier.EXECUTIVE_ELITE]: this.configService.get('STRIPE_EXECUTIVE_ELITE_PRICE_ID'),
     };
 
     return priceIds[tier];
@@ -319,25 +323,68 @@ export class SubscriptionService {
   private getLimitsForTier(tier: SubscriptionTier): any {
     const limits = {
       [SubscriptionTier.FREE]: {
-        applications: 10,
-        ai_cover_letters: 3,
-        resume_uploads: 1,
+        applications: 5,
+        ai_cover_letters: 2,
+        resume_uploads: 2,
         auto_apply: false,
         priority_support: false,
+        interview_prep: false,
+        salary_insights: false,
+      },
+      [SubscriptionTier.FREEMIUM]: {
+        applications: 5,
+        ai_cover_letters: 2,
+        resume_uploads: 2,
+        auto_apply: false,
+        priority_support: false,
+        interview_prep: false,
+        salary_insights: false,
+      },
+      [SubscriptionTier.STARTER]: {
+        applications: 30,
+        ai_cover_letters: 15,
+        resume_uploads: 5,
+        auto_apply: false,
+        priority_support: false,
+        interview_prep: false,
+        salary_insights: false,
       },
       [SubscriptionTier.BASIC]: {
-        applications: 50,
-        ai_cover_letters: 20,
-        resume_uploads: 3,
-        auto_apply: false,
+        applications: 75,
+        ai_cover_letters: 40,
+        resume_uploads: 10,
+        auto_apply: true,
         priority_support: false,
+        interview_prep: false,
+        salary_insights: true,
       },
       [SubscriptionTier.PRO]: {
         applications: 200,
         ai_cover_letters: 100,
-        resume_uploads: 10,
+        resume_uploads: -1, // unlimited
         auto_apply: true,
         priority_support: true,
+        interview_prep: true,
+        salary_insights: true,
+      },
+      [SubscriptionTier.PROFESSIONAL]: {
+        applications: 200,
+        ai_cover_letters: 100,
+        resume_uploads: -1, // unlimited
+        auto_apply: true,
+        priority_support: true,
+        interview_prep: true,
+        salary_insights: true,
+      },
+      [SubscriptionTier.ADVANCED_CAREER]: {
+        applications: 500,
+        ai_cover_letters: 300,
+        resume_uploads: -1,
+        auto_apply: true,
+        priority_support: true,
+        interview_prep: true,
+        salary_insights: true,
+        api_access: true,
       },
       [SubscriptionTier.ENTERPRISE]: {
         applications: -1, // unlimited
@@ -345,9 +392,24 @@ export class SubscriptionService {
         resume_uploads: -1,
         auto_apply: true,
         priority_support: true,
+        interview_prep: true,
+        salary_insights: true,
+        api_access: true,
+        dedicated_manager: true,
+      },
+      [SubscriptionTier.EXECUTIVE_ELITE]: {
+        applications: -1, // unlimited
+        ai_cover_letters: -1,
+        resume_uploads: -1,
+        auto_apply: true,
+        priority_support: true,
+        interview_prep: true,
+        salary_insights: true,
+        api_access: true,
+        dedicated_manager: true,
       },
     };
 
-    return limits[tier];
+    return limits[tier] || limits[SubscriptionTier.FREE];
   }
 }

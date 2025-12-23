@@ -13,7 +13,7 @@
 # -----------------------------------------------------------------------------
 # Pinned Node.js 20 Alpine with SHA256 digest
 # Update digest regularly: docker pull node:20-alpine && docker inspect node:20-alpine | jq -r '.[0].RepoDigests[0]'
-FROM node:20-alpine@sha256:2d5e8a8a51bc341fd5f2eed6d91455c3a3d147e91a14298fc564b5dc519c1666 AS builder
+FROM node:20-alpine@sha256:c13b26e7e602ef2f1074aef304ce6e9b7dd284c419b35d89fcf3cc8e44a8def9 AS builder
 
 # Install build dependencies
 RUN apk add --no-cache \
@@ -51,7 +51,7 @@ RUN pnpm run build
 # Stage 2: Production Runtime - Minimal and Secure
 # -----------------------------------------------------------------------------
 # Pinned Node.js 20 Alpine with SHA256 digest (same as builder)
-FROM node:20-alpine@sha256:2d5e8a8a51bc341fd5f2eed6d91455c3a3d147e91a14298fc564b5dc519c1666 AS production
+FROM node:20-alpine@sha256:c13b26e7e602ef2f1074aef304ce6e9b7dd284c419b35d89fcf3cc8e44a8def9 AS production
 
 # Install only runtime dependencies
 RUN apk add --no-cache \

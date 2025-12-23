@@ -95,6 +95,9 @@ async function bootstrap() {
   // app.setGlobalPrefix('api/v1');
 
   const port = process.env.PORT || 8085;
+  // Graceful shutdown handling
+  app.enableShutdownHooks();
+
   await app.listen(port);
 
   logger.log(`Auto-Apply Service is running on: http://localhost:${port}`);

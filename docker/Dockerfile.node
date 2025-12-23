@@ -1,5 +1,5 @@
 # Base stage - shared dependencies
-FROM node:20-alpine AS base
+FROM node:20-alpine@sha256:c13b26e7e602ef2f1074aef304ce6e9b7dd284c419b35d89fcf3cc8e44a8def9 AS base
 
 # Install pnpm
 RUN corepack enable && corepack prepare pnpm@8.15.0 --activate
@@ -36,7 +36,7 @@ ARG SERVICE_NAME
 RUN pnpm --filter ${SERVICE_NAME} build
 
 # Production stage
-FROM node:20-alpine AS production
+FROM node:20-alpine@sha256:c13b26e7e602ef2f1074aef304ce6e9b7dd284c419b35d89fcf3cc8e44a8def9 AS production
 
 # Install dumb-init for proper signal handling
 RUN apk add --no-cache dumb-init

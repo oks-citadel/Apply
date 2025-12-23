@@ -145,3 +145,15 @@ max_replicas = 2
 #
 # Expected Monthly Cost: ~$150-200 USD
 # ============================================================================
+
+# ============================================================================
+# PostgreSQL Network Access Configuration (DEVELOPMENT)
+# ============================================================================
+# Development environment uses public network access for simplified connectivity
+# Private endpoints are NOT used in dev to reduce costs and complexity
+
+# Disable PostgreSQL private endpoint (not needed for dev)
+postgresql_enable_private_endpoint = false
+
+# Enable public network access (required for dev without private endpoints)
+postgresql_public_network_access_enabled = true

@@ -62,7 +62,7 @@ variable "project_name" {
 variable "enable_sql_database" {
   description = "Enable Azure SQL Database deployment"
   type        = bool
-  default     = true
+  default     = false
 }
 
 variable "sql_admin_username" {
@@ -90,7 +90,7 @@ variable "sql_admin_password" {
 variable "enable_postgresql" {
   description = "Enable Azure PostgreSQL Flexible Server deployment"
   type        = bool
-  default     = true
+  default     = false
 }
 
 variable "postgres_admin_username" {
@@ -123,9 +123,9 @@ variable "postgresql_enable_private_endpoint" {
 }
 
 variable "postgresql_public_network_access_enabled" {
-  description = "Enable public network access to PostgreSQL server"
+  description = "Enable public network access to PostgreSQL server. SECURITY: Default is false for production security. Enable only for development environments."
   type        = bool
-  default     = true
+  default     = false
 }
 
 # ============================================================================
@@ -155,7 +155,7 @@ variable "enable_defender" {
 variable "enable_diagnostics" {
   description = "Enable diagnostic logs for resources"
   type        = bool
-  default     = true
+  default     = false
 }
 
 variable "enable_private_endpoints" {
