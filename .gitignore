@@ -152,3 +152,6 @@ temp/
 *.tmp
 # Legacy archived files
 .archive/
+
+# Claude Code local settings
+.claude/settings.local.json

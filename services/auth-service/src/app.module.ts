@@ -11,6 +11,7 @@ import configuration from './config/configuration';
 import { databaseConfig } from './config/database.config';
 import { HealthModule } from './health/health.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { GdprModule } from './modules/gdpr/gdpr.module';
 import { UsersModule } from './modules/users/users.module';
 
 @Module({
@@ -72,6 +73,7 @@ import { UsersModule } from './modules/users/users.module';
 
     // Feature modules
     AuthModule,
+    GdprModule,
     UsersModule,
   ],
   providers: [
