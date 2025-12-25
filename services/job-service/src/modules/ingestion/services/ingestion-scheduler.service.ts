@@ -8,7 +8,7 @@ import { JobSource, SourceStatus } from '../entities/job-source.entity';
 
 import { DeduplicationService } from './deduplication.service';
 import { IngestionService } from './ingestion.service';
-import type { Repository} from 'typeorm';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class IngestionSchedulerService {

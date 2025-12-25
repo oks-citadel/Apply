@@ -8,7 +8,7 @@ import {
   SourceStatus,
 } from '../modules/ingestion/entities/job-source.entity';
 
-import type { Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 
 
 @Injectable()

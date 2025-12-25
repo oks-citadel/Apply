@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 
 import { SkillMapping, SkillCategory } from '../entities/job-taxonomy.entity';
 
-import type { Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 
 
 interface SkillExtractionResult {

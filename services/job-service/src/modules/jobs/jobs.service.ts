@@ -12,7 +12,7 @@ import { SavedJob } from './entities/saved-job.entity';
 import type { SaveJobDto, UpdateSavedJobDto } from './dto/save-job.dto';
 import type { SearchJobsDto, PaginatedJobsResponseDto, JobResponseDto } from './dto/search-jobs.dto';
 import { RedisCacheService } from '../../common/cache';
-import type { Repository} from 'typeorm';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class JobsService {

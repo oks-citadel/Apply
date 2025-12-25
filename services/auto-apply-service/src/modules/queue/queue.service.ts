@@ -5,7 +5,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { platformRateLimits } from '../../config/queue.config';
 
 import type { ApplicationData } from '../adapters/base.adapter';
-import type { Queue, Job } from 'bull';
+import { Queue, Job } from 'bull';
 
 @Injectable()
 export class QueueService {

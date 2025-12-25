@@ -61,7 +61,7 @@ export function createSecurityMiddleware(config: SecurityHeadersConfig = {}): Re
   return helmet(helmetConfig);
 }
 
-export const securityHeaders = createSecurityMiddleware();
+export const securityHeaders: RequestHandler = createSecurityMiddleware();
 
 export function corsOptions(allowedOrigins: string[]) {
   return {

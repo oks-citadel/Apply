@@ -11,8 +11,9 @@ import { Cohort } from './entities/cohort.entity';
 import { PlacementTracking } from './entities/placement-tracking.entity';
 import { TenantUser } from './entities/tenant-user.entity';
 
-import type { CreateCohortDto } from './dto/create-cohort.dto';
-import type { Repository} from 'typeorm';
+import { Repository } from 'typeorm';
+
+import { CreateCohortDto } from './dto/create-cohort.dto';
 
 @Injectable()
 export class CohortService {

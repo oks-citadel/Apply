@@ -2,8 +2,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { firstValueFrom , of } from 'rxjs';
 import { timeout, catchError } from 'rxjs/operators';
 
-import type { HttpService } from '@nestjs/axios';
-import type { ConfigService } from '@nestjs/config';
+import { HttpService } from '@nestjs/axios';
+import { ConfigService } from '@nestjs/config';
 
 
 export interface ServiceHealth {

@@ -3,10 +3,12 @@ import { PassportStrategy } from '@nestjs/passport';
 import * as bcrypt from 'bcrypt';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 
-import type { JwtPayload } from './jwt.strategy';
-import type { User } from '../../users/entities/user.entity';
-import type { UsersService } from '../../users/users.service';
-import type { ConfigService } from '@nestjs/config';
+import { ConfigService } from '@nestjs/config';
+
+import { JwtPayload } from './jwt.strategy';
+import { User } from '../../users/entities/user.entity';
+import { UsersService } from '../../users/users.service';
+
 import type { Request } from 'express';
 
 @Injectable()

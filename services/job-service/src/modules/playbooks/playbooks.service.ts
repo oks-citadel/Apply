@@ -6,14 +6,14 @@ import { PlaybookApplication, ApplicationStatus } from './entities/playbook-appl
 import { Playbook, Region } from './entities/playbook.entity';
 import { Job, RemoteType } from '../jobs/entities/job.entity';
 
-import type {
+import {
   ApplyPlaybookDto,
   ApplyPlaybookResponseDto,
   UpdateApplicationStatusDto,
   ApplicationStatsDto,
   RecommendationResponseDto,
 } from './dto';
-import type { Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 
 
 @Injectable()

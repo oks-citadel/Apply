@@ -33,8 +33,8 @@ import { RemotiveProvider } from './providers/remotive.provider';
 import { TheMuseProvider } from './providers/themuse.provider';
 import { JobicyProvider } from './providers/jobicy.provider';
 import { WeWorkRemotelyProvider } from './providers/weworkremotely.provider';
-import type { OnModuleInit } from '@nestjs/common';
-import type { Repository } from 'typeorm';
+import { OnModuleInit } from '@nestjs/common';
+import { Repository } from 'typeorm';
 
 export interface AggregationResult {
   provider: string;

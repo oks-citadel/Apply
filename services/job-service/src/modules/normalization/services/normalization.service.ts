@@ -14,8 +14,8 @@ import { FraudDetectorService } from './fraud-detector.service';
 import { QualityScorerService } from './quality-scorer.service';
 import { SkillExtractorService } from './skill-extractor.service';
 import { TitleNormalizerService } from './title-normalizer.service';
-import type { NormalizationResultDto } from '../dto/normalize-job.dto';
-import type { Repository } from 'typeorm';
+import { NormalizationResultDto } from '../dto/normalize-job.dto';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class NormalizationService {

@@ -7,7 +7,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Job } from '../../jobs/entities/job.entity';
 import { NormalizedJob } from '../entities/normalized-job.entity';
 
-import type { Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 
 interface DuplicateDetectionResult {
   is_duplicate: boolean;

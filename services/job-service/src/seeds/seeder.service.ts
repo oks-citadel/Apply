@@ -5,7 +5,7 @@ import { jobsSeedData } from './jobs.seed';
 import { Company } from '../modules/companies/entities/company.entity';
 import { Job } from '../modules/jobs/entities/job.entity';
 
-import type { Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 
 
 @Injectable()

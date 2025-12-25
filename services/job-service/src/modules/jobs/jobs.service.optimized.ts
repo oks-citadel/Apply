@@ -9,10 +9,10 @@ import { UpdateSavedJobDto } from './dto/save-job.dto';
 import { Job } from './entities/job.entity';
 import { SavedJob } from './entities/saved-job.entity';
 
-import type { SearchJobsDto, PaginatedJobsResponseDto, JobResponseDto } from './dto/search-jobs.dto';
+import { SearchJobsDto, PaginatedJobsResponseDto, JobResponseDto } from './dto/search-jobs.dto';
 import { SearchService } from '../search/search.service';
-import type { SaveJobDto} from './dto/save-job.dto';
-import type { Repository} from 'typeorm';
+import { SaveJobDto } from './dto/save-job.dto';
+import { Repository } from 'typeorm';
 
 /**
  * Optimized JobsService with performance improvements:

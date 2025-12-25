@@ -3,8 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 
 import { EmployerProfile } from '../entities/employer-profile.entity';
 
-import type { Job } from '../../jobs/entities/job.entity';
-import type { Repository } from 'typeorm';
+import { Job } from '../../jobs/entities/job.entity';
+import { Repository } from 'typeorm';
 
 
 interface FraudDetectionResult {

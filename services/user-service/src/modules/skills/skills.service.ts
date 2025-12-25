@@ -4,8 +4,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 
 import { Skill } from './entities/skill.entity';
 
-import type { CreateSkillDto, UpdateSkillDto } from './dto/create-skill.dto';
-import type { Repository } from 'typeorm';
+import { Repository } from 'typeorm';
+
+import { CreateSkillDto, UpdateSkillDto } from './dto/create-skill.dto';
 
 @Injectable()
 export class SkillsService {

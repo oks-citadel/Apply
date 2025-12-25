@@ -7,8 +7,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Job } from '../../jobs/entities/job.entity';
 import { RawJobListing } from '../entities/raw-job-listing.entity';
 
-import type { NormalizedJob } from '../interfaces/job-adapter.interface';
-import type { Repository } from 'typeorm';
+import { NormalizedJob } from '../interfaces/job-adapter.interface';
+import { Repository } from 'typeorm';
 
 export interface DeduplicationResult {
   isDuplicate: boolean;

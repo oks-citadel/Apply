@@ -5,7 +5,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { JobTitleMapping } from '../entities/job-taxonomy.entity';
 import { SeniorityLevel, FunctionCategory } from '../entities/normalized-job.entity';
 
-import type { Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 
 interface TitleNormalizationResult {
   standardized_title: string;

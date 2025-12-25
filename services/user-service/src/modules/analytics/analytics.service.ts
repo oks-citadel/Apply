@@ -8,7 +8,7 @@ import { Profile } from '../profile/entities/profile.entity';
 import { Skill } from '../skills/entities/skill.entity';
 import { Subscription } from '../subscription/entities/subscription.entity';
 
-import type { Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class AnalyticsService {

@@ -21,9 +21,9 @@ import {
 
 import { DeduplicationService } from './deduplication.service';
 import { JobAdapterFactory } from '../adapters/adapter.factory';
-import type { FetchOptions, NormalizedJob } from '../interfaces/job-adapter.interface';
-import type { Queue } from 'bull';
-import type { Repository} from 'typeorm';
+import { FetchOptions, NormalizedJob } from '../interfaces/job-adapter.interface';
+import { Queue } from 'bull';
+import { Repository} from 'typeorm';
 
 @Injectable()
 export class IngestionService {

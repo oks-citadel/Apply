@@ -24,13 +24,14 @@ import {
 import { RecruiterRevenue, RevenueType, RevenueStatus } from './entities/recruiter-revenue.entity';
 import { RecruiterReview, ReviewStatus } from './entities/recruiter-review.entity';
 
-import type { AssignRecruiterDto } from './dto/assign-recruiter.dto';
-import type { CreateReviewDto } from './dto/create-review.dto';
-import type { EscalateApplicationDto } from './dto/escalate-application.dto';
-import type { RegisterRecruiterDto } from './dto/register-recruiter.dto';
-import type { SearchRecruitersDto } from './dto/search-recruiters.dto';
-import type { UpdateAssignmentDto } from './dto/update-assignment.dto';
-import type { Repository} from 'typeorm';
+import { Repository } from 'typeorm';
+
+import { AssignRecruiterDto } from './dto/assign-recruiter.dto';
+import { CreateReviewDto } from './dto/create-review.dto';
+import { EscalateApplicationDto } from './dto/escalate-application.dto';
+import { RegisterRecruiterDto } from './dto/register-recruiter.dto';
+import { SearchRecruitersDto } from './dto/search-recruiters.dto';
+import { UpdateAssignmentDto } from './dto/update-assignment.dto';
 
 @Injectable()
 export class RecruiterService {

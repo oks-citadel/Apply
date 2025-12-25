@@ -6,7 +6,7 @@ import { CompanyReview } from './entities/company-review.entity';
 import { Company } from './entities/company.entity';
 import { Job } from '../jobs/entities/job.entity';
 
-import type { Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class CompaniesService {

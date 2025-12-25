@@ -12,15 +12,15 @@ import { JobReport } from './entities/report.entity';
 import { ReportType, ReportStatus } from './enums/report-type.enum';
 import { Job } from '../jobs/entities/job.entity';
 
-import type { CreateReportDto } from './dto/create-report.dto';
-import type { QueryReportsDto } from './dto/query-reports.dto';
-import type {
+import { CreateReportDto } from './dto/create-report.dto';
+import { QueryReportsDto } from './dto/query-reports.dto';
+import {
   ReportResponseDto,
   PaginatedReportsResponseDto,
   ReportStatsDto,
 } from './dto/report-response.dto';
-import type { UpdateReportDto } from './dto/update-report.dto';
-import type { Repository, FindOptionsWhere } from 'typeorm';
+import { UpdateReportDto } from './dto/update-report.dto';
+import { Repository, FindOptionsWhere } from 'typeorm';
 
 @Injectable()
 export class ReportsService {

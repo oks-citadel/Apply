@@ -5,7 +5,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Company } from '../../companies/entities/company.entity';
 import { EmployerProfile, EmployerVerificationStatus, EmployerRiskLevel } from '../entities/employer-profile.entity';
 
-import type { Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 
 interface CredibilityUpdateResult {
   credibility_score: number;

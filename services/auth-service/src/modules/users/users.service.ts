@@ -10,8 +10,8 @@ import * as bcrypt from 'bcrypt';
 
 import { User, UserStatus } from './entities/user.entity';
 
-import type { ConfigService } from '@nestjs/config';
-import type { Repository } from 'typeorm';
+import { ConfigService } from '@nestjs/config';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class UsersService {

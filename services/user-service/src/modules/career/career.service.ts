@@ -5,9 +5,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Education } from './entities/education.entity';
 import { WorkExperience } from './entities/work-experience.entity';
 
-import type { CreateEducationDto, UpdateEducationDto } from './dto/create-education.dto';
-import type { CreateWorkExperienceDto, UpdateWorkExperienceDto } from './dto/create-work-experience.dto';
-import type { Repository } from 'typeorm';
+import { Repository } from 'typeorm';
+
+import { CreateEducationDto, UpdateEducationDto } from './dto/create-education.dto';
+import { CreateWorkExperienceDto, UpdateWorkExperienceDto } from './dto/create-work-experience.dto';
 
 @Injectable()
 export class CareerService {

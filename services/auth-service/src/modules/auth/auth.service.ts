@@ -12,24 +12,25 @@ import * as bcrypt from 'bcrypt';
 import * as QRCode from 'qrcode';
 import * as speakeasy from 'speakeasy';
 
+import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
+
 import { TokenResponseDto } from './dto/token-response.dto';
 import { UserStatus, AuthProvider } from '../users/entities/user.entity';
 import { AuditService } from '../../common/services/audit.service';
+import { EmailService } from '../email/email.service';
+import { UsersService } from '../users/users.service';
 
-import type { EmailService } from '../email/email.service';
 import type { ChangePasswordDto } from './dto/change-password.dto';
 import type { ForgotPasswordDto } from './dto/forgot-password.dto';
 import type { LoginDto } from './dto/login.dto';
 import type { MfaSetupResponseDto } from './dto/mfa-setup.dto';
 import type { MfaVerifyDto } from './dto/mfa-verify.dto';
-import type { User} from '../users/entities/user.entity';
-import type { UsersService } from '../users/users.service';
+import type { User } from '../users/entities/user.entity';
 import type { RegisterDto } from './dto/register.dto';
 import type { ResetPasswordDto } from './dto/reset-password.dto';
 import type { VerifyEmailDto } from './dto/verify-email.dto';
 import type { JwtPayload } from './strategies/jwt.strategy';
-import type { ConfigService } from '@nestjs/config';
-import type { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class AuthService {

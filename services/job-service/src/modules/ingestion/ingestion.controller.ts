@@ -18,10 +18,10 @@ import { IngestionJob, IngestionTrigger } from './entities/ingestion-job.entity'
 import { JobSource, SourceStatus } from './entities/job-source.entity';
 
 import { JobAdapterFactory } from './adapters/adapter.factory';
-import type { CreateJobSourceDto } from './dto/create-source.dto';
+import { CreateJobSourceDto } from './dto/create-source.dto';
 import { DeduplicationService } from './services/deduplication.service';
 import { IngestionService } from './services/ingestion.service';
-import type { Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 
 @ApiTags('Job Ingestion')
 @Controller('api/v1/ingestion')
