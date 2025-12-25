@@ -1,0 +1,386 @@
+# ============================================================================
+# BITNAMI REDIS HELM VALUES
+# Chart: bitnami/redis
+# Version: 18.x (Redis 7.2)
+# ============================================================================
+# For AKS deployment as alternative to Azure Cache for Redis
+# Use this for: local development, cost optimization, or multi-cloud portability
+# ============================================================================
+
+# ============================================================================
+# Architecture Configuration
+# ============================================================================
+# Options: standalone, replication
+architecture: replication
+
+# ============================================================================
+# Authentication
+# ============================================================================
+auth:
+  enabled: true
+  password: ""  # Set via --set or external secret
+  existingSecret: "redis-secrets"
+  existingSecretPasswordKey: "redis-password"
+  usePasswordFiles: true
+
+# ============================================================================
+# Master Configuration
+# ============================================================================
+master:
+  count: 1
+
+  # Persistence - Azure Managed Disks
+  persistence:
+    enabled: true
+    storageClass: "managed-premium"
+    size: 8Gi
+    accessModes:
+      - ReadWriteOnce
+
+  # Resource allocation
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+
+  # Pod Security Context - Non-root execution
+  podSecurityContext:
+    enabled: true
+    fsGroup: 1001
+
+  containerSecurityContext:
+    enabled: true
+    runAsUser: 1001
+    runAsNonRoot: true
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    seccompProfile:
+      type: RuntimeDefault
+    readOnlyRootFilesystem: true
+
+  # Redis configuration
+  configuration: |
+    # Memory management
+    maxmemory 1500mb
+    maxmemory-policy allkeys-lru
+    maxmemory-samples 5
+
+    # Persistence
+    appendonly yes
+    appendfsync everysec
+    no-appendfsync-on-rewrite no
+    auto-aof-rewrite-percentage 100
+    auto-aof-rewrite-min-size 64mb
+    aof-load-truncated yes
+    aof-use-rdb-preamble yes
+
+    # RDB snapshots
+    save 900 1
+    save 300 10
+    save 60 10000
+
+    # Security - Disable dangerous commands
+    rename-command FLUSHDB ""
+    rename-command FLUSHALL ""
+    rename-command DEBUG ""
+    rename-command CONFIG ""
+    rename-command SHUTDOWN SHUTDOWN_APPLYFORUS
+    rename-command SLAVEOF ""
+    rename-command REPLICAOF ""
+
+    # Performance
+    tcp-keepalive 300
+    timeout 0
+    tcp-backlog 511
+
+    # Slow log
+    slowlog-log-slower-than 10000
+    slowlog-max-len 128
+
+    # Client output buffer limits
+    client-output-buffer-limit normal 0 0 0
+    client-output-buffer-limit replica 256mb 64mb 60
+    client-output-buffer-limit pubsub 32mb 8mb 60
+
+  # Node affinity
+  nodeSelector:
+    nodepool-type: workload
+
+  # Pod anti-affinity for HA
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          podAffinityTerm:
+            labelSelector:
+              matchLabels:
+                app.kubernetes.io/name: redis
+                app.kubernetes.io/component: master
+            topologyKey: kubernetes.io/hostname
+
+  # Service configuration
+  service:
+    type: ClusterIP
+    ports:
+      redis: 6379
+
+# ============================================================================
+# Replica Configuration
+# ============================================================================
+replica:
+  replicaCount: 2
+
+  persistence:
+    enabled: true
+    storageClass: "managed-premium"
+    size: 8Gi
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+
+  podSecurityContext:
+    enabled: true
+    fsGroup: 1001
+
+  containerSecurityContext:
+    enabled: true
+    runAsUser: 1001
+    runAsNonRoot: true
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    seccompProfile:
+      type: RuntimeDefault
+
+  nodeSelector:
+    nodepool-type: workload
+
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          podAffinityTerm:
+            labelSelector:
+              matchLabels:
+                app.kubernetes.io/name: redis
+                app.kubernetes.io/component: replica
+            topologyKey: kubernetes.io/hostname
+
+  # Replica configuration
+  configuration: |
+    replica-read-only yes
+
+# ============================================================================
+# Sentinel Configuration (High Availability)
+# ============================================================================
+sentinel:
+  enabled: true
+  masterSet: applyforus-master
+  quorum: 2
+
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+
+  containerSecurityContext:
+    enabled: true
+    runAsUser: 1001
+    runAsNonRoot: true
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    seccompProfile:
+      type: RuntimeDefault
+
+  configuration: |
+    sentinel down-after-milliseconds applyforus-master 10000
+    sentinel failover-timeout applyforus-master 180000
+    sentinel parallel-syncs applyforus-master 1
+
+  persistence:
+    enabled: true
+    storageClass: "managed-premium"
+    size: 1Gi
+
+  service:
+    type: ClusterIP
+    ports:
+      sentinel: 26379
+
+# ============================================================================
+# TLS Configuration
+# ============================================================================
+tls:
+  enabled: true
+  authClients: true
+  autoGenerated: true
+  # For production, use cert-manager certificates:
+  # existingSecret: redis-tls
+  # certFilename: tls.crt
+  # certKeyFilename: tls.key
+  # certCAFilename: ca.crt
+
+# ============================================================================
+# Metrics (Prometheus)
+# ============================================================================
+metrics:
+  enabled: true
+
+  image:
+    registry: docker.io
+    repository: bitnami/redis-exporter
+    tag: 1.56.0-debian-11-r0
+    pullPolicy: IfNotPresent
+
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 100m
+      memory: 128Mi
+
+  serviceMonitor:
+    enabled: true
+    namespace: "monitoring"
+    interval: 30s
+    scrapeTimeout: 10s
+    labels:
+      release: prometheus
+
+  prometheusRule:
+    enabled: true
+    namespace: "monitoring"
+    rules:
+      - alert: RedisDown
+        expr: redis_up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Redis instance is down"
+          description: "Redis instance {{ $labels.instance }} is down"
+
+      - alert: RedisMemoryHigh
+        expr: redis_memory_used_bytes / redis_memory_max_bytes > 0.85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Redis memory usage is high"
+          description: "Redis instance {{ $labels.instance }} memory usage is {{ $value | humanizePercentage }}"
+
+      - alert: RedisTooManyConnections
+        expr: redis_connected_clients > 500
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Redis has too many connections"
+          description: "Redis instance {{ $labels.instance }} has {{ $value }} connections"
+
+      - alert: RedisReplicationBroken
+        expr: redis_connected_slaves < 1
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Redis replication broken"
+          description: "Redis master {{ $labels.instance }} has no connected slaves"
+
+# ============================================================================
+# Network Policy
+# ============================================================================
+networkPolicy:
+  enabled: true
+  allowExternal: false
+
+  ingressRules:
+    accessOnlyFrom:
+      enabled: true
+      namespaceSelector:
+        matchLabels:
+          name: applyforus
+      podSelector:
+        matchLabels:
+          app.kubernetes.io/part-of: applyforus
+
+  egressRules:
+    denyAllExcept:
+      enabled: true
+      rules:
+        - ports:
+            - port: 53
+              protocol: UDP
+            - port: 53
+              protocol: TCP
+
+# ============================================================================
+# Pod Disruption Budget
+# ============================================================================
+pdb:
+  create: true
+  minAvailable: 1
+
+# ============================================================================
+# Service Account
+# ============================================================================
+serviceAccount:
+  create: true
+  name: "redis-sa"
+  automountServiceAccountToken: false
+  annotations:
+    azure.workload.identity/client-id: ""  # Set for workload identity
+
+# ============================================================================
+# Volume Permissions
+# ============================================================================
+volumePermissions:
+  enabled: false
+
+# ============================================================================
+# Sysctl Configuration
+# ============================================================================
+sysctl:
+  enabled: true
+  image:
+    registry: docker.io
+    repository: bitnami/os-shell
+    tag: 11-debian-11-r0
+    pullPolicy: IfNotPresent
+  command:
+    - /bin/bash
+    - -ec
+    - |
+      sysctl -w net.core.somaxconn=65535
+      sysctl -w vm.overcommit_memory=1
+
+# ============================================================================
+# Common Labels
+# ============================================================================
+commonLabels:
+  app.kubernetes.io/part-of: applyforus
+  app.kubernetes.io/managed-by: helm
+
+# ============================================================================
+# Common Annotations
+# ============================================================================
+commonAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "9121"

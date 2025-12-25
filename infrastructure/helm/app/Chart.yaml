@@ -1,0 +1,54 @@
+apiVersion: v2
+name: applyforus
+description: ApplyForUs AI-Powered Job Application Platform
+type: application
+
+# Chart version
+version: 1.0.0
+
+# Application version
+appVersion: "2.0.0"
+
+# Keywords
+keywords:
+  - job-application
+  - ai
+  - microservices
+  - nestjs
+  - nextjs
+  - typescript
+
+# Maintainers
+maintainers:
+  - name: ApplyForUs Team
+    email: team@applyforus.com
+
+# Source
+sources:
+  - https://github.com/applyforus/apply-platform
+
+# Home
+home: https://applyforus.com
+
+# Icon
+icon: https://applyforus.com/logo.png
+
+# Dependencies (Bitnami charts for local/alternative deployment)
+dependencies:
+  - name: postgresql
+    version: "15.x.x"
+    repository: https://charts.bitnami.com/bitnami
+    condition: postgresql.enabled
+    tags:
+      - database
+  - name: redis
+    version: "18.x.x"
+    repository: https://charts.bitnami.com/bitnami
+    condition: redis.enabled
+    tags:
+      - cache
+
+# Annotations
+annotations:
+  category: Infrastructure
+  licenses: MIT

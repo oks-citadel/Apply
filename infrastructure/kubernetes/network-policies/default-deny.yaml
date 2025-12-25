@@ -1,0 +1,19 @@
+# ============================================================================
+# DEFAULT DENY ALL - ZERO TRUST BASELINE
+# ============================================================================
+# This policy denies all ingress and egress traffic by default.
+# Specific allow policies must be created for each service.
+# ============================================================================
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: applyforus
+  labels:
+    app.kubernetes.io/part-of: applyforus
+    policy-type: baseline
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress

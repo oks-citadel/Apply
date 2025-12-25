@@ -1,12 +1,21 @@
-# ACR build ignore file - minimal exclusions
+# ACR build ignore file
 .git
 .github
 .azure
+.azuredevops
 .vscode
+.claude
+.turbo
 
-# Exclude mobile and extension apps (not deployed to cloud)
+# Exclude all node_modules at root (services have their own)
+node_modules
+
+# Exclude all apps (mobile, admin, employer, extension, web)
 apps/mobile
 apps/extension
+apps/admin
+apps/employer
+apps/web
 
 # Exclude test files
 **/coverage
@@ -17,3 +26,18 @@ infrastructure/
 terraform/
 ops/
 postman/
+
+# Exclude build artifacts
+.next
+dist
+out
+build
+
+# Exclude logs
+*.log
+logs/
+
+# Exclude misc
+*.tar.gz
+*.md
+LICENSE

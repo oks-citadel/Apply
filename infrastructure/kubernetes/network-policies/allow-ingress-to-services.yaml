@@ -1,0 +1,49 @@
+# ============================================================================
+# ALLOW INGRESS CONTROLLER TO APPLICATION SERVICES
+# ============================================================================
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ingress-to-services
+  namespace: applyforus
+  labels:
+    app.kubernetes.io/part-of: applyforus
+    policy-type: ingress
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/part-of: applyforus
+  policyTypes:
+    - Ingress
+  ingress:
+    # Allow from NGINX Ingress Controller
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 3000   # Web app
+        - protocol: TCP
+          port: 8000   # AI service
+        - protocol: TCP
+          port: 8001   # Auth service
+        - protocol: TCP
+          port: 8002   # User service
+        - protocol: TCP
+          port: 8003   # Resume service
+        - protocol: TCP
+          port: 8004   # Job service
+        - protocol: TCP
+          port: 8005   # Auto-apply service
+        - protocol: TCP
+          port: 8006   # Analytics service
+        - protocol: TCP
+          port: 8007   # Notification service
+        - protocol: TCP
+          port: 8008   # Orchestrator service
+        - protocol: TCP
+          port: 8009   # Payment service

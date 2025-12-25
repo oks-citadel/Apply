@@ -1,0 +1,53 @@
+# ============================================================================
+# ALLOW MONITORING ACCESS
+# ============================================================================
+# Allows Prometheus to scrape metrics from application pods
+# ============================================================================
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-prometheus-scraping
+  namespace: applyforus
+  labels:
+    app.kubernetes.io/part-of: applyforus
+    policy-type: monitoring
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/part-of: applyforus
+  policyTypes:
+    - Ingress
+  ingress:
+    # Allow Prometheus to scrape metrics
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: prometheus
+      ports:
+        - protocol: TCP
+          port: 3000   # Web app metrics
+        - protocol: TCP
+          port: 8000   # AI service metrics
+        - protocol: TCP
+          port: 8001   # Auth service metrics
+        - protocol: TCP
+          port: 8002   # User service metrics
+        - protocol: TCP
+          port: 8003   # Resume service metrics
+        - protocol: TCP
+          port: 8004   # Job service metrics
+        - protocol: TCP
+          port: 8005   # Auto-apply service metrics
+        - protocol: TCP
+          port: 8006   # Analytics service metrics
+        - protocol: TCP
+          port: 8007   # Notification service metrics
+        - protocol: TCP
+          port: 8008   # Orchestrator service metrics
+        - protocol: TCP
+          port: 8009   # Payment service metrics
+        - protocol: TCP
+          port: 9090   # Generic metrics port

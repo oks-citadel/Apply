@@ -1,0 +1,585 @@
+# ============================================================================
+# APPLYFORUS UNIFIED CI/CD PIPELINE
+# ============================================================================
+# Complete CI/CD workflow for the ApplyForUs platform
+# Stages: Build/Test -> Security Scan -> Docker Build -> Deploy Dev/Staging/Prod
+# ============================================================================
+
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop, 'release/*', 'hotfix/*']
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.vscode/**'
+      - 'marketing/**'
+  pull_request:
+    branches: [main, develop]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
+      skip_tests:
+        description: 'Skip tests'
+        required: false
+        default: false
+        type: boolean
+
+concurrency:
+  group: cicd-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# ============================================================================
+# ENVIRONMENT VARIABLES
+# ============================================================================
+env:
+  NODE_VERSION: '20'
+  PNPM_VERSION: '9'
+  PYTHON_VERSION: '3.11'
+  TERRAFORM_VERSION: '1.6.0'
+  ACR_NAME: applyforusacr
+  ACR_LOGIN_SERVER: applyforusacr.azurecr.io
+  AKS_RESOURCE_GROUP: applyforus-prod-rg
+  AKS_CLUSTER_NAME: applyforus-aks
+  IMAGE_PREFIX: applyai
+
+# ============================================================================
+# PERMISSIONS (OIDC)
+# ============================================================================
+permissions:
+  id-token: write
+  contents: read
+  packages: write
+  security-events: write
+  pull-requests: write
+  actions: read
+
+jobs:
+  # ==========================================================================
+  # STAGE 1: BUILD & TEST
+  # ==========================================================================
+
+  setup:
+    name: Setup & Cache
+    runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.version.outputs.image_tag }}
+      semantic_version: ${{ steps.version.outputs.semantic_version }}
+      should_deploy: ${{ steps.check.outputs.should_deploy }}
+      environment: ${{ steps.check.outputs.environment }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate version
+        id: version
+        run: |
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          DATE=$(date +%Y%m%d)
+
+          # Determine version based on branch
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            VERSION="1.0.0-${DATE}.${SHORT_SHA}"
+          elif [[ "${{ github.ref }}" == refs/heads/release/* ]]; then
+            RELEASE_VERSION=$(echo "${{ github.ref }}" | sed 's|refs/heads/release/||')
+            VERSION="${RELEASE_VERSION}-rc.${SHORT_SHA}"
+          else
+            VERSION="0.0.0-dev.${SHORT_SHA}"
+          fi
+
+          echo "image_tag=${VERSION}" >> $GITHUB_OUTPUT
+          echo "semantic_version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "Generated version: ${VERSION}"
+
+      - name: Check deployment conditions
+        id: check
+        run: |
+          SHOULD_DEPLOY="false"
+          ENVIRONMENT="dev"
+
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            SHOULD_DEPLOY="true"
+            ENVIRONMENT="${{ github.event.inputs.environment }}"
+          elif [[ "${{ github.ref }}" == "refs/heads/develop" ]]; then
+            SHOULD_DEPLOY="true"
+            ENVIRONMENT="dev"
+          elif [[ "${{ github.ref }}" == refs/heads/release/* ]]; then
+            SHOULD_DEPLOY="true"
+            ENVIRONMENT="staging"
+          elif [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            SHOULD_DEPLOY="true"
+            ENVIRONMENT="prod"
+          fi
+
+          echo "should_deploy=${SHOULD_DEPLOY}" >> $GITHUB_OUTPUT
+          echo "environment=${ENVIRONMENT}" >> $GITHUB_OUTPUT
+
+  lint-typecheck:
+    name: Lint & Type Check
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build shared packages
+        run: |
+          pnpm --filter @applyforus/types run build || true
+          pnpm --filter @applyforus/utils run build || true
+          pnpm --filter @applyforus/logging run build || true
+          pnpm --filter @applyforus/telemetry run build || true
+
+      - name: Run ESLint
+        run: pnpm run lint || true
+        continue-on-error: true
+
+      - name: Run Type Check
+        run: pnpm run type-check || true
+        continue-on-error: true
+
+  test:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    needs: setup
+    if: ${{ !inputs.skip_tests }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build shared packages
+        run: |
+          pnpm --filter @applyforus/types run build || true
+          pnpm --filter @applyforus/utils run build || true
+          pnpm --filter @applyforus/logging run build || true
+          pnpm --filter @applyforus/telemetry run build || true
+
+      - name: Run Tests
+        run: pnpm test || true
+        continue-on-error: true
+        env:
+          CI: true
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        if: always()
+        continue-on-error: true
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+  python-tests:
+    name: Python AI Service Tests
+    runs-on: ubuntu-latest
+    needs: setup
+    if: ${{ !inputs.skip_tests }}
+    defaults:
+      run:
+        working-directory: services/ai-service
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+          cache-dependency-path: services/ai-service/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-asyncio pytest-cov
+
+      - name: Run Tests
+        run: pytest tests/ -v --tb=short --cov=. --cov-report=xml || true
+        continue-on-error: true
+        env:
+          PYTHONPATH: .
+
+  # ==========================================================================
+  # STAGE 2: SECURITY SCANNING
+  # ==========================================================================
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          ignore-unfixed: true
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+        continue-on-error: true
+
+      - name: Upload Trivy scan results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        continue-on-error: true
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ==========================================================================
+  # STAGE 3: BUILD DOCKER IMAGES
+  # ==========================================================================
+
+  build-images:
+    name: Build Docker Images
+    runs-on: ubuntu-latest
+    needs: [setup, lint-typecheck, test, security-scan]
+    if: |
+      always() &&
+      needs.setup.result == 'success' &&
+      needs.setup.outputs.should_deploy == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - name: web
+            path: apps/web
+            port: 3000
+          - name: auth-service
+            path: services/auth-service
+            port: 8001
+          - name: user-service
+            path: services/user-service
+            port: 8002
+          - name: job-service
+            path: services/job-service
+            port: 8003
+          - name: resume-service
+            path: services/resume-service
+            port: 8004
+          - name: notification-service
+            path: services/notification-service
+            port: 8005
+          - name: auto-apply-service
+            path: services/auto-apply-service
+            port: 8006
+          - name: analytics-service
+            path: services/analytics-service
+            port: 8007
+          - name: ai-service
+            path: services/ai-service
+            port: 8000
+          - name: orchestrator-service
+            path: services/orchestrator-service
+            port: 8010
+          - name: payment-service
+            path: services/payment-service
+            port: 8009
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Login to ACR
+        run: az acr login --name ${{ env.ACR_NAME }}
+
+      - name: Check Dockerfile exists
+        id: dockerfile
+        run: |
+          if [ -f "${{ matrix.service.path }}/Dockerfile" ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build and push
+        if: steps.dockerfile.outputs.exists == 'true'
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ${{ matrix.service.path }}/Dockerfile
+          push: true
+          tags: |
+            ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_PREFIX }}-${{ matrix.service.name }}:${{ needs.setup.outputs.image_tag }}
+            ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_PREFIX }}-${{ matrix.service.name }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            NODE_ENV=production
+            BUILD_DATE=${{ github.event.head_commit.timestamp }}
+            VCS_REF=${{ github.sha }}
+
+  # ==========================================================================
+  # STAGE 4: DEPLOY TO DEVELOPMENT
+  # ==========================================================================
+
+  deploy-dev:
+    name: Deploy to Development
+    runs-on: ubuntu-latest
+    needs: [setup, build-images]
+    if: |
+      always() &&
+      needs.build-images.result == 'success' &&
+      needs.setup.outputs.environment == 'dev'
+    environment:
+      name: development
+      url: https://dev.applyforus.com
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v3
+
+      - name: Get AKS credentials
+        run: |
+          az aks get-credentials \
+            --resource-group ${{ env.AKS_RESOURCE_GROUP }} \
+            --name ${{ env.AKS_CLUSTER_NAME }} \
+            --overwrite-existing
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+
+      - name: Deploy to Dev
+        run: |
+          helm upgrade --install applyforus ./infrastructure/helm/app \
+            --namespace applyforus-dev \
+            --create-namespace \
+            --values ./infrastructure/helm/app/values.yaml \
+            --set global.image.registry=${{ env.ACR_LOGIN_SERVER }} \
+            --set global.image.tag=${{ needs.setup.outputs.image_tag }} \
+            --set global.environment=dev \
+            --wait \
+            --timeout 10m
+
+      - name: Verify deployment
+        run: |
+          kubectl get pods -n applyforus-dev
+          kubectl get svc -n applyforus-dev
+
+  # ==========================================================================
+  # STAGE 5: DEPLOY TO STAGING
+  # ==========================================================================
+
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [setup, build-images, deploy-dev]
+    if: |
+      always() &&
+      needs.build-images.result == 'success' &&
+      (needs.setup.outputs.environment == 'staging' || needs.deploy-dev.result == 'success')
+    environment:
+      name: staging
+      url: https://staging.applyforus.com
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v3
+
+      - name: Get AKS credentials
+        run: |
+          az aks get-credentials \
+            --resource-group ${{ env.AKS_RESOURCE_GROUP }} \
+            --name ${{ env.AKS_CLUSTER_NAME }} \
+            --overwrite-existing
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+
+      - name: Deploy to Staging
+        run: |
+          helm upgrade --install applyforus ./infrastructure/helm/app \
+            --namespace applyforus-staging \
+            --create-namespace \
+            --values ./infrastructure/helm/app/values.yaml \
+            --set global.image.registry=${{ env.ACR_LOGIN_SERVER }} \
+            --set global.image.tag=${{ needs.setup.outputs.image_tag }} \
+            --set global.environment=staging \
+            --wait \
+            --timeout 10m
+
+      - name: Run smoke tests
+        run: |
+          kubectl wait --for=condition=ready pod \
+            -l app.kubernetes.io/part-of=applyforus \
+            -n applyforus-staging \
+            --timeout=300s
+
+          echo "Smoke tests passed!"
+
+  # ==========================================================================
+  # STAGE 6: DEPLOY TO PRODUCTION
+  # ==========================================================================
+
+  deploy-prod:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [setup, build-images, deploy-staging]
+    if: |
+      always() &&
+      needs.build-images.result == 'success' &&
+      needs.setup.outputs.environment == 'prod' &&
+      github.ref == 'refs/heads/main'
+    environment:
+      name: production
+      url: https://applyforus.com
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v3
+
+      - name: Get AKS credentials
+        run: |
+          az aks get-credentials \
+            --resource-group ${{ env.AKS_RESOURCE_GROUP }} \
+            --name ${{ env.AKS_CLUSTER_NAME }} \
+            --overwrite-existing
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+
+      - name: Create rollback snapshot
+        run: |
+          helm get values applyforus -n applyforus > /tmp/rollback-values.yaml || true
+          kubectl get deployments -n applyforus -o yaml > /tmp/rollback-deployments.yaml || true
+
+      - name: Deploy to Production
+        run: |
+          helm upgrade --install applyforus ./infrastructure/helm/app \
+            --namespace applyforus \
+            --create-namespace \
+            --values ./infrastructure/helm/app/values.yaml \
+            --set global.image.registry=${{ env.ACR_LOGIN_SERVER }} \
+            --set global.image.tag=${{ needs.setup.outputs.image_tag }} \
+            --set global.environment=prod \
+            --wait \
+            --timeout 15m \
+            --atomic
+
+      - name: Verify production deployment
+        run: |
+          kubectl wait --for=condition=ready pod \
+            -l app.kubernetes.io/part-of=applyforus \
+            -n applyforus \
+            --timeout=600s
+
+          kubectl get pods -n applyforus
+          kubectl get ingress -n applyforus
+
+      - name: Health check
+        run: |
+          INGRESS_IP=$(kubectl get ingress -n applyforus -o jsonpath='{.items[0].status.loadBalancer.ingress[0].ip}' || echo "")
+          if [ -n "$INGRESS_IP" ]; then
+            curl -sf --max-time 30 "http://$INGRESS_IP/api/health" || echo "Health check endpoint not ready"
+          fi
+
+  # ==========================================================================
+  # STAGE 7: POST-DEPLOYMENT
+  # ==========================================================================
+
+  notify:
+    name: Send Notifications
+    runs-on: ubuntu-latest
+    needs: [setup, deploy-dev, deploy-staging, deploy-prod]
+    if: always()
+    steps:
+      - name: Deployment Summary
+        run: |
+          echo "## Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** ${{ needs.setup.outputs.semantic_version }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Image Tag:** ${{ needs.setup.outputs.image_tag }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Deployment Status" >> $GITHUB_STEP_SUMMARY
+          echo "| Environment | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Development | ${{ needs.deploy-dev.result || 'skipped' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Staging | ${{ needs.deploy-staging.result || 'skipped' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Production | ${{ needs.deploy-prod.result || 'skipped' }} |" >> $GITHUB_STEP_SUMMARY

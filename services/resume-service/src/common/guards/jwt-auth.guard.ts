@@ -1,13 +1,12 @@
 import {
+  CanActivate,
+  ExecutionContext,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 
-import type {
-  CanActivate,
-  ExecutionContext} from '@nestjs/common';
 import type { Request } from 'express';
 
 @Injectable()

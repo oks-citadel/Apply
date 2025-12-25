@@ -1,0 +1,78 @@
+# ============================================================================
+# ALLOW INTER-SERVICE COMMUNICATION
+# ============================================================================
+# Allows services within the applyforus namespace to communicate with each other
+# ============================================================================
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-inter-service-communication
+  namespace: applyforus
+  labels:
+    app.kubernetes.io/part-of: applyforus
+    policy-type: service-mesh
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/part-of: applyforus
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow from other services in the namespace
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/part-of: applyforus
+      ports:
+        - protocol: TCP
+          port: 3000
+        - protocol: TCP
+          port: 8000
+        - protocol: TCP
+          port: 8001
+        - protocol: TCP
+          port: 8002
+        - protocol: TCP
+          port: 8003
+        - protocol: TCP
+          port: 8004
+        - protocol: TCP
+          port: 8005
+        - protocol: TCP
+          port: 8006
+        - protocol: TCP
+          port: 8007
+        - protocol: TCP
+          port: 8008
+        - protocol: TCP
+          port: 8009
+  egress:
+    # Allow to other services in the namespace
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/part-of: applyforus
+      ports:
+        - protocol: TCP
+          port: 3000
+        - protocol: TCP
+          port: 8000
+        - protocol: TCP
+          port: 8001
+        - protocol: TCP
+          port: 8002
+        - protocol: TCP
+          port: 8003
+        - protocol: TCP
+          port: 8004
+        - protocol: TCP
+          port: 8005
+        - protocol: TCP
+          port: 8006
+        - protocol: TCP
+          port: 8007
+        - protocol: TCP
+          port: 8008
+        - protocol: TCP
+          port: 8009

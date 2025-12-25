@@ -1,0 +1,43 @@
+{{/*
+Generic service template for all services
+*/}}
+
+{{- $services := dict
+  "web" .Values.web
+  "auth-service" .Values.authService
+  "user-service" .Values.userService
+  "job-service" .Values.jobService
+  "resume-service" .Values.resumeService
+  "ai-service" .Values.aiService
+  "analytics-service" .Values.analyticsService
+  "notification-service" .Values.notificationService
+  "auto-apply-service" .Values.autoApplyService
+  "orchestrator-service" .Values.orchestratorService
+  "payment-service" .Values.paymentService
+-}}
+
+{{- range $serviceName, $serviceConfig := $services }}
+{{- if $serviceConfig.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $serviceName }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: {{ $serviceName }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+    app.kubernetes.io/component: {{ $serviceName }}
+    {{- include "applyforus.labels" $ | nindent 4 }}
+spec:
+  type: {{ $serviceConfig.service.type }}
+  ports:
+    - port: {{ $serviceConfig.service.port }}
+      targetPort: {{ $serviceConfig.service.targetPort }}
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: {{ $serviceName }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+{{- end }}
+{{- end }}

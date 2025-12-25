@@ -1,0 +1,340 @@
+# ============================================================================
+# ROLLBACK WORKFLOW
+# ============================================================================
+# Emergency rollback to previous deployment
+# Supports Helm rollback and Kubernetes manifest rollback
+# ============================================================================
+
+name: Rollback Deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
+      rollback_type:
+        description: 'Rollback method'
+        required: true
+        type: choice
+        options:
+          - helm-revision
+          - helm-previous
+          - specific-tag
+      revision:
+        description: 'Helm revision number (for helm-revision)'
+        required: false
+        type: string
+      image_tag:
+        description: 'Specific image tag to deploy (for specific-tag)'
+        required: false
+        type: string
+      confirm:
+        description: 'Type "ROLLBACK" to confirm'
+        required: true
+        type: string
+
+concurrency:
+  group: rollback-${{ github.event.inputs.environment }}
+  cancel-in-progress: false
+
+env:
+  ACR_LOGIN_SERVER: applyforusacr.azurecr.io
+  AKS_RESOURCE_GROUP: applyforus-prod-rg
+  AKS_CLUSTER_NAME: applyforus-aks
+  IMAGE_PREFIX: applyai
+
+permissions:
+  id-token: write
+  contents: read
+  actions: write
+
+jobs:
+  validate:
+    name: Validate Rollback Request
+    runs-on: ubuntu-latest
+    outputs:
+      proceed: ${{ steps.check.outputs.proceed }}
+      namespace: ${{ steps.namespace.outputs.value }}
+    steps:
+      - name: Validate confirmation
+        id: check
+        run: |
+          if [ "${{ github.event.inputs.confirm }}" != "ROLLBACK" ]; then
+            echo "::error::Confirmation failed. Please type 'ROLLBACK' to confirm."
+            echo "proceed=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+          echo "proceed=true" >> $GITHUB_OUTPUT
+
+      - name: Determine namespace
+        id: namespace
+        run: |
+          case "${{ github.event.inputs.environment }}" in
+            dev)
+              echo "value=applyforus-dev" >> $GITHUB_OUTPUT
+              ;;
+            staging)
+              echo "value=applyforus-staging" >> $GITHUB_OUTPUT
+              ;;
+            prod)
+              echo "value=applyforus" >> $GITHUB_OUTPUT
+              ;;
+          esac
+
+  snapshot:
+    name: Capture Current State
+    runs-on: ubuntu-latest
+    needs: validate
+    if: needs.validate.outputs.proceed == 'true'
+    steps:
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v3
+
+      - name: Get AKS credentials
+        run: |
+          az aks get-credentials \
+            --resource-group ${{ env.AKS_RESOURCE_GROUP }} \
+            --name ${{ env.AKS_CLUSTER_NAME }} \
+            --overwrite-existing
+
+      - name: Capture current state
+        run: |
+          NAMESPACE="${{ needs.validate.outputs.namespace }}"
+
+          echo "## Pre-Rollback State" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          echo "### Current Helm Release" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          helm list -n "$NAMESPACE" >> $GITHUB_STEP_SUMMARY 2>&1 || echo "No releases found"
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          echo "### Current Deployments" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          kubectl get deployments -n "$NAMESPACE" -o wide >> $GITHUB_STEP_SUMMARY 2>&1 || echo "No deployments found"
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          echo "### Current Pods" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          kubectl get pods -n "$NAMESPACE" -o wide >> $GITHUB_STEP_SUMMARY 2>&1 || echo "No pods found"
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+
+      - name: Save current manifests
+        run: |
+          NAMESPACE="${{ needs.validate.outputs.namespace }}"
+          mkdir -p rollback-backup
+
+          kubectl get deployments -n "$NAMESPACE" -o yaml > rollback-backup/deployments.yaml 2>/dev/null || true
+          kubectl get services -n "$NAMESPACE" -o yaml > rollback-backup/services.yaml 2>/dev/null || true
+          kubectl get configmaps -n "$NAMESPACE" -o yaml > rollback-backup/configmaps.yaml 2>/dev/null || true
+          kubectl get secrets -n "$NAMESPACE" -o yaml > rollback-backup/secrets.yaml 2>/dev/null || true
+
+          # Get current image tags
+          kubectl get deployments -n "$NAMESPACE" -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.spec.template.spec.containers[*].image}{"\n"}{end}' > rollback-backup/current-images.txt 2>/dev/null || true
+
+      - name: Upload backup
+        uses: actions/upload-artifact@v4
+        with:
+          name: rollback-backup-${{ github.run_id }}
+          path: rollback-backup/
+          retention-days: 30
+
+  rollback:
+    name: Execute Rollback
+    runs-on: ubuntu-latest
+    needs: [validate, snapshot]
+    if: needs.validate.outputs.proceed == 'true'
+    environment: ${{ github.event.inputs.environment }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v3
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+
+      - name: Get AKS credentials
+        run: |
+          az aks get-credentials \
+            --resource-group ${{ env.AKS_RESOURCE_GROUP }} \
+            --name ${{ env.AKS_CLUSTER_NAME }} \
+            --overwrite-existing
+
+      - name: Helm Rollback (Previous)
+        if: github.event.inputs.rollback_type == 'helm-previous'
+        run: |
+          NAMESPACE="${{ needs.validate.outputs.namespace }}"
+
+          echo "Rolling back to previous Helm revision..."
+          helm rollback applyforus -n "$NAMESPACE" --wait --timeout 10m
+
+          echo "## Rollback Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Rolled back to previous Helm revision" >> $GITHUB_STEP_SUMMARY
+
+      - name: Helm Rollback (Specific Revision)
+        if: github.event.inputs.rollback_type == 'helm-revision'
+        run: |
+          NAMESPACE="${{ needs.validate.outputs.namespace }}"
+          REVISION="${{ github.event.inputs.revision }}"
+
+          if [ -z "$REVISION" ]; then
+            echo "::error::Revision number is required for helm-revision rollback"
+            exit 1
+          fi
+
+          echo "Rolling back to Helm revision $REVISION..."
+          helm rollback applyforus "$REVISION" -n "$NAMESPACE" --wait --timeout 10m
+
+          echo "## Rollback Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Rolled back to Helm revision: $REVISION" >> $GITHUB_STEP_SUMMARY
+
+      - name: Deploy Specific Tag
+        if: github.event.inputs.rollback_type == 'specific-tag'
+        run: |
+          NAMESPACE="${{ needs.validate.outputs.namespace }}"
+          IMAGE_TAG="${{ github.event.inputs.image_tag }}"
+
+          if [ -z "$IMAGE_TAG" ]; then
+            echo "::error::Image tag is required for specific-tag rollback"
+            exit 1
+          fi
+
+          echo "Deploying with image tag: $IMAGE_TAG..."
+
+          helm upgrade --install applyforus ./infrastructure/helm/app \
+            --namespace "$NAMESPACE" \
+            --values ./infrastructure/helm/app/values.yaml \
+            --set global.image.registry=${{ env.ACR_LOGIN_SERVER }} \
+            --set global.image.tag="$IMAGE_TAG" \
+            --set global.environment="${{ github.event.inputs.environment }}" \
+            --wait \
+            --timeout 15m
+
+          echo "## Rollback Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Deployed with image tag: $IMAGE_TAG" >> $GITHUB_STEP_SUMMARY
+
+  verify:
+    name: Verify Rollback
+    runs-on: ubuntu-latest
+    needs: [validate, rollback]
+    steps:
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v3
+
+      - name: Get AKS credentials
+        run: |
+          az aks get-credentials \
+            --resource-group ${{ env.AKS_RESOURCE_GROUP }} \
+            --name ${{ env.AKS_CLUSTER_NAME }} \
+            --overwrite-existing
+
+      - name: Wait for pods to be ready
+        run: |
+          NAMESPACE="${{ needs.validate.outputs.namespace }}"
+
+          echo "Waiting for pods to be ready..."
+          kubectl wait --for=condition=ready pod \
+            -l app.kubernetes.io/part-of=applyforus \
+            -n "$NAMESPACE" \
+            --timeout=300s || true
+
+      - name: Verify deployment
+        run: |
+          NAMESPACE="${{ needs.validate.outputs.namespace }}"
+
+          echo "## Post-Rollback Verification" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          echo "### Helm Release" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          helm list -n "$NAMESPACE" >> $GITHUB_STEP_SUMMARY 2>&1
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          echo "### Helm History" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          helm history applyforus -n "$NAMESPACE" --max 5 >> $GITHUB_STEP_SUMMARY 2>&1
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          echo "### Pods" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          kubectl get pods -n "$NAMESPACE" >> $GITHUB_STEP_SUMMARY 2>&1
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          echo "### Current Images" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          kubectl get deployments -n "$NAMESPACE" -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.spec.template.spec.containers[*].image}{"\n"}{end}' >> $GITHUB_STEP_SUMMARY 2>&1
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+
+      - name: Health check
+        run: |
+          NAMESPACE="${{ needs.validate.outputs.namespace }}"
+
+          # Get ingress IP
+          INGRESS_IP=$(kubectl get ingress -n "$NAMESPACE" -o jsonpath='{.items[0].status.loadBalancer.ingress[0].ip}' 2>/dev/null || echo "")
+
+          if [ -n "$INGRESS_IP" ]; then
+            echo "### Health Check" >> $GITHUB_STEP_SUMMARY
+            RESPONSE=$(curl -sf --max-time 30 "http://$INGRESS_IP/api/health" 2>/dev/null || echo "failed")
+            if [ "$RESPONSE" != "failed" ]; then
+              echo "Health check: **PASSED**" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "Health check: **FAILED** (endpoint not responding)" >> $GITHUB_STEP_SUMMARY
+            fi
+          fi
+
+  notify:
+    name: Send Notification
+    runs-on: ubuntu-latest
+    needs: [validate, rollback, verify]
+    if: always()
+    steps:
+      - name: Rollback Summary
+        run: |
+          echo "# Rollback Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Environment | ${{ github.event.inputs.environment }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Type | ${{ github.event.inputs.rollback_type }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Triggered by | ${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Rollback Status | ${{ needs.rollback.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Verification Status | ${{ needs.verify.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Timestamp:** $(date -u +"%Y-%m-%dT%H:%M:%SZ")" >> $GITHUB_STEP_SUMMARY

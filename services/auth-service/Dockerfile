@@ -63,7 +63,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
     CMD curl -f http://localhost:8081/health || exit 1
 
 ENTRYPOINT ["dumb-init", "--"]
-CMD ["node", "dist/main.js"]
+CMD ["node", "dist/services/auth-service/src/main.js"]
 
 # Build metadata labels (OCI standard)
 ARG BUILD_DATE

@@ -1,0 +1,82 @@
+# ============================================================================
+# ALLOW EXTERNAL SERVICES ACCESS
+# ============================================================================
+# Allows application services to connect to external APIs and services
+# ============================================================================
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-external-services
+  namespace: applyforus
+  labels:
+    app.kubernetes.io/part-of: applyforus
+    policy-type: external
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/part-of: applyforus
+  policyTypes:
+    - Egress
+  egress:
+    # HTTPS for external APIs (OpenAI, Anthropic, Stripe, SendGrid, etc.)
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8      # Internal VNet
+              - 172.16.0.0/12   # Private ranges
+              - 192.168.0.0/16  # Private ranges
+      ports:
+        - protocol: TCP
+          port: 443
+
+    # Azure Service Bus (AMQP)
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - protocol: TCP
+          port: 5671  # AMQP over TLS
+        - protocol: TCP
+          port: 5672  # AMQP
+
+    # Azure Key Vault (via Private Endpoint or public)
+    - to:
+        - ipBlock:
+            cidr: 10.0.0.0/8
+      ports:
+        - protocol: TCP
+          port: 443
+---
+# ============================================================================
+# ALLOW ELASTICSEARCH/SEARCH ACCESS
+# ============================================================================
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-elasticsearch-access
+  namespace: applyforus
+  labels:
+    app.kubernetes.io/part-of: applyforus
+    policy-type: search
+spec:
+  podSelector:
+    matchExpressions:
+      - key: app.kubernetes.io/name
+        operator: In
+        values:
+          - job-service
+          - ai-service
+          - analytics-service
+  policyTypes:
+    - Egress
+  egress:
+    # Elasticsearch
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - protocol: TCP
+          port: 9200
+        - protocol: TCP
+          port: 9300

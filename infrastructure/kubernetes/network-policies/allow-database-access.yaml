@@ -1,0 +1,88 @@
+# ============================================================================
+# ALLOW DATABASE ACCESS
+# ============================================================================
+# Allows application services to connect to PostgreSQL and Redis
+# For Azure PaaS: Uses IP block for private endpoint IPs
+# For Bitnami Helm: Uses pod selectors
+# ============================================================================
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-database-access
+  namespace: applyforus
+  labels:
+    app.kubernetes.io/part-of: applyforus
+    policy-type: database
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/part-of: applyforus
+  policyTypes:
+    - Egress
+  egress:
+    # PostgreSQL (Azure PaaS via Private Endpoint)
+    # Adjust CIDR to match your VNet/Private Endpoint subnet
+    - to:
+        - ipBlock:
+            cidr: 10.0.0.0/8
+      ports:
+        - protocol: TCP
+          port: 5432
+
+    # PostgreSQL (Bitnami Helm in-cluster)
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: postgresql
+      ports:
+        - protocol: TCP
+          port: 5432
+
+    # Redis (Azure Cache via Private Endpoint)
+    - to:
+        - ipBlock:
+            cidr: 10.0.0.0/8
+      ports:
+        - protocol: TCP
+          port: 6379
+        - protocol: TCP
+          port: 6380  # Azure Cache for Redis SSL port
+
+    # Redis (Bitnami Helm in-cluster)
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: redis
+      ports:
+        - protocol: TCP
+          port: 6379
+        - protocol: TCP
+          port: 26379  # Sentinel port
+---
+# ============================================================================
+# ALLOW COSMOSDB ACCESS
+# ============================================================================
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-cosmosdb-access
+  namespace: applyforus
+  labels:
+    app.kubernetes.io/part-of: applyforus
+    policy-type: database
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/part-of: applyforus
+  policyTypes:
+    - Egress
+  egress:
+    # CosmosDB (Azure PaaS via Private Endpoint)
+    - to:
+        - ipBlock:
+            cidr: 10.0.0.0/8
+      ports:
+        - protocol: TCP
+          port: 443  # CosmosDB HTTPS endpoint
+        - protocol: TCP
+          port: 10255  # MongoDB API (if used)

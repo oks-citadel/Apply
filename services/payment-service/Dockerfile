@@ -32,6 +32,9 @@ COPY --from=builder --chown=nodejs:nodejs /app/services/payment-service/dist ./s
 COPY --from=builder --chown=nodejs:nodejs /app/services/payment-service/node_modules ./services/payment-service/node_modules
 COPY --from=builder --chown=nodejs:nodejs /app/services/payment-service/package.json ./services/payment-service/
 
+# Create logs directory with proper permissions
+RUN mkdir -p /app/services/payment-service/logs && chown -R nodejs:nodejs /app/services/payment-service/logs
+
 USER nodejs
 ENV NODE_ENV=production
 ENV PORT=8088

@@ -1,0 +1,70 @@
+# ============================================================================
+# RBAC ROLES FOR APPLYFORUS NAMESPACE
+# ============================================================================
+
+# Role for reading secrets (used by services to access credentials)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: secret-reader
+  namespace: applyforus
+  labels:
+    app.kubernetes.io/part-of: applyforus
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "list"]
+    resourceNames:
+      - "applyforus-secrets"
+      - "auth-service-secrets"
+      - "database-secrets"
+      - "redis-secrets"
+      - "api-keys-secrets"
+---
+# Role for reading configmaps
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: configmap-reader
+  namespace: applyforus
+  labels:
+    app.kubernetes.io/part-of: applyforus
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list", "watch"]
+---
+# Role for the orchestrator service (needs more permissions)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: orchestrator-role
+  namespace: applyforus
+  labels:
+    app.kubernetes.io/part-of: applyforus
+rules:
+  - apiGroups: [""]
+    resources: ["secrets", "configmaps"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["batch"]
+    resources: ["jobs", "cronjobs"]
+    verbs: ["get", "list", "watch", "create", "delete"]
+---
+# Role for viewing pod status (for health checks)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: pod-viewer
+  namespace: applyforus
+  labels:
+    app.kubernetes.io/part-of: applyforus
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "pods/status"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["services", "endpoints"]
+    verbs: ["get", "list", "watch"]
