@@ -55,19 +55,30 @@ async function bootstrap() {
   }));
 
   // CORS configuration - secure origins only
-  const corsOrigins = process.env.CORS_ORIGINS || process.env.ALLOWED_ORIGINS || '';
+  const isProduction = process.env.NODE_ENV === 'production';
+  const corsOrigins = process.env.ALLOWED_ORIGINS || process.env.CORS_ORIGINS || '';
   const allowedOrigins = corsOrigins
-    ? corsOrigins.split(',').map(o => o.trim())
-    : [
-        'https://applyforus.com',
-        'https://dev.applyforus.com',
-        'http://localhost:3000', // For local development
-      ];
+    ? corsOrigins.split(',').map(o => o.trim()).filter(o => o.length > 0)
+    : isProduction
+      ? [
+          'https://applyforus.com',
+          'https://www.applyforus.com',
+        ]
+      : [
+          'https://applyforus.com',
+          'https://dev.applyforus.com',
+          'http://localhost:3000', // For local development
+        ];
 
   app.enableCors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps, Postman, or server-to-server)
+      // In production, require an origin for browser requests (blocks null origin)
+      // In development, allow requests with no origin (mobile apps, Postman, server-to-server)
       if (!origin) {
+        if (isProduction) {
+          logger.warn('CORS request with null origin blocked in production');
+          return callback(new Error('Origin header required in production'));
+        }
         return callback(null, true);
       }
 
@@ -85,8 +96,9 @@ async function bootstrap() {
     exposedHeaders: ['X-RateLimit-Limit', 'X-RateLimit-Remaining'],
   });
 
-  // Compression
-  app.use(compression.default());
+  // Compression - handle both ESM and CJS module formats
+  const compressionMiddleware = typeof compression === 'function' ? compression : compression.default;
+  app.use(compressionMiddleware());
 
   // No global prefix - ingress routes /users to this service directly
   // app.setGlobalPrefix('api/v1');

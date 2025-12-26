@@ -1,6 +1,10 @@
 import { Client } from '@elastic/elasticsearch';
 import { Injectable, Logger } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
+import { Repository, MoreThan } from 'typeorm';
+
+import { SearchHistory } from './entities/search-history.entity';
 
 import type { SearchJobsDto } from '../jobs/dto/search-jobs.dto';
 import type { Job } from '../jobs/entities/job.entity';
@@ -9,27 +13,46 @@ import type { OnModuleInit } from '@nestjs/common';
 @Injectable()
 export class SearchService implements OnModuleInit {
   private readonly logger = new Logger(SearchService.name);
-  private elasticsearchClient: Client;
+  private elasticsearchClient: Client | null = null;
   private readonly indexName = 'jobs';
+  private elasticsearchEnabled = false;
 
-  constructor(private readonly configService: ConfigService) {
+  constructor(
+    private readonly configService: ConfigService,
+    @InjectRepository(SearchHistory)
+    private readonly searchHistoryRepository: Repository<SearchHistory>,
+  ) {
+    // Elasticsearch is optional - only initialize if explicitly configured
     const node = this.configService.get('elasticsearch.node');
-    const auth = this.configService.get('elasticsearch.auth');
+    const esEnabled = this.configService.get('ELASTICSEARCH_ENABLED', 'false');
 
-    this.elasticsearchClient = new Client({
-      node,
-      auth: auth.password ? auth : undefined,
-      maxRetries: 3,
-      requestTimeout: 30000,
-    });
+    // Only enable if ELASTICSEARCH_ENABLED=true AND a valid node is configured
+    if (esEnabled === 'true' && node && !node.includes('localhost')) {
+      const auth = this.configService.get('elasticsearch.auth');
+      this.elasticsearchClient = new Client({
+        node,
+        auth: auth?.password ? auth : undefined,
+        maxRetries: 3,
+        requestTimeout: 30000,
+      });
+      this.elasticsearchEnabled = true;
+    } else {
+      this.logger.warn('Elasticsearch disabled - using database fallback for search');
+    }
   }
 
   async onModuleInit() {
+    if (!this.elasticsearchEnabled || !this.elasticsearchClient) {
+      this.logger.log('Elasticsearch not configured, skipping index creation');
+      return;
+    }
+
     try {
       await this.createIndex();
       this.logger.log('Elasticsearch connection established');
     } catch (error) {
-      this.logger.error('Failed to connect to Elasticsearch', error.stack);
+      this.logger.error('Failed to connect to Elasticsearch, disabling ES features', error.stack);
+      this.elasticsearchEnabled = false;
     }
   }
 
@@ -37,6 +60,8 @@ export class SearchService implements OnModuleInit {
    * Create Elasticsearch index with mapping
    */
   async createIndex(): Promise<void> {
+    if (!this.elasticsearchClient) return;
+
     try {
       const indexExists = await this.elasticsearchClient.indices.exists({
         index: this.indexName,
@@ -119,6 +144,8 @@ export class SearchService implements OnModuleInit {
    * Index a job document
    */
   async indexJob(job: Job): Promise<void> {
+    if (!this.elasticsearchEnabled || !this.elasticsearchClient) return;
+
     try {
       await this.elasticsearchClient.index({
         index: this.indexName,
@@ -165,6 +192,8 @@ export class SearchService implements OnModuleInit {
    * Bulk index jobs
    */
   async bulkIndexJobs(jobs: Job[]): Promise<void> {
+    if (!this.elasticsearchEnabled || !this.elasticsearchClient) return;
+
     try {
       const body = jobs.flatMap((job) => [
         { index: { _index: this.indexName, _id: job.id } },
@@ -214,6 +243,12 @@ export class SearchService implements OnModuleInit {
     total: number;
     facets?: any;
   }> {
+    if (!this.elasticsearchEnabled || !this.elasticsearchClient) {
+      // Fallback: return empty results when ES is not available
+      this.logger.warn('Elasticsearch not available, returning empty search results');
+      return { hits: [], total: 0 };
+    }
+
     try {
       const must: any[] = [{ term: { is_active: true } }];
       const should: any[] = [];
@@ -363,6 +398,8 @@ export class SearchService implements OnModuleInit {
    * Find similar jobs based on a job
    */
   async findSimilarJobs(job: Job, limit: number = 10): Promise<any[]> {
+    if (!this.elasticsearchEnabled || !this.elasticsearchClient) return [];
+
     try {
       const response = await this.elasticsearchClient.search({
         index: this.indexName,
@@ -395,6 +432,8 @@ export class SearchService implements OnModuleInit {
    * Autocomplete suggestions
    */
   async autocomplete(field: string, query: string, limit: number = 10): Promise<string[]> {
+    if (!this.elasticsearchEnabled || !this.elasticsearchClient) return [];
+
     try {
       const response = await this.elasticsearchClient.search({
         index: this.indexName,
@@ -423,6 +462,8 @@ export class SearchService implements OnModuleInit {
    * Delete job from index
    */
   async deleteJob(jobId: string): Promise<void> {
+    if (!this.elasticsearchEnabled || !this.elasticsearchClient) return;
+
     try {
       await this.elasticsearchClient.delete({
         index: this.indexName,
@@ -442,6 +483,10 @@ export class SearchService implements OnModuleInit {
     skills: string[];
     locations: string[];
   }> {
+    if (!this.elasticsearchEnabled || !this.elasticsearchClient) {
+      return { titles: [], companies: [], skills: [], locations: [] };
+    }
+
     try {
       const [titles, companies, skills, locations] = await Promise.all([
         this.autocomplete('title', query, 5),
@@ -465,6 +510,8 @@ export class SearchService implements OnModuleInit {
     state: string;
     country: string;
   }>> {
+    if (!this.elasticsearchEnabled || !this.elasticsearchClient) return [];
+
     try {
       const response = await this.elasticsearchClient.search({
         index: this.indexName,
@@ -510,28 +557,123 @@ export class SearchService implements OnModuleInit {
    * Get recent searches for a user
    */
   async getRecentSearches(userId: string, limit: number = 10): Promise<Array<{
+    id: string;
     query: string;
+    filters: any;
+    resultsCount: number;
     timestamp: string;
   }>> {
-    // This would typically come from a database table
-    // For now, return empty array as placeholder
     this.logger.log(`Getting recent searches for user ${userId}`);
-    return [];
+
+    try {
+      const searches = await this.searchHistoryRepository.find({
+        where: { user_id: userId },
+        order: { created_at: 'DESC' },
+        take: limit,
+      });
+
+      return searches.map((search) => ({
+        id: search.id,
+        query: search.query,
+        filters: search.filters,
+        resultsCount: search.results_count,
+        timestamp: search.created_at.toISOString(),
+      }));
+    } catch (error) {
+      this.logger.error(`Error getting recent searches for user ${userId}: ${error.message}`, error.stack);
+      return [];
+    }
   }
 
   /**
    * Save a search query
    */
-  async saveSearch(userId: string, query: string): Promise<void> {
-    // This would typically save to a database table
+  async saveSearch(
+    userId: string,
+    query: string,
+    filters?: {
+      location?: string;
+      remote_type?: string;
+      salary_min?: number;
+      salary_max?: number;
+      experience_level?: string;
+      employment_type?: string;
+      skills?: string[];
+      company_id?: string;
+      posted_within_days?: number;
+    },
+    resultsCount?: number,
+  ): Promise<SearchHistory> {
     this.logger.log(`Saving search for user ${userId}: ${query}`);
+
+    try {
+      // Check for duplicate recent searches (within last hour with same query)
+      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+      const existingSearch = await this.searchHistoryRepository.findOne({
+        where: {
+          user_id: userId,
+          query,
+          created_at: MoreThan(oneHourAgo),
+        },
+        order: { created_at: 'DESC' },
+      });
+
+      if (existingSearch) {
+        // Update the existing search with new results count if provided
+        if (resultsCount !== undefined) {
+          existingSearch.results_count = resultsCount;
+          return await this.searchHistoryRepository.save(existingSearch);
+        }
+        return existingSearch;
+      }
+
+      // Create new search history entry
+      const searchHistory = this.searchHistoryRepository.create({
+        user_id: userId,
+        query,
+        filters: filters || null,
+        results_count: resultsCount || 0,
+      });
+
+      return await this.searchHistoryRepository.save(searchHistory);
+    } catch (error) {
+      this.logger.error(`Error saving search for user ${userId}: ${error.message}`, error.stack);
+      throw error;
+    }
   }
 
   /**
    * Delete a recent search
    */
   async deleteRecentSearch(userId: string, searchId: string): Promise<void> {
-    // This would typically delete from a database table
     this.logger.log(`Deleting search ${searchId} for user ${userId}`);
+
+    try {
+      const result = await this.searchHistoryRepository.delete({
+        id: searchId,
+        user_id: userId,
+      });
+
+      if (result.affected === 0) {
+        this.logger.warn(`Search ${searchId} not found for user ${userId}`);
+      }
+    } catch (error) {
+      this.logger.error(`Error deleting search ${searchId} for user ${userId}: ${error.message}`, error.stack);
+      throw error;
+    }
+  }
+
+  /**
+   * Clear all recent searches for a user
+   */
+  async clearRecentSearches(userId: string): Promise<void> {
+    this.logger.log(`Clearing all recent searches for user ${userId}`);
+
+    try {
+      await this.searchHistoryRepository.delete({ user_id: userId });
+    } catch (error) {
+      this.logger.error(`Error clearing searches for user ${userId}: ${error.message}`, error.stack);
+      throw error;
+    }
   }
 }
