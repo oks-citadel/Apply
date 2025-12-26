@@ -10,27 +10,16 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * - PRO -> PROFESSIONAL
  * - BUSINESS -> ADVANCED_CAREER
  * - ENTERPRISE -> EXECUTIVE_ELITE
+ *
+ * Note: The tier column is varchar, not an enum type.
  */
 export class SubscriptionTierRebrand1733836800000 implements MigrationInterface {
   name = 'SubscriptionTierRebrand1733836800000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
-    // Step 1: Add new enum values to the subscription_tier enum
-    await queryRunner.query(`
-      ALTER TYPE subscription_tier ADD VALUE IF NOT EXISTS 'FREEMIUM';
-    `);
-    await queryRunner.query(`
-      ALTER TYPE subscription_tier ADD VALUE IF NOT EXISTS 'PROFESSIONAL';
-    `);
-    await queryRunner.query(`
-      ALTER TYPE subscription_tier ADD VALUE IF NOT EXISTS 'ADVANCED_CAREER';
-    `);
-    await queryRunner.query(`
-      ALTER TYPE subscription_tier ADD VALUE IF NOT EXISTS 'EXECUTIVE_ELITE';
-    `);
+    // The tier column is varchar (not enum), so we just update values directly
 
-    // Step 2: Migrate existing subscriptions to new tier names
-    // Note: This is done in a transaction-safe way
+    // Step 1: Migrate existing subscriptions to new tier names
     await queryRunner.query(`
       UPDATE subscriptions SET tier = 'FREEMIUM' WHERE tier = 'FREE';
     `);
@@ -44,12 +33,21 @@ export class SubscriptionTierRebrand1733836800000 implements MigrationInterface 
       UPDATE subscriptions SET tier = 'EXECUTIVE_ELITE' WHERE tier = 'ENTERPRISE';
     `);
 
-    // Step 3: Update default value for new subscriptions
+    // Step 2: Update default value for new subscriptions
     await queryRunner.query(`
       ALTER TABLE subscriptions ALTER COLUMN tier SET DEFAULT 'FREEMIUM';
     `);
 
-    // Step 4: Log the migration for audit purposes
+    // Step 3: Create migration_audit table if it doesn't exist and log
+    await queryRunner.query(`
+      CREATE TABLE IF NOT EXISTS migration_audit (
+        id SERIAL PRIMARY KEY,
+        migration_name VARCHAR(255) NOT NULL,
+        executed_at TIMESTAMP NOT NULL DEFAULT NOW(),
+        details TEXT,
+        CONSTRAINT uq_migration_name UNIQUE (migration_name)
+      );
+    `);
     await queryRunner.query(`
       INSERT INTO migration_audit (migration_name, executed_at, details)
       VALUES (
@@ -57,7 +55,7 @@ export class SubscriptionTierRebrand1733836800000 implements MigrationInterface 
         NOW(),
         'Rebranded subscription tiers: FREE->FREEMIUM, PRO->PROFESSIONAL, BUSINESS->ADVANCED_CAREER, ENTERPRISE->EXECUTIVE_ELITE'
       )
-      ON CONFLICT DO NOTHING;
+      ON CONFLICT (migration_name) DO NOTHING;
     `);
   }
 
