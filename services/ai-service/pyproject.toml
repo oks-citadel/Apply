@@ -16,7 +16,7 @@ dependencies = [
     "redis==7.1.0",
     "httpx==0.26.0",
     "python-multipart==0.0.6",
-    "python-jose[cryptography]==3.3.0",
+    "python-jose[cryptography]==3.5.0",
     "tenacity==8.2.3",
     "structlog==25.5.0",
 ]
