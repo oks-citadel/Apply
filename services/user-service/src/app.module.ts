@@ -1,12 +1,14 @@
-import { Module } from '@nestjs/common';
+import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerModule , ThrottlerGuard } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { LoggingModule, LoggingInterceptor } from '@applyforus/logging';
+import { InputSanitizationMiddleware } from '@applyforus/security';
 
 import { HealthModule } from './health/health.module';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { CareerModule } from './modules/career/career.module';
 import { PreferencesModule } from './modules/preferences/preferences.module';
@@ -88,6 +90,7 @@ import { TenantModule } from './modules/tenant/tenant.module';
 
     // Feature Modules
     StorageModule,
+    AnalyticsModule,
     AuthModule,
     ProfileModule,
     CareerModule,
@@ -108,4 +111,8 @@ import { TenantModule } from './modules/tenant/tenant.module';
     },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(InputSanitizationMiddleware).forRoutes('*');
+  }
+}

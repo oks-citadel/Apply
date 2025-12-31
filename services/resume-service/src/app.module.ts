@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
@@ -6,7 +6,9 @@ import { ThrottlerModule , ThrottlerGuard } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { LoggingModule, LoggingInterceptor } from '@applyforus/logging';
+import { SubscriptionGuard, InputSanitizationMiddleware } from '@applyforus/security';
 
+import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { appConfig, validationSchema } from './config/app.config';
 import { dataSourceOptions } from './config/database.config';
 import { HealthModule } from './health/health.module';
@@ -90,9 +92,20 @@ import { TemplatesModule } from './modules/templates/templates.module';
   ],
   controllers: [],
   providers: [
+    // Rate limiting
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
+    },
+    // Authentication - must come before subscription guard
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
+    },
+    // Subscription tier enforcement - applies @RequiresTier decorators
+    {
+      provide: APP_GUARD,
+      useClass: SubscriptionGuard,
     },
     {
       provide: APP_INTERCEPTOR,
@@ -100,4 +113,8 @@ import { TemplatesModule } from './modules/templates/templates.module';
     },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(InputSanitizationMiddleware).forRoutes('*');
+  }
+}

@@ -1,15 +1,20 @@
-import { Module } from '@nestjs/common';
+import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ClientsModule, Transport } from '@nestjs/microservices';
+import { ScheduleModule } from '@nestjs/schedule';
+import { InputSanitizationMiddleware } from '@applyforus/security';
 import { StripeModule } from './modules/stripe/stripe.module';
 import { FlutterwaveModule } from './modules/flutterwave/flutterwave.module';
 import { PaystackModule } from './modules/paystack/paystack.module';
 import { CoinsModule } from './modules/coins/coins.module';
 import { SubscriptionsModule } from './modules/subscriptions/subscriptions.module';
 import { InvoicesModule } from './modules/invoices/invoices.module';
+import { TaxModule } from './modules/tax/tax.module';
+import { CurrencyModule } from './modules/currency/currency.module';
+import { RevenueModule } from './modules/revenue/revenue.module';
 import { HealthModule } from './health/health.module';
 import { LoggingModule } from './common/logging/logging.module';
 import { typeOrmConfig } from './common/config/typeorm.config';
@@ -86,6 +91,9 @@ import { typeOrmConfig } from './common/config/typeorm.config';
       ],
     }),
 
+    // Scheduled tasks
+    ScheduleModule.forRoot(),
+
     // Feature modules
     StripeModule,
     FlutterwaveModule,
@@ -93,6 +101,9 @@ import { typeOrmConfig } from './common/config/typeorm.config';
     CoinsModule,
     SubscriptionsModule,
     InvoicesModule,
+    TaxModule,
+    CurrencyModule,
+    RevenueModule,
     HealthModule,
   ],
   providers: [
@@ -102,4 +113,8 @@ import { typeOrmConfig } from './common/config/typeorm.config';
     },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(InputSanitizationMiddleware).forRoutes('*');
+  }
+}

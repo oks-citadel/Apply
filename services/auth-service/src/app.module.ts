@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerModule , ThrottlerGuard } from '@nestjs/throttler';
@@ -6,6 +6,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { LoggingModule, LoggingInterceptor } from '@applyforus/logging';
 import { TelemetryModule, PrometheusInterceptor } from '@applyforus/telemetry';
+import { InputSanitizationMiddleware } from '@applyforus/security';
 
 import configuration from './config/configuration';
 import { databaseConfig } from './config/database.config';
@@ -92,4 +93,8 @@ import { UsersModule } from './modules/users/users.module';
     },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(InputSanitizationMiddleware).forRoutes('*');
+  }
+}

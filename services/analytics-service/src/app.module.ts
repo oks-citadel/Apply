@@ -1,10 +1,11 @@
-import { Module } from '@nestjs/common';
+import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { LoggingModule, LoggingInterceptor } from '@applyforus/logging';
+import { InputSanitizationMiddleware } from '@applyforus/security';
 import configuration from './config/configuration';
 import { databaseConfig } from './config/database.config';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
@@ -70,4 +71,8 @@ import { HealthModule } from './health/health.module';
     },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(InputSanitizationMiddleware).forRoutes('*');
+  }
+}

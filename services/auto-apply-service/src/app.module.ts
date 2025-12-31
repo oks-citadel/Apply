@@ -1,11 +1,12 @@
 import { HttpModule } from '@nestjs/axios';
 import { BullModule } from '@nestjs/bull';
-import { Module } from '@nestjs/common';
+import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_INTERCEPTOR, APP_GUARD } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { LoggingModule, LoggingInterceptor } from '@applyforus/logging';
+import { SubscriptionGuard, RequiresTier, InputSanitizationMiddleware } from '@applyforus/security';
 
 import { HealthModule } from './health/health.module';
 import { HealthController } from './health.controller';
@@ -120,10 +121,20 @@ import { RateLimiterModule } from './modules/rate-limiter/rate-limiter.module';
       provide: APP_INTERCEPTOR,
       useClass: LoggingInterceptor,
     },
+    // Authentication - must come first
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
     },
+    // Subscription tier enforcement - applies @RequiresTier decorators
+    {
+      provide: APP_GUARD,
+      useClass: SubscriptionGuard,
+    },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(InputSanitizationMiddleware).forRoutes('*');
+  }
+}

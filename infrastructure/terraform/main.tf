@@ -490,9 +490,19 @@ module "key_vault_secrets" {
 
   key_vault_id = module.key_vault.vault_id
 
+  # Database connections
   sql_connection_string          = var.enable_sql_database ? module.sql_database[0].connection_string : ""
   redis_connection_string        = module.redis_cache.primary_connection_string
+  redis_password                 = module.redis_cache.primary_access_key
   servicebus_connection_string   = module.service_bus.connection_string
+
+  # Security secrets (generated or from variables)
+  jwt_secret         = var.jwt_secret
+  jwt_refresh_secret = var.jwt_refresh_secret
+  session_secret     = var.session_secret
+  encryption_key     = var.encryption_key
+
+  # Monitoring
   app_insights_key               = module.app_insights.instrumentation_key
   app_insights_connection_string = module.app_insights.connection_string
 
@@ -543,6 +553,77 @@ module "monitoring" {
 }
 
 # ============================================================================
+# Module: Identity (Microsoft Entra ID / B2C Configuration)
+# ============================================================================
+
+module "identity" {
+  source = "./modules/identity"
+
+  project_name         = var.project_name
+  project_display_name = "ApplyForUs"
+  environment          = var.environment
+  domain_name          = var.domain_name
+
+  # API configuration
+  api_identifier_uri = "api://${var.project_name}-api"
+
+  # Redirect URIs
+  web_redirect_uris = var.environment == "prod" ? [
+    "https://${var.domain_name}/auth/callback",
+    "https://${var.domain_name}/api/auth/callback/azure-ad",
+    "https://www.${var.domain_name}/auth/callback",
+  ] : [
+    "https://${var.environment}.${var.domain_name}/auth/callback",
+    "https://${var.environment}.${var.domain_name}/api/auth/callback/azure-ad",
+  ]
+
+  spa_redirect_uris = concat(
+    var.environment == "prod" ? [
+      "https://${var.domain_name}/",
+      "https://www.${var.domain_name}/",
+    ] : [
+      "https://${var.environment}.${var.domain_name}/",
+    ],
+    # Always include localhost for development
+    [
+      "http://localhost:3000/",
+      "http://localhost:3000/auth/callback",
+    ]
+  )
+
+  mobile_redirect_uris = [
+    "${var.project_name}://auth/callback",
+    "com.${var.project_name}.app://callback",
+    "msauth.com.${var.project_name}.app://auth",
+  ]
+
+  # Subscription tiers (matching existing platform configuration)
+  subscription_tiers = [
+    "freemium",
+    "starter",
+    "basic",
+    "professional",
+    "advanced_career",
+    "executive_elite"
+  ]
+
+  # Security groups configuration
+  create_security_groups   = var.enable_identity_groups
+  enable_dynamic_membership = false  # Requires Azure AD P1/P2
+
+  # Graph API permissions for automation
+  enable_graph_permissions = true
+  grant_admin_consent      = var.grant_identity_admin_consent
+
+  # B2C configuration (optional)
+  b2c_tenant_name = var.b2c_tenant_name
+  b2c_tenant_id   = var.b2c_tenant_id
+
+  # Tags
+  tags = local.common_tags
+}
+
+# ============================================================================
 # Module: Dashboards
 # ============================================================================
 
@@ -566,4 +647,90 @@ module "dashboards" {
   front_door_id          = var.enable_front_door ? module.front_door[0].front_door_id : null
 
   depends_on = [module.monitoring]
+}
+
+# ============================================================================
+# Module: Security Center (Microsoft Defender for Cloud)
+# ============================================================================
+
+module "security_center" {
+  source = "./modules/security-center"
+
+  subscription_id        = data.azurerm_client_config.current.subscription_id
+  resource_group_name    = azurerm_resource_group.main.name
+  location               = azurerm_resource_group.main.location
+  defender_tier          = var.environment == "prod" ? "Standard" : "Free"
+  security_contact_email = "security@applyforus.com"
+
+  enable_auto_provisioning   = true
+  log_analytics_workspace_id = module.app_insights.workspace_id
+
+  tags = local.common_tags
+
+  depends_on = [module.app_insights]
+}
+
+# ============================================================================
+# Module: ACR Security (Immutable Tags, Content Trust, Scanning)
+# ============================================================================
+
+module "acr_security" {
+  source = "./modules/acr-security"
+
+  acr_name            = module.container_registry.registry_name
+  acr_id              = module.container_registry.registry_id
+  resource_group_name = azurerm_resource_group.main.name
+  location            = azurerm_resource_group.main.location
+
+  defender_tier           = var.environment == "prod" ? "Standard" : "Free"
+  enable_content_trust    = var.environment == "prod" ? true : false
+  enable_retention_policy = true
+  retention_days          = var.environment == "prod" ? 30 : 7
+  enable_quarantine       = var.environment == "prod" ? true : false
+  enforce_signed_images   = var.environment == "prod" ? true : false
+
+  enable_private_endpoint    = var.enable_private_endpoints
+  subnet_id                  = var.enable_private_endpoints ? module.networking.private_endpoints_subnet_id : ""
+  vnet_id                    = var.enable_private_endpoints ? module.networking.vnet_id : ""
+  log_analytics_workspace_id = module.app_insights.workspace_id
+  aks_cluster_id             = var.enable_aks ? module.aks[0].cluster_id : ""
+
+  allowed_image_patterns = [
+    "${module.container_registry.registry_login_server}/applyai-*"
+  ]
+
+  tags = local.common_tags
+
+  depends_on = [module.container_registry, module.app_insights]
+}
+
+# ============================================================================
+# Module: MFA Enforcement (Azure AD Conditional Access)
+# ============================================================================
+
+module "mfa_enforcement" {
+  source = "./modules/mfa-enforcement"
+
+  tenant_id           = data.azurerm_client_config.current.tenant_id
+  resource_group_name = azurerm_resource_group.main.name
+  location            = azurerm_resource_group.main.location
+
+  enforce_mfa           = var.environment == "prod" ? true : false
+  enable_risk_based_mfa = var.environment == "prod" ? true : false
+  enforce_mfa_billing   = true  # Always require MFA for billing
+
+  session_lifetime_hours     = var.environment == "prod" ? 8 : 24
+  log_analytics_workspace_id = module.app_insights.workspace_id
+  enable_mfa_alerts          = var.environment == "prod" ? true : false
+
+  blocked_countries = var.environment == "prod" ? [
+    "KP", # North Korea
+    "IR", # Iran
+    "CU", # Cuba
+    "SY", # Syria
+  ] : []
+
+  tags = local.common_tags
+
+  depends_on = [module.app_insights]
 }

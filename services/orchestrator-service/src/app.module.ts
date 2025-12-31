@@ -1,11 +1,12 @@
 import { HttpModule } from '@nestjs/axios';
 import { BullModule } from '@nestjs/bull';
-import { Module } from '@nestjs/common';
+import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { TerminusModule } from '@nestjs/terminus';
 
 import { LoggingModule, LoggingInterceptor, LogLevel } from '@applyforus/logging';
+import { InputSanitizationMiddleware } from '@applyforus/security';
 
 import { ComplianceModule } from './agents/compliance/compliance.module';
 import { HealthModule } from './health/health.module';
@@ -90,4 +91,8 @@ import { OrchestratorModule } from './orchestrator/orchestrator.module';
     },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(InputSanitizationMiddleware).forRoutes('*');
+  }
+}

@@ -26,4 +26,12 @@ export * from './service-auth';
 
 // Subscription Management - Guards & Decorators
 export * from './guards/subscription.guard';
+export * from './guards/b2c-groups.guard';
 export * from './decorators/subscription.decorator';
+
+// Usage Tracking
+export * from './usage-tracking.middleware';
+export * from './usage-tracking.service';
+
+// Input Sanitization
+export * from './input-sanitization.middleware';
