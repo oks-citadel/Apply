@@ -114,7 +114,7 @@ export class InputSanitizationMiddleware implements NestMiddleware {
     this.config = { ...DEFAULT_CONFIG, ...config };
   }
 
-  use(req: Request, res: Response, next: NextFunction): void {
+  use(req: Request, _res: Response, next: NextFunction): void {
     try {
       // Sanitize request body
       if (req.body && typeof req.body === 'object') {
@@ -134,7 +134,7 @@ export class InputSanitizationMiddleware implements NestMiddleware {
       // Sanitize headers (only specific ones)
       this.sanitizeHeaders(req);
     } catch (error) {
-      this.logger.error(`Sanitization error: ${error.message}`);
+      this.logger.error(`Sanitization error: ${(error as Error).message}`);
       // Continue even if sanitization fails - don't block the request
     }
 

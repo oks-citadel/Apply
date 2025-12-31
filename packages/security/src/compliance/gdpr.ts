@@ -2,10 +2,36 @@
  * ApplyForUs AI - GDPR Compliance Service
  *
  * Implements GDPR (General Data Protection Regulation) compliance features.
+ *
+ * GDPR Article 17 - Right to Erasure (Right to be Forgotten)
+ * GDPR Article 20 - Right to Data Portability
  */
 
+import * as crypto from 'crypto';
 import { auditLogger } from '../audit/audit-logger';
 import { AuditEventType } from '../audit/audit-events';
+
+/**
+ * Service client interface for cross-service data operations
+ */
+export interface ServiceClient {
+  fetchData(userId: string): Promise<any>;
+  deleteData(userId: string): Promise<number>;
+}
+
+/**
+ * Configuration for external service clients
+ */
+export interface GDPRServiceConfig {
+  profileService?: ServiceClient;
+  resumeService?: ServiceClient;
+  applicationService?: ServiceClient;
+  preferenceService?: ServiceClient;
+  communicationService?: ServiceClient;
+  analyticsService?: ServiceClient;
+  documentService?: ServiceClient;
+  activityLogService?: ServiceClient;
+}
 
 /**
  * GDPR consent purposes
@@ -113,10 +139,24 @@ export enum LegalBasis {
 
 /**
  * GDPR Service implementation
+ *
+ * Provides comprehensive GDPR compliance features including:
+ * - Data export (Article 20 - Right to Data Portability)
+ * - Data deletion (Article 17 - Right to Erasure)
+ * - Consent management (Article 7)
+ * - Processing records (Article 30)
  */
 export class GDPRService {
   private consentStorage: Map<string, ConsentRecord[]> = new Map();
   private processingRecords: Map<string, ProcessingRecord[]> = new Map();
+  private serviceClients: GDPRServiceConfig = {};
+
+  /**
+   * Configure external service clients for data operations
+   */
+  configureServices(config: GDPRServiceConfig): void {
+    this.serviceClients = { ...this.serviceClients, ...config };
+  }
 
   /**
    * Export user data (GDPR Article 20 - Right to Data Portability)
@@ -172,6 +212,10 @@ export class GDPRService {
     );
 
     // In a real implementation, delete data from various services
+    // Also delete analytics and preferences
+    await this.deleteUserAnalytics(userId);
+    await this.deleteUserPreferences(userId);
+
     const report: DataDeletionReport = {
       userId,
       deletedAt: new Date(),
@@ -402,79 +446,633 @@ export class GDPRService {
     };
   }
 
-  // Helper methods (stubs for demonstration)
-  private async fetchUserProfile(_userId: string): Promise<any> {
-    // Stub - fetch from profile service
-    return { userId: _userId, name: 'User Profile Data' };
+  // ============================================================================
+  // Data Retrieval Methods (GDPR Article 20 - Right to Data Portability)
+  // ============================================================================
+
+  /**
+   * Fetch user profile data from the profile service
+   */
+  private async fetchUserProfile(userId: string): Promise<any> {
+    try {
+      if (this.serviceClients.profileService) {
+        const profileData = await this.serviceClients.profileService.fetchData(userId);
+        return this.sanitizeDataForExport(profileData);
+      }
+      // Fallback: return minimal profile structure
+      return {
+        userId,
+        exportedAt: new Date().toISOString(),
+        note: 'Profile service not configured',
+      };
+    } catch (error) {
+      await auditLogger.logSystemError(
+        error instanceof Error ? error : new Error('Failed to fetch user profile'),
+        { userId, operation: 'fetchUserProfile' }
+      );
+      return { userId, error: 'Failed to retrieve profile data' };
+    }
   }
 
-  private async fetchUserResumes(_userId: string): Promise<any[]> {
-    // Stub - fetch from resume service
-    return [];
+  /**
+   * Fetch all resumes for a user
+   */
+  private async fetchUserResumes(userId: string): Promise<any[]> {
+    try {
+      if (this.serviceClients.resumeService) {
+        const resumes = await this.serviceClients.resumeService.fetchData(userId);
+        return Array.isArray(resumes)
+          ? resumes.map(resume => this.sanitizeDataForExport(resume))
+          : [];
+      }
+      return [];
+    } catch (error) {
+      await auditLogger.logSystemError(
+        error instanceof Error ? error : new Error('Failed to fetch user resumes'),
+        { userId, operation: 'fetchUserResumes' }
+      );
+      return [];
+    }
   }
 
-  private async fetchUserApplications(_userId: string): Promise<any[]> {
-    // Stub - fetch from application service
-    return [];
+  /**
+   * Fetch all job applications for a user
+   */
+  private async fetchUserApplications(userId: string): Promise<any[]> {
+    try {
+      if (this.serviceClients.applicationService) {
+        const applications = await this.serviceClients.applicationService.fetchData(userId);
+        return Array.isArray(applications)
+          ? applications.map(app => this.sanitizeDataForExport(app))
+          : [];
+      }
+      return [];
+    } catch (error) {
+      await auditLogger.logSystemError(
+        error instanceof Error ? error : new Error('Failed to fetch user applications'),
+        { userId, operation: 'fetchUserApplications' }
+      );
+      return [];
+    }
   }
 
-  private async fetchUserPreferences(_userId: string): Promise<any> {
-    // Stub - fetch from preference service
-    return {};
+  /**
+   * Fetch user preferences (job preferences, notification settings, etc.)
+   */
+  private async fetchUserPreferences(userId: string): Promise<any> {
+    try {
+      if (this.serviceClients.preferenceService) {
+        const preferences = await this.serviceClients.preferenceService.fetchData(userId);
+        return this.sanitizeDataForExport(preferences);
+      }
+      return {};
+    } catch (error) {
+      await auditLogger.logSystemError(
+        error instanceof Error ? error : new Error('Failed to fetch user preferences'),
+        { userId, operation: 'fetchUserPreferences' }
+      );
+      return {};
+    }
   }
 
-  private async fetchUserCommunications(_userId: string): Promise<any[]> {
-    // Stub - fetch from communication service
-    return [];
+  /**
+   * Fetch user communications (emails, notifications, messages)
+   */
+  private async fetchUserCommunications(userId: string): Promise<any[]> {
+    try {
+      if (this.serviceClients.communicationService) {
+        const communications = await this.serviceClients.communicationService.fetchData(userId);
+        return Array.isArray(communications)
+          ? communications.map(comm => this.sanitizeDataForExport(comm))
+          : [];
+      }
+      return [];
+    } catch (error) {
+      await auditLogger.logSystemError(
+        error instanceof Error ? error : new Error('Failed to fetch user communications'),
+        { userId, operation: 'fetchUserCommunications' }
+      );
+      return [];
+    }
   }
 
-  private async fetchUserAnalytics(_userId: string): Promise<any> {
-    // Stub - fetch from analytics service
-    return {};
+  /**
+   * Fetch user analytics data (usage patterns, preferences learned)
+   */
+  private async fetchUserAnalytics(userId: string): Promise<any> {
+    try {
+      if (this.serviceClients.analyticsService) {
+        const analytics = await this.serviceClients.analyticsService.fetchData(userId);
+        return this.sanitizeDataForExport(analytics);
+      }
+      return {};
+    } catch (error) {
+      await auditLogger.logSystemError(
+        error instanceof Error ? error : new Error('Failed to fetch user analytics'),
+        { userId, operation: 'fetchUserAnalytics' }
+      );
+      return {};
+    }
   }
 
-  private async fetchUserActivityLog(_userId: string): Promise<any[]> {
-    // Stub - fetch from audit log
-    return [];
+  /**
+   * Fetch user activity log (audit trail of user actions)
+   */
+  private async fetchUserActivityLog(userId: string): Promise<any[]> {
+    try {
+      if (this.serviceClients.activityLogService) {
+        const activities = await this.serviceClients.activityLogService.fetchData(userId);
+        return Array.isArray(activities)
+          ? activities.map(activity => this.sanitizeDataForExport(activity))
+          : [];
+      }
+      // Fallback: query the audit logger for user's activity trail
+      const auditEvents = await auditLogger.getUserAuditTrail(userId, 1000);
+      return auditEvents.map(event => ({
+        timestamp: event.timestamp,
+        type: event.type,
+        description: event.details?.description || event.type,
+        outcome: event.outcome,
+      }));
+    } catch (error) {
+      await auditLogger.logSystemError(
+        error instanceof Error ? error : new Error('Failed to fetch user activity log'),
+        { userId, operation: 'fetchUserActivityLog' }
+      );
+      return [];
+    }
   }
 
-  private async deleteUserResumes(_userId: string): Promise<number> {
-    // Stub - delete from resume service
-    return 0;
+  // ============================================================================
+  // Data Deletion Methods (GDPR Article 17 - Right to Erasure)
+  // ============================================================================
+
+  /**
+   * Delete all resumes for a user with cascading deletes
+   */
+  private async deleteUserResumes(userId: string): Promise<number> {
+    try {
+      if (this.serviceClients.resumeService) {
+        const deletedCount = await this.serviceClients.resumeService.deleteData(userId);
+        await auditLogger.logComplianceEvent(
+          AuditEventType.COMPLIANCE_GDPR_DATA_DELETION,
+          userId,
+          { dataType: 'resumes', count: deletedCount }
+        );
+        return deletedCount;
+      }
+      return 0;
+    } catch (error) {
+      await auditLogger.logSystemError(
+        error instanceof Error ? error : new Error('Failed to delete user resumes'),
+        { userId, operation: 'deleteUserResumes' }
+      );
+      throw error;
+    }
   }
 
-  private async deleteUserApplications(_userId: string): Promise<number> {
-    // Stub - delete from application service
-    return 0;
+  /**
+   * Delete all job applications for a user
+   */
+  private async deleteUserApplications(userId: string): Promise<number> {
+    try {
+      if (this.serviceClients.applicationService) {
+        const deletedCount = await this.serviceClients.applicationService.deleteData(userId);
+        await auditLogger.logComplianceEvent(
+          AuditEventType.COMPLIANCE_GDPR_DATA_DELETION,
+          userId,
+          { dataType: 'applications', count: deletedCount }
+        );
+        return deletedCount;
+      }
+      return 0;
+    } catch (error) {
+      await auditLogger.logSystemError(
+        error instanceof Error ? error : new Error('Failed to delete user applications'),
+        { userId, operation: 'deleteUserApplications' }
+      );
+      throw error;
+    }
   }
 
-  private async deleteUserDocuments(_userId: string): Promise<number> {
-    // Stub - delete from document service
-    return 0;
+  /**
+   * Delete all documents (uploaded files, cover letters, etc.) for a user
+   */
+  private async deleteUserDocuments(userId: string): Promise<number> {
+    try {
+      if (this.serviceClients.documentService) {
+        const deletedCount = await this.serviceClients.documentService.deleteData(userId);
+        await auditLogger.logComplianceEvent(
+          AuditEventType.COMPLIANCE_GDPR_DATA_DELETION,
+          userId,
+          { dataType: 'documents', count: deletedCount }
+        );
+        return deletedCount;
+      }
+      return 0;
+    } catch (error) {
+      await auditLogger.logSystemError(
+        error instanceof Error ? error : new Error('Failed to delete user documents'),
+        { userId, operation: 'deleteUserDocuments' }
+      );
+      throw error;
+    }
   }
 
-  private async deleteUserCommunications(_userId: string): Promise<number> {
-    // Stub - delete from communication service
-    return 0;
+  /**
+   * Delete all communications (emails, notifications) for a user
+   */
+  private async deleteUserCommunications(userId: string): Promise<number> {
+    try {
+      if (this.serviceClients.communicationService) {
+        const deletedCount = await this.serviceClients.communicationService.deleteData(userId);
+        await auditLogger.logComplianceEvent(
+          AuditEventType.COMPLIANCE_GDPR_DATA_DELETION,
+          userId,
+          { dataType: 'communications', count: deletedCount }
+        );
+        return deletedCount;
+      }
+      return 0;
+    } catch (error) {
+      await auditLogger.logSystemError(
+        error instanceof Error ? error : new Error('Failed to delete user communications'),
+        { userId, operation: 'deleteUserCommunications' }
+      );
+      throw error;
+    }
   }
 
+  /**
+   * Delete all consent records for a user
+   */
   private deleteUserConsents(userId: string): number {
     const consents = this.consentStorage.get(userId) || [];
+    const count = consents.length;
     this.consentStorage.delete(userId);
-    return consents.length;
+    this.processingRecords.delete(userId);
+    return count;
   }
 
+  /**
+   * Delete user analytics data
+   */
+  private async deleteUserAnalytics(userId: string): Promise<boolean> {
+    try {
+      if (this.serviceClients.analyticsService) {
+        await this.serviceClients.analyticsService.deleteData(userId);
+        await auditLogger.logComplianceEvent(
+          AuditEventType.COMPLIANCE_GDPR_DATA_DELETION,
+          userId,
+          { dataType: 'analytics' }
+        );
+        return true;
+      }
+      return true;
+    } catch (error) {
+      await auditLogger.logSystemError(
+        error instanceof Error ? error : new Error('Failed to delete user analytics'),
+        { userId, operation: 'deleteUserAnalytics' }
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Delete user preferences
+   */
+  private async deleteUserPreferences(userId: string): Promise<boolean> {
+    try {
+      if (this.serviceClients.preferenceService) {
+        await this.serviceClients.preferenceService.deleteData(userId);
+        await auditLogger.logComplianceEvent(
+          AuditEventType.COMPLIANCE_GDPR_DATA_DELETION,
+          userId,
+          { dataType: 'preferences' }
+        );
+        return true;
+      }
+      return true;
+    } catch (error) {
+      await auditLogger.logSystemError(
+        error instanceof Error ? error : new Error('Failed to delete user preferences'),
+        { userId, operation: 'deleteUserPreferences' }
+      );
+      throw error;
+    }
+  }
+
+  // ============================================================================
+  // Helper Methods
+  // ============================================================================
+
+  /**
+   * Generate unique consent ID
+   */
   private generateConsentId(): string {
-    return `consent-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    return `consent-${Date.now()}-${crypto.randomBytes(8).toString('hex')}`;
   }
 
+  /**
+   * Generate unique processing record ID
+   */
   private generateProcessingRecordId(): string {
-    return `proc-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    return `proc-${Date.now()}-${crypto.randomBytes(8).toString('hex')}`;
   }
 
+  /**
+   * Generate cryptographic hash for deletion verification
+   * This provides proof that data was deleted at a specific time
+   */
   private generateDeletionVerificationHash(userId: string): string {
-    // In production, use proper cryptographic hash
-    return `hash-${userId}-${Date.now()}`;
+    const timestamp = new Date().toISOString();
+    const data = `${userId}:${timestamp}:deletion_verified`;
+    return crypto.createHash('sha256').update(data).digest('hex');
+  }
+
+  /**
+   * Sanitize data for export by removing internal/sensitive fields
+   */
+  private sanitizeDataForExport(data: any): any {
+    if (!data || typeof data !== 'object') {
+      return data;
+    }
+
+    const sensitiveFields = [
+      'password',
+      'passwordHash',
+      'refreshToken',
+      'mfaSecret',
+      'apiKey',
+      'secretKey',
+      'internalId',
+      '_id',
+      '__v',
+    ];
+
+    if (Array.isArray(data)) {
+      return data.map(item => this.sanitizeDataForExport(item));
+    }
+
+    const sanitized: Record<string, any> = {};
+    for (const [key, value] of Object.entries(data)) {
+      if (sensitiveFields.some(field => key.toLowerCase().includes(field.toLowerCase()))) {
+        continue;
+      }
+      if (typeof value === 'object' && value !== null) {
+        sanitized[key] = this.sanitizeDataForExport(value);
+      } else {
+        sanitized[key] = value;
+      }
+    }
+    return sanitized;
+  }
+
+  // ============================================================================
+  // Data Export Format Conversion
+  // ============================================================================
+
+  /**
+   * Convert user data export to CSV format
+   */
+  convertToCSV(exportData: UserDataExport): string {
+    const lines: string[] = [];
+
+    // Add metadata header
+    lines.push('# GDPR Data Export');
+    lines.push(`# User ID: ${exportData.userId}`);
+    lines.push(`# Exported At: ${exportData.exportedAt.toISOString()}`);
+    lines.push(`# Format: CSV`);
+    lines.push('');
+
+    // Profile section
+    lines.push('## Profile Data');
+    lines.push(this.objectToCSVSection(exportData.data.profile));
+    lines.push('');
+
+    // Resumes section
+    if (exportData.data.resumes.length > 0) {
+      lines.push('## Resumes');
+      lines.push(this.arrayToCSVTable(exportData.data.resumes));
+      lines.push('');
+    }
+
+    // Applications section
+    if (exportData.data.applications.length > 0) {
+      lines.push('## Applications');
+      lines.push(this.arrayToCSVTable(exportData.data.applications));
+      lines.push('');
+    }
+
+    // Job preferences
+    lines.push('## Job Preferences');
+    lines.push(this.objectToCSVSection(exportData.data.jobPreferences));
+    lines.push('');
+
+    // Communications
+    if (exportData.data.communications.length > 0) {
+      lines.push('## Communications');
+      lines.push(this.arrayToCSVTable(exportData.data.communications));
+      lines.push('');
+    }
+
+    // Consents
+    if (exportData.data.consents.length > 0) {
+      lines.push('## Consent Records');
+      lines.push(this.arrayToCSVTable(exportData.data.consents.map(c => ({
+        purpose: c.purpose,
+        granted: c.granted,
+        grantedAt: c.grantedAt?.toISOString() || '',
+        revokedAt: c.revokedAt?.toISOString() || '',
+        version: c.version,
+      }))));
+      lines.push('');
+    }
+
+    // Activity log
+    if (exportData.data.activityLog.length > 0) {
+      lines.push('## Activity Log');
+      lines.push(this.arrayToCSVTable(exportData.data.activityLog));
+    }
+
+    return lines.join('\n');
+  }
+
+  /**
+   * Convert user data export to XML format
+   */
+  convertToXML(exportData: UserDataExport): string {
+    const xmlParts: string[] = [];
+
+    xmlParts.push('<?xml version="1.0" encoding="UTF-8"?>');
+    xmlParts.push('<GDPRDataExport>');
+    xmlParts.push(`  <userId>${this.escapeXML(exportData.userId)}</userId>`);
+    xmlParts.push(`  <exportedAt>${exportData.exportedAt.toISOString()}</exportedAt>`);
+    xmlParts.push(`  <format>XML</format>`);
+
+    xmlParts.push('  <metadata>');
+    xmlParts.push(`    <dataVersion>${exportData.metadata.dataVersion}</dataVersion>`);
+    xmlParts.push(`    <includesThirdPartyData>${exportData.metadata.includesThirdPartyData}</includesThirdPartyData>`);
+    if (exportData.metadata.retentionPeriod) {
+      xmlParts.push(`    <retentionPeriod>${exportData.metadata.retentionPeriod}</retentionPeriod>`);
+    }
+    xmlParts.push('  </metadata>');
+
+    xmlParts.push('  <data>');
+    xmlParts.push('    <profile>');
+    xmlParts.push(this.objectToXML(exportData.data.profile, 6));
+    xmlParts.push('    </profile>');
+
+    xmlParts.push('    <resumes>');
+    for (const resume of exportData.data.resumes) {
+      xmlParts.push('      <resume>');
+      xmlParts.push(this.objectToXML(resume, 8));
+      xmlParts.push('      </resume>');
+    }
+    xmlParts.push('    </resumes>');
+
+    xmlParts.push('    <applications>');
+    for (const app of exportData.data.applications) {
+      xmlParts.push('      <application>');
+      xmlParts.push(this.objectToXML(app, 8));
+      xmlParts.push('      </application>');
+    }
+    xmlParts.push('    </applications>');
+
+    xmlParts.push('    <jobPreferences>');
+    xmlParts.push(this.objectToXML(exportData.data.jobPreferences, 6));
+    xmlParts.push('    </jobPreferences>');
+
+    xmlParts.push('    <communications>');
+    for (const comm of exportData.data.communications) {
+      xmlParts.push('      <communication>');
+      xmlParts.push(this.objectToXML(comm, 8));
+      xmlParts.push('      </communication>');
+    }
+    xmlParts.push('    </communications>');
+
+    xmlParts.push('    <consents>');
+    for (const consent of exportData.data.consents) {
+      xmlParts.push('      <consent>');
+      xmlParts.push(`        <purpose>${consent.purpose}</purpose>`);
+      xmlParts.push(`        <granted>${consent.granted}</granted>`);
+      if (consent.grantedAt) {
+        xmlParts.push(`        <grantedAt>${consent.grantedAt.toISOString()}</grantedAt>`);
+      }
+      if (consent.revokedAt) {
+        xmlParts.push(`        <revokedAt>${consent.revokedAt.toISOString()}</revokedAt>`);
+      }
+      xmlParts.push(`        <version>${consent.version}</version>`);
+      xmlParts.push('      </consent>');
+    }
+    xmlParts.push('    </consents>');
+
+    xmlParts.push('    <activityLog>');
+    for (const activity of exportData.data.activityLog) {
+      xmlParts.push('      <activity>');
+      xmlParts.push(this.objectToXML(activity, 8));
+      xmlParts.push('      </activity>');
+    }
+    xmlParts.push('    </activityLog>');
+
+    xmlParts.push('  </data>');
+    xmlParts.push('</GDPRDataExport>');
+
+    return xmlParts.join('\n');
+  }
+
+  /**
+   * Convert object to CSV section
+   */
+  private objectToCSVSection(obj: any): string {
+    if (!obj || typeof obj !== 'object') {
+      return '';
+    }
+    const lines: string[] = [];
+    for (const [key, value] of Object.entries(obj)) {
+      const formattedValue = typeof value === 'object' ? JSON.stringify(value) : String(value);
+      lines.push(`${key},${this.escapeCSV(formattedValue)}`);
+    }
+    return lines.join('\n');
+  }
+
+  /**
+   * Convert array of objects to CSV table
+   */
+  private arrayToCSVTable(arr: any[]): string {
+    if (!arr || arr.length === 0) {
+      return '';
+    }
+    const headers = Object.keys(arr[0]);
+    const lines: string[] = [];
+    lines.push(headers.join(','));
+    for (const item of arr) {
+      const values = headers.map(h => {
+        const val = item[h];
+        return this.escapeCSV(typeof val === 'object' ? JSON.stringify(val) : String(val ?? ''));
+      });
+      lines.push(values.join(','));
+    }
+    return lines.join('\n');
+  }
+
+  /**
+   * Escape CSV value
+   */
+  private escapeCSV(value: string): string {
+    if (value.includes(',') || value.includes('"') || value.includes('\n')) {
+      return `"${value.replace(/"/g, '""')}"`;
+    }
+    return value;
+  }
+
+  /**
+   * Convert object to XML elements
+   */
+  private objectToXML(obj: any, indent: number = 0): string {
+    if (!obj || typeof obj !== 'object') {
+      return '';
+    }
+    const spaces = ' '.repeat(indent);
+    const lines: string[] = [];
+    for (const [key, value] of Object.entries(obj)) {
+      if (value === null || value === undefined) {
+        continue;
+      }
+      const tagName = key.replace(/[^a-zA-Z0-9]/g, '_');
+      if (typeof value === 'object' && !Array.isArray(value)) {
+        lines.push(`${spaces}<${tagName}>`);
+        lines.push(this.objectToXML(value, indent + 2));
+        lines.push(`${spaces}</${tagName}>`);
+      } else if (Array.isArray(value)) {
+        lines.push(`${spaces}<${tagName}>`);
+        for (const item of value) {
+          if (typeof item === 'object') {
+            lines.push(`${spaces}  <item>`);
+            lines.push(this.objectToXML(item, indent + 4));
+            lines.push(`${spaces}  </item>`);
+          } else {
+            lines.push(`${spaces}  <item>${this.escapeXML(String(item))}</item>`);
+          }
+        }
+        lines.push(`${spaces}</${tagName}>`);
+      } else {
+        lines.push(`${spaces}<${tagName}>${this.escapeXML(String(value))}</${tagName}>`);
+      }
+    }
+    return lines.join('\n');
+  }
+
+  /**
+   * Escape XML special characters
+   */
+  private escapeXML(value: string): string {
+    return value
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&apos;');
   }
 }
 

@@ -4,10 +4,12 @@ import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerModule , ThrottlerGuard } from '@nestjs/throttler';
 
 import { LoggingModule, LoggingInterceptor, LogLevel } from '@applyforus/logging';
+import { SubscriptionGuard, CsrfGuard, CsrfService } from '@applyforus/security';
 import { TelemetryModule, PrometheusInterceptor } from '@applyforus/telemetry';
 
 import { AppController } from './app.controller';
 import { AuthModule } from './auth/auth.module';
+import { JwtAuthGuard } from './auth/jwt.guard';
 import { HealthModule } from './health/health.module';
 import { ProxyModule } from './proxy/proxy.module';
 import { RateLimitModule } from './rate-limit/rate-limit.module';
@@ -78,9 +80,27 @@ import { RateLimitModule } from './rate-limit/rate-limit.module';
   ],
   controllers: [AppController],
   providers: [
+    // CSRF service for token generation/validation
+    CsrfService,
+    // Rate limiting - first line of defense
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
+    },
+    // Authentication - validates JWT tokens
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
+    },
+    // CSRF protection - validates X-CSRF-Token for state-changing requests
+    {
+      provide: APP_GUARD,
+      useClass: CsrfGuard,
+    },
+    // Subscription tier enforcement - applies @RequiresTier decorators
+    {
+      provide: APP_GUARD,
+      useClass: SubscriptionGuard,
     },
     {
       provide: APP_INTERCEPTOR,

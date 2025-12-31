@@ -1,6 +1,4 @@
-import { Injectable, Logger, Inject, Optional } from '@nestjs/common';
-import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { Cache } from 'cache-manager';
+import { Injectable, Logger } from '@nestjs/common';
 
 /**
  * Usage data structure for tracking user consumption
@@ -94,13 +92,17 @@ export class UsageTrackingService {
   private readonly CACHE_PREFIX = 'usage:';
   private readonly CACHE_TTL = 300; // 5 minutes
 
-  // In-memory fallback when no cache manager is available
+  // In-memory cache for usage data
   private memoryCache: Map<string, { data: UsageData; expiry: number }> = new Map();
 
-  constructor(
-    @Optional() @Inject(CACHE_MANAGER) private cacheManager?: Cache,
-    @Optional() @Inject('USAGE_REPOSITORY') private usageRepository?: UsageRepository,
-  ) {}
+  private usageRepository?: UsageRepository;
+
+  /**
+   * Configure usage repository (call from consuming service's module)
+   */
+  setRepository(repository: UsageRepository): void {
+    this.usageRepository = repository;
+  }
 
   /**
    * Get current usage for a user
@@ -241,11 +243,6 @@ export class UsageTrackingService {
    */
   async clearUserCache(userId: string): Promise<void> {
     const cacheKey = this.getCacheKey(userId);
-
-    if (this.cacheManager) {
-      await this.cacheManager.del(cacheKey);
-    }
-
     this.memoryCache.delete(cacheKey);
   }
 
@@ -258,15 +255,7 @@ export class UsageTrackingService {
   private async getFromCache(userId: string): Promise<UsageData | null> {
     const cacheKey = this.getCacheKey(userId);
 
-    // Try cache manager first
-    if (this.cacheManager) {
-      const cached = await this.cacheManager.get<UsageData>(cacheKey);
-      if (cached) {
-        return cached;
-      }
-    }
-
-    // Fall back to memory cache
+    // Use in-memory cache
     const memoryCached = this.memoryCache.get(cacheKey);
     if (memoryCached && memoryCached.expiry > Date.now()) {
       return memoryCached.data;
@@ -278,11 +267,7 @@ export class UsageTrackingService {
   private async setCache(userId: string, usage: UsageData): Promise<void> {
     const cacheKey = this.getCacheKey(userId);
 
-    if (this.cacheManager) {
-      await this.cacheManager.set(cacheKey, usage, this.CACHE_TTL * 1000);
-    }
-
-    // Also set in memory cache as fallback
+    // Set in memory cache
     this.memoryCache.set(cacheKey, {
       data: usage,
       expiry: Date.now() + this.CACHE_TTL * 1000,
@@ -321,7 +306,7 @@ export class UsageTrackingService {
     return now > usage.periodEnd;
   }
 
-  private async resetForNewPeriod(userId: string, oldUsage: UsageData): Promise<UsageData> {
+  private async resetForNewPeriod(userId: string, _oldUsage: UsageData): Promise<UsageData> {
     this.logger.log(`Resetting usage for new period for user ${userId}`);
     return this.initializeUsage(userId);
   }

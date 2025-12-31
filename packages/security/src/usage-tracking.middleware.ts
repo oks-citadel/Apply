@@ -35,7 +35,7 @@ export interface RequestWithUsage extends Request {
 /**
  * Interface for usage tracking service that can be injected
  */
-export interface UsageTrackingService {
+export interface IUsageTrackingService {
   getUserUsage(userId: string): Promise<UserUsageData>;
   incrementUsage(userId: string, usageType: string, amount?: number): Promise<void>;
   resetMonthlyUsage(userId: string): Promise<void>;
@@ -78,10 +78,10 @@ export class UsageTrackingMiddleware implements NestMiddleware {
   private readonly cacheTTL = 60000; // 1 minute cache
 
   constructor(
-    private readonly usageTrackingService?: UsageTrackingService,
+    private readonly usageTrackingService?: IUsageTrackingService,
   ) {}
 
-  async use(req: RequestWithUsage, res: Response, next: NextFunction) {
+  async use(req: RequestWithUsage, _res: Response, next: NextFunction) {
     // Skip if no user or no tracking service
     if (!req.user?.id) {
       return next();
@@ -112,7 +112,7 @@ export class UsageTrackingMiddleware implements NestMiddleware {
         req.user.usage = this.getDefaultUsage();
       }
     } catch (error) {
-      this.logger.error(`Failed to fetch usage for user ${req.user.id}: ${error.message}`);
+      this.logger.error(`Failed to fetch usage for user ${req.user.id}: ${(error as Error).message}`);
       // Default to zero usage on error to prevent blocking
       req.user.usage = this.getDefaultUsage();
     }
