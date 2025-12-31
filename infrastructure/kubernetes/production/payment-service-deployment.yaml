@@ -17,9 +17,22 @@ spec:
         app: payment-service
         tier: backend
     spec:
+      imagePullSecrets:
+        - name: acr-auth
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
       containers:
         - name: payment-service
-          image: applyforusacr.azurecr.io/applyai-payment-service:latest
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          # IMAGE_TAG is substituted by CI/CD pipeline - NEVER use :latest in production
+          image: applyforusacr.azurecr.io/applyai-payment-service:v2.0.0
           ports:
             - containerPort: 8009
           env:
@@ -28,6 +41,8 @@ spec:
             - name: PORT
               value: "8009"
           envFrom:
+            - configMapRef:
+                name: identity-config
             - secretRef:
                 name: applyforus-secrets
           resources:

@@ -29,13 +29,21 @@ spec:
         prometheus.io/port: "3001"
         prometheus.io/path: "/metrics"
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
       containers:
         - name: admin-app
-          # IMPORTANT: Replace with digest reference in deployment: image@sha256:xxx
-          # CI/CD will update this with: applyforusacr.azurecr.io/applyai-admin@sha256:xxxxx
-          # Tag reference for manual deploy (use digest for production): sha-<gitcommit>
-          image: applyforusacr.azurecr.io/applyai-admin:latest
-          imagePullPolicy: Always
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          # IMAGE_TAG is substituted by CI/CD pipeline - NEVER use :latest in production
+          image: applyforusacr.azurecr.io/applyai-admin:v1.0.0
+          imagePullPolicy: IfNotPresent
           ports:
             - name: http
               containerPort: 3001

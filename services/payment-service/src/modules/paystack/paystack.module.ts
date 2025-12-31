@@ -4,9 +4,10 @@ import { PaystackService } from './paystack.service';
 import { PaystackController } from './paystack.controller';
 import { SubscriptionsModule } from '../subscriptions/subscriptions.module';
 import { InvoicesModule } from '../invoices/invoices.module';
+import { TaxModule } from '../tax/tax.module';
 
 @Module({
-  imports: [ConfigModule, SubscriptionsModule, InvoicesModule],
+  imports: [ConfigModule, SubscriptionsModule, InvoicesModule, TaxModule],
   controllers: [PaystackController],
   providers: [PaystackService],
   exports: [PaystackService],

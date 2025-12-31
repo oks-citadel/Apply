@@ -139,8 +139,8 @@ spec:
     name: ai-service
   progressDeadlineSeconds: 900
   service:
-    port: 5000
-    targetPort: 5000
+    port: 8089
+    targetPort: 8089
   analysis:
     interval: 2m
     threshold: 5
@@ -161,10 +161,10 @@ spec:
       timeout: 10s
       metadata:
         type: cmd
-        cmd: "hey -z 2m -q 5 -c 2 http://ai-service-canary:5000/api/v1/health"
+        cmd: "hey -z 2m -q 5 -c 2 http://ai-service-canary:8089/api/v1/health"
     - name: rollback-on-health-check-failure
       type: rollback
-      url: http://ai-service-canary:5000/api/v1/health/ready
+      url: http://ai-service-canary:8089/api/v1/health/ready
 ---
 # Resume Service Canary
 apiVersion: flagger.app/v1beta1

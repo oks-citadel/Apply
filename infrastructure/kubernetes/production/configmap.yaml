@@ -9,14 +9,33 @@ data:
   WEB_BASE_URL: "https://applyforus.com"
   LOG_LEVEL: "info"
 ---
-apiVersion: v1
-kind: Secret
-metadata:
-  name: applyforus-secrets
-  namespace: applyforus
-type: Opaque
-stringData:
-  DATABASE_URL: "postgresql://applyforus:your-password@postgres.applyforus.svc.cluster.local:5432/applyforus"
-  REDIS_URL: "redis://redis.applyforus.svc.cluster.local:6379"
-  JWT_SECRET: "your-jwt-secret-change-in-production"
-  SESSION_SECRET: "your-session-secret-change-in-production"
+# ============================================================================
+# Production Secrets - MANAGED BY AZURE KEY VAULT CSI DRIVER
+# ============================================================================
+# DO NOT store actual secrets in this file. This placeholder is for reference only.
+#
+# In production, secrets are injected via:
+# 1. Azure Key Vault CSI Driver (SecretProviderClass in base/secrets.yaml)
+# 2. The SecretProviderClass syncs Key Vault secrets to K8s Secret 'applyforus-secrets'
+#
+# Required secrets in Azure Key Vault:
+# - postgres-connection-string -> DATABASE_URL
+# - redis-connection-string -> REDIS_URL
+# - jwt-secret -> JWT_SECRET
+# - session-secret -> SESSION_SECRET
+# - stripe-secret-key -> STRIPE_SECRET_KEY
+# - stripe-webhook-secret -> STRIPE_WEBHOOK_SECRET
+# - paystack-secret-key -> PAYSTACK_SECRET_KEY
+# - openai-api-key -> OPENAI_API_KEY
+# - anthropic-api-key -> ANTHROPIC_API_KEY
+# - sendgrid-api-key -> SENDGRID_API_KEY
+# - redis-password -> REDIS_PASSWORD
+# - postgres-password -> POSTGRES_PASSWORD
+#
+# See: infrastructure/kubernetes/base/secrets.yaml for full list
+# ============================================================================
+#
+# NOTE: The actual Secret resource 'applyforus-secrets' is created automatically
+# by the Azure Key Vault CSI Driver SecretProviderClass defined in base/secrets.yaml
+# Do not create a manual Secret here to avoid conflicts.
+# ============================================================================

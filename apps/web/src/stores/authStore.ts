@@ -2,6 +2,16 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import axios, { AxiosError } from 'axios';
 import type { User, LoginCredentials, RegisterData, AuthResponse, MfaRequiredResponse } from '@/types/auth';
+import {
+  setAccessToken,
+  getAccessToken,
+  clearAccessToken,
+  refreshAccessToken,
+  performLogout,
+  initializeAuth,
+  migrateFromLocalStorage,
+  onAuthEvent,
+} from '@/lib/auth/secureTokenManager';
 
 interface ApiErrorResponse {
   message?: string | string[];
@@ -23,26 +33,33 @@ interface AuthStore {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
-  accessToken: string | null;
-  refreshToken: string | null;
   mfaRequired: boolean;
   mfaTempToken: string | null;
 
   login: (credentials: LoginCredentials) => Promise<{ requiresMfa: boolean; tempToken?: string }>;
   verifyMfaLogin: (tempToken: string, code: string) => Promise<void>;
   register: (data: RegisterData) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   refreshAccessToken: () => Promise<void>;
   checkAuth: () => Promise<void>;
   clearError: () => void;
   updateUser: (user: Partial<User>) => void;
   resetMfaState: () => void;
   setUser: (user: User) => void;
-  setTokens: (accessToken: string, refreshToken: string) => void;
+  initializeAuth: () => Promise<void>;
+
+  // Internal method to get access token (for API client)
+  getAccessToken: () => string | null;
 }
 
 // API Base URL - Backend handles routing internally (no /api/v1 needed)
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
+// Create axios instance with credentials for httpOnly cookies
+const authAxios = axios.create({
+  baseURL: API_BASE_URL,
+  withCredentials: true, // Important: enables httpOnly cookie handling
+});
 
 export const useAuthStore = create<AuthStore>()(
   persist(
@@ -51,16 +68,16 @@ export const useAuthStore = create<AuthStore>()(
       isAuthenticated: false,
       isLoading: false,
       error: null,
-      accessToken: null,
-      refreshToken: null,
       mfaRequired: false,
       mfaTempToken: null,
+
+      getAccessToken: () => getAccessToken(),
 
       login: async (credentials: LoginCredentials) => {
         set({ isLoading: true, error: null, mfaRequired: false, mfaTempToken: null });
         try {
-          const response = await axios.post<{ data: AuthResponse | MfaRequiredResponse }>(
-            `${API_BASE_URL}/auth/login`,
+          const response = await authAxios.post<{ data: AuthResponse | MfaRequiredResponse }>(
+            '/auth/login',
             credentials
           );
 
@@ -78,21 +95,20 @@ export const useAuthStore = create<AuthStore>()(
           }
 
           // Regular login success
-          const { user, accessToken, refreshToken } = data as AuthResponse;
+          const { user, accessToken, expiresIn } = data as AuthResponse & { expiresIn?: number };
+
+          // Store access token in memory only (secure)
+          // Refresh token is stored in httpOnly cookie by the server
+          setAccessToken(accessToken, expiresIn || 3600);
 
           set({
             user,
             isAuthenticated: true,
-            accessToken,
-            refreshToken,
             isLoading: false,
             error: null,
             mfaRequired: false,
             mfaTempToken: null,
           });
-
-          // Set axios default authorization header
-          axios.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
 
           return { requiresMfa: false };
         } catch (error) {
@@ -112,26 +128,24 @@ export const useAuthStore = create<AuthStore>()(
       verifyMfaLogin: async (tempToken: string, code: string) => {
         set({ isLoading: true, error: null });
         try {
-          const response = await axios.post<AuthResponse>(
-            `${API_BASE_URL}/auth/mfa/login`,
+          const response = await authAxios.post<AuthResponse & { expiresIn?: number }>(
+            '/auth/mfa/login',
             { tempToken, code }
           );
 
-          const { user, accessToken, refreshToken } = response.data;
+          const { user, accessToken, expiresIn } = response.data;
+
+          // Store access token in memory only (secure)
+          setAccessToken(accessToken, expiresIn || 3600);
 
           set({
             user,
             isAuthenticated: true,
-            accessToken,
-            refreshToken,
             isLoading: false,
             error: null,
             mfaRequired: false,
             mfaTempToken: null,
           });
-
-          // Set axios default authorization header
-          axios.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
         } catch (error) {
           const axiosError = error as AxiosError<ApiErrorResponse>;
           const errorMessage = extractErrorMessage(axiosError.response?.data, 'Invalid verification code. Please try again.');
@@ -151,8 +165,8 @@ export const useAuthStore = create<AuthStore>()(
           const firstName = nameParts[0] || '';
           const lastName = nameParts.slice(1).join(' ') || '';
 
-          const response = await axios.post<{ data: AuthResponse }>(
-            `${API_BASE_URL}/auth/register`,
+          const response = await authAxios.post<{ data: AuthResponse & { expiresIn?: number } }>(
+            '/auth/register',
             {
               firstName,
               lastName,
@@ -162,19 +176,17 @@ export const useAuthStore = create<AuthStore>()(
           );
 
           // Backend wraps response in 'data' object
-          const { user, accessToken, refreshToken } = response.data.data;
+          const { user, accessToken, expiresIn } = response.data.data;
+
+          // Store access token in memory only (secure)
+          setAccessToken(accessToken, expiresIn || 3600);
 
           set({
             user,
             isAuthenticated: true,
-            accessToken,
-            refreshToken,
             isLoading: false,
             error: null,
           });
-
-          // Set axios default authorization header
-          axios.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
         } catch (error) {
           const axiosError = error as AxiosError<ApiErrorResponse>;
           const errorMessage = extractErrorMessage(axiosError.response?.data, 'Registration failed. Please try again.');
@@ -187,59 +199,65 @@ export const useAuthStore = create<AuthStore>()(
         }
       },
 
-      logout: () => {
-        // Clear axios authorization header
-        delete axios.defaults.headers.common['Authorization'];
+      logout: async () => {
+        // Clear tokens securely (memory + server httpOnly cookie)
+        await performLogout(API_BASE_URL);
 
         set({
           user: null,
           isAuthenticated: false,
-          accessToken: null,
-          refreshToken: null,
           error: null,
         });
       },
 
       refreshAccessToken: async () => {
-        const { refreshToken } = get();
-
-        if (!refreshToken) {
-          get().logout();
-          return;
-        }
-
         try {
-          const response = await axios.post<{ accessToken: string }>(
-            `${API_BASE_URL}/auth/refresh`,
-            { refreshToken }
-          );
+          const newToken = await refreshAccessToken(API_BASE_URL);
 
-          const { accessToken } = response.data;
-
-          set({ accessToken });
-          axios.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
+          if (!newToken) {
+            // Refresh failed, logout user
+            set({
+              user: null,
+              isAuthenticated: false,
+              error: null,
+            });
+          }
         } catch (error) {
-          get().logout();
+          // Refresh failed, logout user
+          set({
+            user: null,
+            isAuthenticated: false,
+            error: null,
+          });
         }
       },
 
       checkAuth: async () => {
-        const { accessToken } = get();
+        const token = getAccessToken();
 
-        if (!accessToken) {
-          set({ isLoading: false, isAuthenticated: false });
-          return;
+        if (!token) {
+          // Try to refresh token using httpOnly cookie
+          try {
+            const newToken = await refreshAccessToken(API_BASE_URL);
+            if (!newToken) {
+              set({ isLoading: false, isAuthenticated: false });
+              return;
+            }
+          } catch {
+            set({ isLoading: false, isAuthenticated: false });
+            return;
+          }
         }
 
         set({ isLoading: true });
 
         try {
-          // Set authorization header
-          axios.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
-
-          const response = await axios.get<{ user: User }>(
-            `${API_BASE_URL}/auth/me`
-          );
+          const currentToken = getAccessToken();
+          const response = await authAxios.get<{ user: User }>('/auth/me', {
+            headers: {
+              Authorization: `Bearer ${currentToken}`,
+            },
+          });
 
           set({
             user: response.data.user,
@@ -249,12 +267,44 @@ export const useAuthStore = create<AuthStore>()(
         } catch (error) {
           // Try to refresh token
           try {
-            await get().refreshAccessToken();
-            await get().checkAuth();
+            const newToken = await refreshAccessToken(API_BASE_URL);
+            if (newToken) {
+              await get().checkAuth();
+            } else {
+              set({
+                user: null,
+                isAuthenticated: false,
+                isLoading: false,
+              });
+            }
           } catch (refreshError) {
-            get().logout();
-            set({ isLoading: false });
+            set({
+              user: null,
+              isAuthenticated: false,
+              isLoading: false,
+            });
           }
+        }
+      },
+
+      initializeAuth: async () => {
+        // Migrate from localStorage on first load (security upgrade)
+        migrateFromLocalStorage();
+
+        set({ isLoading: true });
+
+        try {
+          // Try to initialize auth using httpOnly refresh token cookie
+          const success = await initializeAuth(API_BASE_URL);
+
+          if (success) {
+            // Token refreshed successfully, now get user data
+            await get().checkAuth();
+          } else {
+            set({ isLoading: false, isAuthenticated: false });
+          }
+        } catch {
+          set({ isLoading: false, isAuthenticated: false });
         }
       },
 
@@ -274,21 +324,42 @@ export const useAuthStore = create<AuthStore>()(
       setUser: (user: User) => {
         set({ user, isAuthenticated: true });
       },
-
-      setTokens: (accessToken: string, refreshToken: string) => {
-        set({ accessToken, refreshToken });
-        axios.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
-      },
     }),
     {
       name: 'auth-storage',
-      storage: createJSONStorage(() => localStorage),
+      storage: createJSONStorage(() => {
+        // Custom storage that only persists user data, NOT tokens
+        return {
+          getItem: (name: string) => {
+            if (typeof window === 'undefined') return null;
+            const item = localStorage.getItem(name);
+            return item;
+          },
+          setItem: (name: string, value: string) => {
+            if (typeof window === 'undefined') return;
+            localStorage.setItem(name, value);
+          },
+          removeItem: (name: string) => {
+            if (typeof window === 'undefined') return;
+            localStorage.removeItem(name);
+          },
+        };
+      }),
+      // Only persist user data and auth state, NOT tokens
       partialize: (state) => ({
         user: state.user,
         isAuthenticated: state.isAuthenticated,
-        accessToken: state.accessToken,
-        refreshToken: state.refreshToken,
+        // Note: accessToken and refreshToken are intentionally NOT persisted
+        // Access token is in memory, refresh token is in httpOnly cookie
       }),
     }
   )
 );
+
+// Subscribe to session expired events to handle global logout
+if (typeof window !== 'undefined') {
+  onAuthEvent('sessionExpired', () => {
+    const store = useAuthStore.getState();
+    store.logout();
+  });
+}

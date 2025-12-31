@@ -1,13 +1,15 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
 import { BadRequestException } from '@nestjs/common';
-import { StripeService } from './stripe.service';
-import { SubscriptionTier } from '../../common/enums/subscription-tier.enum';
+import { StripeService, CheckoutSessionOptions } from './stripe.service';
+import { TaxService } from '../tax/tax.service';
+import { SubscriptionTier, SUBSCRIPTION_TIER_PRICES } from '../../common/enums/subscription-tier.enum';
 import Stripe from 'stripe';
 
 describe('StripeService', () => {
   let service: StripeService;
   let configService: ConfigService;
+  let taxService: jest.Mocked<TaxService>;
   let stripeMock: jest.Mocked<Stripe>;
 
   const mockStripeCustomer: Stripe.Customer = {
@@ -72,6 +74,14 @@ describe('StripeService', () => {
     created: Date.now(),
   } as Stripe.Invoice;
 
+  // Mock TaxService
+  const mockTaxService = {
+    getTaxRate: jest.fn(),
+    calculateTax: jest.fn(),
+    validateVatNumber: jest.fn(),
+    getAllTaxRates: jest.fn(),
+  };
+
   beforeEach(async () => {
     // Create a comprehensive Stripe mock
     stripeMock = {
@@ -100,6 +110,7 @@ describe('StripeService', () => {
       invoices: {
         retrieve: jest.fn(),
         list: jest.fn(),
+        pay: jest.fn(),
       },
       webhooks: {
         constructEvent: jest.fn(),
@@ -107,17 +118,24 @@ describe('StripeService', () => {
     } as any;
 
     const mockConfigService = {
-      get: jest.fn((key: string) => {
+      get: jest.fn((key: string, defaultValue?: any) => {
         switch (key) {
           case 'STRIPE_SECRET_KEY':
             return 'sk_test_mock_key';
           case 'STRIPE_WEBHOOK_SECRET':
             return 'whsec_test_secret';
+          case 'STRIPE_TAX_ENABLED':
+            return defaultValue ?? false;
           default:
-            return null;
+            return defaultValue ?? null;
         }
       }),
     };
+
+    // Reset mock implementations
+    mockTaxService.getTaxRate.mockReset();
+    mockTaxService.calculateTax.mockReset();
+    mockTaxService.validateVatNumber.mockReset();
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -126,11 +144,16 @@ describe('StripeService', () => {
           provide: ConfigService,
           useValue: mockConfigService,
         },
+        {
+          provide: TaxService,
+          useValue: mockTaxService,
+        },
       ],
     }).compile();
 
     service = module.get<StripeService>(StripeService);
     configService = module.get<ConfigService>(ConfigService);
+    taxService = module.get(TaxService);
 
     // Replace the Stripe instance with our mock
     (service as any).stripe = stripeMock;
@@ -643,6 +666,498 @@ describe('StripeService', () => {
 
       await expect(
         service.createCustomer('test@example.com', 'user123'),
+      ).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('Tax Integration', () => {
+    const mockPrice: Stripe.Price = {
+      id: 'price_tax_test',
+      object: 'price',
+      unit_amount: 4999,
+      currency: 'usd',
+    } as Stripe.Price;
+
+    it('should get tax rate for country via TaxService', () => {
+      const mockTaxRate = {
+        countryCode: 'DE',
+        countryName: 'Germany',
+        taxType: 'VAT' as const,
+        rate: 19,
+        registrationRequired: true,
+        reverseChargeApplicable: true,
+      };
+
+      taxService.getTaxRate.mockReturnValue(mockTaxRate);
+
+      const result = service.getTaxRateForCountry('DE');
+
+      expect(result).toEqual(mockTaxRate);
+      expect(taxService.getTaxRate).toHaveBeenCalledWith('DE');
+    });
+
+    it('should return undefined for unknown country', () => {
+      taxService.getTaxRate.mockReturnValue(undefined);
+
+      const result = service.getTaxRateForCountry('XX');
+
+      expect(result).toBeUndefined();
+    });
+
+    it('should calculate tax preview for given amount', async () => {
+      const mockCalculation = {
+        subtotal: 100,
+        taxRate: 19,
+        taxAmount: 19,
+        total: 119,
+        taxType: 'VAT',
+        countryCode: 'DE',
+        currency: 'USD',
+        isReverseCharge: false,
+        breakdown: [{ description: 'VAT (19%)', rate: 19, amount: 19 }],
+      };
+
+      taxService.calculateTax.mockResolvedValue(mockCalculation);
+
+      const result = await service.calculateTaxPreview(100, 'USD', 'DE', false);
+
+      expect(result).toEqual(mockCalculation);
+      expect(taxService.calculateTax).toHaveBeenCalledWith(100, 'USD', {
+        countryCode: 'DE',
+        isBusinessCustomer: false,
+        taxId: undefined,
+      });
+    });
+
+    it('should calculate tax preview for B2B customer with tax ID', async () => {
+      const mockCalculation = {
+        subtotal: 100,
+        taxRate: 0,
+        taxAmount: 0,
+        total: 100,
+        taxType: 'VAT',
+        countryCode: 'DE',
+        currency: 'USD',
+        isReverseCharge: true,
+        taxId: 'DE123456789',
+        breakdown: [{ description: 'VAT Reverse Charge (0%)', rate: 0, amount: 0 }],
+      };
+
+      taxService.calculateTax.mockResolvedValue(mockCalculation);
+
+      const result = await service.calculateTaxPreview(100, 'USD', 'DE', true, 'DE123456789');
+
+      expect(result).toEqual(mockCalculation);
+      expect(taxService.calculateTax).toHaveBeenCalledWith(100, 'USD', {
+        countryCode: 'DE',
+        isBusinessCustomer: true,
+        taxId: 'DE123456789',
+      });
+    });
+
+    it('should create checkout session with options object including tax settings', async () => {
+      stripeMock.prices.create.mockResolvedValue(mockPrice);
+      stripeMock.checkout.sessions.create.mockResolvedValue(mockCheckoutSession);
+      taxService.getTaxRate.mockReturnValue({
+        countryCode: 'DE',
+        countryName: 'Germany',
+        taxType: 'VAT' as const,
+        rate: 19,
+        registrationRequired: true,
+        reverseChargeApplicable: true,
+      });
+
+      const options: CheckoutSessionOptions = {
+        customerId: 'cus_test123',
+        tier: SubscriptionTier.BASIC,
+        billingPeriod: 'monthly',
+        successUrl: 'https://example.com/success',
+        cancelUrl: 'https://example.com/cancel',
+        enableAutomaticTax: true,
+        collectTaxId: true,
+        customerCountry: 'DE',
+      };
+
+      const result = await service.createCheckoutSession(options);
+
+      expect(result).toEqual(mockCheckoutSession);
+      expect(stripeMock.checkout.sessions.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          automatic_tax: { enabled: true },
+          tax_id_collection: { enabled: true },
+          billing_address_collection: 'required',
+        }),
+      );
+      expect(taxService.getTaxRate).toHaveBeenCalledWith('DE');
+    });
+
+    it('should create checkout session with tax ID collection disabled', async () => {
+      stripeMock.prices.create.mockResolvedValue(mockPrice);
+      stripeMock.checkout.sessions.create.mockResolvedValue(mockCheckoutSession);
+
+      const options: CheckoutSessionOptions = {
+        customerId: 'cus_test123',
+        tier: SubscriptionTier.PROFESSIONAL,
+        billingPeriod: 'yearly',
+        successUrl: 'https://example.com/success',
+        cancelUrl: 'https://example.com/cancel',
+        collectTaxId: false,
+      };
+
+      await service.createCheckoutSession(options);
+
+      expect(stripeMock.checkout.sessions.create).toHaveBeenCalledWith(
+        expect.not.objectContaining({
+          tax_id_collection: { enabled: true },
+        }),
+      );
+    });
+  });
+
+  describe('Subscription Tier Pricing', () => {
+    const mockPrice: Stripe.Price = {
+      id: 'price_tier_test',
+      object: 'price',
+      unit_amount: 2399,
+      currency: 'usd',
+    } as Stripe.Price;
+
+    it.each([
+      [SubscriptionTier.STARTER, 'monthly', 2399],
+      [SubscriptionTier.STARTER, 'yearly', 23999],
+      [SubscriptionTier.BASIC, 'monthly', 4999],
+      [SubscriptionTier.BASIC, 'yearly', 49999],
+      [SubscriptionTier.PROFESSIONAL, 'monthly', 8999],
+      [SubscriptionTier.PROFESSIONAL, 'yearly', 89999],
+      [SubscriptionTier.ADVANCED_CAREER, 'monthly', 14999],
+      [SubscriptionTier.ADVANCED_CAREER, 'yearly', 149999],
+      [SubscriptionTier.EXECUTIVE_ELITE, 'monthly', 29999],
+      [SubscriptionTier.EXECUTIVE_ELITE, 'yearly', 299999],
+    ])('should create price with correct amount for %s %s', async (tier, period, expectedCents) => {
+      stripeMock.prices.create.mockResolvedValue({ ...mockPrice, unit_amount: expectedCents } as Stripe.Price);
+      stripeMock.checkout.sessions.create.mockResolvedValue(mockCheckoutSession);
+
+      await service.createCheckoutSession(
+        'cus_test123',
+        tier,
+        period as 'monthly' | 'yearly',
+        'https://example.com/success',
+        'https://example.com/cancel',
+      );
+
+      expect(stripeMock.prices.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          unit_amount: expectedCents,
+          currency: 'usd',
+          recurring: {
+            interval: period === 'monthly' ? 'month' : 'year',
+          },
+        }),
+      );
+    });
+
+    it('should include SaaS tax code in price creation', async () => {
+      stripeMock.prices.create.mockResolvedValue(mockPrice);
+      stripeMock.checkout.sessions.create.mockResolvedValue(mockCheckoutSession);
+
+      await service.createCheckoutSession(
+        'cus_test123',
+        SubscriptionTier.BASIC,
+        'monthly',
+        'https://example.com/success',
+        'https://example.com/cancel',
+      );
+
+      expect(stripeMock.prices.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          product_data: expect.objectContaining({
+            tax_code: 'txcd_10103001',
+          }),
+          tax_behavior: 'exclusive',
+        }),
+      );
+    });
+  });
+
+  describe('Subscription Update with Proration', () => {
+    const mockPrice: Stripe.Price = {
+      id: 'price_update_test',
+      object: 'price',
+      unit_amount: 8999,
+      currency: 'usd',
+    } as Stripe.Price;
+
+    it('should update subscription with proration enabled', async () => {
+      stripeMock.prices.create.mockResolvedValue(mockPrice);
+      stripeMock.subscriptions.retrieve.mockResolvedValue(mockStripeSubscription);
+      stripeMock.subscriptions.update.mockResolvedValue(mockStripeSubscription);
+
+      await service.updateSubscription(
+        'sub_test123',
+        SubscriptionTier.ADVANCED_CAREER,
+        'monthly',
+      );
+
+      expect(stripeMock.subscriptions.update).toHaveBeenCalledWith(
+        'sub_test123',
+        expect.objectContaining({
+          proration_behavior: 'always_invoice',
+        }),
+      );
+    });
+
+    it('should handle upgrade from lower to higher tier', async () => {
+      stripeMock.prices.create.mockResolvedValue(mockPrice);
+      stripeMock.subscriptions.retrieve.mockResolvedValue(mockStripeSubscription);
+      stripeMock.subscriptions.update.mockResolvedValue({
+        ...mockStripeSubscription,
+        metadata: { tier: SubscriptionTier.EXECUTIVE_ELITE },
+      } as Stripe.Subscription);
+
+      const result = await service.updateSubscription(
+        'sub_test123',
+        SubscriptionTier.EXECUTIVE_ELITE,
+        'yearly',
+      );
+
+      expect(result).toBeDefined();
+      expect(stripeMock.subscriptions.update).toHaveBeenCalledWith(
+        'sub_test123',
+        expect.objectContaining({
+          metadata: {
+            tier: SubscriptionTier.EXECUTIVE_ELITE,
+            billingPeriod: 'yearly',
+          },
+        }),
+      );
+    });
+
+    it('should handle downgrade from higher to lower tier', async () => {
+      const starterPrice: Stripe.Price = {
+        id: 'price_starter',
+        object: 'price',
+        unit_amount: 2399,
+        currency: 'usd',
+      } as Stripe.Price;
+
+      stripeMock.prices.create.mockResolvedValue(starterPrice);
+      stripeMock.subscriptions.retrieve.mockResolvedValue({
+        ...mockStripeSubscription,
+        metadata: { tier: SubscriptionTier.PROFESSIONAL },
+      } as Stripe.Subscription);
+      stripeMock.subscriptions.update.mockResolvedValue({
+        ...mockStripeSubscription,
+        metadata: { tier: SubscriptionTier.STARTER },
+      } as Stripe.Subscription);
+
+      const result = await service.updateSubscription(
+        'sub_test123',
+        SubscriptionTier.STARTER,
+        'monthly',
+      );
+
+      expect(result).toBeDefined();
+      expect(stripeMock.prices.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          unit_amount: 2399,
+        }),
+      );
+    });
+  });
+
+  describe('Webhook Event Types', () => {
+    it('should construct checkout.session.completed event', () => {
+      const payload = Buffer.from(JSON.stringify({
+        type: 'checkout.session.completed',
+        data: { object: { id: 'cs_test123' } },
+      }));
+      const signature = 'valid_signature';
+      const mockEvent = {
+        id: 'evt_test123',
+        type: 'checkout.session.completed',
+        data: { object: { id: 'cs_test123' } },
+      } as Stripe.Event;
+
+      stripeMock.webhooks.constructEvent.mockReturnValue(mockEvent);
+
+      const result = service.constructWebhookEvent(payload, signature);
+
+      expect(result.type).toBe('checkout.session.completed');
+    });
+
+    it('should construct customer.subscription.updated event', () => {
+      const payload = Buffer.from(JSON.stringify({
+        type: 'customer.subscription.updated',
+        data: { object: { id: 'sub_test123', status: 'past_due' } },
+      }));
+      const signature = 'valid_signature';
+      const mockEvent = {
+        id: 'evt_test123',
+        type: 'customer.subscription.updated',
+        data: { object: { id: 'sub_test123', status: 'past_due' } },
+      } as Stripe.Event;
+
+      stripeMock.webhooks.constructEvent.mockReturnValue(mockEvent);
+
+      const result = service.constructWebhookEvent(payload, signature);
+
+      expect(result.type).toBe('customer.subscription.updated');
+      expect((result.data.object as any).status).toBe('past_due');
+    });
+
+    it('should construct invoice.payment_failed event', () => {
+      const payload = Buffer.from(JSON.stringify({
+        type: 'invoice.payment_failed',
+        data: { object: { id: 'in_test123' } },
+      }));
+      const signature = 'valid_signature';
+      const mockEvent = {
+        id: 'evt_test123',
+        type: 'invoice.payment_failed',
+        data: { object: { id: 'in_test123', attempt_count: 1 } },
+      } as Stripe.Event;
+
+      stripeMock.webhooks.constructEvent.mockReturnValue(mockEvent);
+
+      const result = service.constructWebhookEvent(payload, signature);
+
+      expect(result.type).toBe('invoice.payment_failed');
+    });
+  });
+
+  describe('Multi-Currency Support', () => {
+    const mockPrice: Stripe.Price = {
+      id: 'price_currency_test',
+      object: 'price',
+      unit_amount: 4999,
+      currency: 'usd',
+    } as Stripe.Price;
+
+    it('should create checkout session with USD currency', async () => {
+      stripeMock.prices.create.mockResolvedValue(mockPrice);
+      stripeMock.checkout.sessions.create.mockResolvedValue(mockCheckoutSession);
+
+      await service.createCheckoutSession(
+        'cus_test123',
+        SubscriptionTier.BASIC,
+        'monthly',
+        'https://example.com/success',
+        'https://example.com/cancel',
+      );
+
+      expect(stripeMock.prices.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          currency: 'usd',
+        }),
+      );
+    });
+
+    it('should list invoices with different currencies', async () => {
+      const euroInvoice: Stripe.Invoice = {
+        ...mockInvoice,
+        currency: 'eur',
+        total: 4599,
+      } as Stripe.Invoice;
+
+      const gbpInvoice: Stripe.Invoice = {
+        ...mockInvoice,
+        currency: 'gbp',
+        total: 3999,
+      } as Stripe.Invoice;
+
+      stripeMock.invoices.list.mockResolvedValue({
+        object: 'list',
+        data: [mockInvoice, euroInvoice, gbpInvoice],
+        has_more: false,
+        url: '/v1/invoices',
+      } as Stripe.ApiList<Stripe.Invoice>);
+
+      const result = await service.listCustomerInvoices('cus_test123');
+
+      expect(result).toHaveLength(3);
+      expect(result.map(inv => inv.currency)).toContain('usd');
+      expect(result.map(inv => inv.currency)).toContain('eur');
+      expect(result.map(inv => inv.currency)).toContain('gbp');
+    });
+  });
+
+  describe('Error Scenarios', () => {
+    it('should handle Stripe card declined error', async () => {
+      const cardDeclinedError = new Error('Your card was declined');
+      (cardDeclinedError as any).type = 'StripeCardError';
+      (cardDeclinedError as any).code = 'card_declined';
+
+      stripeMock.customers.create.mockRejectedValue(cardDeclinedError);
+
+      await expect(
+        service.createCustomer('test@example.com', 'user123'),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should handle Stripe invalid request error', async () => {
+      const invalidRequestError = new Error('Invalid request');
+      (invalidRequestError as any).type = 'StripeInvalidRequestError';
+
+      stripeMock.subscriptions.retrieve.mockRejectedValue(invalidRequestError);
+
+      await expect(service.getSubscription('invalid_sub_id')).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('should handle subscription not found during update', async () => {
+      const notFoundError = new Error('No such subscription');
+      (notFoundError as any).type = 'StripeInvalidRequestError';
+
+      stripeMock.prices.create.mockResolvedValue({
+        id: 'price_test',
+        object: 'price',
+        unit_amount: 4999,
+        currency: 'usd',
+      } as Stripe.Price);
+      stripeMock.subscriptions.retrieve.mockRejectedValue(notFoundError);
+
+      await expect(
+        service.updateSubscription('sub_nonexistent', SubscriptionTier.PROFESSIONAL, 'monthly'),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should handle webhook construction with tampered payload', () => {
+      const payload = Buffer.from('tampered_payload');
+      const signature = 'invalid_signature';
+
+      stripeMock.webhooks.constructEvent.mockImplementation(() => {
+        throw new Error('Webhook signature verification failed');
+      });
+
+      expect(() => service.constructWebhookEvent(payload, signature)).toThrow(
+        BadRequestException,
+      );
+    });
+  });
+
+  describe('Billing Portal Configuration', () => {
+    it('should create billing portal with custom return URL', async () => {
+      stripeMock.billingPortal.sessions.create.mockResolvedValue(mockBillingPortalSession);
+
+      const customReturnUrl = 'https://myapp.com/account/billing';
+      const result = await service.createBillingPortalSession('cus_test123', customReturnUrl);
+
+      expect(result.return_url).toBe('https://example.com/return');
+      expect(stripeMock.billingPortal.sessions.create).toHaveBeenCalledWith({
+        customer: 'cus_test123',
+        return_url: customReturnUrl,
+      });
+    });
+
+    it('should handle billing portal creation for non-existent customer', async () => {
+      const customerNotFoundError = new Error('No such customer');
+      (customerNotFoundError as any).type = 'StripeInvalidRequestError';
+
+      stripeMock.billingPortal.sessions.create.mockRejectedValue(customerNotFoundError);
+
+      await expect(
+        service.createBillingPortalSession('cus_nonexistent', 'https://example.com'),
       ).rejects.toThrow(BadRequestException);
     });
   });

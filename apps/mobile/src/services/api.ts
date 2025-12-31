@@ -1,5 +1,4 @@
 import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   User,
   AuthTokens,
@@ -12,10 +11,47 @@ import {
   ApiError,
 } from '../types';
 
+// Declare React Native's global __DEV__ variable
+declare const __DEV__: boolean | undefined;
+
+// Extended config interface for retry tracking
+interface ExtendedAxiosRequestConfig extends InternalAxiosRequestConfig {
+  _retry?: boolean;
+}
+
+// Job search filters type
+interface JobSearchFilters {
+  location?: string;
+  employmentType?: string;
+  locationType?: string;
+  experienceLevel?: string;
+  salary?: {
+    min?: number;
+    max?: number;
+  };
+}
+import {
+  getAccessToken,
+  getRefreshToken,
+  setAccessToken,
+  setRefreshToken,
+  clearAllAuthData,
+  isTokenRefreshing,
+  subscribeToTokenRefresh,
+  refreshAccessToken,
+} from '../lib/secureTokenManager';
+
 // Base API URL - Update this to your actual API URL
-// @ts-ignore - process.env is available in React Native via babel transform
-const API_BASE_URL =
-  (typeof process !== 'undefined' && process.env?.API_URL) || 'http://localhost:3000/api';
+// Note: In React Native, environment variables are accessed via expo-constants or react-native-config
+// Using a fallback pattern that works across different build configurations
+const API_BASE_URL = (() => {
+  // Check for global __DEV__ which is available in React Native
+  if (typeof __DEV__ !== 'undefined' && __DEV__) {
+    return 'http://localhost:3000/api';
+  }
+  // Production URL - should be configured via build-time environment
+  return 'https://api.applyforus.com/api';
+})();
 
 // Create axios instance
 const apiClient: AxiosInstance = axios.create({
@@ -26,10 +62,11 @@ const apiClient: AxiosInstance = axios.create({
   },
 });
 
-// Request interceptor - Add auth token
+// Request interceptor - Add auth token from secure storage
 apiClient.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
-    const token = await AsyncStorage.getItem('@applyforus/access_token');
+    // Get token from secure memory storage
+    const token = getAccessToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -44,38 +81,41 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response) => response,
   async (error: AxiosError<ApiError>) => {
-    const originalRequest = error.config as InternalAxiosRequestConfig & {
-      _retry?: boolean;
-    };
+    const originalRequest = error.config as ExtendedAxiosRequestConfig;
 
     // Handle 401 Unauthorized - Try to refresh token
     if (error.response?.status === 401 && !originalRequest._retry) {
+      // Check if already refreshing
+      if (isTokenRefreshing()) {
+        // Wait for token refresh to complete
+        return new Promise((resolve, reject) => {
+          subscribeToTokenRefresh((token: string | null) => {
+            if (token) {
+              originalRequest.headers.Authorization = `Bearer ${token}`;
+              resolve(apiClient(originalRequest));
+            } else {
+              reject(new Error('Token refresh failed'));
+            }
+          });
+        });
+      }
+
       originalRequest._retry = true;
 
       try {
-        const refreshToken = await AsyncStorage.getItem('@applyforus/refresh_token');
-        if (!refreshToken) {
-          throw new Error('No refresh token available');
+        // Refresh token using secure storage
+        const newToken = await refreshAccessToken(API_BASE_URL);
+
+        if (!newToken) {
+          throw new Error('Token refresh failed');
         }
 
-        // Refresh the token
-        const response = await axios.post(`${API_BASE_URL}/auth/refresh`, {
-          refreshToken,
-        });
-
-        const { accessToken } = response.data;
-        await AsyncStorage.setItem('@applyforus/access_token', accessToken);
-
         // Retry the original request with new token
-        originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+        originalRequest.headers.Authorization = `Bearer ${newToken}`;
         return apiClient(originalRequest);
       } catch (refreshError) {
-        // If refresh fails, clear storage and redirect to login
-        await AsyncStorage.multiRemove([
-          '@applyforus/access_token',
-          '@applyforus/refresh_token',
-          '@applyforus/user',
-        ]);
+        // If refresh fails, clear secure storage
+        await clearAllAuthData();
         return Promise.reject(refreshError);
       }
     }
@@ -92,12 +132,14 @@ export const authApi = {
   register: (data: RegisterData) =>
     apiClient.post<{ user: User } & AuthTokens>('/auth/register', data),
 
-  loginWithOAuth: (provider: 'google' | 'linkedin', token: string) =>
+  loginWithOAuth: (provider: 'google' | 'linkedin' | 'github', token: string) =>
     apiClient.post<{ user: User } & AuthTokens>(`/auth/oauth/${provider}`, {
       token,
     }),
 
-  logout: (refreshToken: string) => apiClient.post('/auth/logout', { refreshToken }),
+  logout: async (refreshToken: string) => {
+    return apiClient.post('/auth/logout', { refreshToken });
+  },
 
   refreshToken: (refreshToken: string) =>
     apiClient.post<{ accessToken: string }>('/auth/refresh', { refreshToken }),
@@ -123,7 +165,7 @@ export const jobsApi = {
 
   getJobById: (id: string) => apiClient.get<Job>(`/jobs/${id}`),
 
-  searchJobs: (query: string, filters?: Record<string, any>) =>
+  searchJobs: (query: string, filters?: JobSearchFilters) =>
     apiClient.post<PaginatedResponse<Job>>('/jobs/search', { query, filters }),
 
   getSavedJobs: (params?: { page?: number; limit?: number }) =>

@@ -492,7 +492,7 @@ function RegionalRightsSection({ region }: { region: Region }) {
           <ul className="list-disc list-inside mb-4 space-y-2">
             <li>Email: privacy@applyforus.com</li>
             <li>In-app privacy settings</li>
-            <li>Toll-free: 1-800-XXX-XXXX</li>
+            <li>Support: <a href="https://applyforus.com/support" className="text-primary-600 dark:text-primary-400 hover:underline">Contact Support</a></li>
           </ul>
           <p className="text-sm text-gray-600 dark:text-gray-400">
             We will respond to verifiable requests within 45 days.

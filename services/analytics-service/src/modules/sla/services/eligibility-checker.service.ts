@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { HttpService } from '@nestjs/axios';
+import { ConfigService } from '@nestjs/config';
+import { firstValueFrom, timeout, catchError, of } from 'rxjs';
 import {
   SLATier,
   EligibilityStatus,
@@ -16,8 +17,16 @@ import { EligibilityCheckResponseDto, EligibilityCheckResultDto } from '../dto';
 @Injectable()
 export class EligibilityCheckerService {
   private readonly logger = new Logger(EligibilityCheckerService.name);
+  private readonly userServiceUrl: string;
+  private readonly resumeServiceUrl: string;
 
-  constructor() {}
+  constructor(
+    private readonly httpService: HttpService,
+    private readonly configService: ConfigService,
+  ) {
+    this.userServiceUrl = this.configService.get<string>('USER_SERVICE_URL', 'http://localhost:8082');
+    this.resumeServiceUrl = this.configService.get<string>('RESUME_SERVICE_URL', 'http://localhost:8083');
+  }
 
   /**
    * Check if user is eligible for SLA tier
@@ -235,49 +244,181 @@ export class EligibilityCheckerService {
 
   /**
    * Fetch user profile from user-service
-   * In production, this would make an HTTP call to the user-service
+   * Makes HTTP calls to user-service and resume-service to gather complete profile data
    */
   private async fetchUserProfile(userId: string): Promise<any> {
-    // TODO: Implement actual API call to user-service
-    // For now, return mock data
-    this.logger.warn(
-      `Using mock profile data for user ${userId}. Implement user-service integration.`,
-    );
+    this.logger.log(`Fetching user profile for user ${userId} from user-service`);
 
-    return {
-      userId,
-      firstName: 'John',
-      lastName: 'Doe',
-      email: 'john.doe@example.com',
-      phone: '+1234567890',
-      location: 'New York, NY',
-      workExperience: [
-        {
-          company: 'Tech Corp',
-          title: 'Software Engineer',
-          startDate: '2020-01-01',
-          endDate: '2023-12-31',
-        },
-      ],
-      education: [
-        {
-          institution: 'University',
-          degree: 'Bachelor of Science',
-          field: 'Computer Science',
-          graduationDate: '2019-05-01',
-        },
-      ],
-      skills: ['JavaScript', 'TypeScript', 'React', 'Node.js'],
-      resumeUrl: 'https://example.com/resume.pdf',
-      resumeId: 'resume-123',
-      resumeScore: 75,
-      hasApprovedResume: true,
-      preferences: {
-        desiredRoles: ['Software Engineer', 'Full Stack Developer'],
-        desiredSalary: 100000,
-        remotePreference: 'remote',
-      },
-    };
+    try {
+      // Fetch profile, work experience, education, skills, and preferences in parallel
+      const [profileResponse, workExperienceResponse, educationResponse, skillsResponse, preferencesResponse, resumeResponse] = await Promise.all([
+        firstValueFrom(
+          this.httpService.get(`${this.userServiceUrl}/api/v1/profile`, {
+            headers: { 'X-User-Id': userId },
+          }).pipe(
+            timeout(10000),
+            catchError((error) => {
+              this.logger.warn(`Failed to fetch profile for user ${userId}: ${error.message}`);
+              return of({ data: null });
+            }),
+          ),
+        ),
+        firstValueFrom(
+          this.httpService.get(`${this.userServiceUrl}/api/v1/career/work-experience`, {
+            headers: { 'X-User-Id': userId },
+          }).pipe(
+            timeout(10000),
+            catchError((error) => {
+              this.logger.warn(`Failed to fetch work experience for user ${userId}: ${error.message}`);
+              return of({ data: [] });
+            }),
+          ),
+        ),
+        firstValueFrom(
+          this.httpService.get(`${this.userServiceUrl}/api/v1/career/education`, {
+            headers: { 'X-User-Id': userId },
+          }).pipe(
+            timeout(10000),
+            catchError((error) => {
+              this.logger.warn(`Failed to fetch education for user ${userId}: ${error.message}`);
+              return of({ data: [] });
+            }),
+          ),
+        ),
+        firstValueFrom(
+          this.httpService.get(`${this.userServiceUrl}/api/v1/skills`, {
+            headers: { 'X-User-Id': userId },
+          }).pipe(
+            timeout(10000),
+            catchError((error) => {
+              this.logger.warn(`Failed to fetch skills for user ${userId}: ${error.message}`);
+              return of({ data: [] });
+            }),
+          ),
+        ),
+        firstValueFrom(
+          this.httpService.get(`${this.userServiceUrl}/api/v1/preferences`, {
+            headers: { 'X-User-Id': userId },
+          }).pipe(
+            timeout(10000),
+            catchError((error) => {
+              this.logger.warn(`Failed to fetch preferences for user ${userId}: ${error.message}`);
+              return of({ data: null });
+            }),
+          ),
+        ),
+        firstValueFrom(
+          this.httpService.get(`${this.resumeServiceUrl}/api/v1/resumes`, {
+            headers: { 'X-User-Id': userId },
+            params: { limit: 1, sortBy: 'updatedAt', order: 'DESC' },
+          }).pipe(
+            timeout(10000),
+            catchError((error) => {
+              this.logger.warn(`Failed to fetch resumes for user ${userId}: ${error.message}`);
+              return of({ data: { resumes: [] } });
+            }),
+          ),
+        ),
+      ]);
+
+      const profile = profileResponse.data;
+      const workExperience = Array.isArray(workExperienceResponse.data)
+        ? workExperienceResponse.data
+        : workExperienceResponse.data?.workExperiences || [];
+      const education = Array.isArray(educationResponse.data)
+        ? educationResponse.data
+        : educationResponse.data?.education || [];
+      const skills = Array.isArray(skillsResponse.data)
+        ? skillsResponse.data.map((s: any) => s.name || s)
+        : skillsResponse.data?.skills?.map((s: any) => s.name || s) || [];
+      const preferences = preferencesResponse.data;
+      const resumes = resumeResponse.data?.resumes || resumeResponse.data || [];
+      const primaryResume = resumes[0];
+
+      // Check if profile data was successfully fetched
+      if (!profile) {
+        this.logger.warn(`No profile found for user ${userId}, returning minimal profile`);
+        return {
+          userId,
+          firstName: null,
+          lastName: null,
+          email: null,
+          phone: null,
+          location: null,
+          workExperience: [],
+          education: [],
+          skills: [],
+          resumeUrl: null,
+          resumeId: null,
+          resumeScore: 0,
+          hasApprovedResume: false,
+          preferences: null,
+        };
+      }
+
+      // Parse full name into first and last name
+      const nameParts = (profile.full_name || '').split(' ');
+      const firstName = nameParts[0] || null;
+      const lastName = nameParts.slice(1).join(' ') || null;
+
+      // Transform work experience to expected format
+      const transformedWorkExperience = workExperience.map((exp: any) => ({
+        company: exp.company || exp.company_name,
+        title: exp.title || exp.job_title || exp.position,
+        startDate: exp.start_date || exp.startDate,
+        endDate: exp.end_date || exp.endDate,
+        description: exp.description,
+        current: exp.is_current || exp.current || !exp.end_date,
+      }));
+
+      // Transform education to expected format
+      const transformedEducation = education.map((edu: any) => ({
+        institution: edu.institution || edu.school,
+        degree: edu.degree,
+        field: edu.field_of_study || edu.field || edu.major,
+        graduationDate: edu.graduation_date || edu.end_date || edu.graduationDate,
+      }));
+
+      return {
+        userId,
+        firstName,
+        lastName,
+        email: profile.email || null,
+        phone: profile.phone || null,
+        location: profile.location || null,
+        workExperience: transformedWorkExperience,
+        education: transformedEducation,
+        skills,
+        resumeUrl: primaryResume?.file_url || primaryResume?.fileUrl || null,
+        resumeId: primaryResume?.id || null,
+        resumeScore: primaryResume?.score || primaryResume?.ats_score || 0,
+        hasApprovedResume: primaryResume?.status === 'approved' || primaryResume?.is_approved || false,
+        preferences: preferences ? {
+          desiredRoles: preferences.desired_roles || preferences.desiredRoles || [],
+          desiredSalary: preferences.desired_salary || preferences.desiredSalary,
+          remotePreference: preferences.remote_preference || preferences.remotePreference,
+        } : null,
+      };
+    } catch (error) {
+      this.logger.error(`Error fetching user profile for ${userId}:`, error.stack);
+      // Return empty profile on error to allow graceful degradation
+      return {
+        userId,
+        firstName: null,
+        lastName: null,
+        email: null,
+        phone: null,
+        location: null,
+        workExperience: [],
+        education: [],
+        skills: [],
+        resumeUrl: null,
+        resumeId: null,
+        resumeScore: 0,
+        hasApprovedResume: false,
+        preferences: null,
+      };
+    }
   }
 
   /**

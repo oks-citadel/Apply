@@ -1,12 +1,10 @@
-// import { initTelemetry } from '@applyforus/telemetry';
+import { initTelemetry } from '@applyforus/telemetry';
 import { Logger } from '@nestjs/common';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
 
   // Initialize OpenTelemetry tracing with Azure Application Insights
-  // TODO: Uncomment when @applyforus/telemetry package is available
-  /*
   try {
     await initTelemetry({
       serviceName: 'payment-service',
@@ -18,7 +16,6 @@ async function bootstrap() {
   } catch (error) {
     logger.warn('Failed to initialize telemetry, continuing without tracing', error);
   }
-  */
 
   // Import NestJS modules AFTER telemetry initialization
   const { NestFactory } = await import('@nestjs/core');
@@ -59,22 +56,33 @@ async function bootstrap() {
   }));
   const port = configService.get<number>('PORT', 8088);
   const serviceName = configService.get<string>('SERVICE_NAME', 'payment-service');
+  const isProduction = configService.get('NODE_ENV') === 'production';
 
   // CORS configuration - secure origins only
-  // TODO: SECURITY - Never use '*' for CORS in production. Configure allowed origins via CORS_ORIGINS env variable.
-  const corsOrigins = configService.get<string>('CORS_ORIGINS', '');
+  // Use ALLOWED_ORIGINS or CORS_ORIGINS env variable to configure allowed origins
+  const corsOrigins = configService.get<string>('ALLOWED_ORIGINS') || configService.get<string>('CORS_ORIGINS', '');
   const allowedOrigins = corsOrigins
-    ? corsOrigins.split(',').map((o) => o.trim())
-    : [
-        'https://applyforus.com',
-        'https://dev.applyforus.com',
-        'http://localhost:3000', // For local development
-      ];
+    ? corsOrigins.split(',').map((o) => o.trim()).filter((o) => o.length > 0)
+    : isProduction
+      ? [
+          'https://applyforus.com',
+          'https://www.applyforus.com',
+        ]
+      : [
+          'https://applyforus.com',
+          'https://dev.applyforus.com',
+          'http://localhost:3000', // For local development
+        ];
 
   app.enableCors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps, Postman, or server-to-server)
+      // In production, require an origin for browser requests (blocks null origin)
+      // In development, allow requests with no origin (mobile apps, Postman, server-to-server)
       if (!origin) {
+        if (isProduction) {
+          logger.warn('CORS request with null origin blocked in production');
+          return callback(new Error('Origin header required in production'));
+        }
         return callback(null, true);
       }
 

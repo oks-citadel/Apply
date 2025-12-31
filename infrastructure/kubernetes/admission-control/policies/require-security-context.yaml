@@ -1,0 +1,114 @@
+# ==============================================================================
+# KYVERNO POLICY: Require Security Context
+# ==============================================================================
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-security-context
+  annotations:
+    policies.kyverno.io/title: Require Security Context
+    policies.kyverno.io/category: Pod Security
+    policies.kyverno.io/severity: high
+    policies.kyverno.io/subject: Pod
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: require-run-as-non-root
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - applyforus
+                - applyforus-staging
+      validate:
+        message: "Pods must run as non-root. Set spec.securityContext.runAsNonRoot=true"
+        anyPattern:
+          - spec:
+              securityContext:
+                runAsNonRoot: true
+          - spec:
+              containers:
+                - securityContext:
+                    runAsNonRoot: true
+    - name: require-read-only-root-filesystem
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - applyforus
+                - applyforus-staging
+      validate:
+        message: "Containers must use read-only root filesystem."
+        pattern:
+          spec:
+            containers:
+              - securityContext:
+                  readOnlyRootFilesystem: true
+    - name: prevent-privilege-escalation
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - applyforus
+                - applyforus-staging
+      validate:
+        message: "Container must not allow privilege escalation."
+        pattern:
+          spec:
+            containers:
+              - securityContext:
+                  allowPrivilegeEscalation: false
+    - name: drop-all-capabilities
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - applyforus
+                - applyforus-staging
+      validate:
+        message: "Containers must drop all capabilities."
+        pattern:
+          spec:
+            containers:
+              - securityContext:
+                  capabilities:
+                    drop:
+                      - ALL
+    - name: require-seccomp-profile
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - applyforus
+                - applyforus-staging
+      validate:
+        message: "Pod must specify a seccomp profile (RuntimeDefault)."
+        anyPattern:
+          - spec:
+              securityContext:
+                seccompProfile:
+                  type: RuntimeDefault
+          - spec:
+              securityContext:
+                seccompProfile:
+                  type: Localhost
+  exclude:
+    any:
+      - resources:
+          namespaces:
+            - kube-system
+            - kube-public
+            - kyverno
+            - cert-manager
+            - ingress-nginx

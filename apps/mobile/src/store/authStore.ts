@@ -1,19 +1,50 @@
 import { create } from 'zustand';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { User, AuthTokens } from '../types';
+import { AxiosError } from 'axios';
+import { User } from '../types';
 import { authApi } from '../services/api';
+import {
+  setAccessToken,
+  getAccessToken,
+  clearAccessToken,
+  setRefreshToken,
+  getRefreshToken,
+  clearRefreshToken,
+  setUserData,
+  getUserData,
+  clearUserData,
+  storeAuthData,
+  clearAllAuthData,
+  refreshAccessToken,
+  performLogout,
+  initializeAuth,
+  migrateFromAsyncStorage,
+  onAuthEvent,
+} from '../lib/secureTokenManager';
+
+// Type for API error responses
+interface ApiErrorResponse {
+  message?: string;
+  error?: string;
+  statusCode?: number;
+}
+
+// Type for auth response data
+interface AuthResponseData {
+  user: User;
+  accessToken: string;
+  refreshToken: string;
+  expiresIn?: number;
+}
 
 interface AuthState {
   user: User | null;
-  accessToken: string | null;
-  refreshToken: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
 
   // Actions
   login: (email: string, password: string) => Promise<void>;
-  loginWithOAuth: (provider: 'google' | 'linkedin', token: string) => Promise<void>;
+  loginWithOAuth: (provider: 'google' | 'linkedin' | 'github', token: string) => Promise<void>;
   logout: () => Promise<void>;
   register: (data: {
     email: string;
@@ -24,72 +55,64 @@ interface AuthState {
   refreshAccessToken: () => Promise<void>;
   loadAuthState: () => Promise<void>;
   clearError: () => void;
+
+  // Internal method for API client
+  getAccessToken: () => string | null;
 }
 
-const STORAGE_KEYS = {
-  ACCESS_TOKEN: '@applyforus/access_token',
-  REFRESH_TOKEN: '@applyforus/refresh_token',
-  USER: '@applyforus/user',
-};
+// Base API URL
+const API_BASE_URL =
+  (typeof process !== 'undefined' && process.env?.API_URL) || 'http://localhost:3000/api';
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
-  accessToken: null,
-  refreshToken: null,
   isAuthenticated: false,
   isLoading: false,
   error: null,
+
+  getAccessToken: () => getAccessToken(),
 
   login: async (email: string, password: string) => {
     try {
       set({ isLoading: true, error: null });
 
       const response = await authApi.login({ email, password });
-      const { user, accessToken, refreshToken } = response.data;
+      const { user, accessToken, refreshToken, expiresIn } = response.data as AuthResponseData;
 
-      // Store tokens and user data
-      await AsyncStorage.multiSet([
-        [STORAGE_KEYS.ACCESS_TOKEN, accessToken],
-        [STORAGE_KEYS.REFRESH_TOKEN, refreshToken],
-        [STORAGE_KEYS.USER, JSON.stringify(user)],
-      ]);
+      // Store tokens securely
+      await storeAuthData(accessToken, refreshToken, user as Record<string, unknown>, expiresIn);
 
       set({
         user,
-        accessToken,
-        refreshToken,
         isAuthenticated: true,
         isLoading: false,
       });
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.message || 'Login failed';
+    } catch (error) {
+      const axiosError = error as AxiosError<ApiErrorResponse>;
+      const errorMessage = axiosError.response?.data?.message || 'Login failed';
       set({ error: errorMessage, isLoading: false });
       throw error;
     }
   },
 
-  loginWithOAuth: async (provider: 'google' | 'linkedin', token: string) => {
+  loginWithOAuth: async (provider: 'google' | 'linkedin' | 'github', token: string) => {
     try {
       set({ isLoading: true, error: null });
 
       const response = await authApi.loginWithOAuth(provider, token);
-      const { user, accessToken, refreshToken } = response.data;
+      const { user, accessToken, refreshToken, expiresIn } = response.data as AuthResponseData;
 
-      await AsyncStorage.multiSet([
-        [STORAGE_KEYS.ACCESS_TOKEN, accessToken],
-        [STORAGE_KEYS.REFRESH_TOKEN, refreshToken],
-        [STORAGE_KEYS.USER, JSON.stringify(user)],
-      ]);
+      // Store tokens securely
+      await storeAuthData(accessToken, refreshToken, user as Record<string, unknown>, expiresIn);
 
       set({
         user,
-        accessToken,
-        refreshToken,
         isAuthenticated: true,
         isLoading: false,
       });
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.message || 'OAuth login failed';
+    } catch (error) {
+      const axiosError = error as AxiosError<ApiErrorResponse>;
+      const errorMessage = axiosError.response?.data?.message || 'OAuth login failed';
       set({ error: errorMessage, isLoading: false });
       throw error;
     }
@@ -99,39 +122,21 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       set({ isLoading: true });
 
-      // Call logout endpoint
-      const { refreshToken } = get();
-      if (refreshToken) {
-        await authApi.logout(refreshToken);
-      }
-
-      // Clear storage
-      await AsyncStorage.multiRemove([
-        STORAGE_KEYS.ACCESS_TOKEN,
-        STORAGE_KEYS.REFRESH_TOKEN,
-        STORAGE_KEYS.USER,
-      ]);
+      // Perform secure logout
+      await performLogout(API_BASE_URL);
 
       set({
         user: null,
-        accessToken: null,
-        refreshToken: null,
         isAuthenticated: false,
         isLoading: false,
         error: null,
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error('Logout error:', error);
       // Even if logout fails, clear local state
-      await AsyncStorage.multiRemove([
-        STORAGE_KEYS.ACCESS_TOKEN,
-        STORAGE_KEYS.REFRESH_TOKEN,
-        STORAGE_KEYS.USER,
-      ]);
+      await clearAllAuthData();
       set({
         user: null,
-        accessToken: null,
-        refreshToken: null,
         isAuthenticated: false,
         isLoading: false,
       });
@@ -143,23 +148,19 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       set({ isLoading: true, error: null });
 
       const response = await authApi.register(data);
-      const { user, accessToken, refreshToken } = response.data;
+      const { user, accessToken, refreshToken, expiresIn } = response.data as AuthResponseData;
 
-      await AsyncStorage.multiSet([
-        [STORAGE_KEYS.ACCESS_TOKEN, accessToken],
-        [STORAGE_KEYS.REFRESH_TOKEN, refreshToken],
-        [STORAGE_KEYS.USER, JSON.stringify(user)],
-      ]);
+      // Store tokens securely
+      await storeAuthData(accessToken, refreshToken, user as Record<string, unknown>, expiresIn);
 
       set({
         user,
-        accessToken,
-        refreshToken,
         isAuthenticated: true,
         isLoading: false,
       });
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.message || 'Registration failed';
+    } catch (error) {
+      const axiosError = error as AxiosError<ApiErrorResponse>;
+      const errorMessage = axiosError.response?.data?.message || 'Registration failed';
       set({ error: errorMessage, isLoading: false });
       throw error;
     }
@@ -167,21 +168,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   refreshAccessToken: async () => {
     try {
-      const { refreshToken } = get();
-      if (!refreshToken) {
-        throw new Error('No refresh token available');
+      const newToken = await refreshAccessToken(API_BASE_URL);
+
+      if (!newToken) {
+        // If refresh fails, logout the user
+        await get().logout();
+        throw new Error('Token refresh failed');
       }
-
-      const response = await authApi.refreshToken(refreshToken);
-      const { accessToken: newAccessToken } = response.data;
-
-      await AsyncStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, newAccessToken);
-
-      set({ accessToken: newAccessToken });
     } catch (error) {
       console.error('Token refresh failed:', error);
-      // If refresh fails, logout the user
-      get().logout();
+      await get().logout();
       throw error;
     }
   },
@@ -190,27 +186,27 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       set({ isLoading: true });
 
-      const [accessToken, refreshToken, userJson] = await AsyncStorage.multiGet([
-        STORAGE_KEYS.ACCESS_TOKEN,
-        STORAGE_KEYS.REFRESH_TOKEN,
-        STORAGE_KEYS.USER,
-      ]);
+      // Migrate from insecure AsyncStorage on first load
+      await migrateFromAsyncStorage();
 
-      const token = accessToken[1];
-      const refresh = refreshToken[1];
-      const user = userJson[1] ? JSON.parse(userJson[1]) : null;
+      // Try to initialize auth using securely stored refresh token
+      const success = await initializeAuth(API_BASE_URL);
 
-      if (token && refresh && user) {
-        set({
-          accessToken: token,
-          refreshToken: refresh,
-          user,
-          isAuthenticated: true,
-          isLoading: false,
-        });
-      } else {
-        set({ isLoading: false });
+      if (success) {
+        // Load user data from secure storage
+        const user = await getUserData<User>();
+
+        if (user) {
+          set({
+            user,
+            isAuthenticated: true,
+            isLoading: false,
+          });
+          return;
+        }
       }
+
+      set({ isLoading: false });
     } catch (error) {
       console.error('Failed to load auth state:', error);
       set({ isLoading: false });
@@ -219,3 +215,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   clearError: () => set({ error: null }),
 }));
+
+// Subscribe to session expired events
+onAuthEvent('sessionExpired', () => {
+  const store = useAuthStore.getState();
+  store.logout();
+});

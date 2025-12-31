@@ -2,11 +2,14 @@ import { HttpModule } from '@nestjs/axios';
 import { BullModule } from '@nestjs/bull';
 import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { TerminusModule } from '@nestjs/terminus';
 
 import { LoggingModule, LoggingInterceptor, LogLevel } from '@applyforus/logging';
-import { InputSanitizationMiddleware } from '@applyforus/security';
+import { InputSanitizationMiddleware, SubscriptionGuard } from '@applyforus/security';
+
+import { AuthModule } from './auth/auth.module';
+import { JwtAuthGuard } from './auth/jwt-auth.guard';
 
 import { ComplianceModule } from './agents/compliance/compliance.module';
 import { HealthModule } from './health/health.module';
@@ -79,12 +82,25 @@ import { OrchestratorModule } from './orchestrator/orchestrator.module';
     // Health checks
     TerminusModule,
 
+    // Authentication
+    AuthModule,
+
     // Feature modules
     OrchestratorModule,
     ComplianceModule,
     HealthModule,
   ],
   providers: [
+    // Authentication - must come first
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
+    },
+    // Subscription tier enforcement - applies @RequiresTier decorators
+    {
+      provide: APP_GUARD,
+      useClass: SubscriptionGuard,
+    },
     {
       provide: APP_INTERCEPTOR,
       useClass: LoggingInterceptor,

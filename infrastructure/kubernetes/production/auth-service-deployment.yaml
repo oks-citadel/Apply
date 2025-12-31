@@ -29,13 +29,23 @@ spec:
         prometheus.io/port: "4000"
         prometheus.io/path: "/metrics"
     spec:
+      imagePullSecrets:
+        - name: acr-auth
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
       containers:
         - name: auth-service
-          # IMPORTANT: Replace with digest reference in deployment: image@sha256:xxx
-          # CI/CD will update this with: applyforusacr.azurecr.io/applyai-auth-service@sha256:xxxxx
-          # Tag reference for manual deploy (use digest for production): sha-<gitcommit>
-          image: applyforusacr.azurecr.io/applyai-auth-service:sha-REPLACE_WITH_GIT_SHA
-          imagePullPolicy: Always
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          # IMAGE_TAG is substituted by CI/CD pipeline - NEVER use :latest in production
+          image: applyforusacr.azurecr.io/applyai-auth-service:v2.2.0
+          imagePullPolicy: IfNotPresent
           ports:
             - name: http
               containerPort: 4000
@@ -46,6 +56,8 @@ spec:
             - name: PORT
               value: "4000"
           envFrom:
+            - configMapRef:
+                name: identity-config
             - secretRef:
                 name: applyforus-secrets
           resources:

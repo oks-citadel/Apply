@@ -69,7 +69,9 @@ export const usePushNotifications = () => {
         return null;
       }
     } catch (error) {
-      console.error('Error requesting notification permission:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('[useNotifications] Error requesting notification permission:', error);
+      }
       return null;
     } finally {
       setIsRegistering(false);
@@ -85,7 +87,9 @@ export const usePushNotifications = () => {
       setFcmToken(null);
       localStorage.removeItem('fcm_token');
     } catch (error) {
-      console.error('Error unregistering device:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('[useNotifications] Error unregistering device:', error);
+      }
     }
   }, [user, fcmToken]);
 
@@ -94,7 +98,9 @@ export const usePushNotifications = () => {
     if (permissionStatus !== 'granted') return;
 
     const unsubscribe = onForegroundMessage((payload) => {
-      console.log('Foreground message received:', payload);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[useNotifications] Foreground message received:', payload);
+      }
 
       // Invalidate notifications query to refetch
       queryClient.invalidateQueries({ queryKey: ['notifications'] });

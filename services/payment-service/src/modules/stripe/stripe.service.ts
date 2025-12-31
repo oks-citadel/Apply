@@ -5,13 +5,36 @@ import {
   SubscriptionTier,
   SUBSCRIPTION_TIER_PRICES,
 } from '../../common/enums/subscription-tier.enum';
+import { TaxService } from '../tax/tax.service';
+
+/**
+ * Options for checkout session with tax support
+ */
+export interface CheckoutSessionOptions {
+  customerId: string;
+  tier: SubscriptionTier;
+  billingPeriod: 'monthly' | 'yearly';
+  successUrl: string;
+  cancelUrl: string;
+  metadata?: Record<string, string>;
+  /** Enable Stripe Tax automatic calculation */
+  enableAutomaticTax?: boolean;
+  /** Allow customers to provide VAT/GST ID for B2B */
+  collectTaxId?: boolean;
+  /** Customer's country for tax purposes (ISO 3166-1 alpha-2) */
+  customerCountry?: string;
+}
 
 @Injectable()
 export class StripeService {
   private readonly logger = new Logger(StripeService.name);
   private stripe: Stripe;
+  private readonly enableStripeTax: boolean;
 
-  constructor(private configService: ConfigService) {
+  constructor(
+    private configService: ConfigService,
+    private taxService: TaxService,
+  ) {
     const stripeSecretKey = this.configService.get<string>('STRIPE_SECRET_KEY');
 
     if (!stripeSecretKey) {
@@ -22,6 +45,9 @@ export class StripeService {
       apiVersion: '2023-10-16',
       typescript: true,
     });
+
+    // Enable Stripe Tax if configured (requires Stripe Tax subscription)
+    this.enableStripeTax = this.configService.get<boolean>('STRIPE_TAX_ENABLED', false);
   }
 
   /**
@@ -75,7 +101,12 @@ export class StripeService {
   }
 
   /**
-   * Create a checkout session for subscription
+   * Create a checkout session for subscription with tax support
+   *
+   * Tax handling:
+   * - If STRIPE_TAX_ENABLED=true, uses Stripe Tax for automatic calculation
+   * - Collects customer tax IDs (VAT/GST) for B2B transactions
+   * - Applies reverse charge for valid EU B2B customers
    */
   async createCheckoutSession(
     customerId: string,
@@ -84,34 +115,64 @@ export class StripeService {
     successUrl: string,
     cancelUrl: string,
     metadata?: Record<string, string>,
+  ): Promise<Stripe.Checkout.Session>;
+
+  async createCheckoutSession(options: CheckoutSessionOptions): Promise<Stripe.Checkout.Session>;
+
+  async createCheckoutSession(
+    customerIdOrOptions: string | CheckoutSessionOptions,
+    tier?: SubscriptionTier,
+    billingPeriod?: 'monthly' | 'yearly',
+    successUrl?: string,
+    cancelUrl?: string,
+    metadata?: Record<string, string>,
   ): Promise<Stripe.Checkout.Session> {
+    // Normalize to options object
+    const options: CheckoutSessionOptions =
+      typeof customerIdOrOptions === 'string'
+        ? {
+            customerId: customerIdOrOptions,
+            tier: tier!,
+            billingPeriod: billingPeriod!,
+            successUrl: successUrl!,
+            cancelUrl: cancelUrl!,
+            metadata,
+            enableAutomaticTax: this.enableStripeTax,
+            collectTaxId: true,
+          }
+        : customerIdOrOptions;
+
     try {
       this.logger.log(
-        `Creating checkout session for customer: ${customerId}, tier: ${tier}, period: ${billingPeriod}`,
+        `Creating checkout session for customer: ${options.customerId}, tier: ${options.tier}, period: ${options.billingPeriod}, tax: ${options.enableAutomaticTax ?? this.enableStripeTax}`,
       );
 
-      if (tier === SubscriptionTier.FREEMIUM) {
+      if (options.tier === SubscriptionTier.FREEMIUM) {
         throw new BadRequestException('Cannot create checkout session for FREE tier');
       }
 
-      const price = SUBSCRIPTION_TIER_PRICES[tier][billingPeriod];
+      const price = SUBSCRIPTION_TIER_PRICES[options.tier][options.billingPeriod];
       const priceInCents = Math.round(price * 100);
 
-      // Create a price object
+      // Create a price object with tax behavior
       const priceObject = await this.stripe.prices.create({
         unit_amount: priceInCents,
         currency: 'usd',
         recurring: {
-          interval: billingPeriod === 'monthly' ? 'month' : 'year',
+          interval: options.billingPeriod === 'monthly' ? 'month' : 'year',
         },
         product_data: {
-          name: `${tier} Subscription`,
-          statement_descriptor: `${tier} tier subscription (${billingPeriod})`,
+          name: `${options.tier} Subscription`,
+          // Tax code for SaaS/digital services (required for Stripe Tax)
+          tax_code: 'txcd_10103001', // Software as a Service (SaaS) - Business use
         },
+        // Tax behavior: exclusive means tax is added on top of the price
+        tax_behavior: 'exclusive',
       });
 
-      const session = await this.stripe.checkout.sessions.create({
-        customer: customerId,
+      // Build checkout session params
+      const sessionParams: Stripe.Checkout.SessionCreateParams = {
+        customer: options.customerId,
         mode: 'subscription',
         payment_method_types: ['card'],
         line_items: [
@@ -120,21 +181,48 @@ export class StripeService {
             quantity: 1,
           },
         ],
-        success_url: successUrl,
-        cancel_url: cancelUrl,
+        success_url: options.successUrl,
+        cancel_url: options.cancelUrl,
         metadata: {
-          tier,
-          billingPeriod,
-          ...metadata,
+          tier: options.tier,
+          billingPeriod: options.billingPeriod,
+          ...options.metadata,
         },
         subscription_data: {
           metadata: {
-            tier,
-            billingPeriod,
-            ...metadata,
+            tier: options.tier,
+            billingPeriod: options.billingPeriod,
+            ...options.metadata,
           },
         },
-      });
+        // Enable customer to update billing address for tax purposes
+        billing_address_collection: 'required',
+      };
+
+      // Enable automatic tax calculation if configured
+      const useAutomaticTax = options.enableAutomaticTax ?? this.enableStripeTax;
+      if (useAutomaticTax) {
+        sessionParams.automatic_tax = { enabled: true };
+        this.logger.log('Stripe Tax automatic calculation enabled');
+      }
+
+      // Enable tax ID collection (VAT/GST numbers for B2B)
+      if (options.collectTaxId !== false) {
+        sessionParams.tax_id_collection = { enabled: true };
+        this.logger.log('Tax ID collection enabled for B2B customers');
+      }
+
+      // If customer country is provided, we can log the expected tax rate
+      if (options.customerCountry) {
+        const taxRate = this.taxService.getTaxRate(options.customerCountry);
+        if (taxRate) {
+          this.logger.log(
+            `Expected tax for ${options.customerCountry}: ${taxRate.taxType} ${taxRate.rate}%`,
+          );
+        }
+      }
+
+      const session = await this.stripe.checkout.sessions.create(sessionParams);
 
       this.logger.log(`Created checkout session: ${session.id}`);
       return session;
@@ -142,6 +230,30 @@ export class StripeService {
       this.logger.error(`Failed to create checkout session: ${error.message}`);
       throw new BadRequestException('Failed to create checkout session');
     }
+  }
+
+  /**
+   * Get tax settings for display (uses our TaxService)
+   */
+  getTaxRateForCountry(countryCode: string) {
+    return this.taxService.getTaxRate(countryCode);
+  }
+
+  /**
+   * Calculate tax preview for a given amount and country
+   */
+  async calculateTaxPreview(
+    amount: number,
+    currency: string,
+    countryCode: string,
+    isBusinessCustomer: boolean = false,
+    taxId?: string,
+  ) {
+    return this.taxService.calculateTax(amount, currency, {
+      countryCode,
+      isBusinessCustomer,
+      taxId,
+    });
   }
 
   /**

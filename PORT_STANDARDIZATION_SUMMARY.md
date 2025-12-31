@@ -240,4 +240,29 @@ This allows:
 
 **Date Completed**: 2025-12-18
 **Updated By**: Claude Code Agent
-**Version**: 1.0
+**Version**: 1.1
+
+---
+
+## Historical Port Reference
+
+The following ports were used BEFORE standardization (now deprecated):
+
+| Service | Previous Ports (DEPRECATED) | Current Port |
+|---------|---------------------------|--------------|
+| auth-service | 4000, 3001, 8001 | 8081 |
+| user-service | 4004, 8002 | 8082 |
+| resume-service | 4001, 8003 | 8083 |
+| job-service | 4002, 8004 | 8084 |
+| auto-apply-service | 4003, 8005 | 8085 |
+| analytics-service | 3007, 8006 | 8086 |
+| notification-service | 4005, 8007 | 8087 |
+| payment-service | 8009 | 8088 |
+| ai-service | 5000, 8008 | 8089 |
+| orchestrator-service | 3009, 8010 | 8090 |
+
+**Note**: If you encounter references to ports like 3007, 3009, 4000-4005, 5000, or 8009 in any
+documentation or code, these are outdated and should be updated to use the standardized 808x ports.
+
+Any specification documents referencing ports 8081-8089 should also include 8090 for the
+orchestrator-service to reflect the complete standardized port range (8081-8090)

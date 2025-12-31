@@ -13,7 +13,7 @@ import {
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { InjectRepository } from '@nestjs/typeorm';
 
-
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { IngestionJob, IngestionTrigger } from './entities/ingestion-job.entity';
 import { JobSource, SourceStatus } from './entities/job-source.entity';
 
@@ -24,7 +24,9 @@ import { IngestionService } from './services/ingestion.service';
 import { Repository } from 'typeorm';
 
 @ApiTags('Job Ingestion')
+@ApiBearerAuth()
 @Controller('api/v1/ingestion')
+@UseGuards(JwtAuthGuard) // Admin-only endpoint - requires authentication
 export class IngestionController {
   private readonly logger = new Logger(IngestionController.name);
 

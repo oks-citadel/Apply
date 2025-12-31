@@ -5,9 +5,10 @@ import {
   Get,
   Body,
   Param,
-  UseGuards,
   HttpCode,
   HttpStatus,
+  UseGuards,
+  ForbiddenException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -22,12 +23,14 @@ import {
   SendPushNotificationDto,
 } from './dto';
 import { DeviceToken } from './entities/device-token.entity';
+import { CurrentUser } from '../../auth/current-user.decorator';
+import { AuthenticatedUser } from '../../auth/jwt.strategy';
+import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 
-// Note: Add your auth guard here when available
-// @UseGuards(JwtAuthGuard)
 @ApiTags('Push Notifications')
 @ApiBearerAuth()
 @Controller('push')
+@UseGuards(JwtAuthGuard) // Require authentication for push notification management
 export class PushController {
   constructor(private readonly pushService: PushService) {}
 
@@ -64,20 +67,33 @@ export class PushController {
     description: 'List of user devices',
     type: [DeviceToken],
   })
+  @ApiResponse({ status: 403, description: 'Forbidden - Cannot access other user data' })
   async getUserDevices(
     @Param('userId') userId: string,
+    @CurrentUser() user: AuthenticatedUser,
   ): Promise<DeviceToken[]> {
+    // IDOR protection: Users can only access their own devices
+    if (user.id !== userId && user.role !== 'admin') {
+      throw new ForbiddenException('You can only access your own devices');
+    }
     return this.pushService.getUserDevices(userId);
   }
 
   @Post('send')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Send push notification to users' })
+  @ApiOperation({ summary: 'Send push notification to users (Admin only)' })
   @ApiResponse({ status: 200, description: 'Notifications sent successfully' })
   @ApiResponse({ status: 400, description: 'Bad request' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Admin access required' })
   async sendPushNotification(
     @Body() sendPushDto: SendPushNotificationDto,
+    @CurrentUser() user: AuthenticatedUser,
   ): Promise<any> {
+    // Admin-only endpoint for bulk push notifications
+    if (user.role !== 'admin') {
+      throw new ForbiddenException('Only administrators can send bulk push notifications');
+    }
+
     const results = await this.pushService.sendPushNotification(sendPushDto);
 
     const successCount = results.filter((r) => r.success).length;
@@ -93,9 +109,17 @@ export class PushController {
 
   @Post('cleanup')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Clean up inactive devices' })
+  @ApiOperation({ summary: 'Clean up inactive devices (Admin only)' })
   @ApiResponse({ status: 200, description: 'Cleanup completed' })
-  async cleanupInactiveDevices(): Promise<any> {
+  @ApiResponse({ status: 403, description: 'Forbidden - Admin access required' })
+  async cleanupInactiveDevices(
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<any> {
+    // Admin-only endpoint
+    if (user.role !== 'admin') {
+      throw new ForbiddenException('Only administrators can clean up devices');
+    }
+
     const count = await this.pushService.cleanupInactiveDevices();
     return {
       success: true,

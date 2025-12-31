@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, Logger, Optional } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger, Optional, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { firstValueFrom } from 'rxjs';
 import { ILike } from 'typeorm';
@@ -13,6 +13,8 @@ import type { SaveJobDto, UpdateSavedJobDto } from './dto/save-job.dto';
 import type { SearchJobsDto, PaginatedJobsResponseDto, JobResponseDto } from './dto/search-jobs.dto';
 import { RedisCacheService } from '../../common/cache';
 import { Repository } from 'typeorm';
+import { ReportsService } from '../reports/reports.service';
+import { CreateReportDto } from '../reports/dto/create-report.dto';
 
 @Injectable()
 export class JobsService {
@@ -27,6 +29,8 @@ export class JobsService {
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
     @Optional() private readonly cacheService: RedisCacheService,
+    @Optional() @Inject(forwardRef(() => ReportsService))
+    private readonly reportsService: ReportsService,
   ) {
     this.aiServiceUrl = this.configService.get<string>('AI_SERVICE_URL');
     this.logger.log('JobsService initialized with Redis caching enabled');
@@ -784,7 +788,7 @@ export class JobsService {
   }
 
   /**
-   * Report a job posting (ReportsService disabled - using stub)
+   * Report a job posting - uses ReportsService for persistence
    */
   async reportJob(jobId: string, reportJobDto: any, userId: string): Promise<any> {
     try {
@@ -796,17 +800,30 @@ export class JobsService {
         throw new NotFoundException('Job not found');
       }
 
-      // ReportsService disabled - log report for now
-      this.logger.log(
-        `Job ${jobId} reported by user ${userId}. Reason: ${reportJobDto.reason}, Details: ${reportJobDto.details}`,
-      );
+      // Use ReportsService if available, otherwise fallback to logging
+      if (this.reportsService) {
+        const createReportDto: CreateReportDto = {
+          reportType: reportJobDto.reason || reportJobDto.reportType,
+          reason: reportJobDto.reason || reportJobDto.reportType,
+          description: reportJobDto.details || reportJobDto.description,
+        };
 
-      // Generate a temporary report ID
-      const tempReportId = `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        const report = await this.reportsService.createReport(jobId, userId, createReportDto);
+
+        return {
+          message: 'Job reported successfully. Our team will review it shortly.',
+          reportId: report.id,
+        };
+      }
+
+      // Fallback: log report if ReportsService is not available
+      this.logger.warn(
+        `ReportsService not available. Job ${jobId} reported by user ${userId}. Reason: ${reportJobDto.reason}`,
+      );
 
       return {
         message: 'Job reported successfully. Our team will review it shortly.',
-        reportId: tempReportId,
+        reportId: `pending-${Date.now()}`,
       };
     } catch (error) {
       if (error instanceof NotFoundException) {
@@ -818,10 +835,14 @@ export class JobsService {
   }
 
   /**
-   * Get reports for a specific job (ReportsService disabled)
+   * Get reports for a specific job
    */
   async getJobReports(jobId: string, page: number = 1, limit: number = 20): Promise<any> {
-    // ReportsService disabled - return empty result
+    if (this.reportsService) {
+      return this.reportsService.getReportsByJobId(jobId, page, limit);
+    }
+
+    // Fallback if ReportsService not available
     return {
       data: [],
       pagination: {
@@ -836,18 +857,22 @@ export class JobsService {
   }
 
   /**
-   * Check if user has already reported a job (ReportsService disabled)
+   * Check if user has already reported a job
    */
   async hasUserReportedJob(userId: string, jobId: string): Promise<boolean> {
-    // ReportsService disabled - always return false
+    if (this.reportsService) {
+      return this.reportsService.hasUserReportedJob(userId, jobId);
+    }
     return false;
   }
 
   /**
-   * Get report count for a job (ReportsService disabled)
+   * Get report count for a job
    */
   async getJobReportCount(jobId: string): Promise<number> {
-    // ReportsService disabled - return 0
+    if (this.reportsService) {
+      return this.reportsService.getJobReportCount(jobId);
+    }
     return 0;
   }
 

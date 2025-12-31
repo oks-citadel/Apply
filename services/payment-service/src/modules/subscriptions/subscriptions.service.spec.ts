@@ -906,4 +906,583 @@ describe('SubscriptionsService', () => {
       expect(result.remaining).toBe(0);
     });
   });
+
+  describe('Subscription Lifecycle - Upgrade', () => {
+    it('should upgrade from STARTER to BASIC tier', async () => {
+      const starterSubscription = {
+        ...mockSubscription,
+        tier: SubscriptionTier.STARTER,
+      };
+      const upgradedSubscription = {
+        ...mockSubscription,
+        tier: SubscriptionTier.BASIC,
+      };
+
+      jest
+        .spyOn(repository, 'findOne')
+        .mockResolvedValue(starterSubscription as Subscription);
+      jest
+        .spyOn(repository, 'save')
+        .mockResolvedValue(upgradedSubscription as Subscription);
+
+      const result = await service.update('sub_123', { tier: SubscriptionTier.BASIC });
+
+      expect(result.tier).toBe(SubscriptionTier.BASIC);
+      expect(subscriptionEventClient.emit).toHaveBeenCalledWith(
+        'subscription.tier.changed',
+        expect.objectContaining({
+          previousTier: SubscriptionTier.STARTER,
+          newTier: SubscriptionTier.BASIC,
+        }),
+      );
+    });
+
+    it('should upgrade from BASIC to PROFESSIONAL tier', async () => {
+      const upgradedSubscription = {
+        ...mockSubscription,
+        tier: SubscriptionTier.PROFESSIONAL,
+      };
+
+      jest
+        .spyOn(repository, 'findOne')
+        .mockResolvedValue(mockSubscription as Subscription);
+      jest
+        .spyOn(repository, 'save')
+        .mockResolvedValue(upgradedSubscription as Subscription);
+
+      const result = await service.update('sub_123', { tier: SubscriptionTier.PROFESSIONAL });
+
+      expect(result.tier).toBe(SubscriptionTier.PROFESSIONAL);
+    });
+
+    it('should upgrade from FREEMIUM to EXECUTIVE_ELITE tier', async () => {
+      const freeSubscription = {
+        ...mockSubscription,
+        tier: SubscriptionTier.FREEMIUM,
+      };
+      const upgradedSubscription = {
+        ...mockSubscription,
+        tier: SubscriptionTier.EXECUTIVE_ELITE,
+      };
+
+      jest
+        .spyOn(repository, 'findOne')
+        .mockResolvedValue(freeSubscription as Subscription);
+      jest
+        .spyOn(repository, 'save')
+        .mockResolvedValue(upgradedSubscription as Subscription);
+
+      const result = await service.update('sub_123', { tier: SubscriptionTier.EXECUTIVE_ELITE });
+
+      expect(result.tier).toBe(SubscriptionTier.EXECUTIVE_ELITE);
+      expect(subscriptionEventClient.emit).toHaveBeenCalledWith(
+        'subscription.tier.changed',
+        expect.objectContaining({
+          previousTier: SubscriptionTier.FREEMIUM,
+          newTier: SubscriptionTier.EXECUTIVE_ELITE,
+        }),
+      );
+    });
+
+    it('should handle multi-tier upgrade in single update', async () => {
+      const starterSubscription = {
+        ...mockSubscription,
+        tier: SubscriptionTier.STARTER,
+      };
+      const advancedSubscription = {
+        ...mockSubscription,
+        tier: SubscriptionTier.ADVANCED_CAREER,
+      };
+
+      jest
+        .spyOn(repository, 'findOne')
+        .mockResolvedValue(starterSubscription as Subscription);
+      jest
+        .spyOn(repository, 'save')
+        .mockResolvedValue(advancedSubscription as Subscription);
+
+      const result = await service.update('sub_123', { tier: SubscriptionTier.ADVANCED_CAREER });
+
+      expect(result.tier).toBe(SubscriptionTier.ADVANCED_CAREER);
+    });
+  });
+
+  describe('Subscription Lifecycle - Downgrade', () => {
+    it('should downgrade from PROFESSIONAL to BASIC tier', async () => {
+      const proSubscription = {
+        ...mockSubscription,
+        tier: SubscriptionTier.PROFESSIONAL,
+      };
+      const downgradedSubscription = {
+        ...mockSubscription,
+        tier: SubscriptionTier.BASIC,
+      };
+
+      jest
+        .spyOn(repository, 'findOne')
+        .mockResolvedValue(proSubscription as Subscription);
+      jest
+        .spyOn(repository, 'save')
+        .mockResolvedValue(downgradedSubscription as Subscription);
+
+      const result = await service.update('sub_123', { tier: SubscriptionTier.BASIC });
+
+      expect(result.tier).toBe(SubscriptionTier.BASIC);
+      expect(subscriptionEventClient.emit).toHaveBeenCalledWith(
+        'subscription.tier.changed',
+        expect.objectContaining({
+          previousTier: SubscriptionTier.PROFESSIONAL,
+          newTier: SubscriptionTier.BASIC,
+        }),
+      );
+    });
+
+    it('should downgrade from EXECUTIVE_ELITE to FREEMIUM using downgradeToFreeTier', async () => {
+      const eliteSubscription = {
+        ...mockSubscription,
+        tier: SubscriptionTier.EXECUTIVE_ELITE,
+        stripeCustomerId: 'cus_test123',
+        stripeSubscriptionId: 'sub_test123',
+      };
+      const freeSubscription = {
+        ...mockSubscription,
+        tier: SubscriptionTier.FREEMIUM,
+        stripeCustomerId: null,
+        stripeSubscriptionId: null,
+      };
+
+      jest
+        .spyOn(repository, 'findOne')
+        .mockResolvedValue(eliteSubscription as Subscription);
+      jest
+        .spyOn(repository, 'save')
+        .mockResolvedValue(freeSubscription as Subscription);
+
+      const result = await service.downgradeToFreeTier('user_123');
+
+      expect(result.tier).toBe(SubscriptionTier.FREEMIUM);
+      expect(result.stripeCustomerId).toBeNull();
+      expect(result.stripeSubscriptionId).toBeNull();
+    });
+  });
+
+  describe('Subscription Lifecycle - Cancel', () => {
+    it('should cancel subscription immediately and emit event', async () => {
+      const canceledSubscription = {
+        ...mockSubscription,
+        status: SubscriptionStatus.CANCELED,
+        canceledAt: new Date(),
+      };
+
+      jest
+        .spyOn(repository, 'findOne')
+        .mockResolvedValue(mockSubscription as Subscription);
+      jest
+        .spyOn(repository, 'save')
+        .mockResolvedValue(canceledSubscription as Subscription);
+
+      const result = await service.cancel('sub_123', true);
+
+      expect(result.status).toBe(SubscriptionStatus.CANCELED);
+      expect(result.canceledAt).toBeDefined();
+      expect(subscriptionEventClient.emit).toHaveBeenCalledWith(
+        'subscription.canceled',
+        expect.objectContaining({
+          immediately: true,
+        }),
+      );
+    });
+
+    it('should schedule cancellation at period end', async () => {
+      const scheduledCancelSubscription = {
+        ...mockSubscription,
+        status: SubscriptionStatus.ACTIVE,
+        cancelAtPeriodEnd: true,
+      };
+
+      jest
+        .spyOn(repository, 'findOne')
+        .mockResolvedValue(mockSubscription as Subscription);
+      jest
+        .spyOn(repository, 'save')
+        .mockResolvedValue(scheduledCancelSubscription as Subscription);
+
+      const result = await service.cancel('sub_123', false);
+
+      expect(result.status).toBe(SubscriptionStatus.ACTIVE);
+      expect(result.cancelAtPeriodEnd).toBe(true);
+    });
+
+    it('should prevent canceling already canceled subscription', async () => {
+      const canceledSubscription = {
+        ...mockSubscription,
+        status: SubscriptionStatus.CANCELED,
+        isCanceled: jest.fn().mockReturnValue(true),
+      };
+
+      jest
+        .spyOn(repository, 'findOne')
+        .mockResolvedValue(canceledSubscription as Subscription);
+
+      await expect(service.cancel('sub_123', true)).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+  });
+
+  describe('Subscription Lifecycle - Reactivate', () => {
+    it('should reactivate a canceled subscription', async () => {
+      const canceledSubscription = {
+        ...mockSubscription,
+        status: SubscriptionStatus.CANCELED,
+        cancelAtPeriodEnd: false,
+        canceledAt: new Date(),
+        isCanceled: jest.fn().mockReturnValue(true),
+      };
+      const reactivatedSubscription = {
+        ...mockSubscription,
+        status: SubscriptionStatus.ACTIVE,
+        cancelAtPeriodEnd: false,
+        canceledAt: null,
+      };
+
+      jest
+        .spyOn(repository, 'findOne')
+        .mockResolvedValue(canceledSubscription as Subscription);
+      jest
+        .spyOn(repository, 'save')
+        .mockResolvedValue(reactivatedSubscription as Subscription);
+
+      const result = await service.reactivate('sub_123');
+
+      expect(result.status).toBe(SubscriptionStatus.ACTIVE);
+      expect(result.canceledAt).toBeNull();
+      expect(subscriptionEventClient.emit).toHaveBeenCalledWith(
+        'subscription.reactivated',
+        reactivatedSubscription,
+      );
+    });
+
+    it('should reactivate subscription pending cancellation', async () => {
+      const pendingCancelSubscription = {
+        ...mockSubscription,
+        status: SubscriptionStatus.ACTIVE,
+        cancelAtPeriodEnd: true,
+        isCanceled: jest.fn().mockReturnValue(false),
+      };
+      const reactivatedSubscription = {
+        ...mockSubscription,
+        status: SubscriptionStatus.ACTIVE,
+        cancelAtPeriodEnd: false,
+      };
+
+      jest
+        .spyOn(repository, 'findOne')
+        .mockResolvedValue(pendingCancelSubscription as Subscription);
+      jest
+        .spyOn(repository, 'save')
+        .mockResolvedValue(reactivatedSubscription as Subscription);
+
+      const result = await service.reactivate('sub_123');
+
+      expect(result.cancelAtPeriodEnd).toBe(false);
+    });
+
+    it('should prevent reactivating active subscription', async () => {
+      jest
+        .spyOn(repository, 'findOne')
+        .mockResolvedValue(mockSubscription as Subscription);
+
+      await expect(service.reactivate('sub_123')).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+  });
+
+  describe('Subscription Status Transitions', () => {
+    it('should transition from ACTIVE to PAST_DUE', async () => {
+      const pastDueSubscription = {
+        ...mockSubscription,
+        status: SubscriptionStatus.PAST_DUE,
+      };
+
+      jest
+        .spyOn(repository, 'findOne')
+        .mockResolvedValue(mockSubscription as Subscription);
+      jest
+        .spyOn(repository, 'save')
+        .mockResolvedValue(pastDueSubscription as Subscription);
+
+      const result = await service.update('sub_123', { status: SubscriptionStatus.PAST_DUE });
+
+      expect(result.status).toBe(SubscriptionStatus.PAST_DUE);
+      expect(subscriptionEventClient.emit).toHaveBeenCalledWith(
+        'subscription.status.changed',
+        expect.objectContaining({
+          previousStatus: SubscriptionStatus.ACTIVE,
+          newStatus: SubscriptionStatus.PAST_DUE,
+        }),
+      );
+    });
+
+    it('should transition from PAST_DUE to ACTIVE after payment', async () => {
+      const pastDueSubscription = {
+        ...mockSubscription,
+        status: SubscriptionStatus.PAST_DUE,
+      };
+      const activeSubscription = {
+        ...mockSubscription,
+        status: SubscriptionStatus.ACTIVE,
+      };
+
+      jest
+        .spyOn(repository, 'findOne')
+        .mockResolvedValue(pastDueSubscription as Subscription);
+      jest
+        .spyOn(repository, 'save')
+        .mockResolvedValue(activeSubscription as Subscription);
+
+      const result = await service.update('sub_123', { status: SubscriptionStatus.ACTIVE });
+
+      expect(result.status).toBe(SubscriptionStatus.ACTIVE);
+    });
+
+    it('should transition from TRIALING to ACTIVE', async () => {
+      const trialingSubscription = {
+        ...mockSubscription,
+        status: SubscriptionStatus.TRIALING,
+      };
+      const activeSubscription = {
+        ...mockSubscription,
+        status: SubscriptionStatus.ACTIVE,
+      };
+
+      jest
+        .spyOn(repository, 'findOne')
+        .mockResolvedValue(trialingSubscription as Subscription);
+      jest
+        .spyOn(repository, 'save')
+        .mockResolvedValue(activeSubscription as Subscription);
+
+      const result = await service.update('sub_123', { status: SubscriptionStatus.ACTIVE });
+
+      expect(result.status).toBe(SubscriptionStatus.ACTIVE);
+    });
+
+    it('should transition from PAST_DUE to UNPAID', async () => {
+      const pastDueSubscription = {
+        ...mockSubscription,
+        status: SubscriptionStatus.PAST_DUE,
+      };
+      const unpaidSubscription = {
+        ...mockSubscription,
+        status: SubscriptionStatus.UNPAID,
+      };
+
+      jest
+        .spyOn(repository, 'findOne')
+        .mockResolvedValue(pastDueSubscription as Subscription);
+      jest
+        .spyOn(repository, 'save')
+        .mockResolvedValue(unpaidSubscription as Subscription);
+
+      const result = await service.update('sub_123', { status: SubscriptionStatus.UNPAID });
+
+      expect(result.status).toBe(SubscriptionStatus.UNPAID);
+    });
+
+    it('should transition from INCOMPLETE to ACTIVE', async () => {
+      const incompleteSubscription = {
+        ...mockSubscription,
+        status: SubscriptionStatus.INCOMPLETE,
+      };
+      const activeSubscription = {
+        ...mockSubscription,
+        status: SubscriptionStatus.ACTIVE,
+      };
+
+      jest
+        .spyOn(repository, 'findOne')
+        .mockResolvedValue(incompleteSubscription as Subscription);
+      jest
+        .spyOn(repository, 'save')
+        .mockResolvedValue(activeSubscription as Subscription);
+
+      const result = await service.update('sub_123', { status: SubscriptionStatus.ACTIVE });
+
+      expect(result.status).toBe(SubscriptionStatus.ACTIVE);
+    });
+  });
+
+  describe('Subscription Period Management', () => {
+    it('should update current period dates', async () => {
+      const newPeriodStart = new Date();
+      const newPeriodEnd = new Date();
+      newPeriodEnd.setMonth(newPeriodEnd.getMonth() + 1);
+
+      const updatedSubscription = {
+        ...mockSubscription,
+        currentPeriodStart: newPeriodStart,
+        currentPeriodEnd: newPeriodEnd,
+      };
+
+      jest
+        .spyOn(repository, 'findOne')
+        .mockResolvedValue(mockSubscription as Subscription);
+      jest
+        .spyOn(repository, 'save')
+        .mockResolvedValue(updatedSubscription as Subscription);
+
+      const result = await service.update('sub_123', {
+        currentPeriodStart: newPeriodStart,
+        currentPeriodEnd: newPeriodEnd,
+      });
+
+      expect(result.currentPeriodStart).toEqual(newPeriodStart);
+      expect(result.currentPeriodEnd).toEqual(newPeriodEnd);
+    });
+  });
+
+  describe('Trial Management', () => {
+    it('should create subscription with trial period', async () => {
+      const trialStart = new Date();
+      const trialEnd = new Date();
+      trialEnd.setDate(trialEnd.getDate() + 14);
+
+      const trialSubscription = {
+        ...mockSubscription,
+        status: SubscriptionStatus.TRIALING,
+        trialStart,
+        trialEnd,
+      };
+
+      jest.spyOn(repository, 'findOne').mockResolvedValue(null);
+      jest.spyOn(repository, 'create').mockReturnValue(trialSubscription as Subscription);
+      jest.spyOn(repository, 'save').mockResolvedValue(trialSubscription as Subscription);
+
+      const result = await service.create({
+        userId: 'user_123',
+        tier: SubscriptionTier.PROFESSIONAL,
+        status: SubscriptionStatus.TRIALING,
+        trialStart,
+        trialEnd,
+      });
+
+      expect(result.status).toBe(SubscriptionStatus.TRIALING);
+      expect(result.trialEnd).toEqual(trialEnd);
+    });
+  });
+
+  describe('Feature Access by Tier', () => {
+    it.each([
+      [SubscriptionTier.FREEMIUM, 'emailAlerts', false],
+      [SubscriptionTier.FREEMIUM, 'prioritySupport', false],
+      [SubscriptionTier.FREEMIUM, 'advancedAnalytics', false],
+      [SubscriptionTier.STARTER, 'emailAlerts', true],
+      [SubscriptionTier.STARTER, 'prioritySupport', false],
+      [SubscriptionTier.BASIC, 'emailAlerts', true],
+      [SubscriptionTier.PROFESSIONAL, 'prioritySupport', true],
+      [SubscriptionTier.PROFESSIONAL, 'advancedAnalytics', true],
+      [SubscriptionTier.ADVANCED_CAREER, 'customBranding', true],
+      [SubscriptionTier.EXECUTIVE_ELITE, 'customBranding', true],
+    ])('should check feature access for %s tier - %s: %s', async (tier, feature, expected) => {
+      const subscription = {
+        ...mockSubscription,
+        tier,
+        hasAccess: jest.fn().mockReturnValue(true),
+      };
+
+      jest.spyOn(repository, 'findOne').mockResolvedValue(subscription as Subscription);
+
+      const result = await service.checkFeatureAccess('user_123', feature);
+
+      expect(result).toBe(expected);
+    });
+  });
+
+  describe('Usage Limits by Tier', () => {
+    it.each([
+      [SubscriptionTier.FREEMIUM, 'jobApplications', 5],
+      [SubscriptionTier.STARTER, 'jobApplications', 30],
+      [SubscriptionTier.BASIC, 'jobApplications', 75],
+      [SubscriptionTier.PROFESSIONAL, 'jobApplications', 200],
+      [SubscriptionTier.ADVANCED_CAREER, 'jobApplications', 500],
+      [SubscriptionTier.EXECUTIVE_ELITE, 'jobApplications', -1], // Unlimited
+    ])('should return correct job applications limit for %s tier: %d', async (tier, usageType, expectedLimit) => {
+      const subscription = {
+        ...mockSubscription,
+        tier,
+        hasAccess: jest.fn().mockReturnValue(true),
+      };
+
+      jest.spyOn(repository, 'findOne').mockResolvedValue(subscription as Subscription);
+
+      const result = await service.checkUsageLimits('user_123', usageType, 0);
+
+      expect(result.limit).toBe(expectedLimit);
+    });
+  });
+
+  describe('Stripe Integration', () => {
+    it('should update Stripe customer ID', async () => {
+      const updatedSubscription = {
+        ...mockSubscription,
+        stripeCustomerId: 'cus_new123',
+      };
+
+      jest
+        .spyOn(repository, 'findOne')
+        .mockResolvedValue(mockSubscription as Subscription);
+      jest
+        .spyOn(repository, 'save')
+        .mockResolvedValue(updatedSubscription as Subscription);
+
+      const result = await service.update('sub_123', { stripeCustomerId: 'cus_new123' });
+
+      expect(result.stripeCustomerId).toBe('cus_new123');
+    });
+
+    it('should update Stripe subscription ID', async () => {
+      const updatedSubscription = {
+        ...mockSubscription,
+        stripeSubscriptionId: 'sub_new123',
+      };
+
+      jest
+        .spyOn(repository, 'findOne')
+        .mockResolvedValue(mockSubscription as Subscription);
+      jest
+        .spyOn(repository, 'save')
+        .mockResolvedValue(updatedSubscription as Subscription);
+
+      const result = await service.update('sub_123', { stripeSubscriptionId: 'sub_new123' });
+
+      expect(result.stripeSubscriptionId).toBe('sub_new123');
+    });
+  });
+
+  describe('Metadata Management', () => {
+    it('should store and retrieve metadata', async () => {
+      const metadata = {
+        source: 'web',
+        campaign: 'summer2024',
+        referral: 'user_456',
+      };
+      const subscriptionWithMetadata = {
+        ...mockSubscription,
+        metadata,
+      };
+
+      jest
+        .spyOn(repository, 'findOne')
+        .mockResolvedValue(mockSubscription as Subscription);
+      jest
+        .spyOn(repository, 'save')
+        .mockResolvedValue(subscriptionWithMetadata as Subscription);
+
+      const result = await service.update('sub_123', { metadata });
+
+      expect(result.metadata).toEqual(metadata);
+    });
+  });
 });

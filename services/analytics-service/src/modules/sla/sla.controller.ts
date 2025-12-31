@@ -35,12 +35,19 @@ import {
 } from './dto';
 import { SLATier } from './enums/sla.enums';
 
+import { RequiresTier } from '@applyforus/security';
+
 /**
  * SLA Controller
- * REST API endpoints for SLA contract management
+ * REST API endpoints for SLA contract management.
+ *
+ * PREMIUM FEATURE: SLA contracts are only available to PROFESSIONAL tier and above.
+ * These contracts provide guaranteed outcomes (interview invites) with money-back guarantees.
  */
 @ApiTags('SLA')
+@ApiBearerAuth()
 @Controller('api/v1/sla')
+@RequiresTier('professional') // SLA contracts require PROFESSIONAL tier or higher
 export class SLAController {
   private readonly logger = new Logger(SLAController.name);
 

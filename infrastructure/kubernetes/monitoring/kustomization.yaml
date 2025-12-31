@@ -8,6 +8,7 @@ namespace: monitoring
 
 resources:
   - namespace.yaml
+  - secrets.yaml  # Azure Key Vault SecretProviderClass for monitoring secrets
   - prometheus-configmap.yaml
   - prometheus-rules.yaml
   - prometheus-deployment.yaml

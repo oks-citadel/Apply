@@ -37,9 +37,9 @@ data:
   REDIS_DB: "0"
 
   # Elasticsearch Configuration - Azure hosted
+  # Note: ELASTICSEARCH_USERNAME and ELASTICSEARCH_PASSWORD are in applyforus-secrets
   ELASTICSEARCH_NODE: "https://applyforus-elasticsearch.azurewebsites.net:9200"
   ELASTICSEARCH_URL: "https://applyforus-elasticsearch.azurewebsites.net:9200"
-  ELASTICSEARCH_USERNAME: "elastic"
   ELASTICSEARCH_SSL: "true"
 
   # Service URLs (Internal Kubernetes DNS) - ports match K8s deployment containerPorts

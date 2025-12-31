@@ -29,8 +29,20 @@ spec:
         prometheus.io/port: "4002"
         prometheus.io/path: "/metrics"
     spec:
+      imagePullSecrets:
+        - name: acr-auth
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
       containers:
         - name: job-service
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
           # IMPORTANT: Replace with digest reference in deployment: image@sha256:xxx
           # CI/CD will update this with: applyforusacr.azurecr.io/applyai-job-service@sha256:xxxxx
           # Tag reference for manual deploy (use digest for production): sha-<gitcommit>
@@ -51,6 +63,8 @@ spec:
             - name: REDIS_PORT
               value: "6379"
           envFrom:
+            - configMapRef:
+                name: identity-config
             - secretRef:
                 name: applyforus-secrets
           resources:

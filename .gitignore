@@ -53,6 +53,9 @@ lerna-debug.log*
 .env.test.local
 .env.production.local
 
+# Identity configuration files (contain sensitive group IDs)
+ops/config/identity-env.*.sh
+
 # Vercel
 .vercel
 
@@ -154,4 +157,5 @@ temp/
 .archive/
 
 # Claude Code local settings
+.claude/settings.local.json
 .claude/settings.local.json

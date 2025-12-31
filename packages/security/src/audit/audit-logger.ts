@@ -15,6 +15,7 @@ import {
   AuditResource,
   DataChangeRecord,
   AuditEventFactory,
+  AuditDetailValue,
 } from './audit-events';
 
 /**
@@ -171,7 +172,7 @@ export class AuditLogger extends EventEmitter {
 
     // Redact sensitive data if enabled
     if (this.config.redactSensitiveData) {
-      event.details = this.redactSensitiveData(event.details);
+      event.details = this.redactSensitiveData(event.details) as Record<string, AuditDetailValue>;
     }
 
     try {
@@ -195,7 +196,7 @@ export class AuditLogger extends EventEmitter {
     userId: string,
     resource: AuditResource,
     action: 'read' | 'create' | 'update' | 'delete',
-    details: Record<string, any> = {},
+    details: Record<string, AuditDetailValue> = {},
     actorInfo?: Partial<AuditActor>
   ): Promise<void> {
     const actor: AuditActor = {
@@ -216,8 +217,8 @@ export class AuditLogger extends EventEmitter {
   async logDataChange(
     userId: string,
     resource: AuditResource,
-    before: Record<string, any>,
-    after: Record<string, any>,
+    before: Record<string, AuditDetailValue>,
+    after: Record<string, AuditDetailValue>,
     actorInfo?: Partial<AuditActor>
   ): Promise<void> {
     const changes = this.detectChanges(before, after);
@@ -241,7 +242,7 @@ export class AuditLogger extends EventEmitter {
    */
   async logSecurityEvent(
     eventType: AuditEventType,
-    details: Record<string, any>,
+    details: Record<string, AuditDetailValue>,
     actorInfo?: Partial<AuditActor>
   ): Promise<void> {
     const actor: AuditActor = {
@@ -260,7 +261,7 @@ export class AuditLogger extends EventEmitter {
   async logAuthentication(
     userId: string,
     success: boolean,
-    details: Record<string, any> = {},
+    details: Record<string, AuditDetailValue> & { reason?: string } = {},
     actorInfo?: Partial<AuditActor>
   ): Promise<void> {
     const actor: AuditActor = {
@@ -303,7 +304,7 @@ export class AuditLogger extends EventEmitter {
   async logComplianceEvent(
     eventType: AuditEventType,
     userId: string,
-    details: Record<string, any>,
+    details: Record<string, AuditDetailValue>,
     actorInfo?: Partial<AuditActor>
   ): Promise<void> {
     const actor: AuditActor = {
@@ -319,7 +320,7 @@ export class AuditLogger extends EventEmitter {
   /**
    * Log system error
    */
-  async logSystemError(error: Error, context?: Record<string, any>): Promise<void> {
+  async logSystemError(error: Error, context?: Record<string, AuditDetailValue>): Promise<void> {
     const eventData = AuditEventFactory.createSystemError(error, context);
     await this.log(eventData);
   }
@@ -410,8 +411,8 @@ export class AuditLogger extends EventEmitter {
    * Detect changes between two objects
    */
   private detectChanges(
-    before: Record<string, any>,
-    after: Record<string, any>
+    before: Record<string, AuditDetailValue>,
+    after: Record<string, AuditDetailValue>
   ): DataChangeRecord[] {
     const changes: DataChangeRecord[] = [];
     const timestamp = new Date();
@@ -448,7 +449,7 @@ export class AuditLogger extends EventEmitter {
   /**
    * Compare two values for equality
    */
-  private areValuesEqual(a: any, b: any): boolean {
+  private areValuesEqual(a: AuditDetailValue, b: AuditDetailValue): boolean {
     if (a === b) return true;
     if (a == null || b == null) return false;
     if (typeof a !== typeof b) return false;
@@ -463,7 +464,7 @@ export class AuditLogger extends EventEmitter {
   /**
    * Sanitize value for logging
    */
-  private sanitizeValue(value: any): any {
+  private sanitizeValue(value: AuditDetailValue): AuditDetailValue {
     if (value === undefined) return undefined;
     if (value === null) return null;
 
@@ -478,7 +479,7 @@ export class AuditLogger extends EventEmitter {
   /**
    * Redact sensitive data from object
    */
-  private redactSensitiveData(obj: any): any {
+  private redactSensitiveData(obj: unknown): unknown {
     if (obj === null || obj === undefined) {
       return obj;
     }
@@ -488,7 +489,7 @@ export class AuditLogger extends EventEmitter {
     }
 
     if (typeof obj === 'object') {
-      const redacted: any = {};
+      const redacted: Record<string, unknown> = {};
 
       for (const [key, value] of Object.entries(obj)) {
         if (this.isSensitiveField(key)) {

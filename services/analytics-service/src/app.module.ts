@@ -5,9 +5,11 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { LoggingModule, LoggingInterceptor } from '@applyforus/logging';
-import { InputSanitizationMiddleware } from '@applyforus/security';
+import { InputSanitizationMiddleware, SubscriptionGuard } from '@applyforus/security';
 import configuration from './config/configuration';
 import { databaseConfig } from './config/database.config';
+import { AuthModule } from './auth/auth.module';
+import { JwtAuthGuard } from './auth/jwt-auth.guard';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { SLAModule } from './modules/sla/sla.module';
 import { HealthModule } from './health/health.module';
@@ -55,6 +57,9 @@ import { HealthModule } from './health/health.module';
       ],
     }),
 
+    // Authentication
+    AuthModule,
+
     // Feature modules
     AnalyticsModule,
     SLAModule,
@@ -64,6 +69,15 @@ import { HealthModule } from './health/health.module';
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
+    },
+    // Subscription tier enforcement - applies @RequiresTier decorators
+    {
+      provide: APP_GUARD,
+      useClass: SubscriptionGuard,
     },
     {
       provide: APP_INTERCEPTOR,

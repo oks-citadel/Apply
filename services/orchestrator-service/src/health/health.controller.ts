@@ -1,5 +1,6 @@
 import { Controller, Get } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { SkipThrottle } from '@nestjs/throttler';
 import {
   HealthCheck,
   HealthCheckService,
@@ -7,9 +8,14 @@ import {
   MemoryHealthIndicator,
   DiskHealthIndicator,
 } from '@nestjs/terminus';
+import { Public } from '../auth/public.decorator';
 
-
+/**
+ * Health Check Controller for Orchestrator Service
+ * @Public() - Health checks don't require authentication for K8s probes
+ */
 @ApiTags('health')
+@Public()
 @Controller('health')
 export class HealthController {
   constructor(

@@ -220,7 +220,7 @@ spec:
           restartPolicy: OnFailure
           containers:
           - name: scaler
-            image: bitnami/kubectl:latest
+            image: bitnami/kubectl:1.28
             command: ["/bin/bash", "/scripts/scale-down.sh"]
             env:
             - name: NAMESPACE
@@ -263,7 +263,7 @@ spec:
           restartPolicy: OnFailure
           containers:
           - name: scaler
-            image: bitnami/kubectl:latest
+            image: bitnami/kubectl:1.28
             command: ["/bin/bash", "/scripts/scale-up.sh"]
             env:
             - name: NAMESPACE
@@ -306,7 +306,7 @@ spec:
           restartPolicy: OnFailure
           containers:
           - name: scaler
-            image: bitnami/kubectl:latest
+            image: bitnami/kubectl:1.28
             command: ["/bin/bash", "/scripts/scale-down.sh"]
             env:
             - name: NAMESPACE
@@ -349,7 +349,7 @@ spec:
           restartPolicy: OnFailure
           containers:
           - name: scaler
-            image: bitnami/kubectl:latest
+            image: bitnami/kubectl:1.28
             command: ["/bin/bash", "/scripts/scale-up.sh"]
             env:
             - name: NAMESPACE
@@ -392,7 +392,7 @@ spec:
           restartPolicy: OnFailure
           containers:
           - name: scaler
-            image: bitnami/kubectl:latest
+            image: bitnami/kubectl:1.28
             command: ["/bin/bash", "/scripts/scale-down.sh"]
             env:
             - name: NAMESPACE
@@ -435,7 +435,7 @@ spec:
           restartPolicy: OnFailure
           containers:
           - name: scaler
-            image: bitnami/kubectl:latest
+            image: bitnami/kubectl:1.28
             command: ["/bin/bash", "/scripts/scale-up.sh"]
             env:
             - name: NAMESPACE

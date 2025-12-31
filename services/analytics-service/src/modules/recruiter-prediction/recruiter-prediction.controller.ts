@@ -5,6 +5,7 @@ import {
   HttpCode,
   HttpStatus,
   UseInterceptors,
+  UseGuards,
   ClassSerializerInterceptor,
 } from '@nestjs/common';
 import {
@@ -13,7 +14,13 @@ import {
   ApiResponse,
   ApiBadRequestResponse,
   ApiInternalServerErrorResponse,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
+
+import { RequiresTier } from '@applyforus/security';
+
+import { Public } from '../../auth/public.decorator';
+import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { RecruiterPredictionService } from './recruiter-prediction.service';
 import {
   PredictResponseDto,
@@ -30,6 +37,7 @@ import {
 
 /**
  * Controller for recruiter behavior prediction endpoints.
+ * PREMIUM FEATURE: Requires PROFESSIONAL tier or higher
  *
  * Provides REST API endpoints for:
  * - Predicting recruiter response likelihood
@@ -39,8 +47,11 @@ import {
  * - Getting actionable insights
  */
 @ApiTags('recruiter-prediction')
+@ApiBearerAuth()
 @Controller('recruiter-prediction')
+@UseGuards(JwtAuthGuard) // Require authentication for recruiter prediction endpoints
 @UseInterceptors(ClassSerializerInterceptor)
+@RequiresTier('professional') // Recruiter insights requires Professional tier
 export class RecruiterPredictionController {
   constructor(private readonly predictionService: RecruiterPredictionService) {}
 
@@ -286,6 +297,7 @@ export class RecruiterPredictionController {
    * Health check endpoint
    */
   @Post('health')
+  @Public() // Health checks don't require authentication
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Health check',

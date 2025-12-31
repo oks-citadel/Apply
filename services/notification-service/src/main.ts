@@ -57,9 +57,41 @@ async function bootstrap() {
     } : false,
   }));
 
-  // Enable CORS for HTTP and WebSocket
+  // CORS configuration for HTTP and WebSocket
+  const corsOrigins = process.env.ALLOWED_ORIGINS || process.env.CORS_ORIGINS || process.env.FRONTEND_URL || '';
+  const allowedOrigins = corsOrigins
+    ? corsOrigins.split(',').map(o => o.trim()).filter(o => o.length > 0)
+    : isProduction
+      ? [
+          'https://applyforus.com',
+          'https://www.applyforus.com',
+        ]
+      : [
+          'https://applyforus.com',
+          'https://dev.applyforus.com',
+          'http://localhost:3000', // For local development
+        ];
+
   app.enableCors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    origin: (origin, callback) => {
+      // In production, require an origin for browser requests (blocks null origin)
+      // In development, allow requests with no origin (mobile apps, Postman, server-to-server)
+      if (!origin) {
+        if (isProduction) {
+          logger.warn('CORS request with null origin blocked in production');
+          return callback(new Error('Origin header required in production'));
+        }
+        return callback(null, true);
+      }
+
+      // Check if origin is in allowed list
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        logger.warn(`CORS request from unauthorized origin: ${origin}`);
+        callback(new Error(`Origin ${origin} not allowed by CORS policy`));
+      }
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],

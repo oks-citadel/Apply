@@ -7,6 +7,8 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { LoggingModule, LoggingInterceptor } from '@applyforus/logging';
 import { InputSanitizationMiddleware } from '@applyforus/security';
 import { join } from 'path';
+import { AuthModule } from './auth/auth.module';
+import { JwtAuthGuard } from './auth/jwt-auth.guard';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { EmailModule } from './modules/email/email.module';
 import { PushModule } from './modules/push/push.module';
@@ -84,6 +86,10 @@ import { HealthModule } from './health/health.module';
         maxQueryExecutionTime: 1000,
       }),
     }),
+    // Authentication
+    AuthModule,
+
+    // Feature modules
     NotificationsModule,
     EmailModule,
     PushModule,
@@ -108,6 +114,10 @@ import { HealthModule } from './health/health.module';
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
     },
     {
       provide: APP_INTERCEPTOR,

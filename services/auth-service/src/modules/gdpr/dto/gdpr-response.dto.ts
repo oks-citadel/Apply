@@ -94,6 +94,12 @@ export class PaginatedGdprRequestsDto {
  * User data export structure
  */
 export class UserDataExportDto {
+  @ApiProperty({ description: 'Export date' })
+  exportDate: string;
+
+  @ApiProperty({ description: 'Export version' })
+  exportVersion: string;
+
   @ApiProperty({ description: 'Export metadata' })
   metadata: {
     exportedAt: Date;
@@ -122,4 +128,11 @@ export class UserDataExportDto {
 
   @ApiPropertyOptional({ description: 'Activity logs' })
   activityLogs?: Record<string, any>[];
+
+  @ApiPropertyOptional({ description: 'Consent history' })
+  consentHistory?: {
+    consentType: string;
+    granted: boolean;
+    timestamp: string;
+  }[];
 }

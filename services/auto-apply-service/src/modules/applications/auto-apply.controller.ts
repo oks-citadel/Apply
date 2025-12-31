@@ -20,16 +20,23 @@ import {
 
 import { User } from '../../common/decorators/user.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { SubscriptionGuard, RequiresFeature, FeatureType } from '@applyforus/security';
 import { AutoApplyService } from './services/auto-apply.service';
 import { QueueService } from '../queue/queue.service';
 
 import type { UpdateAutoApplySettingsDto } from './dto/auto-apply-settings.dto';
 
 
+/**
+ * Auto-Apply Controller
+ * Requires BASIC tier or higher (autoApplyEnabled feature)
+ * All endpoints are subscription-gated
+ */
 @ApiTags('Auto-Apply')
 @ApiBearerAuth('JWT-auth')
 @Controller('auto-apply')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, SubscriptionGuard)
+@RequiresFeature(FeatureType.AUTO_APPLY_ENABLED)
 export class AutoApplyController {
   private readonly logger = new Logger(AutoApplyController.name);
 

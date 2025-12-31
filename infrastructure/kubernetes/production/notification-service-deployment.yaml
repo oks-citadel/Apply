@@ -29,9 +29,22 @@ spec:
         prometheus.io/port: "4005"
         prometheus.io/path: "/metrics"
     spec:
+      imagePullSecrets:
+        - name: acr-auth
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
       containers:
         - name: notification-service
-          image: applyforusacr.azurecr.io/applyai-notification-service:latest
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          # IMAGE_TAG is substituted by CI/CD pipeline - NEVER use :latest in production
+          image: applyforusacr.azurecr.io/applyai-notification-service:v4.0.0
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -45,6 +58,8 @@ spec:
             - name: DB_DATABASE
               value: "notification_service"
           envFrom:
+            - configMapRef:
+                name: identity-config
             - secretRef:
                 name: applyforus-secrets
           resources:

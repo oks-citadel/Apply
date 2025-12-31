@@ -12,6 +12,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { LoggingModule, LoggingInterceptor } from '@applyforus/logging';
 import { InputSanitizationMiddleware } from '@applyforus/security';
 
+import { AuthModule } from './auth/auth.module';
+import { JwtAuthGuard } from './auth/jwt-auth.guard';
+
 
 // Configuration
 import { RedisCacheModule } from './common/cache';
@@ -155,6 +158,9 @@ import { NormalizationModule } from './modules/normalization/normalization.modul
     // Job Aggregator - enabled for real-time job fetching
     AggregatorModule,
 
+    // Authentication
+    AuthModule,
+
     // Rate limiting module
     ThrottlerModule.forRootAsync({
       imports: [ConfigModule],
@@ -180,6 +186,10 @@ import { NormalizationModule } from './modules/normalization/normalization.modul
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
     },
     {
       provide: APP_INTERCEPTOR,

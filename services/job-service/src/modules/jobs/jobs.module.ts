@@ -1,5 +1,5 @@
 import { HttpModule } from '@nestjs/axios';
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -9,9 +9,9 @@ import { SavedJob } from './entities/saved-job.entity';
 import { JobsController } from './jobs.controller';
 import { JobsService } from './jobs.service';
 import { JwtAuthGuard } from '../../common/guards';
-// SearchModule and ReportsModule disabled until ES/Redis deployed
+import { ReportsModule } from '../reports/reports.module';
+// SearchModule disabled until Elasticsearch deployed
 // import { SearchModule } from '../search/search.module';
-// import { ReportsModule } from '../reports/reports.module';
 
 @Module({
   imports: [
@@ -25,8 +25,8 @@ import { JwtAuthGuard } from '../../common/guards';
       }),
       inject: [ConfigService],
     }),
+    forwardRef(() => ReportsModule), // Job reporting now enabled
     // SearchModule,  // Disabled - requires Elasticsearch
-    // ReportsModule, // Disabled - requires dependencies
   ],
   controllers: [JobsController],
   providers: [JobsService, JwtAuthGuard],

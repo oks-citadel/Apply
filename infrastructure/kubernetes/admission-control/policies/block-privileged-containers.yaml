@@ -1,0 +1,111 @@
+# ==============================================================================
+# KYVERNO POLICY: Block Privileged Containers
+# ==============================================================================
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: block-privileged-containers
+  annotations:
+    policies.kyverno.io/title: Block Privileged Containers
+    policies.kyverno.io/category: Pod Security
+    policies.kyverno.io/severity: critical
+    policies.kyverno.io/subject: Pod
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: block-privileged-mode
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - applyforus
+                - applyforus-staging
+                - applyforus-dev
+      validate:
+        message: "Privileged mode is not allowed. Remove securityContext.privileged."
+        pattern:
+          spec:
+            containers:
+              - securityContext:
+                  privileged: "false | !true"
+    - name: block-host-network
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - applyforus
+                - applyforus-staging
+                - applyforus-dev
+      validate:
+        message: "Using hostNetwork is not allowed."
+        pattern:
+          spec:
+            =(hostNetwork): "false | !true"
+    - name: block-host-pid
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - applyforus
+                - applyforus-staging
+                - applyforus-dev
+      validate:
+        message: "Using hostPID is not allowed."
+        pattern:
+          spec:
+            =(hostPID): "false | !true"
+    - name: block-host-ipc
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - applyforus
+                - applyforus-staging
+                - applyforus-dev
+      validate:
+        message: "Using hostIPC is not allowed."
+        pattern:
+          spec:
+            =(hostIPC): "false | !true"
+    - name: block-privileged-workloads
+      match:
+        any:
+          - resources:
+              kinds:
+                - Deployment
+                - StatefulSet
+                - DaemonSet
+              namespaces:
+                - applyforus
+                - applyforus-staging
+                - applyforus-dev
+      validate:
+        message: "Workload contains privileged containers. This is not allowed."
+        pattern:
+          spec:
+            template:
+              spec:
+                =(hostNetwork): "false | !true"
+                =(hostPID): "false | !true"
+                =(hostIPC): "false | !true"
+                containers:
+                  - securityContext:
+                      privileged: "false | !true"
+  exclude:
+    any:
+      - resources:
+          namespaces:
+            - kube-system
+            - kube-public
+            - kyverno
+            - cert-manager
+            - ingress-nginx

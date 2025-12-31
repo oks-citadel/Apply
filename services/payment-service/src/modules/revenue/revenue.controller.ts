@@ -1,10 +1,12 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { RevenueMetricsService, RevenueMetrics, MrrByPlan, RevenueTrendPoint } from './revenue-metrics.service';
 
 @ApiTags('Revenue Metrics')
 @Controller('revenue')
 @ApiBearerAuth()
+@UseGuards(JwtAuthGuard) // Require authentication for revenue metrics - admin only
 export class RevenueController {
   constructor(private readonly revenueMetricsService: RevenueMetricsService) {}
 

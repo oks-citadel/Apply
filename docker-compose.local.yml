@@ -110,7 +110,7 @@ services:
       NODE_ENV: development
       PORT: 3000
       NEXT_PUBLIC_API_URL: http://localhost:8081
-      NEXT_PUBLIC_AI_SERVICE_URL: http://localhost:8090
+      NEXT_PUBLIC_AI_SERVICE_URL: http://localhost:8089
       DATABASE_URL: postgresql://postgres:postgres123@postgres:5432/applyforus
       REDIS_URL: redis://:redis123@redis:6379
       NEXTAUTH_URL: http://localhost:3000
@@ -184,7 +184,7 @@ services:
       PORT: 8083
       DATABASE_URL: postgresql://postgres:postgres123@postgres:5432/applyforus
       REDIS_URL: redis://:redis123@redis:6379
-      AI_SERVICE_URL: http://ai-service:8090
+      AI_SERVICE_URL: http://ai-service:8089
       RABBITMQ_URL: amqp://admin:admin123@rabbitmq:5672
     depends_on:
       postgres:
@@ -232,7 +232,7 @@ services:
       REDIS_URL: redis://:redis123@redis:6379
       JOB_SERVICE_URL: http://job-service:8084
       RESUME_SERVICE_URL: http://resume-service:8083
-      AI_SERVICE_URL: http://ai-service:8090
+      AI_SERVICE_URL: http://ai-service:8089
       RABBITMQ_URL: amqp://admin:admin123@rabbitmq:5672
     depends_on:
       postgres:

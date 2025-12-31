@@ -2,14 +2,17 @@ import { Controller, Get } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { SkipThrottle } from '@nestjs/throttler';
 import { HealthService } from './health.service';
+import { Public } from '../auth/public.decorator';
 
 /**
  * Health Check Controller for Analytics Service
  * Provides endpoints for service health monitoring
  * @SkipThrottle() - Exempt health checks from rate limiting to allow K8s probes
+ * @Public() - Health checks don't require authentication for K8s probes
  */
 @ApiTags('Health')
 @SkipThrottle()
+@Public()
 @Controller('health')
 export class HealthController {
   constructor(private readonly healthService: HealthService) {}

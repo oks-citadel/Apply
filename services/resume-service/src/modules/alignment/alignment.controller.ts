@@ -12,6 +12,8 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery } from '@nestjs/swagger';
 
+import { RequiresTier } from '@applyforus/security';
+
 import {
   AlignmentAnalysisResponseDto,
   AlignedResumeResponseDto,
@@ -33,6 +35,7 @@ import type { GenerateCoverLetterDto } from './dto/generate-cover-letter.dto';
 @ApiBearerAuth()
 @Controller('api/v1/alignment')
 @UseGuards(JwtAuthGuard)
+@RequiresTier('basic') // AI-powered alignment requires BASIC tier or higher
 export class AlignmentController {
   private readonly logger = new Logger(AlignmentController.name);
 
@@ -269,11 +272,9 @@ export class AlignmentController {
   ): Promise<AlignedResumeResponseDto> {
     this.logger.log(`Getting aligned resume ${alignedResumeId} for user ${userId}`);
 
-    const _alignedResume = await this.alignmentService.getAnalysis(userId, alignedResumeId);
+    const alignedResume = await this.alignmentService.getAlignedResume(userId, alignedResumeId);
 
-    // This would need a dedicated method in the service
-    // For now, return placeholder
-    return {} as AlignedResumeResponseDto;
+    return AlignedResumeResponseDto.fromEntity(alignedResume);
   }
 
   @Get('cover-letter/:id')

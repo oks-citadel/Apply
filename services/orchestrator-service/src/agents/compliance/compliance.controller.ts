@@ -7,6 +7,7 @@ import {
   Query,
   HttpStatus,
   HttpCode,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -16,6 +17,8 @@ import {
   ApiParam,
   ApiQuery,
 } from '@nestjs/swagger';
+
+import { ServiceAuthGuard } from '@applyforus/security';
 
 import {
   ComplianceCheckResponseDto,
@@ -30,6 +33,7 @@ import type {
 @ApiTags('compliance')
 @ApiBearerAuth()
 @Controller('compliance')
+@UseGuards(ServiceAuthGuard) // Internal service-to-service auth required
 export class ComplianceController {
   constructor(private readonly complianceService: ComplianceService) {}
 

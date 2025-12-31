@@ -90,10 +90,42 @@ export class Subscription {
       return false;
     }
 
+    const now = new Date();
+
+    // Check trial expiration if in trialing status
+    if (this.status === SubscriptionStatus.TRIALING && this.trialEnd) {
+      if (now > this.trialEnd) {
+        return false; // Trial expired
+      }
+    }
+
+    // Check subscription period expiration
     if (this.currentPeriodEnd) {
-      return new Date() <= this.currentPeriodEnd;
+      return now <= this.currentPeriodEnd;
     }
 
     return true;
+  }
+
+  /**
+   * Check if trial has expired
+   */
+  isTrialExpired(): boolean {
+    if (!this.trialEnd) {
+      return false;
+    }
+    return new Date() > this.trialEnd;
+  }
+
+  /**
+   * Get days remaining in trial
+   */
+  getTrialDaysRemaining(): number {
+    if (!this.trialEnd) {
+      return 0;
+    }
+    const now = new Date();
+    const diffMs = this.trialEnd.getTime() - now.getTime();
+    return Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
   }
 }

@@ -1,14 +1,26 @@
 import { io, Socket } from 'socket.io-client';
 
 const NOTIFICATION_SERVICE_URL =
-  process.env.NEXT_PUBLIC_NOTIFICATION_SERVICE_URL || 'http://localhost:8007';
+  process.env.NEXT_PUBLIC_NOTIFICATION_SERVICE_URL || 'http://localhost:8087';
+
+// Define the notification structure for type safety
+export interface SocketNotification {
+  id: string;
+  type: string;
+  title: string;
+  message: string;
+  read: boolean;
+  userId: string;
+  createdAt: string;
+  data?: Record<string, unknown>;
+}
 
 export interface NotificationSocketCallbacks {
-  onNewNotification?: (notification: any) => void;
-  onNotificationUpdated?: (notification: any) => void;
+  onNewNotification?: (notification: SocketNotification) => void;
+  onNotificationUpdated?: (notification: SocketNotification) => void;
   onUnreadCount?: (data: { count: number }) => void;
-  onInitialNotifications?: (notifications: any[]) => void;
-  onNotificationsRefreshed?: (notifications: any[]) => void;
+  onInitialNotifications?: (notifications: SocketNotification[]) => void;
+  onNotificationsRefreshed?: (notifications: SocketNotification[]) => void;
   onConnect?: () => void;
   onDisconnect?: () => void;
   onError?: (error: Error) => void;
@@ -27,7 +39,9 @@ export class NotificationSocketClient {
 
   connect(userId: string, token: string, callbacks?: NotificationSocketCallbacks): void {
     if (this.socket?.connected) {
-      console.warn('Socket already connected');
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('[NotificationSocket] Socket already connected');
+      }
       return;
     }
 
@@ -58,49 +72,67 @@ export class NotificationSocketClient {
     if (!this.socket) return;
 
     this.socket.on('connect', () => {
-      console.log('Notification socket connected');
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[NotificationSocket] Connected');
+      }
       this.callbacks.onConnect?.();
     });
 
     this.socket.on('disconnect', (reason) => {
-      console.log('Notification socket disconnected:', reason);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[NotificationSocket] Disconnected:', reason);
+      }
       this.callbacks.onDisconnect?.();
     });
 
     this.socket.on('connect_error', (error) => {
-      console.error('Notification socket connection error:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('[NotificationSocket] Connection error:', error);
+      }
       this.callbacks.onError?.(error);
     });
 
     this.socket.on('new-notification', (notification) => {
-      console.log('New notification received:', notification);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[NotificationSocket] New notification received:', notification);
+      }
       this.callbacks.onNewNotification?.(notification);
     });
 
     this.socket.on('notification-updated', (notification) => {
-      console.log('Notification updated:', notification);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[NotificationSocket] Notification updated:', notification);
+      }
       this.callbacks.onNotificationUpdated?.(notification);
     });
 
     this.socket.on('unread-count', (data) => {
-      console.log('Unread count updated:', data);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[NotificationSocket] Unread count updated:', data);
+      }
       this.callbacks.onUnreadCount?.(data);
     });
 
     this.socket.on('initial-notifications', (notifications) => {
-      console.log('Initial notifications received:', notifications.length);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[NotificationSocket] Initial notifications received:', notifications.length);
+      }
       this.callbacks.onInitialNotifications?.(notifications);
     });
 
     this.socket.on('notifications-refreshed', (notifications) => {
-      console.log('Notifications refreshed:', notifications.length);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[NotificationSocket] Notifications refreshed:', notifications.length);
+      }
       this.callbacks.onNotificationsRefreshed?.(notifications);
     });
   }
 
   markAsRead(notificationId: string): void {
     if (!this.socket?.connected) {
-      console.warn('Socket not connected');
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('[NotificationSocket] Socket not connected');
+      }
       return;
     }
 
@@ -109,7 +141,9 @@ export class NotificationSocketClient {
 
   markAllAsRead(): void {
     if (!this.socket?.connected) {
-      console.warn('Socket not connected');
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('[NotificationSocket] Socket not connected');
+      }
       return;
     }
 
@@ -118,7 +152,9 @@ export class NotificationSocketClient {
 
   fetchNotifications(page: number = 1, limit: number = 20): void {
     if (!this.socket?.connected) {
-      console.warn('Socket not connected');
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('[NotificationSocket] Socket not connected');
+      }
       return;
     }
 

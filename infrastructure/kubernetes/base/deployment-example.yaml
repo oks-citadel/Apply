@@ -39,7 +39,9 @@ spec:
 
       containers:
         - name: auth-service
-          image: applyforusacr.azurecr.io/applyai-auth-service:latest
+          # IMPORTANT: Never use :latest in production. Use versioned tags.
+          # CI/CD pipeline should substitute IMAGE_TAG variable with the actual version
+          image: applyforusacr.azurecr.io/applyai-auth-service:${IMAGE_TAG:-v1.0.0}
           imagePullPolicy: IfNotPresent
           ports:
             - name: http

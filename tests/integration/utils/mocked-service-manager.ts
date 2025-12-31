@@ -25,8 +25,8 @@ export class MockedServiceManager {
       { name: 'analytics-service', baseURL: 'http://localhost:8086', port: 8086, healthEndpoint: '/api/v1/health' },
       { name: 'notification-service', baseURL: 'http://localhost:8087', port: 8087, healthEndpoint: '/api/v1/health' },
       { name: 'payment-service', baseURL: 'http://localhost:8088', port: 8088, healthEndpoint: '/api/v1/health' },
-      { name: 'orchestrator-service', baseURL: 'http://localhost:8089', port: 8089, healthEndpoint: '/api/v1/health' },
-      { name: 'ai-service', baseURL: 'http://localhost:8090', port: 8090, healthEndpoint: '/health' },
+      { name: 'ai-service', baseURL: 'http://localhost:8089', port: 8089, healthEndpoint: '/health' },
+      { name: 'orchestrator-service', baseURL: 'http://localhost:8090', port: 8090, healthEndpoint: '/api/v1/health' },
     ];
   }
 

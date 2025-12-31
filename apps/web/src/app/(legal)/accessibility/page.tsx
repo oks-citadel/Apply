@@ -555,9 +555,9 @@ export default function AccessibilityStatementPage() {
                 </a>
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Phone:</p>
-                <a href="tel:1-800-XXX-XXXX" className="text-primary-600 dark:text-primary-400 hover:underline">
-                  1-800-XXX-XXXX (TTY available)
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Support:</p>
+                <a href="https://applyforus.com/support" className="text-primary-600 dark:text-primary-400 hover:underline">
+                  Contact Support (TTY available)
                 </a>
               </div>
               <div>

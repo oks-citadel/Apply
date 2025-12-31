@@ -7,32 +7,45 @@ import {
   Param,
   HttpCode,
   HttpStatus,
+  UseGuards,
+  ForbiddenException,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiQuery, ApiResponse, ApiParam } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiQuery, ApiResponse, ApiParam, ApiBearerAuth } from '@nestjs/swagger';
 
+import { Public } from '../../auth/public.decorator';
+import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
+import { CurrentUser, AuthenticatedUser } from '../../auth/current-user.decorator';
 import { AggregatorService, AggregationSummary } from './aggregator.service';
 import type { RawJobData } from './interfaces/job-provider.interface';
 
 @ApiTags('Job Aggregation')
+@ApiBearerAuth()
 @Controller('jobs/aggregator')
+@UseGuards(JwtAuthGuard) // Require authentication for aggregator endpoints
 export class AggregatorController {
   constructor(private readonly aggregatorService: AggregatorService) {}
 
   /**
-   * Trigger manual aggregation from all providers
+   * Trigger manual aggregation from all providers (Admin only)
    */
   @Post('aggregate')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Trigger job aggregation from all 10 providers' })
+  @ApiOperation({ summary: 'Trigger job aggregation from all 10 providers (Admin only)' })
   @ApiQuery({ name: 'keywords', required: false, description: 'Search keywords' })
   @ApiQuery({ name: 'location', required: false, description: 'Job location' })
   @ApiQuery({ name: 'limit', required: false, description: 'Max jobs per provider' })
   @ApiResponse({ status: 200, description: 'Aggregation summary' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Admin access required' })
   async aggregate(
     @Query('keywords') keywords?: string,
     @Query('location') location?: string,
     @Query('limit') limit?: string,
+    @CurrentUser() user?: AuthenticatedUser,
   ): Promise<AggregationSummary> {
+    // Admin-only endpoint
+    if (!user || user.role !== 'admin') {
+      throw new ForbiddenException('Only administrators can trigger job aggregation');
+    }
     return this.aggregatorService.aggregateAll({
       keywords,
       location,
@@ -41,11 +54,11 @@ export class AggregatorController {
   }
 
   /**
-   * Aggregate from a specific provider
+   * Aggregate from a specific provider (Admin only)
    */
   @Post('aggregate/:providerName')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Trigger aggregation from a specific provider' })
+  @ApiOperation({ summary: 'Trigger aggregation from a specific provider (Admin only)' })
   @ApiParam({
     name: 'providerName',
     required: true,
@@ -56,13 +69,20 @@ export class AggregatorController {
   @ApiQuery({ name: 'location', required: false, description: 'Job location' })
   @ApiQuery({ name: 'limit', required: false, description: 'Max jobs to fetch' })
   @ApiResponse({ status: 200, description: 'Aggregation result from the provider' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Admin access required' })
   @ApiResponse({ status: 404, description: 'Provider not found' })
   async aggregateFromProvider(
     @Param('providerName') providerName: string,
     @Query('keywords') keywords?: string,
     @Query('location') location?: string,
     @Query('limit') limit?: string,
+    @CurrentUser() user?: AuthenticatedUser,
   ) {
+    // Admin-only endpoint
+    if (!user || user.role !== 'admin') {
+      throw new ForbiddenException('Only administrators can trigger provider aggregation');
+    }
+
     const provider = this.aggregatorService.getProvider(providerName);
     if (!provider) {
       return { error: `Provider ${providerName} not found` };
@@ -76,9 +96,10 @@ export class AggregatorController {
   }
 
   /**
-   * Search jobs across all providers in real-time
+   * Search jobs across all providers in real-time (Public)
    */
   @Get('search')
+  @Public()
   @ApiOperation({ summary: 'Search jobs across all 10 providers in real-time' })
   @ApiQuery({ name: 'keywords', required: true, description: 'Search keywords (e.g., "software engineer")' })
   @ApiQuery({ name: 'location', required: false, description: 'Job location (e.g., "Remote", "New York")' })
@@ -100,9 +121,10 @@ export class AggregatorController {
   }
 
   /**
-   * Get list of available providers
+   * Get list of available providers (Public)
    */
   @Get('providers')
+  @Public()
   @ApiOperation({ summary: 'List all available job board providers' })
   @ApiResponse({
     status: 200,
@@ -150,9 +172,10 @@ export class AggregatorController {
   }
 
   /**
-   * Check health of all providers
+   * Check health of all providers (Public)
    */
   @Get('health')
+  @Public()
   @ApiOperation({ summary: 'Check health status of all providers' })
   @ApiResponse({
     status: 200,
@@ -173,10 +196,10 @@ export class AggregatorController {
   }
 
   /**
-   * Get aggregation statistics
+   * Get aggregation statistics (Admin only)
    */
   @Get('stats')
-  @ApiOperation({ summary: 'Get job aggregation statistics' })
+  @ApiOperation({ summary: 'Get job aggregation statistics (Admin only)' })
   @ApiResponse({
     status: 200,
     description: 'Aggregation statistics',
@@ -200,15 +223,20 @@ export class AggregatorController {
       },
     },
   })
-  async getStats() {
+  @ApiResponse({ status: 403, description: 'Forbidden - Admin access required' })
+  async getStats(@CurrentUser() user?: AuthenticatedUser) {
+    // Admin-only endpoint
+    if (!user || user.role !== 'admin') {
+      throw new ForbiddenException('Only administrators can view aggregation statistics');
+    }
     return this.aggregatorService.getStatistics();
   }
 
   /**
-   * Get cache statistics
+   * Get cache statistics (Admin only)
    */
   @Get('cache/stats')
-  @ApiOperation({ summary: 'Get Redis cache statistics' })
+  @ApiOperation({ summary: 'Get Redis cache statistics (Admin only)' })
   @ApiResponse({
     status: 200,
     description: 'Cache statistics',
@@ -221,18 +249,28 @@ export class AggregatorController {
       },
     },
   })
-  async getCacheStats() {
+  @ApiResponse({ status: 403, description: 'Forbidden - Admin access required' })
+  async getCacheStats(@CurrentUser() user?: AuthenticatedUser) {
+    // Admin-only endpoint
+    if (!user || user.role !== 'admin') {
+      throw new ForbiddenException('Only administrators can view cache statistics');
+    }
     return this.aggregatorService.getCacheStats();
   }
 
   /**
-   * Clear all aggregator cache
+   * Clear all aggregator cache (Admin only)
    */
   @Delete('cache')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: 'Clear all cached job search results' })
+  @ApiOperation({ summary: 'Clear all cached job search results (Admin only)' })
   @ApiResponse({ status: 204, description: 'Cache cleared successfully' })
-  async clearCache(): Promise<void> {
+  @ApiResponse({ status: 403, description: 'Forbidden - Admin access required' })
+  async clearCache(@CurrentUser() user?: AuthenticatedUser): Promise<void> {
+    // Admin-only endpoint
+    if (!user || user.role !== 'admin') {
+      throw new ForbiddenException('Only administrators can clear the cache');
+    }
     await this.aggregatorService.clearCache();
   }
 }

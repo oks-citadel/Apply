@@ -138,14 +138,33 @@ export interface AuditActor {
 }
 
 /**
+ * Audit resource attribute value types
+ */
+export type AuditAttributeValue = string | number | boolean | Date | null | undefined | AuditAttributeValue[] | { [key: string]: AuditAttributeValue };
+
+/**
  * Resource information
  */
 export interface AuditResource {
   type: string;
   id: string;
   name?: string;
-  attributes?: Record<string, any>;
+  attributes?: Record<string, AuditAttributeValue>;
 }
+
+/**
+ * Audit event detail value types
+ * Note: Using a broader type to accommodate various data structures from services
+ */
+export type AuditDetailValue =
+  | string
+  | number
+  | boolean
+  | Date
+  | null
+  | undefined
+  | AuditDetailValue[]
+  | Record<string, unknown>;
 
 /**
  * Audit event structure
@@ -159,7 +178,7 @@ export interface AuditEvent {
   actor: AuditActor;
   resource?: AuditResource;
   action: string;
-  details: Record<string, any>;
+  details: Record<string, AuditDetailValue>;
   metadata?: {
     correlationId?: string; // For tracking related events
     requestId?: string;
@@ -177,8 +196,8 @@ export interface AuditEvent {
  */
 export interface DataChangeRecord {
   field: string;
-  oldValue: any;
-  newValue: any;
+  oldValue: AuditDetailValue;
+  newValue: AuditDetailValue;
   timestamp: Date;
 }
 
@@ -278,7 +297,7 @@ export class AuditEventFactory {
   static createSecurityEvent(
     type: AuditEventType,
     actor: AuditActor,
-    details: Record<string, any>
+    details: Record<string, AuditDetailValue>
   ): Omit<AuditEvent, 'id' | 'timestamp'> {
     return {
       type,
@@ -317,7 +336,7 @@ export class AuditEventFactory {
   static createComplianceEvent(
     type: AuditEventType,
     actor: AuditActor,
-    details: Record<string, any>
+    details: Record<string, AuditDetailValue>
   ): Omit<AuditEvent, 'id' | 'timestamp'> {
     return {
       type,
@@ -382,7 +401,7 @@ export class AuditEventFactory {
    */
   static createSystemError(
     error: Error,
-    context?: Record<string, any>
+    context?: Record<string, AuditDetailValue>
   ): Omit<AuditEvent, 'id' | 'timestamp'> {
     return {
       type: AuditEventType.SYSTEM_ERROR,

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   Platform,
   TouchableOpacity,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -15,6 +16,7 @@ import { Button, Input } from '../../components/common';
 import { useAuthStore } from '../../store/authStore';
 import { theme } from '../../theme';
 import { AuthStackParamList } from '../../navigation/types';
+import { oauthService, OAuthProvider } from '../../services/oauth';
 
 export type LoginScreenProps = NativeStackScreenProps<AuthStackParamList, 'Login'>;
 
@@ -22,6 +24,7 @@ export const LoginScreen = ({ navigation }: LoginScreenProps) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [oauthLoading, setOauthLoading] = useState<OAuthProvider | null>(null);
 
   const { login, loginWithOAuth, isLoading, error, clearError } = useAuthStore();
 
@@ -63,19 +66,96 @@ export const LoginScreen = ({ navigation }: LoginScreenProps) => {
     }
   };
 
-  const handleOAuthLogin = async (provider: 'google' | 'linkedin') => {
-    try {
-      clearError();
-      // TODO: Implement OAuth flow
-      // For now, show a placeholder message
-      Alert.alert(
-        'OAuth Login',
-        `${provider} login will be implemented with native OAuth libraries`
-      );
-    } catch (err: any) {
-      Alert.alert('OAuth Failed', err.response?.data?.message || 'OAuth login failed');
-    }
-  };
+  /**
+   * Handle OAuth login for Google, LinkedIn, and GitHub
+   * Uses expo-web-browser for in-app OAuth flow
+   */
+  const handleOAuthLogin = useCallback(
+    async (provider: OAuthProvider) => {
+      // Prevent multiple simultaneous OAuth attempts
+      if (oauthLoading) {
+        return;
+      }
+
+      try {
+        clearError();
+        setOauthLoading(provider);
+
+        // Initiate OAuth flow with exchange token approach
+        // This opens an in-app browser for the OAuth provider
+        const result = await oauthService.initiateOAuthWithExchangeToken(provider);
+
+        if (result.success && result.accessToken && result.refreshToken) {
+          // Successfully received tokens, complete the login
+          try {
+            await loginWithOAuth(provider, result.accessToken);
+            // Navigation will be handled automatically by AppNavigator based on auth state
+          } catch (loginError: any) {
+            console.error('OAuth login error:', loginError);
+            Alert.alert(
+              'Login Failed',
+              loginError.response?.data?.message ||
+                'Failed to complete authentication. Please try again.'
+            );
+          }
+        } else if (!result.success) {
+          // OAuth flow failed or was cancelled
+          const errorMessage = oauthService.getErrorMessage(result.error, provider);
+
+          // Only show alert if it wasn't a cancellation
+          if (result.error !== 'Authentication was cancelled') {
+            Alert.alert('Authentication Failed', errorMessage);
+          }
+        }
+      } catch (err: any) {
+        console.error('OAuth error:', err);
+        const errorMessage = oauthService.getErrorMessage(err.message, provider);
+        Alert.alert('OAuth Failed', errorMessage);
+      } finally {
+        setOauthLoading(null);
+      }
+    },
+    [oauthLoading, clearError, loginWithOAuth]
+  );
+
+  /**
+   * Handle OAuth login with fallback to code exchange
+   * Alternative flow that uses authorization code
+   */
+  const handleOAuthLoginWithCodeExchange = useCallback(
+    async (provider: OAuthProvider) => {
+      if (oauthLoading) {
+        return;
+      }
+
+      try {
+        clearError();
+        setOauthLoading(provider);
+
+        // Initiate OAuth flow
+        const result = await oauthService.initiateOAuth(provider);
+
+        if (result.success) {
+          // The OAuth flow completed successfully
+          // Tokens should be set via cookies or will be returned by the callback
+          Alert.alert(
+            'Success',
+            'Authentication successful! You will be logged in shortly.'
+          );
+        } else if (result.error && result.error !== 'Authentication was cancelled') {
+          const errorMessage = oauthService.getErrorMessage(result.error, provider);
+          Alert.alert('Authentication Failed', errorMessage);
+        }
+      } catch (err: any) {
+        console.error('OAuth error:', err);
+        const errorMessage = oauthService.getErrorMessage(err.message, provider);
+        Alert.alert('OAuth Failed', errorMessage);
+      } finally {
+        setOauthLoading(null);
+      }
+    },
+    [oauthLoading, clearError]
+  );
 
   const handleForgotPassword = () => {
     navigation.navigate('ForgotPassword');
@@ -152,21 +232,69 @@ export const LoginScreen = ({ navigation }: LoginScreenProps) => {
               <View style={styles.dividerLine} />
             </View>
 
-            <Button
-              title="Continue with Google"
-              variant="outline"
+            {/* OAuth Buttons with Loading States */}
+            <TouchableOpacity
+              style={[
+                styles.oauthButtonContainer,
+                (isLoading || oauthLoading) && styles.oauthButtonDisabled,
+              ]}
               onPress={() => handleOAuthLogin('google')}
-              fullWidth
-              style={styles.oauthButton}
-            />
+              disabled={isLoading || oauthLoading !== null}
+              activeOpacity={0.7}
+            >
+              {oauthLoading === 'google' ? (
+                <ActivityIndicator size="small" color={theme.colors.primary[600]} />
+              ) : (
+                <>
+                  <View style={styles.oauthIconContainer}>
+                    <Text style={styles.oauthIcon}>G</Text>
+                  </View>
+                  <Text style={styles.oauthButtonText}>Continue with Google</Text>
+                </>
+              )}
+            </TouchableOpacity>
 
-            <Button
-              title="Continue with LinkedIn"
-              variant="outline"
+            <TouchableOpacity
+              style={[
+                styles.oauthButtonContainer,
+                (isLoading || oauthLoading) && styles.oauthButtonDisabled,
+              ]}
               onPress={() => handleOAuthLogin('linkedin')}
-              fullWidth
-              style={styles.oauthButton}
-            />
+              disabled={isLoading || oauthLoading !== null}
+              activeOpacity={0.7}
+            >
+              {oauthLoading === 'linkedin' ? (
+                <ActivityIndicator size="small" color={theme.colors.primary[600]} />
+              ) : (
+                <>
+                  <View style={[styles.oauthIconContainer, styles.linkedinIcon]}>
+                    <Text style={styles.oauthIconWhite}>in</Text>
+                  </View>
+                  <Text style={styles.oauthButtonText}>Continue with LinkedIn</Text>
+                </>
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.oauthButtonContainer,
+                (isLoading || oauthLoading) && styles.oauthButtonDisabled,
+              ]}
+              onPress={() => handleOAuthLogin('github')}
+              disabled={isLoading || oauthLoading !== null}
+              activeOpacity={0.7}
+            >
+              {oauthLoading === 'github' ? (
+                <ActivityIndicator size="small" color={theme.colors.primary[600]} />
+              ) : (
+                <>
+                  <View style={[styles.oauthIconContainer, styles.githubIcon]}>
+                    <Text style={styles.oauthIconWhite}>GH</Text>
+                  </View>
+                  <Text style={styles.oauthButtonText}>Continue with GitHub</Text>
+                </>
+              )}
+            </TouchableOpacity>
 
             <View style={styles.footer}>
               <Text style={styles.footerText}>Don't have an account? </Text>
@@ -240,6 +368,52 @@ const styles = StyleSheet.create({
   },
   oauthButton: {
     marginBottom: theme.spacing.md,
+  },
+  oauthButtonContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.lg,
+    borderRadius: theme.borderRadius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.gray[300],
+    backgroundColor: theme.colors.white,
+    marginBottom: theme.spacing.md,
+    minHeight: 48,
+  },
+  oauthButtonDisabled: {
+    opacity: 0.6,
+  },
+  oauthButtonText: {
+    fontSize: theme.fontSize.md,
+    fontWeight: theme.fontWeight.medium,
+    color: theme.colors.gray[700],
+    marginLeft: theme.spacing.sm,
+  },
+  oauthIconContainer: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: theme.colors.gray[100],
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  oauthIcon: {
+    fontSize: 14,
+    fontWeight: theme.fontWeight.bold,
+    color: theme.colors.gray[700],
+  },
+  oauthIconWhite: {
+    fontSize: 12,
+    fontWeight: theme.fontWeight.bold,
+    color: theme.colors.white,
+  },
+  linkedinIcon: {
+    backgroundColor: '#0A66C2',
+  },
+  githubIcon: {
+    backgroundColor: '#24292F',
   },
   footer: {
     flexDirection: 'row',

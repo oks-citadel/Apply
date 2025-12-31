@@ -1,7 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { Download, Shield, CheckCircle, AlertCircle, MapPin } from 'lucide-react';
+import { Download, Shield, CheckCircle, AlertCircle, MapPin, Loader2 } from 'lucide-react';
+import { submitPrivacyRequest } from '@/lib/api/gdpr';
+
+type RequestType = 'do-not-sell' | 'know' | 'delete' | 'correct' | 'limit';
 
 export default function DoNotSellPage() {
   const [formData, setFormData] = useState({
@@ -9,17 +12,42 @@ export default function DoNotSellPage() {
     lastName: '',
     email: '',
     state: '',
-    requestType: 'do-not-sell',
+    requestType: 'do-not-sell' as RequestType,
     verificationMethod: 'email',
     additionalInfo: '',
   });
 
   const [submitted, setSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [requestId, setRequestId] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // In production, this would submit to an API
-    setSubmitted(true);
+    setIsSubmitting(true);
+    setError(null);
+
+    try {
+      const response = await submitPrivacyRequest({
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        state: formData.state,
+        requestType: formData.requestType,
+        additionalInfo: formData.additionalInfo || undefined,
+      });
+
+      setRequestId(response.requestId);
+      setSubmitted(true);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'An error occurred while submitting your request. Please try again.'
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handlePrint = () => {
@@ -456,13 +484,36 @@ export default function DoNotSellPage() {
               </p>
             </div>
 
+            {/* Error Message */}
+            {error && (
+              <div className="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-4 rounded-r-lg">
+                <div className="flex items-start">
+                  <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 mr-2 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <h4 className="text-sm font-semibold text-red-800 dark:text-red-200 mb-1">
+                      Error Submitting Request
+                    </h4>
+                    <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Submit Button */}
             <div>
               <button
                 type="submit"
-                className="w-full px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium"
+                disabled={isSubmitting}
+                className="w-full px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
               >
-                Submit Privacy Request
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                    Submitting...
+                  </>
+                ) : (
+                  'Submit Privacy Request'
+                )}
               </button>
               <p className="mt-2 text-xs text-center text-gray-500 dark:text-gray-400">
                 We will respond within 45 days as required by law
@@ -477,6 +528,11 @@ export default function DoNotSellPage() {
             <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
               Request Submitted Successfully
             </h3>
+            {requestId && (
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 font-mono">
+                Request ID: {requestId}
+              </p>
+            )}
             <p className="text-gray-700 dark:text-gray-300 mb-4">
               We've received your privacy request. You will receive a confirmation email shortly at{' '}
               <strong>{formData.email}</strong>
@@ -486,7 +542,19 @@ export default function DoNotSellPage() {
               Our response will be provided within 45 days as required by law.
             </p>
             <button
-              onClick={() => setSubmitted(false)}
+              onClick={() => {
+                setSubmitted(false);
+                setRequestId(null);
+                setFormData({
+                  firstName: '',
+                  lastName: '',
+                  email: '',
+                  state: '',
+                  requestType: 'do-not-sell',
+                  verificationMethod: 'email',
+                  additionalInfo: '',
+                });
+              }}
               className="px-6 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
             >
               Submit Another Request
@@ -520,18 +588,18 @@ export default function DoNotSellPage() {
           </div>
 
           <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
-            <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Phone (Toll-Free)</h3>
+            <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Support Portal</h3>
             <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
-              Call our privacy hotline:
+              Contact our privacy team:
             </p>
             <a
-              href="tel:1-800-XXX-XXXX"
+              href="https://applyforus.com/support?topic=privacy"
               className="text-primary-600 dark:text-primary-400 hover:underline font-medium"
             >
-              1-800-XXX-XXXX
+              Contact Support
             </a>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              Monday-Friday, 9am-5pm PT
+              Response within 24-48 hours
             </p>
           </div>
 

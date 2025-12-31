@@ -4,9 +4,10 @@ import { StripeService } from './stripe.service';
 import { StripeController } from './stripe.controller';
 import { SubscriptionsModule } from '../subscriptions/subscriptions.module';
 import { InvoicesModule } from '../invoices/invoices.module';
+import { TaxModule } from '../tax/tax.module';
 
 @Module({
-  imports: [ConfigModule, SubscriptionsModule, InvoicesModule],
+  imports: [ConfigModule, SubscriptionsModule, InvoicesModule, TaxModule],
   controllers: [StripeController],
   providers: [StripeService],
   exports: [StripeService],

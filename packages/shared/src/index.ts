@@ -10,3 +10,6 @@ export * from './metrics/metrics.controller';
 export * from './health/health.service';
 export * from './health/health.controller';
 export * from './health/redis-health.indicator';
+
+// Standardized API Response exports
+export * from './response';

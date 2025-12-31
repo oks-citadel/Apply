@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ScheduleModule } from '@nestjs/schedule';
+import { HttpModule } from '@nestjs/axios';
+import { ConfigModule } from '@nestjs/config';
 import { SLAController } from './sla.controller';
 import { SLAService } from './services/sla.service';
 import { EligibilityCheckerService } from './services/eligibility-checker.service';
@@ -14,6 +16,11 @@ import { SLARemedy } from './entities/sla-remedy.entity';
   imports: [
     TypeOrmModule.forFeature([SLAContract, SLAProgress, SLAViolation, SLARemedy]),
     ScheduleModule.forRoot(),
+    HttpModule.register({
+      timeout: 10000,
+      maxRedirects: 3,
+    }),
+    ConfigModule,
   ],
   controllers: [SLAController],
   providers: [SLAService, EligibilityCheckerService, ViolationHandlerService],

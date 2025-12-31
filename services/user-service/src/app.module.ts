@@ -5,7 +5,9 @@ import { ThrottlerModule , ThrottlerGuard } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { LoggingModule, LoggingInterceptor } from '@applyforus/logging';
-import { InputSanitizationMiddleware } from '@applyforus/security';
+import { InputSanitizationMiddleware, SubscriptionGuard } from '@applyforus/security';
+
+import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 
 import { HealthModule } from './health/health.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
@@ -104,6 +106,16 @@ import { TenantModule } from './modules/tenant/tenant.module';
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
+    },
+    // Authentication - validates JWT tokens globally
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
+    },
+    // Subscription tier enforcement - applies @RequiresTier decorators
+    {
+      provide: APP_GUARD,
+      useClass: SubscriptionGuard,
     },
     {
       provide: APP_INTERCEPTOR,

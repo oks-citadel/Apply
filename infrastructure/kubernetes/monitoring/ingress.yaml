@@ -58,9 +58,22 @@ spec:
                 port:
                   number: 9093
 ---
-# Basic auth secret for Prometheus and Alertmanager
-# Generate with: htpasswd -c auth admin
-# Then: kubectl create secret generic monitoring-basic-auth --from-file=auth -n monitoring
+# ============================================================================
+# Basic Auth Secret for Prometheus and Alertmanager
+# ============================================================================
+# DO NOT store actual credentials in this file.
+#
+# In production, create the secret manually:
+# 1. Generate htpasswd file: htpasswd -c auth admin
+# 2. Create secret: kubectl create secret generic monitoring-basic-auth \
+#      --from-file=auth -n monitoring
+#
+# Or update the auth value with your own generated password:
+# htpasswd -nb admin <your-secure-password> | base64
+#
+# The Azure Key Vault SecretProviderClass in secrets.yaml can also be used
+# to sync this secret from Azure Key Vault.
+# ============================================================================
 apiVersion: v1
 kind: Secret
 metadata:
@@ -68,11 +81,16 @@ metadata:
   namespace: monitoring
   labels:
     app: monitoring
+  annotations:
+    # Mark this as a placeholder - actual credentials should be managed externally
+    applyforus.com/secret-management: "manual-or-keyvault"
+    applyforus.com/placeholder: "true"
 type: Opaque
 data:
-  # Default: admin:admin (CHANGE IN PRODUCTION)
-  # Generate new: htpasswd -nb admin <password> | base64
-  auth: YWRtaW46JGFwcjEkSEhQVTZQNEgkLnBFWC5vN2dZWnJoOTdLOWRqSGRDLwo=
+  # PLACEHOLDER - This is NOT a real password
+  # Replace in production with output from: htpasswd -nb admin <password> | base64
+  # The value below decodes to: admin:$apr1$placeholder$notarealpassword
+  auth: YWRtaW46JGFWCI0JF8tUExQTEFDRUhPTERFUk5PVFJFQUw=
 ---
 # Network Policy to restrict access to monitoring namespace
 apiVersion: networking.k8s.io/v1

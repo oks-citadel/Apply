@@ -10,6 +10,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 
+import { SkipCsrf } from '@applyforus/security';
 
 import { JwtAuthGuard } from '../auth/jwt.guard';
 
@@ -25,8 +26,11 @@ export class ProxyController {
 
   /**
    * Proxy all /api/auth/* requests to auth-service
+   * Note: Auth endpoints (login, register, OAuth callbacks) skip CSRF
+   * because they are session-initiating, not session-protected
    */
   @All('auth/*')
+  @SkipCsrf()
   @ApiOperation({ summary: 'Proxy requests to auth service' })
   async proxyAuth(@Req() req: Request, @Res() res: Response) {
     return this.handleProxy('auth', req, res, false);

@@ -1,0 +1,117 @@
+# ==============================================================================
+# KYVERNO POLICY: Require Image Signature (Cosign)
+# ==============================================================================
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-image-signature
+  annotations:
+    policies.kyverno.io/title: Require Image Signature
+    policies.kyverno.io/category: Supply Chain Security
+    policies.kyverno.io/severity: critical
+    policies.kyverno.io/subject: Pod
+    policies.kyverno.io/minversion: 1.9.0
+    policies.kyverno.io/description: >-
+      Verifies that all container images are signed with Cosign using keyless
+      signing (OIDC identity). Uses GitHub Actions as the OIDC identity provider.
+spec:
+  # Start with Audit mode, change to Enforce after verification
+  validationFailureAction: Audit
+  webhookTimeoutSeconds: 30
+  background: false
+  rules:
+    - name: verify-image-signature
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - applyforus
+      verifyImages:
+        - imageReferences:
+            - "applyforusacr.azurecr.io/applyai-*"
+          attestors:
+            - count: 1
+              entries:
+                - keyless:
+                    issuer: "https://token.actions.githubusercontent.com"
+                    subject: "https://github.com/applyforus/*"
+                    rekor:
+                      url: https://rekor.sigstore.dev
+          mutateDigest: true
+          verifyDigest: true
+          required: true
+    - name: verify-deployment-images
+      match:
+        any:
+          - resources:
+              kinds:
+                - Deployment
+              namespaces:
+                - applyforus
+      verifyImages:
+        - imageReferences:
+            - "applyforusacr.azurecr.io/applyai-*"
+          attestors:
+            - count: 1
+              entries:
+                - keyless:
+                    issuer: "https://token.actions.githubusercontent.com"
+                    subject: "https://github.com/applyforus/*"
+                    rekor:
+                      url: https://rekor.sigstore.dev
+          mutateDigest: true
+          verifyDigest: true
+          required: true
+  exclude:
+    any:
+      - resources:
+          namespaces:
+            - kube-system
+            - kube-public
+            - kyverno
+            - cert-manager
+            - ingress-nginx
+            - monitoring
+---
+# Policy to verify SBOM attestations
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: verify-sbom-attestation
+  annotations:
+    policies.kyverno.io/title: Verify SBOM Attestation
+    policies.kyverno.io/category: Supply Chain Security
+    policies.kyverno.io/severity: high
+spec:
+  validationFailureAction: Audit
+  webhookTimeoutSeconds: 30
+  background: false
+  rules:
+    - name: verify-sbom-exists
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - applyforus
+      verifyImages:
+        - imageReferences:
+            - "applyforusacr.azurecr.io/applyai-*"
+          attestations:
+            - predicateType: https://spdx.dev/Document
+              conditions:
+                - all:
+                    - key: "{{ name }}"
+                      operator: NotEquals
+                      value: ""
+          required: false
+  exclude:
+    any:
+      - resources:
+          namespaces:
+            - kube-system
+            - kube-public
+            - kyverno

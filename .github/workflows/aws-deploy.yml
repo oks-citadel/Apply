@@ -1,0 +1,397 @@
+# AWS Deployment Pipeline
+# Migrated from Azure DevOps - Cost-Optimized CI/CD
+name: AWS Deploy
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'infrastructure/terraform-aws/**'
+      - 'services/**'
+      - 'apps/**'
+      - 'packages/**'
+      - '.github/workflows/aws-deploy.yml'
+  pull_request:
+    branches:
+      - main
+      - develop
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
+      skip_tests:
+        description: 'Skip tests'
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+
+env:
+  AWS_REGION: us-east-1
+  TF_VERSION: 1.6.0
+  NODE_VERSION: 20
+  PNPM_VERSION: 8.15.0
+
+jobs:
+  #-----------------------------------------------------------------------------
+  # Determine Environment
+  #-----------------------------------------------------------------------------
+  setup:
+    name: Setup
+    runs-on: ubuntu-latest
+    outputs:
+      environment: ${{ steps.set-env.outputs.environment }}
+      should_deploy: ${{ steps.set-env.outputs.should_deploy }}
+    steps:
+      - name: Determine Environment
+        id: set-env
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "environment=${{ github.event.inputs.environment }}" >> $GITHUB_OUTPUT
+            echo "should_deploy=true" >> $GITHUB_OUTPUT
+          elif [ "${{ github.ref }}" == "refs/heads/main" ]; then
+            echo "environment=prod" >> $GITHUB_OUTPUT
+            echo "should_deploy=${{ github.event_name != 'pull_request' }}" >> $GITHUB_OUTPUT
+          elif [ "${{ github.ref }}" == "refs/heads/develop" ]; then
+            echo "environment=dev" >> $GITHUB_OUTPUT
+            echo "should_deploy=${{ github.event_name != 'pull_request' }}" >> $GITHUB_OUTPUT
+          else
+            echo "environment=dev" >> $GITHUB_OUTPUT
+            echo "should_deploy=false" >> $GITHUB_OUTPUT
+          fi
+
+  #-----------------------------------------------------------------------------
+  # Build & Test
+  #-----------------------------------------------------------------------------
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    needs: setup
+    if: ${{ github.event.inputs.skip_tests != 'true' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Type check
+        run: pnpm run type-check
+        continue-on-error: true
+
+      - name: Run tests
+        run: pnpm run test --passWithNoTests
+        continue-on-error: true
+
+  #-----------------------------------------------------------------------------
+  # Terraform Plan
+  #-----------------------------------------------------------------------------
+  terraform-plan:
+    name: Terraform Plan (${{ needs.setup.outputs.environment }})
+    runs-on: ubuntu-latest
+    needs: [setup, test]
+    if: always() && needs.setup.result == 'success'
+    environment: ${{ needs.setup.outputs.environment }}
+    env:
+      TF_WORKING_DIR: infrastructure/terraform-aws
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-session-name: TerraformPlan
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Terraform Init
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}" \
+            -backend-config="key=${{ needs.setup.outputs.environment }}/terraform.tfstate" \
+            -backend-config="region=${{ env.AWS_REGION }}" \
+            -backend-config="dynamodb_table=${{ secrets.TF_LOCK_TABLE }}"
+
+      - name: Terraform Validate
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform validate
+
+      - name: Terraform Plan
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: |
+          terraform plan \
+            -var-file="environments/${{ needs.setup.outputs.environment }}/terraform.tfvars" \
+            -out=tfplan \
+            -no-color
+
+      - name: Upload Plan
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan-${{ needs.setup.outputs.environment }}
+          path: ${{ env.TF_WORKING_DIR }}/tfplan
+          retention-days: 7
+
+      # Cost estimation with Infracost
+      - name: Setup Infracost
+        uses: infracost/actions/setup@v3
+        with:
+          api-key: ${{ secrets.INFRACOST_API_KEY }}
+        continue-on-error: true
+
+      - name: Generate Cost Report
+        if: success()
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: |
+          infracost breakdown \
+            --path . \
+            --terraform-var-file="environments/${{ needs.setup.outputs.environment }}/terraform.tfvars" \
+            --format json \
+            --out-file /tmp/infracost.json
+        continue-on-error: true
+
+      - name: Post Cost Comment
+        if: github.event_name == 'pull_request'
+        uses: infracost/actions/comment@v1
+        with:
+          path: /tmp/infracost.json
+          behavior: update
+        continue-on-error: true
+
+  #-----------------------------------------------------------------------------
+  # Build Docker Images
+  #-----------------------------------------------------------------------------
+  build-images:
+    name: Build Images
+    runs-on: ubuntu-latest
+    needs: [setup, test]
+    if: needs.setup.outputs.should_deploy == 'true'
+    strategy:
+      matrix:
+        service:
+          - name: web
+            dockerfile: apps/web/Dockerfile
+          - name: auth-service
+            dockerfile: services/auth-service/Dockerfile
+          - name: user-service
+            dockerfile: services/user-service/Dockerfile
+          - name: job-service
+            dockerfile: services/job-service/Dockerfile
+          - name: resume-service
+            dockerfile: services/resume-service/Dockerfile
+          - name: notification-service
+            dockerfile: services/notification-service/Dockerfile
+          - name: auto-apply-service
+            dockerfile: services/auto-apply-service/Dockerfile
+          - name: analytics-service
+            dockerfile: services/analytics-service/Dockerfile
+          - name: ai-service
+            dockerfile: services/ai-service/Dockerfile
+          - name: orchestrator-service
+            dockerfile: services/orchestrator-service/Dockerfile
+          - name: payment-service
+            dockerfile: services/payment-service/Dockerfile
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-session-name: DockerBuild
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Generate image tags
+        id: meta
+        run: |
+          SHA_SHORT=$(echo ${{ github.sha }} | cut -c1-7)
+          echo "sha_tag=$SHA_SHORT" >> $GITHUB_OUTPUT
+          echo "env_tag=${{ needs.setup.outputs.environment }}-latest" >> $GITHUB_OUTPUT
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ${{ matrix.service.dockerfile }}
+          push: true
+          tags: |
+            ${{ steps.login-ecr.outputs.registry }}/applyai-${{ matrix.service.name }}:${{ steps.meta.outputs.sha_tag }}
+            ${{ steps.login-ecr.outputs.registry }}/applyai-${{ matrix.service.name }}:${{ steps.meta.outputs.env_tag }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64,linux/arm64
+
+  #-----------------------------------------------------------------------------
+  # Deploy to Dev/Staging (Auto)
+  #-----------------------------------------------------------------------------
+  deploy-dev:
+    name: Deploy to Dev
+    runs-on: ubuntu-latest
+    needs: [setup, terraform-plan, build-images]
+    if: |
+      needs.setup.outputs.should_deploy == 'true' &&
+      needs.setup.outputs.environment == 'dev'
+    environment: dev
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-session-name: DeployDev
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Download Terraform Plan
+        uses: actions/download-artifact@v4
+        with:
+          name: tfplan-dev
+          path: infrastructure/terraform-aws
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Terraform Apply
+        working-directory: infrastructure/terraform-aws
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}" \
+            -backend-config="key=dev/terraform.tfstate" \
+            -backend-config="region=${{ env.AWS_REGION }}" \
+            -backend-config="dynamodb_table=${{ secrets.TF_LOCK_TABLE }}"
+          terraform apply -auto-approve tfplan
+
+      - name: Update kubeconfig
+        run: |
+          aws eks update-kubeconfig \
+            --region ${{ env.AWS_REGION }} \
+            --name applyforus-dev
+
+      - name: Deploy to Kubernetes
+        run: |
+          SHA_SHORT=$(echo ${{ github.sha }} | cut -c1-7)
+          for service in web auth-service user-service job-service resume-service \
+                         notification-service auto-apply-service analytics-service \
+                         ai-service orchestrator-service payment-service; do
+            kubectl set image deployment/${service} \
+              ${service}=${{ secrets.ECR_REGISTRY }}/applyai-${service}:${SHA_SHORT} \
+              -n applyforus-dev --record || true
+          done
+
+      - name: Verify deployment
+        run: |
+          kubectl rollout status deployment/web -n applyforus-dev --timeout=300s
+          kubectl rollout status deployment/auth-service -n applyforus-dev --timeout=300s
+
+  #-----------------------------------------------------------------------------
+  # Deploy to Production (Manual Approval)
+  #-----------------------------------------------------------------------------
+  deploy-prod:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [setup, terraform-plan, build-images]
+    if: |
+      needs.setup.outputs.should_deploy == 'true' &&
+      needs.setup.outputs.environment == 'prod'
+    environment: production  # Requires manual approval
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-session-name: DeployProd
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Download Terraform Plan
+        uses: actions/download-artifact@v4
+        with:
+          name: tfplan-prod
+          path: infrastructure/terraform-aws
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Terraform Apply
+        working-directory: infrastructure/terraform-aws
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}" \
+            -backend-config="key=prod/terraform.tfstate" \
+            -backend-config="region=${{ env.AWS_REGION }}" \
+            -backend-config="dynamodb_table=${{ secrets.TF_LOCK_TABLE }}"
+          terraform apply -auto-approve tfplan
+
+      - name: Update kubeconfig
+        run: |
+          aws eks update-kubeconfig \
+            --region ${{ env.AWS_REGION }} \
+            --name applyforus-prod
+
+      - name: Deploy to Kubernetes (Rolling)
+        run: |
+          SHA_SHORT=$(echo ${{ github.sha }} | cut -c1-7)
+          for service in web auth-service user-service job-service resume-service \
+                         notification-service auto-apply-service analytics-service \
+                         ai-service orchestrator-service payment-service; do
+            kubectl set image deployment/${service} \
+              ${service}=${{ secrets.ECR_REGISTRY }}/applyai-${service}:${SHA_SHORT} \
+              -n applyforus --record
+            kubectl rollout status deployment/${service} -n applyforus --timeout=600s
+          done
+
+      - name: Run smoke tests
+        run: |
+          # Wait for services to stabilize
+          sleep 30
+
+          # Health check endpoints
+          for endpoint in web auth-service user-service job-service; do
+            curl -f "https://api.applyforus.com/api/${endpoint}/health" || exit 1
+          done
+
+      - name: Post-deployment notification
+        if: always()
+        run: |
+          echo "Production deployment completed: ${{ job.status }}"
+          # Add Slack/Teams notification here

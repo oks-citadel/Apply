@@ -1,0 +1,78 @@
+# ==============================================================================
+# KYVERNO POLICY: Block Latest Tag
+# ==============================================================================
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: block-latest-tag
+  annotations:
+    policies.kyverno.io/title: Block Latest Tag
+    policies.kyverno.io/category: Best Practices
+    policies.kyverno.io/severity: high
+    policies.kyverno.io/subject: Pod
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: block-latest-tag-containers
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - applyforus
+                - applyforus-staging
+      validate:
+        message: "Container image cannot use :latest tag. Use explicit version tags."
+        pattern:
+          spec:
+            containers:
+              - image: "!*:latest"
+    - name: block-latest-tag-workloads
+      match:
+        any:
+          - resources:
+              kinds:
+                - Deployment
+                - StatefulSet
+                - DaemonSet
+              namespaces:
+                - applyforus
+                - applyforus-staging
+      validate:
+        message: "Workload containers cannot use :latest tag."
+        pattern:
+          spec:
+            template:
+              spec:
+                containers:
+                  - image: "!*:latest"
+    - name: block-latest-tag-cronjobs
+      match:
+        any:
+          - resources:
+              kinds:
+                - CronJob
+              namespaces:
+                - applyforus
+                - applyforus-staging
+      validate:
+        message: "CronJob containers cannot use :latest tag."
+        pattern:
+          spec:
+            jobTemplate:
+              spec:
+                template:
+                  spec:
+                    containers:
+                      - image: "!*:latest"
+  exclude:
+    any:
+      - resources:
+          namespaces:
+            - kube-system
+            - kube-public
+            - kyverno
+            - cert-manager
+            - applyforus-dev

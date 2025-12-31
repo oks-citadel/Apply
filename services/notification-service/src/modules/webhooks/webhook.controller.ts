@@ -11,6 +11,10 @@ import {
   Request,
   HttpCode,
   HttpStatus,
+  Headers,
+  RawBodyRequest,
+  Req,
+  Logger,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -19,6 +23,8 @@ import {
   ApiBearerAuth,
   ApiParam,
   ApiQuery,
+  ApiHeader,
+  ApiExcludeEndpoint,
 } from '@nestjs/swagger';
 
 import { WebhookService } from './webhook.service';
@@ -30,22 +36,28 @@ import {
   TestWebhookDto,
 } from './dto/create-webhook.dto';
 import { WebhookEventType } from './entities/webhook-subscription.entity';
-
-// Placeholder guard - replace with actual auth guard
-class JwtAuthGuard {
-  canActivate() {
-    return true;
-  }
-}
+import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
+import { WebhookAuthGuard } from './guards/webhook-auth.guard';
+import {
+  WebhookProvider,
+  WebhookProviderType,
+} from './decorators/webhook-provider.decorator';
+import { Public } from '../../auth/public.decorator';
 
 @ApiTags('webhooks')
-@ApiBearerAuth('JWT-auth')
 @Controller('webhooks')
-@UseGuards(JwtAuthGuard)
 export class WebhookController {
+  private readonly logger = new Logger(WebhookController.name);
+
   constructor(private readonly webhookService: WebhookService) {}
 
+  // ============================================================================
+  // OUTGOING WEBHOOK SUBSCRIPTION MANAGEMENT (JWT Protected)
+  // These endpoints allow users to manage their outgoing webhook subscriptions
+  // ============================================================================
+
   @Post()
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'Create webhook subscription',
     description: 'Create a new webhook subscription to receive event notifications',
@@ -61,7 +73,7 @@ export class WebhookController {
     @Request() req: any,
     @Body() createDto: CreateWebhookDto,
   ): Promise<WebhookResponseDto> {
-    const userId = req.user?.id || req.user?.sub || 'demo-user';
+    const userId = this.extractUserId(req);
     const tenantId = req.user?.tenantId;
     const subscription = await this.webhookService.createSubscription(
       userId,
@@ -72,6 +84,7 @@ export class WebhookController {
   }
 
   @Get()
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'List webhook subscriptions',
     description: 'Get all webhook subscriptions for the authenticated user',
@@ -83,12 +96,13 @@ export class WebhookController {
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async listWebhooks(@Request() req: any): Promise<WebhookResponseDto[]> {
-    const userId = req.user?.id || req.user?.sub || 'demo-user';
+    const userId = this.extractUserId(req);
     const subscriptions = await this.webhookService.getSubscriptions(userId);
     return subscriptions.map((s) => this.toWebhookResponse(s));
   }
 
   @Get('event-types')
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'List available event types',
     description: 'Get all available webhook event types',
@@ -104,6 +118,7 @@ export class WebhookController {
   }
 
   @Get(':id')
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'Get webhook subscription',
     description: 'Get details of a specific webhook subscription',
@@ -119,12 +134,13 @@ export class WebhookController {
     @Request() req: any,
     @Param('id') id: string,
   ): Promise<WebhookResponseDto> {
-    const userId = req.user?.id || req.user?.sub || 'demo-user';
+    const userId = this.extractUserId(req);
     const subscription = await this.webhookService.getSubscription(id, userId);
     return this.toWebhookResponse(subscription);
   }
 
   @Put(':id')
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'Update webhook subscription',
     description: 'Update an existing webhook subscription',
@@ -141,7 +157,7 @@ export class WebhookController {
     @Param('id') id: string,
     @Body() updateDto: UpdateWebhookDto,
   ): Promise<WebhookResponseDto> {
-    const userId = req.user?.id || req.user?.sub || 'demo-user';
+    const userId = this.extractUserId(req);
     const subscription = await this.webhookService.updateSubscription(
       id,
       userId,
@@ -151,6 +167,7 @@ export class WebhookController {
   }
 
   @Delete(':id')
+  @ApiBearerAuth('JWT-auth')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({
     summary: 'Delete webhook subscription',
@@ -163,11 +180,12 @@ export class WebhookController {
     @Request() req: any,
     @Param('id') id: string,
   ): Promise<void> {
-    const userId = req.user?.id || req.user?.sub || 'demo-user';
+    const userId = this.extractUserId(req);
     await this.webhookService.deleteSubscription(id, userId);
   }
 
   @Post(':id/test')
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'Test webhook subscription',
     description: 'Send a test event to the webhook endpoint',
@@ -190,11 +208,12 @@ export class WebhookController {
     @Param('id') id: string,
     @Body() testDto: TestWebhookDto,
   ): Promise<{ success: boolean; statusCode?: number; error?: string }> {
-    const userId = req.user?.id || req.user?.sub || 'demo-user';
+    const userId = this.extractUserId(req);
     return this.webhookService.testWebhook(id, userId, testDto.event_type);
   }
 
   @Get(':id/deliveries')
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'Get webhook delivery history',
     description: 'Get the delivery history for a webhook subscription',
@@ -217,7 +236,7 @@ export class WebhookController {
     @Param('id') id: string,
     @Query('limit') limit?: number,
   ): Promise<WebhookDeliveryResponseDto[]> {
-    const userId = req.user?.id || req.user?.sub || 'demo-user';
+    const userId = this.extractUserId(req);
     const deliveries = await this.webhookService.getDeliveryHistory(
       id,
       userId,
@@ -227,6 +246,7 @@ export class WebhookController {
   }
 
   @Post(':id/enable')
+  @ApiBearerAuth('JWT-auth')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Enable webhook subscription',
@@ -242,7 +262,7 @@ export class WebhookController {
     @Request() req: any,
     @Param('id') id: string,
   ): Promise<WebhookResponseDto> {
-    const userId = req.user?.id || req.user?.sub || 'demo-user';
+    const userId = this.extractUserId(req);
     const subscription = await this.webhookService.updateSubscription(id, userId, {
       is_enabled: true,
     });
@@ -250,6 +270,7 @@ export class WebhookController {
   }
 
   @Post(':id/disable')
+  @ApiBearerAuth('JWT-auth')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Disable webhook subscription',
@@ -265,11 +286,133 @@ export class WebhookController {
     @Request() req: any,
     @Param('id') id: string,
   ): Promise<WebhookResponseDto> {
-    const userId = req.user?.id || req.user?.sub || 'demo-user';
+    const userId = this.extractUserId(req);
     const subscription = await this.webhookService.updateSubscription(id, userId, {
       is_enabled: false,
     });
     return this.toWebhookResponse(subscription);
+  }
+
+  // ============================================================================
+  // INCOMING WEBHOOK RECEIVERS (Signature Verified)
+  // These endpoints receive webhooks from external services (Stripe, SendGrid, etc.)
+  // They use HMAC signature verification instead of JWT auth
+  // ============================================================================
+
+  @Post('receive/generic')
+  @Public()
+  @UseGuards(WebhookAuthGuard)
+  @WebhookProviderType(WebhookProvider.GENERIC)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Receive generic webhook',
+    description: 'Receive and process a generic webhook with HMAC signature verification',
+  })
+  @ApiHeader({
+    name: 'X-Webhook-Signature',
+    description: 'HMAC-SHA256 signature in format: t=<timestamp>,v1=<signature>',
+    required: true,
+  })
+  @ApiResponse({ status: 200, description: 'Webhook received successfully' })
+  @ApiResponse({ status: 401, description: 'Invalid signature' })
+  async receiveGenericWebhook(
+    @Body() payload: any,
+    @Headers('x-webhook-id') webhookId: string,
+  ): Promise<{ received: boolean }> {
+    this.logger.log(`Received generic webhook: ${webhookId || 'unknown'}`);
+    // Process the webhook payload as needed
+    // This is where you would dispatch the event internally
+    await this.webhookService.processIncomingWebhook('generic', payload);
+    return { received: true };
+  }
+
+  @Post('receive/stripe')
+  @Public()
+  @UseGuards(WebhookAuthGuard)
+  @WebhookProviderType(WebhookProvider.STRIPE)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Receive Stripe webhook',
+    description: 'Receive and process Stripe webhooks with signature verification',
+  })
+  @ApiHeader({
+    name: 'Stripe-Signature',
+    description: 'Stripe webhook signature',
+    required: true,
+  })
+  @ApiResponse({ status: 200, description: 'Webhook received successfully' })
+  @ApiResponse({ status: 401, description: 'Invalid signature' })
+  async receiveStripeWebhook(@Body() payload: any): Promise<{ received: boolean }> {
+    this.logger.log(`Received Stripe webhook: ${payload?.type || 'unknown'}`);
+    await this.webhookService.processIncomingWebhook('stripe', payload);
+    return { received: true };
+  }
+
+  @Post('receive/sendgrid')
+  @Public()
+  @UseGuards(WebhookAuthGuard)
+  @WebhookProviderType(WebhookProvider.SENDGRID)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Receive SendGrid webhook',
+    description: 'Receive and process SendGrid event webhooks with signature verification',
+  })
+  @ApiHeader({
+    name: 'X-Twilio-Email-Event-Webhook-Signature',
+    description: 'SendGrid webhook signature',
+    required: true,
+  })
+  @ApiHeader({
+    name: 'X-Twilio-Email-Event-Webhook-Timestamp',
+    description: 'SendGrid webhook timestamp',
+    required: true,
+  })
+  @ApiResponse({ status: 200, description: 'Webhook received successfully' })
+  @ApiResponse({ status: 401, description: 'Invalid signature' })
+  async receiveSendGridWebhook(@Body() payload: any): Promise<{ received: boolean }> {
+    this.logger.log('Received SendGrid webhook');
+    await this.webhookService.processIncomingWebhook('sendgrid', payload);
+    return { received: true };
+  }
+
+  @Post('receive/twilio')
+  @Public()
+  @UseGuards(WebhookAuthGuard)
+  @WebhookProviderType(WebhookProvider.TWILIO)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Receive Twilio webhook',
+    description: 'Receive and process Twilio SMS/Voice webhooks with signature verification',
+  })
+  @ApiHeader({
+    name: 'X-Twilio-Signature',
+    description: 'Twilio webhook signature',
+    required: true,
+  })
+  @ApiResponse({ status: 200, description: 'Webhook received successfully' })
+  @ApiResponse({ status: 401, description: 'Invalid signature' })
+  async receiveTwilioWebhook(@Body() payload: any): Promise<{ received: boolean }> {
+    this.logger.log('Received Twilio webhook');
+    await this.webhookService.processIncomingWebhook('twilio', payload);
+    return { received: true };
+  }
+
+  // ============================================================================
+  // PRIVATE HELPER METHODS
+  // ============================================================================
+
+  /**
+   * Extract user ID from authenticated request
+   * Throws UnauthorizedException if user is not authenticated
+   */
+  private extractUserId(req: any): string {
+    const userId = req.user?.id || req.user?.sub;
+    if (!userId) {
+      // This should not happen as JwtAuthGuard should have already validated
+      // but we add this check as a defense-in-depth measure
+      throw new Error('User ID not found in request - authentication may have failed');
+    }
+    return userId;
   }
 
   private toWebhookResponse(subscription: any): WebhookResponseDto {

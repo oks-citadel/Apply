@@ -106,8 +106,9 @@ spec:
               sleep 30
       containers:
         # Auth Service Migrations
+        # Version should match deployed auth-service version
         - name: auth-migrations
-          image: applyforusacr.azurecr.io/applyai-auth-service:latest
+          image: applyforusacr.azurecr.io/applyai-auth-service:v2.2.0
           env:
             - name: DB_HOST
               value: "applyforus-postgres.postgres.database.azure.com"
@@ -135,8 +136,9 @@ spec:
             - migration:run
 
         # User Service Migrations
+        # Version should match deployed user-service version
         - name: user-migrations
-          image: applyforusacr.azurecr.io/applyai-user-service:latest
+          image: applyforusacr.azurecr.io/applyai-user-service:v2.2.0
           env:
             - name: DB_HOST
               value: "applyforus-postgres.postgres.database.azure.com"
@@ -164,8 +166,9 @@ spec:
             - migration:run
 
         # Job Service Migrations
+        # Version should match deployed job-service version
         - name: job-migrations
-          image: applyforusacr.azurecr.io/applyai-job-service:latest
+          image: applyforusacr.azurecr.io/applyai-job-service:v4.0.0
           env:
             - name: DB_HOST
               value: "applyforus-postgres.postgres.database.azure.com"

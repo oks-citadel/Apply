@@ -1,6 +1,22 @@
-import axios, { AxiosError, AxiosRequestConfig, InternalAxiosRequestConfig } from 'axios';
+import axios, { AxiosError, AxiosRequestConfig, InternalAxiosRequestConfig, AxiosResponse } from 'axios';
+
+// Extended config interface to track request metadata and retry state
+interface ExtendedAxiosRequestConfig extends InternalAxiosRequestConfig {
+  metadata?: {
+    startTime: number;
+  };
+  retryCount?: number;
+  _retry?: boolean;
+}
+
+// API response data type with potential error fields
+interface ApiResponseData {
+  message?: string;
+  errors?: Record<string, string[]>;
+}
 
 // API Base URL - Points to auth-service in development
+// NOTE: Port standardized to 8081 as per PORT_STANDARDIZATION_SUMMARY.md
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081';
 
 // Configuration
@@ -110,7 +126,8 @@ apiClient.interceptors.request.use(
     }
 
     // Add request timestamp for performance tracking
-    (config as any).metadata = { startTime: new Date().getTime() };
+    const extendedConfig = config as ExtendedAxiosRequestConfig;
+    extendedConfig.metadata = { startTime: new Date().getTime() };
 
     // Log requests in development
     if (process.env.NODE_ENV === 'development') {
@@ -121,7 +138,7 @@ apiClient.interceptors.request.use(
     }
 
     // Initialize retry count
-    (config as any).retryCount = (config as any).retryCount || 0;
+    extendedConfig.retryCount = extendedConfig.retryCount || 0;
 
     return config;
   },
@@ -135,10 +152,11 @@ apiClient.interceptors.request.use(
 
 // Response interceptor for token refresh, retry logic, and logging
 apiClient.interceptors.response.use(
-  (response) => {
+  (response: AxiosResponse) => {
     // Log response in development
     if (process.env.NODE_ENV === 'development') {
-      const duration = new Date().getTime() - (response.config as any).metadata?.startTime;
+      const extendedConfig = response.config as ExtendedAxiosRequestConfig;
+      const duration = new Date().getTime() - (extendedConfig.metadata?.startTime || 0);
       console.log(`[API Response] ${response.config.method?.toUpperCase()} ${response.config.url}`, {
         status: response.status,
         duration: `${duration}ms`,
@@ -147,11 +165,8 @@ apiClient.interceptors.response.use(
     }
     return response;
   },
-  async (error: AxiosError) => {
-    const originalRequest = error.config as AxiosRequestConfig & {
-      _retry?: boolean;
-      retryCount?: number;
-    };
+  async (error: AxiosError<ApiResponseData>) => {
+    const originalRequest = error.config as ExtendedAxiosRequestConfig | undefined;
 
     if (!originalRequest) {
       return Promise.reject(error);
@@ -280,8 +295,8 @@ export enum ErrorType {
 }
 
 // User-friendly error messages
-const getUserFriendlyMessage = (error: AxiosError, type: ErrorType): string => {
-  const defaultMessage = (error.response?.data as any)?.message || error.message;
+const getUserFriendlyMessage = (error: AxiosError<ApiResponseData>, type: ErrorType): string => {
+  const defaultMessage = error.response?.data?.message || error.message;
 
   switch (type) {
     case ErrorType.NETWORK:
@@ -306,7 +321,7 @@ const getUserFriendlyMessage = (error: AxiosError, type: ErrorType): string => {
 };
 
 // Determine error type from response
-const getErrorType = (error: AxiosError): ErrorType => {
+const getErrorType = (error: AxiosError<ApiResponseData>): ErrorType => {
   const status = error.response?.status;
   const code = error.code;
 
@@ -343,7 +358,7 @@ const getErrorType = (error: AxiosError): ErrorType => {
 
 // Enhanced error handler utility
 export const handleApiError = (error: unknown): ApiError => {
-  if (axios.isAxiosError(error)) {
+  if (axios.isAxiosError<ApiResponseData>(error)) {
     const status = error.response?.status;
     const errors = error.response?.data?.errors;
     const code = error.code;

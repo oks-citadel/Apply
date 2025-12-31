@@ -1,0 +1,59 @@
+# ==============================================================================
+# KYVERNO POLICY: Require Image Digest
+# ==============================================================================
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-image-digest
+  annotations:
+    policies.kyverno.io/title: Require Image Digest
+    policies.kyverno.io/category: Supply Chain Security
+    policies.kyverno.io/severity: high
+    policies.kyverno.io/subject: Pod
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: require-digest-containers
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - applyforus
+                - applyforus-staging
+      validate:
+        message: Container image must use SHA256 digest (image@sha256:abc123...) not tags.
+        pattern:
+          spec:
+            containers:
+              - image: "*@sha256:*"
+    - name: require-digest-workloads
+      match:
+        any:
+          - resources:
+              kinds:
+                - Deployment
+                - StatefulSet
+                - DaemonSet
+              namespaces:
+                - applyforus
+                - applyforus-staging
+      validate:
+        message: Workload containers must use SHA256 digests.
+        pattern:
+          spec:
+            template:
+              spec:
+                containers:
+                  - image: "*@sha256:*"
+  exclude:
+    any:
+      - resources:
+          namespaces:
+            - kube-system
+            - kube-public
+            - kyverno
+            - cert-manager
+            - ingress-nginx

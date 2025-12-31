@@ -4,23 +4,17 @@ import {
   PrimaryGeneratedColumn,
   CreateDateColumn,
   UpdateDateColumn,
-  ManyToOne,
-  JoinColumn,
+  Index,
 } from 'typeorm';
 
-import { Profile } from './profile.entity';
-
 @Entity('certifications')
+@Index(['user_id'])
 export class Certification {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
   @Column({ type: 'uuid' })
-  profile_id: string;
-
-  @ManyToOne(() => Profile, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'profile_id' })
-  profile: Profile;
+  user_id: string;
 
   @Column({ type: 'varchar', length: 255 })
   name: string;

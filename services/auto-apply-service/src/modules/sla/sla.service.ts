@@ -1,7 +1,10 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Optional } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, MoreThan, LessThan, Between } from 'typeorm';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { ConfigService } from '@nestjs/config';
+import { HttpService } from '@nestjs/axios';
+import { firstValueFrom } from 'rxjs';
 
 // SLA Tier definitions
 export enum SLATier {
@@ -166,8 +169,54 @@ export class SLAService {
   private interviewVerifications: Map<string, InterviewVerification[]> = new Map();
   private applicationCounts: Map<string, { daily: number; weekly: number; lastReset: Date }> = new Map();
 
-  constructor() {
+  private readonly notificationServiceUrl: string;
+
+  constructor(
+    @Optional() private readonly httpService: HttpService,
+    @Optional() private readonly configService: ConfigService,
+  ) {
+    this.notificationServiceUrl = this.configService?.get<string>(
+      'NOTIFICATION_SERVICE_URL',
+      'http://notification-service.applyforus.svc.cluster.local:8005'
+    );
     this.logger.log('SLA Service initialized');
+  }
+
+  /**
+   * Send SLA risk alert notification to user
+   */
+  private async sendSLARiskNotification(userId: string, progress: any): Promise<void> {
+    if (!this.httpService) {
+      this.logger.warn('HttpService not available - skipping notification');
+      return;
+    }
+
+    try {
+      await firstValueFrom(
+        this.httpService.post(
+          `${this.notificationServiceUrl}/api/v1/notifications`,
+          {
+            userId,
+            type: 'SLA_RISK_ALERT',
+            channel: ['email', 'push', 'in_app'],
+            priority: progress.riskLevel === 'CRITICAL' ? 'high' : 'medium',
+            title: `SLA Alert: ${progress.riskLevel} Risk Level`,
+            message: `Your SLA progress is at ${progress.progressPercentage}%. ${progress.daysRemaining} days remaining to achieve ${progress.interviewsRemaining} more interviews.`,
+            data: {
+              riskLevel: progress.riskLevel,
+              progressPercentage: progress.progressPercentage,
+              daysRemaining: progress.daysRemaining,
+              interviewsRemaining: progress.interviewsRemaining,
+              recommendations: progress.recommendations || [],
+            },
+          },
+          { timeout: 5000 }
+        )
+      );
+      this.logger.log(`SLA risk notification sent to user ${userId}`);
+    } catch (error) {
+      this.logger.error(`Failed to send SLA risk notification: ${error.message}`);
+    }
   }
 
   /**
@@ -528,7 +577,7 @@ export class SLAService {
         );
 
         // Notify user about risk status
-        // await this.notificationService.sendSLARiskAlert(period.userId, progress);
+        await this.sendSLARiskNotification(period.userId, progress);
       }
     }
   }

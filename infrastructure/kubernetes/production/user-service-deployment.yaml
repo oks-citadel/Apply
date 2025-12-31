@@ -29,9 +29,22 @@ spec:
         prometheus.io/port: "4004"
         prometheus.io/path: "/metrics"
     spec:
+      imagePullSecrets:
+        - name: acr-auth
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
       containers:
         - name: user-service
-          image: applyforusacr.azurecr.io/applyai-user-service:latest
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          # IMAGE_TAG is substituted by CI/CD pipeline - NEVER use :latest in production
+          image: applyforusacr.azurecr.io/applyai-user-service:v2.2.0
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -43,6 +56,8 @@ spec:
             - name: PORT
               value: "4004"
           envFrom:
+            - configMapRef:
+                name: identity-config
             - secretRef:
                 name: applyforus-secrets
           resources:

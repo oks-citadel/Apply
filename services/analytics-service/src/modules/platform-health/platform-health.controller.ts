@@ -5,6 +5,7 @@ import {
   HttpCode,
   HttpStatus,
   UseInterceptors,
+  UseGuards,
   ClassSerializerInterceptor,
   Logger,
 } from '@nestjs/common';
@@ -14,7 +15,10 @@ import {
   ApiResponse,
   ApiQuery,
   ApiInternalServerErrorResponse,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
+
+import { ServiceAuthGuard } from '@applyforus/security';
 
 import { PlatformHealthService } from './platform-health.service';
 import {
@@ -32,9 +36,12 @@ import {
 /**
  * Platform Health Controller
  * REST endpoints for platform-wide health monitoring
+ * Requires service-to-service authentication for internal monitoring access
  */
 @ApiTags('platform-health')
+@ApiBearerAuth()
 @Controller('platform-health')
+@UseGuards(ServiceAuthGuard) // Service-to-service auth for internal monitoring
 @UseInterceptors(ClassSerializerInterceptor)
 export class PlatformHealthController {
   private readonly logger = new Logger(PlatformHealthController.name);

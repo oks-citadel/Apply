@@ -1,0 +1,87 @@
+version: 0.2
+
+# AWS CodeBuild buildspec for deploying to EKS
+# This is triggered after the build phase completes
+
+env:
+  variables:
+    CLUSTER_NAME: "applyai-eks-cluster"
+    NAMESPACE: "applyforus"
+  parameter-store:
+    KUBECONFIG_DATA: "/applyai/kubeconfig"
+
+phases:
+  install:
+    commands:
+      - echo "Installing kubectl..."
+      - curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+      - chmod +x kubectl
+      - mv kubectl /usr/local/bin/
+
+      - echo "Installing Helm..."
+      - curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+
+  pre_build:
+    commands:
+      - echo "Configuring kubectl for EKS..."
+      - aws eks update-kubeconfig --region $AWS_DEFAULT_REGION --name $CLUSTER_NAME
+
+      - echo "Verifying cluster access..."
+      - kubectl cluster-info
+      - kubectl get nodes
+
+  build:
+    commands:
+      - echo "Deploying to Kubernetes..."
+      - export IMAGE_TAG=${CODEBUILD_RESOLVED_SOURCE_VERSION:0:8}
+
+      # Create namespace if not exists
+      - kubectl create namespace $NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
+
+      # Apply ConfigMaps and Secrets first
+      - kubectl apply -f infrastructure/kubernetes/production/configmap.yaml -n $NAMESPACE || true
+
+      # Apply deployments with rolling update
+      - |
+        for deployment in infrastructure/kubernetes/production/*-deployment.yaml; do
+          echo "Applying $deployment..."
+          kubectl apply -f $deployment -n $NAMESPACE
+        done
+
+      # Apply services
+      - kubectl apply -f infrastructure/kubernetes/production/ -n $NAMESPACE --recursive || true
+
+      # Wait for rollouts to complete
+      - |
+        DEPLOYMENTS=$(kubectl get deployments -n $NAMESPACE -o jsonpath='{.items[*].metadata.name}')
+        for deploy in $DEPLOYMENTS; do
+          echo "Waiting for $deploy rollout..."
+          kubectl rollout status deployment/$deploy -n $NAMESPACE --timeout=300s || {
+            echo "Rollout failed for $deploy, initiating rollback..."
+            kubectl rollout undo deployment/$deploy -n $NAMESPACE
+            exit 1
+          }
+        done
+
+  post_build:
+    commands:
+      - echo "Deployment completed!"
+
+      # Verify deployment health
+      - kubectl get pods -n $NAMESPACE
+      - kubectl get services -n $NAMESPACE
+
+      # Run smoke tests
+      - |
+        WEB_URL=$(kubectl get svc web-app -n $NAMESPACE -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+        if [ -n "$WEB_URL" ]; then
+          echo "Running smoke test against $WEB_URL..."
+          curl -f "http://$WEB_URL/api/health" || echo "Health check endpoint not ready"
+        fi
+
+      - echo "Deployment to $NAMESPACE completed successfully at $(date)"
+
+artifacts:
+  files:
+    - deployment-status.txt
+  discard-paths: yes

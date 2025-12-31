@@ -60,12 +60,17 @@ export enum ConditionOperator {
 }
 
 /**
+ * Condition value types for ABAC conditions
+ */
+export type ConditionValue = string | number | boolean | string[] | number[] | null;
+
+/**
  * Condition for attribute-based access control
  */
 export interface PolicyCondition {
   attribute: string;
   operator: ConditionOperator;
-  value: any;
+  value: ConditionValue;
 }
 
 /**
@@ -83,6 +88,11 @@ export interface Policy {
 }
 
 /**
+ * Attribute value type for policy context
+ */
+export type AttributeValue = string | number | boolean | string[] | Date | null | undefined;
+
+/**
  * Context for policy evaluation
  */
 export interface PolicyContext {
@@ -91,7 +101,7 @@ export interface PolicyContext {
   resourceType: ResourceType;
   resourceId?: string;
   action: Action;
-  attributes: Record<string, any>; // Additional context attributes
+  attributes: Record<string, AttributeValue | Record<string, AttributeValue>>; // Additional context attributes
 }
 
 /**
@@ -208,49 +218,52 @@ export class PolicyEngine {
     context: PolicyContext
   ): boolean {
     const attributeValue = this.getAttributeValue(condition.attribute, context);
+    const conditionValue = condition.value;
 
     switch (condition.operator) {
       case ConditionOperator.EQUALS:
-        return attributeValue === condition.value;
+        return attributeValue === conditionValue;
 
       case ConditionOperator.NOT_EQUALS:
-        return attributeValue !== condition.value;
+        return attributeValue !== conditionValue;
 
       case ConditionOperator.IN:
-        return Array.isArray(condition.value) && condition.value.includes(attributeValue);
+        if (!Array.isArray(conditionValue)) return false;
+        // Check if attributeValue exists in the conditionValue array
+        return (conditionValue as (string | number)[]).some(v => v === attributeValue);
 
       case ConditionOperator.NOT_IN:
-        return Array.isArray(condition.value) && !condition.value.includes(attributeValue);
+        if (!Array.isArray(conditionValue)) return false;
+        // Check if attributeValue does not exist in the conditionValue array
+        return !(conditionValue as (string | number)[]).some(v => v === attributeValue);
 
       case ConditionOperator.GREATER_THAN:
-        return attributeValue > condition.value;
+        if (typeof attributeValue !== 'number' || typeof conditionValue !== 'number') return false;
+        return attributeValue > conditionValue;
 
       case ConditionOperator.LESS_THAN:
-        return attributeValue < condition.value;
+        if (typeof attributeValue !== 'number' || typeof conditionValue !== 'number') return false;
+        return attributeValue < conditionValue;
 
       case ConditionOperator.GREATER_THAN_OR_EQUAL:
-        return attributeValue >= condition.value;
+        if (typeof attributeValue !== 'number' || typeof conditionValue !== 'number') return false;
+        return attributeValue >= conditionValue;
 
       case ConditionOperator.LESS_THAN_OR_EQUAL:
-        return attributeValue <= condition.value;
+        if (typeof attributeValue !== 'number' || typeof conditionValue !== 'number') return false;
+        return attributeValue <= conditionValue;
 
       case ConditionOperator.CONTAINS:
-        return (
-          typeof attributeValue === 'string' &&
-          attributeValue.includes(condition.value)
-        );
+        if (typeof attributeValue !== 'string' || typeof conditionValue !== 'string') return false;
+        return attributeValue.includes(conditionValue);
 
       case ConditionOperator.STARTS_WITH:
-        return (
-          typeof attributeValue === 'string' &&
-          attributeValue.startsWith(condition.value)
-        );
+        if (typeof attributeValue !== 'string' || typeof conditionValue !== 'string') return false;
+        return attributeValue.startsWith(conditionValue);
 
       case ConditionOperator.ENDS_WITH:
-        return (
-          typeof attributeValue === 'string' &&
-          attributeValue.endsWith(condition.value)
-        );
+        if (typeof attributeValue !== 'string' || typeof conditionValue !== 'string') return false;
+        return attributeValue.endsWith(conditionValue);
 
       case ConditionOperator.EXISTS:
         return attributeValue !== undefined && attributeValue !== null;
@@ -263,16 +276,20 @@ export class PolicyEngine {
   /**
    * Get attribute value from context
    */
-  private getAttributeValue(attribute: string, context: PolicyContext): any {
+  private getAttributeValue(attribute: string, context: PolicyContext): unknown {
     // Support nested attributes using dot notation
     const parts = attribute.split('.');
-    let value: any = { ...context, ...context.attributes };
+    let value: unknown = { ...context, ...context.attributes };
 
     for (const part of parts) {
       if (value === undefined || value === null) {
         return undefined;
       }
-      value = value[part];
+      if (typeof value === 'object' && value !== null) {
+        value = (value as Record<string, unknown>)[part];
+      } else {
+        return undefined;
+      }
     }
 
     return value;
@@ -390,7 +407,7 @@ export class PolicyEngine {
   /**
    * Resolve special placeholders in condition values
    */
-  resolveConditionValue(value: any, context: PolicyContext): any {
+  resolveConditionValue(value: ConditionValue, context: PolicyContext): unknown {
     if (typeof value === 'string' && value.startsWith('${') && value.endsWith('}')) {
       const path = value.slice(2, -1);
       return this.getAttributeValue(path, context);

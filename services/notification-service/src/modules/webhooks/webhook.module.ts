@@ -7,6 +7,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { WebhookService } from './webhook.service';
 import { WebhookController } from './webhook.controller';
 import { WebhookScheduler } from './webhook.scheduler';
+import { WebhookAuthGuard } from './guards/webhook-auth.guard';
 import { WebhookSubscription } from './entities/webhook-subscription.entity';
 import { WebhookDelivery } from './entities/webhook-delivery.entity';
 
@@ -21,7 +22,7 @@ import { WebhookDelivery } from './entities/webhook-delivery.entity';
     ScheduleModule.forRoot(),
   ],
   controllers: [WebhookController],
-  providers: [WebhookService, WebhookScheduler],
-  exports: [WebhookService],
+  providers: [WebhookService, WebhookScheduler, WebhookAuthGuard],
+  exports: [WebhookService, WebhookAuthGuard],
 })
 export class WebhookModule {}

@@ -13,6 +13,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery } from '@nestjs/swagger';
 
+import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import {
   PlaybookResponseDto,
   PlaybookSummaryDto,
@@ -31,7 +32,9 @@ import type { Playbook} from './entities/playbook.entity';
 import { PlaybooksService } from './playbooks.service';
 
 @ApiTags('Playbooks')
+@ApiBearerAuth()
 @Controller('api/v1/playbooks')
+@UseGuards(JwtAuthGuard) // Require authentication for playbook management
 export class PlaybooksController {
   constructor(private readonly playbooksService: PlaybooksService) {}
 

@@ -290,3 +290,89 @@ variable "max_replicas" {
     error_message = "Maximum replicas must be between 1 and 100"
   }
 }
+
+# ============================================================================
+# Identity / Entra ID B2C Variables
+# ============================================================================
+
+variable "domain_name" {
+  description = "Primary domain name for the platform"
+  type        = string
+  default     = "applyforus.com"
+}
+
+variable "enable_identity_groups" {
+  description = "Enable creation of security groups for subscription tiers"
+  type        = bool
+  default     = true
+}
+
+variable "grant_identity_admin_consent" {
+  description = "Automatically grant admin consent for Graph API permissions (requires Global Admin)"
+  type        = bool
+  default     = false
+}
+
+variable "b2c_tenant_name" {
+  description = "Azure AD B2C tenant name (e.g., 'applyforusb2c'). Leave empty for standard Azure AD."
+  type        = string
+  default     = ""
+}
+
+variable "b2c_tenant_id" {
+  description = "Azure AD B2C tenant ID. Leave empty for standard Azure AD."
+  type        = string
+  default     = ""
+}
+
+# ============================================================================
+# Security Secrets Variables
+# ============================================================================
+
+variable "jwt_secret" {
+  description = "JWT signing secret (min 32 characters)"
+  type        = string
+  sensitive   = true
+  default     = ""
+
+  validation {
+    condition     = var.jwt_secret == "" || length(var.jwt_secret) >= 32
+    error_message = "JWT secret must be at least 32 characters long"
+  }
+}
+
+variable "jwt_refresh_secret" {
+  description = "JWT refresh token secret (min 32 characters)"
+  type        = string
+  sensitive   = true
+  default     = ""
+
+  validation {
+    condition     = var.jwt_refresh_secret == "" || length(var.jwt_refresh_secret) >= 32
+    error_message = "JWT refresh secret must be at least 32 characters long"
+  }
+}
+
+variable "session_secret" {
+  description = "Session encryption secret (min 32 characters)"
+  type        = string
+  sensitive   = true
+  default     = ""
+
+  validation {
+    condition     = var.session_secret == "" || length(var.session_secret) >= 32
+    error_message = "Session secret must be at least 32 characters long"
+  }
+}
+
+variable "encryption_key" {
+  description = "Application data encryption key (min 32 characters)"
+  type        = string
+  sensitive   = true
+  default     = ""
+
+  validation {
+    condition     = var.encryption_key == "" || length(var.encryption_key) >= 32
+    error_message = "Encryption key must be at least 32 characters long"
+  }
+}

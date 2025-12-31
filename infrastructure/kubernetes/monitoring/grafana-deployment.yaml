@@ -190,6 +190,19 @@ spec:
       protocol: TCP
       name: http
 ---
+# ============================================================================
+# Grafana Secrets - MANAGED VIA AZURE KEY VAULT OR SEALED SECRETS
+# ============================================================================
+# DO NOT store actual secrets in this file.
+#
+# In production, create the secret manually or via sealed-secrets:
+# kubectl create secret generic grafana-secrets \
+#   --namespace=monitoring \
+#   --from-literal=admin-user='admin' \
+#   --from-literal=admin-password='YOUR_SECURE_PASSWORD'
+#
+# Or use Azure Key Vault with SecretProviderClass for the monitoring namespace.
+# ============================================================================
 apiVersion: v1
 kind: Secret
 metadata:
@@ -197,7 +210,15 @@ metadata:
   namespace: monitoring
   labels:
     app: grafana
+  annotations:
+    # Mark this as a placeholder - actual secrets should be managed externally
+    applyforus.com/secret-management: "azure-keyvault"
+    applyforus.com/placeholder: "true"
 type: Opaque
+# NOTE: Remove stringData section in production. Secrets should be injected
+# via Azure Key Vault CSI Driver or created manually with kubectl.
+# This placeholder exists only for initial cluster setup/testing.
 stringData:
+  # PLACEHOLDER VALUES - REPLACE IN PRODUCTION
   admin-user: admin
-  admin-password: "CHANGE_ME_IN_PRODUCTION"
+  admin-password: "PLACEHOLDER_CHANGE_IN_PRODUCTION"

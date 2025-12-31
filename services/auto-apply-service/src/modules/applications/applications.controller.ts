@@ -20,6 +20,8 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 
+import { RequiresTier } from '@applyforus/security';
+
 import { User } from '../../common/decorators/user.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ApplicationsService } from './applications.service';
@@ -32,6 +34,7 @@ import type { UpdateApplicationDto, UpdateStatusDto } from './dto/update-applica
 @ApiBearerAuth('JWT-auth')
 @Controller('applications')
 @UseGuards(JwtAuthGuard)
+@RequiresTier('basic') // Auto-apply requires BASIC tier or higher
 export class ApplicationsController {
   constructor(private readonly applicationsService: ApplicationsService) {}
 

@@ -1,0 +1,35 @@
+{
+  "name": "@applyforus/security-agent",
+  "version": "1.0.0",
+  "description": "PR-gated security scanning tool for detecting vulnerabilities and security issues",
+  "main": "dist/index.js",
+  "bin": {
+    "security-agent": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "scan": "ts-node src/index.ts",
+    "dev": "ts-node src/index.ts",
+    "clean": "rimraf dist"
+  },
+  "keywords": ["security", "scanner", "eslint", "vulnerability", "audit"],
+  "author": "ApplyForUs Team",
+  "license": "MIT",
+  "dependencies": {
+    "@typescript-eslint/parser": "^7.0.0",
+    "@typescript-eslint/typescript-estree": "^7.0.0",
+    "chalk": "^4.1.2",
+    "commander": "^12.0.0",
+    "glob": "^10.3.10",
+    "typescript": "^5.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "rimraf": "^5.0.5",
+    "ts-node": "^10.9.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

@@ -243,15 +243,15 @@ check_service_health() {
   local path="/api/v1/health/ready"
 
   case $service in
-    auth-service) port="4000" ;;
-    user-service) port="4004" ;;
-    job-service) port="4002" ;;
-    ai-service) port="5000" ;;
-    resume-service) port="4001" ;;
-    analytics-service) port="3007" ;;
-    notification-service) port="4005" ;;
-    auto-apply-service) port="4003" ;;
-    orchestrator-service) port="3009" ;;
+    auth-service) port="8081" ;;
+    user-service) port="8082" ;;
+    job-service) port="8084" ;;
+    ai-service) port="8089" ;;
+    resume-service) port="8083" ;;
+    analytics-service) port="8086" ;;
+    notification-service) port="8087" ;;
+    auto-apply-service) port="8085" ;;
+    orchestrator-service) port="8090" ;;
     web-app) port="3000"; path="/" ;;
   esac
 

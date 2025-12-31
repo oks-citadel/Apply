@@ -172,11 +172,8 @@ export class ProfileSectionsService {
 
   // Certifications CRUD
   async getCertifications(userId: string): Promise<Certification[]> {
-    // Note: Certification still uses profile_id, need to join with Profile
-    // For now, we'll just return based on profile_id parameter  
-    // TODO: Update Certification entity to use user_id instead of profile_id
     return this.certificationRepository.find({
-      where: { profile_id: userId },
+      where: { user_id: userId },
       order: { issue_date: 'DESC' },
     });
   }
@@ -186,7 +183,7 @@ export class ProfileSectionsService {
     createDto: CreateCertificationDto,
   ): Promise<Certification> {
     const certification = this.certificationRepository.create({
-      profile_id: userId,
+      user_id: userId,
       ...createDto,
     });
     return this.certificationRepository.save(certification);
@@ -198,7 +195,7 @@ export class ProfileSectionsService {
     updateDto: UpdateCertificationDto,
   ): Promise<Certification> {
     const certification = await this.certificationRepository.findOne({
-      where: { id, profile_id: userId },
+      where: { id, user_id: userId },
     });
 
     if (!certification) {
@@ -212,7 +209,7 @@ export class ProfileSectionsService {
   async deleteCertification(id: string, userId: string): Promise<void> {
     const result = await this.certificationRepository.delete({
       id,
-      profile_id: userId,
+      user_id: userId,
     });
 
     if (result.affected === 0) {

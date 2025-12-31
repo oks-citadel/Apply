@@ -32,15 +32,15 @@ SERVICES=(
 
 # Health check ports
 declare -A SERVICE_PORTS=(
-  ["auth-service"]="4000"
-  ["user-service"]="4004"
-  ["job-service"]="4002"
-  ["ai-service"]="5000"
-  ["resume-service"]="4001"
-  ["analytics-service"]="3007"
-  ["notification-service"]="4005"
-  ["auto-apply-service"]="4003"
-  ["orchestrator-service"]="3009"
+  ["auth-service"]="8081"
+  ["user-service"]="8082"
+  ["job-service"]="8084"
+  ["ai-service"]="8089"
+  ["resume-service"]="8083"
+  ["analytics-service"]="8086"
+  ["notification-service"]="8087"
+  ["auto-apply-service"]="8085"
+  ["orchestrator-service"]="8090"
   ["web-app"]="3000"
 )
 

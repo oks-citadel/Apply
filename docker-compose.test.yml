@@ -201,10 +201,10 @@ services:
     container_name: applyforus-ai-service-test
     restart: unless-stopped
     ports:
-      - '8090:8090'
+      - '8089:8089'
     environment:
       ENVIRONMENT: test
-      PORT: 8090
+      PORT: 8089
       OPENAI_API_KEY: ${OPENAI_API_KEY:-test-key}
       REDIS_HOST: redis-test
       REDIS_PORT: 6379
@@ -214,7 +214,7 @@ services:
     networks:
       - test-network
     healthcheck:
-      test: ['CMD', 'curl', '-f', 'http://localhost:8090/health']
+      test: ['CMD', 'curl', '-f', 'http://localhost:8089/health']
       interval: 10s
       timeout: 5s
       retries: 3

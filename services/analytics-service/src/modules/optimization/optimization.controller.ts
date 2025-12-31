@@ -5,6 +5,7 @@ import {
   HttpStatus,
   Logger,
   UseInterceptors,
+  UseGuards,
   ClassSerializerInterceptor,
 } from '@nestjs/common';
 import {
@@ -14,7 +15,13 @@ import {
   ApiQuery,
   ApiBadRequestResponse,
   ApiInternalServerErrorResponse,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
+
+import { RequiresTier } from '@applyforus/security';
+
+import { Public } from '../../auth/public.decorator';
+import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { OptimizationService } from './optimization.service';
 import {
   ApplicationSuccessQueryDto,
@@ -32,10 +39,14 @@ import {
 /**
  * Optimization Controller
  * REST API endpoints for application optimization analysis
+ * PREMIUM FEATURE: Requires PROFESSIONAL tier or higher
  */
 @ApiTags('Optimization')
+@ApiBearerAuth()
 @Controller('api/v1/optimization')
+@UseGuards(JwtAuthGuard) // Require authentication for optimization endpoints
 @UseInterceptors(ClassSerializerInterceptor)
+@RequiresTier('professional') // Advanced analytics requires Professional tier
 export class OptimizationController {
   private readonly logger = new Logger(OptimizationController.name);
 
@@ -299,6 +310,7 @@ export class OptimizationController {
    * Health check endpoint
    */
   @Get('health')
+  @Public() // Health checks don't require authentication
   @ApiOperation({
     summary: 'Health check',
     description: 'Check if the optimization service is running',

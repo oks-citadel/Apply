@@ -12,7 +12,7 @@ import {
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { InjectRepository } from '@nestjs/typeorm';
 
-
+import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import {
   QualityScoreResponseDto,
   EmployerCredibilityResponseDto,
@@ -34,7 +34,9 @@ import { QualityScorerService } from './services/quality-scorer.service';
 import { Repository } from 'typeorm';
 
 @ApiTags('Job Normalization')
+@ApiBearerAuth()
 @Controller('api/v1/normalize')
+@UseGuards(JwtAuthGuard) // Require authentication for normalization endpoints - admin operations
 export class NormalizationController {
   constructor(
     private readonly normalizationService: NormalizationService,

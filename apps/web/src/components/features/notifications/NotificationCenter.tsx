@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { useAuthStore } from '@/stores/authStore';
+import { getAccessToken } from '@/lib/auth/secureTokenManager';
 import {
   initNotificationSocket,
   disconnectNotificationSocket,
@@ -90,8 +91,8 @@ export function NotificationCenter() {
       onError: handleError,
     };
 
-    // Get auth token from store or localStorage
-    const token = localStorage.getItem('auth_token');
+    // Get auth token from secure memory storage (not localStorage)
+    const token = getAccessToken();
 
     if (token) {
       initNotificationSocket(user.id, token, callbacks);

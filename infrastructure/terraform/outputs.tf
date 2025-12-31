@@ -538,3 +538,53 @@ output "deployment_summary" {
     waf_type          = var.enable_application_gateway ? "Application Gateway" : (var.enable_front_door ? "Front Door" : "None")
   }
 }
+
+# ============================================================================
+# Identity Module Outputs
+# ============================================================================
+
+output "identity_web_app_client_id" {
+  description = "Client ID of the web application"
+  value       = module.identity.web_app_client_id
+}
+
+output "identity_api_app_client_id" {
+  description = "Client ID of the API application"
+  value       = module.identity.api_app_client_id
+}
+
+output "identity_automation_app_client_id" {
+  description = "Client ID of the automation application"
+  value       = module.identity.automation_app_client_id
+}
+
+output "identity_api_identifier_uri" {
+  description = "Identifier URI of the API application"
+  value       = module.identity.api_identifier_uri
+}
+
+output "identity_subscription_tier_group_ids" {
+  description = "Object IDs of subscription tier security groups"
+  value       = module.identity.subscription_tier_group_ids
+}
+
+output "identity_special_group_ids" {
+  description = "Object IDs of special security groups"
+  value       = module.identity.special_group_ids
+}
+
+output "identity_openid_config_url" {
+  description = "OpenID Connect configuration URL"
+  value       = module.identity.openid_config_url
+}
+
+output "identity_environment_variables" {
+  description = "Environment variables for backend services"
+  value       = module.identity.environment_variables
+  sensitive   = true
+}
+
+output "identity_backend_config" {
+  description = "Configuration values for backend services"
+  value       = module.identity.backend_config
+}

@@ -37,7 +37,9 @@ export const getFirebaseMessaging = async (): Promise<Messaging | null> => {
 
     const supported = await isSupported();
     if (!supported) {
-      console.warn('Firebase Messaging is not supported in this browser');
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('[Firebase] Messaging is not supported in this browser');
+      }
       return null;
     }
 
@@ -51,7 +53,9 @@ export const getFirebaseMessaging = async (): Promise<Messaging | null> => {
 
     return messaging || null;
   } catch (error) {
-    console.error('Error initializing Firebase Messaging:', error);
+    if (process.env.NODE_ENV === 'development') {
+      console.error('[Firebase] Error initializing Firebase Messaging:', error);
+    }
     return null;
   }
 };
@@ -61,7 +65,9 @@ export const requestNotificationPermission = async (): Promise<string | null> =>
   try {
     // Check if we're in a browser context
     if (typeof window === 'undefined' || !('Notification' in window)) {
-      console.warn('Notifications not supported in this environment');
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('[Firebase] Notifications not supported in this environment');
+      }
       return null;
     }
 
@@ -76,11 +82,15 @@ export const requestNotificationPermission = async (): Promise<string | null> =>
     if (permission === 'granted') {
       return await getFCMToken();
     } else {
-      console.warn('Notification permission denied');
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('[Firebase] Notification permission denied');
+      }
       return null;
     }
   } catch (error) {
-    console.error('Error requesting notification permission:', error);
+    if (process.env.NODE_ENV === 'development') {
+      console.error('[Firebase] Error requesting notification permission:', error);
+    }
     return null;
   }
 };
@@ -91,26 +101,36 @@ export const getFCMToken = async (): Promise<string | null> => {
     const messagingInstance = await getFirebaseMessaging();
 
     if (!messagingInstance) {
-      console.warn('Firebase Messaging not available');
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('[Firebase] Firebase Messaging not available');
+      }
       return null;
     }
 
     if (!vapidKey) {
-      console.error('VAPID key not configured');
+      if (process.env.NODE_ENV === 'development') {
+        console.error('[Firebase] VAPID key not configured');
+      }
       return null;
     }
 
     const token = await getToken(messagingInstance, { vapidKey });
 
     if (token) {
-      console.log('FCM Token received:', token);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[Firebase] FCM Token received:', token.substring(0, 20) + '...');
+      }
       return token;
     } else {
-      console.warn('No FCM token received');
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('[Firebase] No FCM token received');
+      }
       return null;
     }
   } catch (error) {
-    console.error('Error getting FCM token:', error);
+    if (process.env.NODE_ENV === 'development') {
+      console.error('[Firebase] Error getting FCM token:', error);
+    }
     return null;
   }
 };

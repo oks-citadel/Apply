@@ -13,6 +13,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { ComplianceService, ComplianceRegion, DataPurpose, DataSubjectRequestType } from './compliance.service';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 class RecordConsentDto {
   purpose: DataPurpose;
@@ -24,7 +25,9 @@ class CreateDSRDto {
 }
 
 @ApiTags('Compliance')
+@ApiBearerAuth()
 @Controller('compliance')
+@UseGuards(JwtAuthGuard) // Require authentication for compliance/GDPR endpoints
 export class ComplianceController {
   constructor(private readonly complianceService: ComplianceService) {}
 

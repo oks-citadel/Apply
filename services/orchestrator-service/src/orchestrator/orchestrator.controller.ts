@@ -6,6 +6,7 @@ import {
   Body,
   HttpStatus,
   HttpCode,
+  UseGuards,
   NotFoundException,
 } from '@nestjs/common';
 import {
@@ -15,6 +16,8 @@ import {
   ApiBearerAuth,
   ApiParam,
 } from '@nestjs/swagger';
+
+import { ServiceAuthGuard } from '@applyforus/security';
 
 import {
   OrchestrateResponseDto,
@@ -36,6 +39,7 @@ import type { AgentHealth } from './interfaces/agent.interface';
 @ApiTags('orchestration')
 @ApiBearerAuth()
 @Controller()
+@UseGuards(ServiceAuthGuard) // Service-to-service auth for orchestration - internal API
 export class OrchestratorController {
   constructor(
     private readonly orchestratorService: OrchestratorService,

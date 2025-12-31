@@ -6,6 +6,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { ScheduleModule } from '@nestjs/schedule';
 import { InputSanitizationMiddleware } from '@applyforus/security';
+import { AuthModule } from './auth/auth.module';
+import { JwtAuthGuard } from './auth/jwt-auth.guard';
 import { StripeModule } from './modules/stripe/stripe.module';
 import { FlutterwaveModule } from './modules/flutterwave/flutterwave.module';
 import { PaystackModule } from './modules/paystack/paystack.module';
@@ -94,6 +96,9 @@ import { typeOrmConfig } from './common/config/typeorm.config';
     // Scheduled tasks
     ScheduleModule.forRoot(),
 
+    // Authentication
+    AuthModule,
+
     // Feature modules
     StripeModule,
     FlutterwaveModule,
@@ -110,6 +115,10 @@ import { typeOrmConfig } from './common/config/typeorm.config';
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
     },
   ],
 })

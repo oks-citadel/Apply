@@ -10,6 +10,7 @@ import {
   Headers,
   Ip,
   UseInterceptors,
+  UseGuards,
   ClassSerializerInterceptor,
   Logger,
 } from '@nestjs/common';
@@ -19,10 +20,14 @@ import {
   ApiResponse,
   ApiQuery,
   ApiParam,
+  ApiBearerAuth,
   ApiBadRequestResponse,
   ApiInternalServerErrorResponse,
   ApiBody,
 } from '@nestjs/swagger';
+
+import { ServiceAuthGuard } from '@applyforus/security';
+
 import { UserAnalyticsService } from './user-analytics.service';
 import {
   TrackActivityDto,
@@ -52,7 +57,9 @@ import { SegmentType } from './entities/user-segment.entity';
  * REST API endpoints for user analytics, engagement metrics, and behavior tracking
  */
 @ApiTags('user-analytics')
+@ApiBearerAuth()
 @Controller('api/v1/user-analytics')
+@UseGuards(ServiceAuthGuard) // Service-to-service auth required for analytics data
 @UseInterceptors(ClassSerializerInterceptor)
 export class UserAnalyticsController {
   private readonly logger = new Logger(UserAnalyticsController.name);

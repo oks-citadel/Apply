@@ -570,4 +570,160 @@ export class WebhookService {
     );
     return new Date(Date.now() + delay);
   }
+
+  // ============================================================================
+  // INCOMING WEBHOOK PROCESSING
+  // ============================================================================
+
+  /**
+   * Process an incoming webhook from an external service
+   * This method handles webhooks received from services like Stripe, SendGrid, etc.
+   *
+   * @param provider - The webhook provider (stripe, sendgrid, twilio, generic)
+   * @param payload - The raw webhook payload
+   */
+  async processIncomingWebhook(
+    provider: string,
+    payload: Record<string, any>,
+  ): Promise<void> {
+    this.logger.log(`Processing incoming ${provider} webhook`);
+
+    try {
+      switch (provider) {
+        case 'stripe':
+          await this.handleStripeWebhook(payload);
+          break;
+        case 'sendgrid':
+          await this.handleSendGridWebhook(payload);
+          break;
+        case 'twilio':
+          await this.handleTwilioWebhook(payload);
+          break;
+        case 'generic':
+        default:
+          await this.handleGenericWebhook(payload);
+          break;
+      }
+
+      this.logger.log(`Successfully processed ${provider} webhook`);
+    } catch (error) {
+      this.logger.error(
+        `Failed to process ${provider} webhook: ${error.message}`,
+        error.stack,
+      );
+      // Re-throw to let the controller handle the error response
+      throw error;
+    }
+  }
+
+  /**
+   * Handle Stripe webhooks (payment events)
+   */
+  private async handleStripeWebhook(payload: Record<string, any>): Promise<void> {
+    const eventType = payload.type;
+    const data = payload.data?.object;
+
+    this.logger.debug(`Stripe webhook event: ${eventType}`);
+
+    // Map Stripe events to internal notification events
+    switch (eventType) {
+      case 'payment_intent.succeeded':
+        // Trigger payment success notification
+        this.logger.log(`Payment succeeded: ${data?.id}`);
+        break;
+      case 'payment_intent.payment_failed':
+        // Trigger payment failure notification
+        this.logger.log(`Payment failed: ${data?.id}`);
+        break;
+      case 'customer.subscription.created':
+      case 'customer.subscription.updated':
+      case 'customer.subscription.deleted':
+        // Trigger subscription status notification
+        this.logger.log(`Subscription event: ${eventType} for ${data?.id}`);
+        break;
+      case 'invoice.paid':
+      case 'invoice.payment_failed':
+        // Trigger invoice notification
+        this.logger.log(`Invoice event: ${eventType} for ${data?.id}`);
+        break;
+      default:
+        this.logger.debug(`Unhandled Stripe event type: ${eventType}`);
+    }
+  }
+
+  /**
+   * Handle SendGrid webhooks (email delivery events)
+   */
+  private async handleSendGridWebhook(
+    payload: Record<string, any> | Record<string, any>[],
+  ): Promise<void> {
+    // SendGrid sends events as an array
+    const events = Array.isArray(payload) ? payload : [payload];
+
+    for (const event of events) {
+      const eventType = event.event;
+      const email = event.email;
+
+      this.logger.debug(`SendGrid webhook event: ${eventType} for ${email}`);
+
+      switch (eventType) {
+        case 'delivered':
+          this.logger.log(`Email delivered to ${email}`);
+          break;
+        case 'bounce':
+        case 'blocked':
+          this.logger.warn(`Email bounce/blocked for ${email}: ${event.reason}`);
+          break;
+        case 'spam_report':
+          this.logger.warn(`Spam report from ${email}`);
+          break;
+        case 'unsubscribe':
+          this.logger.log(`User unsubscribed: ${email}`);
+          break;
+        case 'open':
+        case 'click':
+          this.logger.debug(`Email ${eventType} event for ${email}`);
+          break;
+        default:
+          this.logger.debug(`Unhandled SendGrid event type: ${eventType}`);
+      }
+    }
+  }
+
+  /**
+   * Handle Twilio webhooks (SMS delivery events)
+   */
+  private async handleTwilioWebhook(payload: Record<string, any>): Promise<void> {
+    const messageStatus = payload.MessageStatus || payload.SmsStatus;
+    const messageSid = payload.MessageSid || payload.SmsSid;
+
+    this.logger.debug(`Twilio webhook: ${messageStatus} for ${messageSid}`);
+
+    switch (messageStatus) {
+      case 'delivered':
+        this.logger.log(`SMS delivered: ${messageSid}`);
+        break;
+      case 'failed':
+      case 'undelivered':
+        this.logger.warn(`SMS failed: ${messageSid} - ${payload.ErrorCode}`);
+        break;
+      case 'sent':
+      case 'queued':
+        this.logger.debug(`SMS ${messageStatus}: ${messageSid}`);
+        break;
+      default:
+        this.logger.debug(`Unhandled Twilio status: ${messageStatus}`);
+    }
+  }
+
+  /**
+   * Handle generic webhooks
+   */
+  private async handleGenericWebhook(payload: Record<string, any>): Promise<void> {
+    const eventType = payload.type || payload.event || 'unknown';
+    this.logger.log(`Generic webhook received: ${eventType}`);
+
+    // Process based on the event type in the payload
+    // This is where you would implement custom logic for your own webhook events
+  }
 }

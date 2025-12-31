@@ -28,6 +28,7 @@ export const DeepLinkRoutes = {
   REGISTER: 'auth/register',
   RESET_PASSWORD: 'auth/reset-password',
   VERIFY_EMAIL: 'auth/verify-email',
+  OAUTH_CALLBACK: 'oauth/callback',
 
   // Other routes
   DASHBOARD: 'dashboard',
@@ -333,6 +334,17 @@ export class DeepLinkingService {
                 path: DeepLinkRoutes.VERIFY_EMAIL,
                 parse: {
                   token: (token: string) => token,
+                },
+              },
+              OAuthCallback: {
+                path: DeepLinkRoutes.OAUTH_CALLBACK,
+                parse: {
+                  success: (success: string) => success === 'true',
+                  error: (error: string) => error,
+                  error_description: (desc: string) => desc,
+                  access_token: (token: string) => token,
+                  refresh_token: (token: string) => token,
+                  state: (state: string) => state,
                 },
               },
             },

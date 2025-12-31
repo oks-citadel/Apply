@@ -47,20 +47,31 @@ async function bootstrap() {
   app.use(compression());
 
   // CORS configuration - secure origins only
-  const corsOrigins = configService.get<string>('CORS_ORIGINS', '');
+  const isProduction = configService.get('NODE_ENV') === 'production';
+  const corsOrigins = configService.get<string>('ALLOWED_ORIGINS') || configService.get<string>('CORS_ORIGINS', '');
   const allowedOrigins = corsOrigins
-    ? corsOrigins.split(',').map(o => o.trim())
-    : [
-        'https://applyforus.com',
-        'https://www.applyforus.com',
-        'https://dev.applyforus.com',
-        'http://localhost:3000', // For local development
-      ];
+    ? corsOrigins.split(',').map(o => o.trim()).filter(o => o.length > 0)
+    : isProduction
+      ? [
+          'https://applyforus.com',
+          'https://www.applyforus.com',
+        ]
+      : [
+          'https://applyforus.com',
+          'https://www.applyforus.com',
+          'https://dev.applyforus.com',
+          'http://localhost:3000', // For local development
+        ];
 
   app.enableCors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps, Postman, or server-to-server)
+      // In production, require an origin for browser requests (blocks null origin)
+      // In development, allow requests with no origin (mobile apps, Postman, server-to-server)
       if (!origin) {
+        if (isProduction) {
+          logger.warn('CORS request with null origin blocked in production');
+          return callback(new Error('Origin header required in production'));
+        }
         return callback(null, true);
       }
 

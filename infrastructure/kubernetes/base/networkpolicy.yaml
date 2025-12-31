@@ -78,7 +78,7 @@ spec:
     - protocol: TCP
       port: 4003  # auto-apply-service
     - protocol: TCP
-      port: 5000  # ai-service
+      port: 8089  # ai-service
   # Allow HTTPS to external services
   - to:
     - namespaceSelector: {}
@@ -251,7 +251,7 @@ spec:
           app: ai-service
     ports:
     - protocol: TCP
-      port: 5000
+      port: 8089
   # Allow to PostgreSQL
   - to:
     - namespaceSelector: {}
@@ -296,7 +296,7 @@ spec:
           name: ingress-nginx
     ports:
     - protocol: TCP
-      port: 5000
+      port: 8089
   # Allow from other services
   - from:
     - podSelector:
@@ -307,7 +307,7 @@ spec:
           tier: frontend
     ports:
     - protocol: TCP
-      port: 5000
+      port: 8089
   egress:
   # Allow to PostgreSQL
   - to:
@@ -373,7 +373,7 @@ spec:
           app: ai-service
     ports:
     - protocol: TCP
-      port: 5000
+      port: 8089
   # Allow to PostgreSQL
   - to:
     - namespaceSelector: {}
@@ -558,7 +558,7 @@ spec:
           app: ai-service
     ports:
     - protocol: TCP
-      port: 5000
+      port: 8089
   # Allow to PostgreSQL
   - to:
     - namespaceSelector: {}

@@ -8,11 +8,16 @@ import {
   HttpCode,
   HttpStatus,
   Logger,
+  ForbiddenException,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiQuery, ApiParam } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiQuery, ApiParam, ApiBearerAuth } from '@nestjs/swagger';
 import { CoinsService } from './coins.service';
+import { CurrentUser } from '../../auth/current-user.decorator';
+import { Public } from '../../auth/public.decorator';
+import { AuthenticatedUser } from '../../auth/jwt.strategy';
 
 @ApiTags('coins')
+@ApiBearerAuth()
 @Controller('coins')
 export class CoinsController {
   private readonly logger = new Logger(CoinsController.name);
@@ -23,7 +28,16 @@ export class CoinsController {
   @ApiOperation({ summary: 'Get user coin balance' })
   @ApiParam({ name: 'userId', description: 'User ID' })
   @ApiResponse({ status: 200, description: 'Returns user coin balance' })
-  async getBalance(@Param('userId') userId: string) {
+  @ApiResponse({ status: 403, description: 'Forbidden - Cannot access other user data' })
+  async getBalance(
+    @Param('userId') userId: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    // IDOR protection: Users can only access their own balance
+    if (user.id !== userId && user.role !== 'admin') {
+      throw new ForbiddenException('You can only access your own coin balance');
+    }
+
     const balance = await this.coinsService.getBalance(userId);
 
     return {
@@ -33,6 +47,7 @@ export class CoinsController {
   }
 
   @Get('packages')
+  @Public()
   @ApiOperation({ summary: 'Get available coin packages' })
   @ApiResponse({ status: 200, description: 'Returns list of coin packages' })
   getPackages() {
@@ -51,24 +66,20 @@ export class CoinsController {
     schema: {
       type: 'object',
       properties: {
-        userId: { type: 'string' },
         packageIndex: { type: 'number' },
         paymentReference: { type: 'string' },
       },
-      required: ['userId', 'packageIndex', 'paymentReference'],
+      required: ['packageIndex', 'paymentReference'],
     },
   })
   @ApiResponse({ status: 200, description: 'Coin package purchased' })
   async purchasePackage(
-    @Body()
-    body: {
-      userId: string;
-      packageIndex: number;
-      paymentReference: string;
-    },
+    @Body() body: { packageIndex: number; paymentReference: string },
+    @CurrentUser() user: AuthenticatedUser,
   ) {
+    // Use authenticated user's ID to prevent IDOR
     const balance = await this.coinsService.purchaseCoinPackage(
-      body.userId,
+      user.id,
       body.packageIndex,
       body.paymentReference,
     );
@@ -86,11 +97,18 @@ export class CoinsController {
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'offset', required: false, type: Number })
   @ApiResponse({ status: 200, description: 'Returns transaction history' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Cannot access other user data' })
   async getTransactions(
     @Param('userId') userId: string,
     @Query('limit') limit?: string,
     @Query('offset') offset?: string,
+    @CurrentUser() user?: AuthenticatedUser,
   ) {
+    // IDOR protection: Users can only access their own transactions
+    if (user && user.id !== userId && user.role !== 'admin') {
+      throw new ForbiddenException('You can only access your own transaction history');
+    }
+
     const transactions = await this.coinsService.getTransactionHistory(
       userId,
       limit ? parseInt(limit, 10) : 50,
@@ -104,6 +122,7 @@ export class CoinsController {
   }
 
   @Get('boost/costs')
+  @Public()
   @ApiOperation({ summary: 'Get visibility boost costs' })
   @ApiResponse({ status: 200, description: 'Returns boost cost structure' })
   getBoostCosts() {
@@ -122,26 +141,26 @@ export class CoinsController {
     schema: {
       type: 'object',
       properties: {
-        userId: { type: 'string' },
         boostType: { type: 'string', enum: ['basic', 'premium', 'featured'] },
         targetType: { type: 'string', enum: ['resume', 'application'] },
         targetId: { type: 'string' },
       },
-      required: ['userId', 'boostType', 'targetType', 'targetId'],
+      required: ['boostType', 'targetType', 'targetId'],
     },
   })
   @ApiResponse({ status: 200, description: 'Visibility boosted' })
   async boostVisibility(
     @Body()
     body: {
-      userId: string;
       boostType: 'basic' | 'premium' | 'featured';
       targetType: 'resume' | 'application';
       targetId: string;
     },
+    @CurrentUser() user: AuthenticatedUser,
   ) {
+    // Use authenticated user's ID to prevent IDOR
     const boost = await this.coinsService.boostVisibility(
-      body.userId,
+      user.id,
       body.boostType,
       body.targetType,
       body.targetId,
@@ -158,7 +177,16 @@ export class CoinsController {
   @ApiOperation({ summary: 'Get user active boosts' })
   @ApiParam({ name: 'userId', description: 'User ID' })
   @ApiResponse({ status: 200, description: 'Returns active boosts' })
-  async getActiveBoosts(@Param('userId') userId: string) {
+  @ApiResponse({ status: 403, description: 'Forbidden - Cannot access other user data' })
+  async getActiveBoosts(
+    @Param('userId') userId: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    // IDOR protection: Users can only access their own boosts
+    if (user.id !== userId && user.role !== 'admin') {
+      throw new ForbiddenException('You can only access your own boosts');
+    }
+
     const boosts = await this.coinsService.getActiveBoosts(userId);
 
     return {
@@ -174,15 +202,18 @@ export class CoinsController {
     schema: {
       type: 'object',
       properties: {
-        userId: { type: 'string' },
         boostId: { type: 'string' },
       },
-      required: ['userId', 'boostId'],
+      required: ['boostId'],
     },
   })
   @ApiResponse({ status: 200, description: 'Boost cancelled with partial refund' })
-  async cancelBoost(@Body() body: { userId: string; boostId: string }) {
-    const result = await this.coinsService.cancelBoost(body.userId, body.boostId);
+  async cancelBoost(
+    @Body() body: { boostId: string },
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    // Use authenticated user's ID to prevent IDOR
+    const result = await this.coinsService.cancelBoost(user.id, body.boostId);
 
     return {
       success: true,
@@ -192,6 +223,7 @@ export class CoinsController {
   }
 
   @Get('boost/status')
+  @Public()
   @ApiOperation({ summary: 'Check if an item is boosted' })
   @ApiQuery({ name: 'targetType', enum: ['resume', 'application'] })
   @ApiQuery({ name: 'targetId', type: String })
@@ -210,7 +242,7 @@ export class CoinsController {
 
   @Post('allocate-monthly')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Allocate monthly coins for subscription' })
+  @ApiOperation({ summary: 'Allocate monthly coins for subscription (Admin only)' })
   @ApiBody({
     schema: {
       type: 'object',
@@ -225,7 +257,16 @@ export class CoinsController {
     },
   })
   @ApiResponse({ status: 200, description: 'Monthly coins allocated' })
-  async allocateMonthlyCoins(@Body() body: { userId: string; tier: string }) {
+  @ApiResponse({ status: 403, description: 'Forbidden - Admin access required' })
+  async allocateMonthlyCoins(
+    @Body() body: { userId: string; tier: string },
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    // Admin-only endpoint - prevent non-admins from allocating coins
+    if (user.role !== 'admin') {
+      throw new ForbiddenException('Only administrators can allocate monthly coins');
+    }
+
     const { SubscriptionTier } = await import('../../common/enums/subscription-tier.enum');
 
     const balance = await this.coinsService.allocateMonthlyCoins(

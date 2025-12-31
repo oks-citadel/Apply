@@ -121,7 +121,9 @@ export async function cachedApiCall<T>(
     // If we have stale data, return it
     const staleData = apiCache.get<T>(key);
     if (staleData !== null) {
-      console.warn(`[API Cache] Returning stale data for key: ${key}`);
+      if (process.env.NODE_ENV === 'development') {
+        console.warn(`[API Cache] Returning stale data for key: ${key}`);
+      }
       return staleData;
     }
 
@@ -358,7 +360,9 @@ export async function retryApiCall<T>(
       // Calculate delay with exponential backoff
       const delay = Math.min(initialDelay * Math.pow(2, attempt), maxDelay);
 
-      console.log(`[Retry] Attempt ${attempt + 1}/${maxRetries} failed. Retrying in ${delay}ms...`);
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`[Retry] Attempt ${attempt + 1}/${maxRetries} failed. Retrying in ${delay}ms...`);
+      }
 
       await new Promise(resolve => setTimeout(resolve, delay));
     }

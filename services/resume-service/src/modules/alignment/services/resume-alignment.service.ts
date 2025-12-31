@@ -227,6 +227,54 @@ export class ResumeAlignmentService {
   }
 
   /**
+   * Get aligned resume by ID
+   */
+  async getAlignedResume(userId: string, alignedResumeId: string): Promise<AlignedResume> {
+    const alignedResume = await this.alignedResumeRepository.findOne({
+      where: { id: alignedResumeId, userId, deletedAt: IsNull() },
+      relations: ['baseResume'],
+    });
+
+    if (!alignedResume) {
+      throw new NotFoundException(`Aligned resume ${alignedResumeId} not found`);
+    }
+
+    return alignedResume;
+  }
+
+  /**
+   * List aligned resumes for a user
+   */
+  async listAlignedResumes(
+    userId: string,
+    options?: { jobId?: string; page?: number; limit?: number },
+  ): Promise<{ alignedResumes: AlignedResume[]; total: number }> {
+    const page = options?.page || 1;
+    const limit = options?.limit || 10;
+    const skip = (page - 1) * limit;
+
+    const whereCondition: any = {
+      userId,
+      isActive: true,
+      deletedAt: IsNull(),
+    };
+
+    if (options?.jobId) {
+      whereCondition.jobId = options.jobId;
+    }
+
+    const [alignedResumes, total] = await this.alignedResumeRepository.findAndCount({
+      where: whereCondition,
+      relations: ['baseResume'],
+      order: { createdAt: 'DESC' },
+      skip,
+      take: limit,
+    });
+
+    return { alignedResumes, total };
+  }
+
+  /**
    * Get improvement suggestions for a user
    */
   async getImprovementSuggestions(userId: string): Promise<any[]> {

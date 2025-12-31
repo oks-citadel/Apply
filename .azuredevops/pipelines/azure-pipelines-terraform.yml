@@ -1,5 +1,19 @@
 # ============================================================================
-# Azure DevOps Terraform Pipeline for JobPilot AI Platform
+# DEPRECATED - AZURE DEVOPS TERRAFORM PIPELINE
+# ============================================================================
+#
+# THIS PIPELINE IS DEPRECATED. Please use GitHub Actions instead.
+#
+# The CI/CD has been migrated to GitHub Actions at:
+#   .github/workflows/ci-cd.yml
+#   .github/workflows/ci-pipeline.yml
+#
+# For documentation, see:
+#   .github/workflows/README.md
+#
+# This file is kept for reference only.
+# ============================================================================
+# Azure DevOps Terraform Pipeline for JobPilot AI Platform (LEGACY)
 # ============================================================================
 # Project: https://dev.azure.com/citadelcloudmanagement/ApplyPlatform
 # Purpose: Infrastructure as Code deployment using Terraform

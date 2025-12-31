@@ -1,13 +1,16 @@
 import { Controller, Get } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 
+import { Public } from '../auth/public.decorator';
 import { HealthService } from './health.service';
 
 /**
  * Health Check Controller for Job Service
  * Provides endpoints for service health monitoring
+ * @Public() - Health checks don't require authentication for K8s probes
  */
 @ApiTags('Health')
+@Public()
 @Controller('health')
 export class HealthController {
   constructor(private readonly healthService: HealthService) {}

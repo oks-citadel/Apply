@@ -18,60 +18,66 @@ export class TestServiceManager {
   private readonly serviceConfigs: ServiceConfig[];
 
   constructor() {
-    // Define service configurations
+    // Define service configurations (using standardized ports 8081-8090)
     this.serviceConfigs = [
       {
         name: 'auth-service',
-        baseURL: process.env.AUTH_SERVICE_URL || 'http://localhost:3001',
-        port: 3001,
+        baseURL: process.env.AUTH_SERVICE_URL || 'http://localhost:8081',
+        port: 8081,
         healthEndpoint: '/api/v1/health',
       },
       {
         name: 'user-service',
-        baseURL: process.env.USER_SERVICE_URL || 'http://localhost:8002',
-        port: 8002,
-        healthEndpoint: '/api/v1/health',
-      },
-      {
-        name: 'job-service',
-        baseURL: process.env.JOB_SERVICE_URL || 'http://localhost:3003',
-        port: 3003,
+        baseURL: process.env.USER_SERVICE_URL || 'http://localhost:8082',
+        port: 8082,
         healthEndpoint: '/api/v1/health',
       },
       {
         name: 'resume-service',
-        baseURL: process.env.RESUME_SERVICE_URL || 'http://localhost:3004',
-        port: 3004,
+        baseURL: process.env.RESUME_SERVICE_URL || 'http://localhost:8083',
+        port: 8083,
         healthEndpoint: '/api/v1/health',
       },
       {
-        name: 'ai-service',
-        baseURL: process.env.AI_SERVICE_URL || 'http://localhost:8000',
-        port: 8000,
-        healthEndpoint: '/health',
-      },
-      {
-        name: 'notification-service',
-        baseURL: process.env.NOTIFICATION_SERVICE_URL || 'http://localhost:3006',
-        port: 3006,
+        name: 'job-service',
+        baseURL: process.env.JOB_SERVICE_URL || 'http://localhost:8084',
+        port: 8084,
         healthEndpoint: '/api/v1/health',
       },
       {
         name: 'auto-apply-service',
-        baseURL: process.env.AUTO_APPLY_SERVICE_URL || 'http://localhost:3007',
-        port: 3007,
+        baseURL: process.env.AUTO_APPLY_SERVICE_URL || 'http://localhost:8085',
+        port: 8085,
         healthEndpoint: '/api/v1/health',
       },
       {
         name: 'analytics-service',
-        baseURL: process.env.ANALYTICS_SERVICE_URL || 'http://localhost:3008',
-        port: 3008,
+        baseURL: process.env.ANALYTICS_SERVICE_URL || 'http://localhost:8086',
+        port: 8086,
         healthEndpoint: '/api/v1/health',
       },
       {
+        name: 'notification-service',
+        baseURL: process.env.NOTIFICATION_SERVICE_URL || 'http://localhost:8087',
+        port: 8087,
+        healthEndpoint: '/api/v1/health',
+      },
+      {
+        name: 'payment-service',
+        baseURL: process.env.PAYMENT_SERVICE_URL || 'http://localhost:8088',
+        port: 8088,
+        healthEndpoint: '/api/v1/health',
+      },
+      {
+        name: 'ai-service',
+        baseURL: process.env.AI_SERVICE_URL || 'http://localhost:8089',
+        port: 8089,
+        healthEndpoint: '/health',
+      },
+      {
         name: 'orchestrator-service',
-        baseURL: process.env.ORCHESTRATOR_SERVICE_URL || 'http://localhost:3009',
-        port: 3009,
+        baseURL: process.env.ORCHESTRATOR_SERVICE_URL || 'http://localhost:8090',
+        port: 8090,
         healthEndpoint: '/api/v1/health',
       },
     ];
