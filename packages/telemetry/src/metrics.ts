@@ -40,7 +40,8 @@ export class MetricsService {
 
   constructor(config: MetricsConfig) {
     this.registry = new Registry();
-    this.serviceName = config.serviceName;
+    // Sanitize service name for Prometheus (replace hyphens with underscores)
+    this.serviceName = config.serviceName.replace(/-/g, '_');
 
     // Set default labels
     if (config.defaultLabels) {
