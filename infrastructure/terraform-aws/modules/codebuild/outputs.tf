@@ -27,7 +27,7 @@ output "codebuild_role_arn" {
 
 output "codebuild_security_group_id" {
   description = "ID of the CodeBuild security group"
-  value       = aws_security_group.codebuild.id
+  value       = var.enable_vpc_config ? aws_security_group.codebuild[0].id : null
 }
 
 output "build_log_group_name" {

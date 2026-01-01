@@ -49,6 +49,7 @@ variable "node_groups" {
   type = map(object({
     instance_types = list(string)
     capacity_type  = string
+    ami_type       = optional(string, "AL2023_ARM_64_STANDARD") # Default to ARM for Graviton
     min_size       = number
     max_size       = number
     desired_size   = number

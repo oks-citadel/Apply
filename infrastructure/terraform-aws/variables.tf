@@ -113,6 +113,7 @@ variable "eks_node_groups" {
   type = map(object({
     instance_types = list(string)
     capacity_type  = string # ON_DEMAND or SPOT
+    ami_type       = optional(string, "AL2023_ARM_64_STANDARD") # ARM for Graviton instances
     min_size       = number
     max_size       = number
     desired_size   = number
@@ -129,6 +130,7 @@ variable "eks_node_groups" {
     system = {
       instance_types = ["m6g.medium", "m6g.large"]
       capacity_type  = "ON_DEMAND"
+      ami_type       = "AL2023_ARM_64_STANDARD" # ARM for Graviton
       min_size       = 1
       max_size       = 3
       desired_size   = 2
@@ -139,6 +141,7 @@ variable "eks_node_groups" {
     application = {
       instance_types = ["m6g.large", "m6g.xlarge", "m7g.large"]
       capacity_type  = "SPOT" # 70% cost savings
+      ami_type       = "AL2023_ARM_64_STANDARD" # ARM for Graviton
       min_size       = 0
       max_size       = 10
       desired_size   = 2

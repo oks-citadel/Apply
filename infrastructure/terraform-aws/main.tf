@@ -49,6 +49,7 @@ module "eks" {
   vpc_id             = module.vpc.vpc_id
   vpc_cidr           = module.vpc.vpc_cidr
   private_subnet_ids = module.vpc.private_subnet_ids
+  kms_key_arn        = aws_kms_key.main.arn
 
   node_groups               = var.eks_node_groups
   enable_karpenter          = var.enable_karpenter
@@ -158,6 +159,10 @@ module "cost_management" {
   budget_alert_emails = var.budget_alert_emails
   finops_email        = var.budget_alert_emails[0]
   monitored_regions   = [var.aws_region, var.dr_region]
+
+  # Anomaly monitor disabled - AWS account already has one at limit
+  # Cost anomaly detection is handled by existing monitors
+  create_anomaly_monitor = false
 
   enable_auto_shutdown = var.auto_shutdown == "true" ? true : false
   shutdown_schedule    = var.shutdown_schedule

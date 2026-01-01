@@ -64,58 +64,63 @@ resource "aws_security_group" "rds" {
 #-------------------------------------------------------------------------------
 
 resource "aws_db_parameter_group" "main" {
-  name        = "${var.environment}-${var.application_name}-pg15"
+  name_prefix = "${var.environment}-${var.application_name}-pg15-"
   family      = "postgres15"
   description = "Custom parameter group for ${var.application_name}"
 
-  # Performance settings
+  # Performance settings (static parameters require pending-reboot)
   parameter {
-    name  = "shared_buffers"
-    value = "{DBInstanceClassMemory/4096}" # 25% of memory
+    name         = "shared_buffers"
+    value        = "{DBInstanceClassMemory/4096}" # 25% of memory
+    apply_method = "pending-reboot"
   }
 
   parameter {
-    name  = "effective_cache_size"
-    value = "{DBInstanceClassMemory*3/4096}" # 75% of memory
+    name         = "effective_cache_size"
+    value        = "{DBInstanceClassMemory*3/4096}" # 75% of memory
+    apply_method = "pending-reboot"
   }
 
   parameter {
-    name  = "work_mem"
-    value = "65536" # 64MB
+    name         = "work_mem"
+    value        = "65536" # 64MB
+    apply_method = "pending-reboot"
   }
 
   parameter {
-    name  = "maintenance_work_mem"
-    value = "524288" # 512MB
+    name         = "maintenance_work_mem"
+    value        = "524288" # 512MB
+    apply_method = "pending-reboot"
   }
 
-  # Connection settings
+  # Connection settings (static parameter)
   parameter {
-    name  = "max_connections"
-    value = var.max_connections
+    name         = "max_connections"
+    value        = var.max_connections
+    apply_method = "pending-reboot"
   }
 
-  # Logging
+  # Logging (dynamic parameters can use immediate)
   parameter {
-    name  = "log_min_duration_statement"
-    value = "1000" # Log queries over 1 second
-  }
-
-  parameter {
-    name  = "log_connections"
-    value = "1"
+    name         = "log_min_duration_statement"
+    value        = "1000" # Log queries over 1 second
+    apply_method = "immediate"
   }
 
   parameter {
-    name  = "log_disconnections"
-    value = "1"
+    name         = "log_connections"
+    value        = "1"
+    apply_method = "immediate"
   }
 
-  # Security
   parameter {
-    name  = "ssl"
-    value = "1"
+    name         = "log_disconnections"
+    value        = "1"
+    apply_method = "immediate"
   }
+
+  # Note: ssl parameter cannot be modified in RDS parameter groups
+  # SSL is enabled by default and enforced via rds.force_ssl parameter if needed
 
   tags = merge(local.common_tags, var.tags)
 

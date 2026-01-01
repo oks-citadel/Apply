@@ -110,43 +110,25 @@ resource "aws_budgets_budget" "database" {
 # Cost Anomaly Detection
 #-------------------------------------------------------------------------------
 
+# Note: AWS Cost Anomaly Detection has limits on dimensional monitors per account
+# Using only the service monitor to stay within limits
+# Set create_anomaly_monitor = false if account limit is reached
 resource "aws_ce_anomaly_monitor" "service_monitor" {
-  name              = "${var.environment}-service-anomaly-monitor"
+  count = var.create_anomaly_monitor ? 1 : 0
+
+  name              = "applyforus-${var.environment}-service-monitor"
   monitor_type      = "DIMENSIONAL"
   monitor_dimension = "SERVICE"
 }
 
-resource "aws_ce_anomaly_monitor" "custom_monitor" {
-  name         = "${var.environment}-custom-anomaly-monitor"
-  monitor_type = "CUSTOM"
-
-  monitor_specification = jsonencode({
-    And = [
-      {
-        Dimensions = {
-          Key          = "REGION"
-          MatchOptions = ["EQUALS"]
-          Values       = var.monitored_regions
-        }
-      },
-      {
-        Tags = {
-          Key          = "Environment"
-          MatchOptions = ["EQUALS"]
-          Values       = [var.environment]
-        }
-      }
-    ]
-  })
-}
-
 resource "aws_ce_anomaly_subscription" "alerts" {
+  count = var.create_anomaly_monitor ? 1 : 0
+
   name      = "${var.environment}-cost-anomaly-alerts"
   frequency = "IMMEDIATE"
 
   monitor_arn_list = [
-    aws_ce_anomaly_monitor.service_monitor.arn,
-    aws_ce_anomaly_monitor.custom_monitor.arn
+    aws_ce_anomaly_monitor.service_monitor[0].arn
   ]
 
   subscriber {
@@ -154,7 +136,7 @@ resource "aws_ce_anomaly_subscription" "alerts" {
     address = var.finops_email
   }
 
-  # Alert on anomalies over $100 impact
+  # Alert on anomalies over threshold impact
   threshold_expression {
     dimension {
       key           = "ANOMALY_TOTAL_IMPACT_ABSOLUTE"

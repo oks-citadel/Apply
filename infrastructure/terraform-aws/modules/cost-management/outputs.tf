@@ -17,15 +17,14 @@ output "database_budget_id" {
 
 output "anomaly_monitor_arns" {
   description = "Cost anomaly monitor ARNs"
-  value = {
-    service = aws_ce_anomaly_monitor.service_monitor.arn
-    custom  = aws_ce_anomaly_monitor.custom_monitor.arn
-  }
+  value = var.create_anomaly_monitor ? {
+    service = aws_ce_anomaly_monitor.service_monitor[0].arn
+  } : {}
 }
 
 output "anomaly_subscription_arn" {
   description = "Cost anomaly subscription ARN"
-  value       = aws_ce_anomaly_subscription.alerts.arn
+  value       = var.create_anomaly_monitor ? aws_ce_anomaly_subscription.alerts[0].arn : null
 }
 
 output "auto_shutdown_lambda_arn" {

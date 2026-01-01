@@ -114,7 +114,8 @@ resource "aws_eks_node_group" "main" {
   # COST OPTIMIZATION: Use Graviton instances (ARM64) and Spot
   instance_types = each.value.instance_types
   capacity_type  = each.value.capacity_type
-  disk_size      = each.value.disk_size
+  ami_type       = each.value.ami_type # AL2023_ARM_64_STANDARD for Graviton, AL2023_x86_64_STANDARD for x86
+  # Note: disk_size is specified in the launch_template block_device_mappings
 
   scaling_config {
     min_size     = each.value.min_size

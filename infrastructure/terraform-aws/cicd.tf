@@ -64,10 +64,14 @@ module "codebuild" {
   project_name         = var.project_name
   environment          = var.environment
   artifact_bucket_arn  = aws_s3_bucket.cicd_artifacts.arn
-  vpc_id               = module.vpc.vpc_id
-  private_subnet_ids   = module.vpc.private_subnet_ids
   eks_cluster_name     = module.eks.cluster_name
   kubernetes_namespace = var.kubernetes_namespace
+
+  # VPC configuration (disabled - requires ec2:DescribeSecurityGroups IAM permission)
+  # Enable this when IAM user has full EC2 permissions
+  enable_vpc_config    = false
+  vpc_id               = module.vpc.vpc_id
+  private_subnet_ids   = module.vpc.private_subnet_ids
 
   # Build configuration
   build_timeout    = var.codebuild_timeout

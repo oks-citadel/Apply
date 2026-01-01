@@ -22,23 +22,26 @@ single_nat_gateway = true # COST: ~$32/month vs $96/month for HA
 eks_cluster_version = "1.30"
 
 # COST OPTIMIZATION: All Spot, Graviton (ARM64), scale to zero
+# RESOURCE EFFICIENCY: Keep nodes minimal until deployment needed
 eks_node_groups = {
   system = {
     instance_types = ["t4g.medium"] # Graviton, cheapest viable
     capacity_type  = "ON_DEMAND"    # System nodes need stability
+    ami_type       = "AL2023_ARM_64_STANDARD" # ARM64 AMI for Graviton
     min_size       = 1
     max_size       = 2
-    desired_size   = 1
+    desired_size   = 1 # Minimal for dev - scale up only when needed
     disk_size      = 30
     labels         = { "node-type" = "system" }
     taints         = []
   }
   application = {
     instance_types = ["t4g.medium", "t4g.large", "m6g.medium"]
-    capacity_type  = "SPOT" # 70% cost savings
-    min_size       = 0      # Scale to zero
+    capacity_type  = "SPOT"                   # 70% cost savings
+    ami_type       = "AL2023_ARM_64_STANDARD" # ARM64 AMI for Graviton
+    min_size       = 0                        # Scale to zero when not in use
     max_size       = 5
-    desired_size   = 0 # Start at zero
+    desired_size   = 0 # Start at zero - Karpenter provisions as needed
     disk_size      = 50
     labels         = { "node-type" = "application" }
     taints         = []

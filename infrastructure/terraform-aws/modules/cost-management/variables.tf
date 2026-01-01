@@ -46,6 +46,12 @@ variable "anomaly_threshold" {
   default     = 100
 }
 
+variable "create_anomaly_monitor" {
+  description = "Create cost anomaly monitor (set false if account limit reached)"
+  type        = bool
+  default     = true
+}
+
 variable "enable_auto_shutdown" {
   description = "Enable auto-shutdown for non-production resources"
   type        = bool

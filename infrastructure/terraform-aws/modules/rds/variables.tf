@@ -59,7 +59,7 @@ variable "master_password" {
 variable "postgres_version" {
   description = "PostgreSQL engine version"
   type        = string
-  default     = "15.4"
+  default     = "15.8" # Updated to latest available version
 }
 
 #-------------------------------------------------------------------------------

@@ -185,10 +185,13 @@ resource "aws_codebuild_project" "build" {
     buildspec = var.buildspec_build
   }
 
-  vpc_config {
-    vpc_id             = var.vpc_id
-    subnets            = var.private_subnet_ids
-    security_group_ids = [aws_security_group.codebuild.id]
+  dynamic "vpc_config" {
+    for_each = var.enable_vpc_config ? [1] : []
+    content {
+      vpc_id             = var.vpc_id
+      subnets            = var.private_subnet_ids
+      security_group_ids = [aws_security_group.codebuild[0].id]
+    }
   }
 
   tags = var.tags
@@ -244,17 +247,22 @@ resource "aws_codebuild_project" "deploy" {
     buildspec = var.buildspec_deploy
   }
 
-  vpc_config {
-    vpc_id             = var.vpc_id
-    subnets            = var.private_subnet_ids
-    security_group_ids = [aws_security_group.codebuild.id]
+  dynamic "vpc_config" {
+    for_each = var.enable_vpc_config ? [1] : []
+    content {
+      vpc_id             = var.vpc_id
+      subnets            = var.private_subnet_ids
+      security_group_ids = [aws_security_group.codebuild[0].id]
+    }
   }
 
   tags = var.tags
 }
 
-# Security Group for CodeBuild
+# Security Group for CodeBuild (only created when VPC config is enabled)
 resource "aws_security_group" "codebuild" {
+  count = var.enable_vpc_config ? 1 : 0
+
   name        = "${var.project_name}-codebuild-sg-${var.environment}"
   description = "Security group for CodeBuild projects"
   vpc_id      = var.vpc_id

@@ -80,11 +80,8 @@ resource "aws_elasticache_parameter_group" "main" {
     value = "300"
   }
 
-  # Persistence (disabled for cache-only use case, saves costs)
-  parameter {
-    name  = "appendonly"
-    value = var.enable_persistence ? "yes" : "no"
-  }
+  # Note: appendonly parameter cannot be modified after creation in ElastiCache
+  # Persistence is managed at cluster level
 
   tags = merge(local.common_tags, var.tags)
 }

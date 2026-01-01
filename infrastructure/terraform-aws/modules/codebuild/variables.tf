@@ -52,14 +52,22 @@ variable "artifact_bucket_arn" {
   type        = string
 }
 
+variable "enable_vpc_config" {
+  description = "Enable VPC configuration for CodeBuild (requires ec2:DescribeSecurityGroups permission)"
+  type        = bool
+  default     = false
+}
+
 variable "vpc_id" {
   description = "VPC ID for CodeBuild projects"
   type        = string
+  default     = ""
 }
 
 variable "private_subnet_ids" {
   description = "List of private subnet IDs"
   type        = list(string)
+  default     = []
 }
 
 variable "eks_cluster_name" {
