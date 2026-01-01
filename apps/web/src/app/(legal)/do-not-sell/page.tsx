@@ -377,7 +377,7 @@ export default function DoNotSellPage() {
                     name="requestType"
                     value="do-not-sell"
                     checked={formData.requestType === 'do-not-sell'}
-                    onChange={(e) => setFormData({ ...formData, requestType: e.target.value })}
+                    onChange={(e) => setFormData({ ...formData, requestType: e.target.value as RequestType })}
                     className="mr-3"
                   />
                   <div>
@@ -394,7 +394,7 @@ export default function DoNotSellPage() {
                     name="requestType"
                     value="know"
                     checked={formData.requestType === 'know'}
-                    onChange={(e) => setFormData({ ...formData, requestType: e.target.value })}
+                    onChange={(e) => setFormData({ ...formData, requestType: e.target.value as RequestType })}
                     className="mr-3"
                   />
                   <div>
@@ -411,7 +411,7 @@ export default function DoNotSellPage() {
                     name="requestType"
                     value="delete"
                     checked={formData.requestType === 'delete'}
-                    onChange={(e) => setFormData({ ...formData, requestType: e.target.value })}
+                    onChange={(e) => setFormData({ ...formData, requestType: e.target.value as RequestType })}
                     className="mr-3"
                   />
                   <div>
@@ -428,7 +428,7 @@ export default function DoNotSellPage() {
                     name="requestType"
                     value="correct"
                     checked={formData.requestType === 'correct'}
-                    onChange={(e) => setFormData({ ...formData, requestType: e.target.value })}
+                    onChange={(e) => setFormData({ ...formData, requestType: e.target.value as RequestType })}
                     className="mr-3"
                   />
                   <div>
@@ -445,7 +445,7 @@ export default function DoNotSellPage() {
                     name="requestType"
                     value="limit"
                     checked={formData.requestType === 'limit'}
-                    onChange={(e) => setFormData({ ...formData, requestType: e.target.value })}
+                    onChange={(e) => setFormData({ ...formData, requestType: e.target.value as RequestType })}
                     className="mr-3"
                   />
                   <div>

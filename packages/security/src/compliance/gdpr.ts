@@ -1558,7 +1558,7 @@ export class GDPRService {
               return {
                 ...paymentMethod,
                 cardNumber: cardNumber ? `****-****-****-${cardNumber.slice(-4)}` : undefined,
-                cvv: undefined,
+                cvv: undefined as string | undefined,
                 expiryDate: expiryDate ? `**/${expiryDate.slice(-2)}` : undefined,
               };
             });

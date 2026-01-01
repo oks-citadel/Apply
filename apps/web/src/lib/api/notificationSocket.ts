@@ -7,12 +7,15 @@ const NOTIFICATION_SERVICE_URL =
 export interface SocketNotification {
   id: string;
   type: string;
+  category: string;
   title: string;
   message: string;
   read: boolean;
   userId: string;
   createdAt: string;
   data?: Record<string, unknown>;
+  actionUrl?: string;
+  readAt?: string;
 }
 
 export interface NotificationSocketCallbacks {

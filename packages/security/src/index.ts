@@ -29,6 +29,9 @@ export * from './guards/subscription.guard';
 export * from './guards/b2c-groups.guard';
 export * from './decorators/subscription.decorator';
 
+// Additional Subscription types from root subscription.decorator
+export { FeatureType, UsageLimitType, TIER_HIERARCHY, REQUIRES_TIER_KEY, REQUIRES_FEATURE_KEY, CHECK_USAGE_LIMIT_KEY, hasRequiredTier } from './subscription.decorator';
+
 // Usage Tracking
 export * from './usage-tracking.middleware';
 export * from './usage-tracking.service';

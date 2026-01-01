@@ -14,7 +14,7 @@ export function EmailVerificationBanner() {
   const [isVisible, setIsVisible] = useState(true);
   const [isResending, setIsResending] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-  const { user, accessToken } = useAuthStore();
+  const { user, getAccessToken } = useAuthStore();
 
   // Don't show banner if user is verified or not logged in
   if (!user || user.isEmailVerified || !isVisible) {
@@ -22,6 +22,7 @@ export function EmailVerificationBanner() {
   }
 
   const handleResendEmail = async () => {
+    const accessToken = getAccessToken();
     if (!accessToken) return;
 
     setIsResending(true);

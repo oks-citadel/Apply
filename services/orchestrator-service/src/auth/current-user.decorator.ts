@@ -6,7 +6,7 @@ import { AuthenticatedUser } from './jwt.strategy';
  * Usage: @CurrentUser() user: AuthenticatedUser
  */
 export const CurrentUser = createParamDecorator(
-  (data: keyof AuthenticatedUser | undefined, ctx: ExecutionContext): AuthenticatedUser | string => {
+  (data: keyof AuthenticatedUser | undefined, ctx: ExecutionContext): AuthenticatedUser | string | undefined => {
     const request = ctx.switchToHttp().getRequest();
     const user = request.user as AuthenticatedUser;
 

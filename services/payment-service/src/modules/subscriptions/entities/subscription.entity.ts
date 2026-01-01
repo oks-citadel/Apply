@@ -42,6 +42,9 @@ export class Subscription {
   })
   status: SubscriptionStatus;
 
+  @Column({ type: 'varchar', length: 20, default: 'monthly' })
+  billingInterval: 'monthly' | 'yearly';
+
   @Column({ type: 'timestamp', nullable: true })
   currentPeriodStart: Date;
 

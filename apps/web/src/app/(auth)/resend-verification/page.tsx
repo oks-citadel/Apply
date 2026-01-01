@@ -13,9 +13,10 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 export default function ResendVerificationPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-  const { user, accessToken } = useAuthStore();
+  const { user, getAccessToken } = useAuthStore();
 
   const handleResendVerification = async () => {
+    const accessToken = getAccessToken();
     if (!accessToken) {
       setMessage({
         type: 'error',
