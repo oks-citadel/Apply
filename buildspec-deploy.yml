@@ -30,8 +30,9 @@ phases:
       - kubectl get nodes
 
       - export IMAGE_TAG=${CODEBUILD_RESOLVED_SOURCE_VERSION:0:8}
+      - export AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
       - export ECR_REGISTRY=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
-      - echo "Deploying with IMAGE_TAG=$IMAGE_TAG"
+      - echo "Deploying with IMAGE_TAG=$IMAGE_TAG to ECR_REGISTRY=$ECR_REGISTRY"
 
   build:
     commands:
