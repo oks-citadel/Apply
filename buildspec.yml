@@ -16,7 +16,7 @@ phases:
     commands:
       - echo "Installing dependencies..."
       - npm install -g pnpm@8
-      - pnpm install --frozen-lockfile
+      - pnpm install --no-frozen-lockfile
 
   pre_build:
     commands:
