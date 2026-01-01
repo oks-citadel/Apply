@@ -1,13 +1,13 @@
 version: 0.2
 
 # AWS CodeBuild buildspec for ApplyForUs Platform
+# Simplified: Build web app only for initial deployment
 
 env:
   variables:
     DOCKER_BUILDKIT: "1"
   exported-variables:
     - IMAGE_TAG
-    - BUILD_ID
 
 phases:
   pre_build:
@@ -15,60 +15,23 @@ phases:
       - echo "Logging into Amazon ECR..."
       - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
       - export IMAGE_TAG=${CODEBUILD_RESOLVED_SOURCE_VERSION:0:8}
-      - export BUILD_ID=$CODEBUILD_BUILD_NUMBER
       - echo "Building with IMAGE_TAG=$IMAGE_TAG"
+      - export ECR_REGISTRY=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
 
   build:
     commands:
-      - echo "Building Docker images..."
-      - export ECR_REGISTRY=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
-
-      # Build and push web app
       - echo "Building web app..."
       - docker build -t $ECR_REGISTRY/applyai-web:$IMAGE_TAG -t $ECR_REGISTRY/applyai-web:latest -f apps/web/Dockerfile .
       - docker push $ECR_REGISTRY/applyai-web:$IMAGE_TAG
       - docker push $ECR_REGISTRY/applyai-web:latest
-
-      # Build and push services in parallel using background jobs
-      - |
-        build_service() {
-          SERVICE=$1
-          echo "Building $SERVICE..."
-          docker build -t $ECR_REGISTRY/applyai-$SERVICE:$IMAGE_TAG -t $ECR_REGISTRY/applyai-$SERVICE:latest -f services/$SERVICE/Dockerfile . && \
-          docker push $ECR_REGISTRY/applyai-$SERVICE:$IMAGE_TAG && \
-          docker push $ECR_REGISTRY/applyai-$SERVICE:latest
-        }
-
-        # Build services
-        build_service "auth-service" &
-        build_service "user-service" &
-        build_service "job-service" &
-        build_service "resume-service" &
-        wait
-
-        build_service "notification-service" &
-        build_service "auto-apply-service" &
-        build_service "analytics-service" &
-        build_service "payment-service" &
-        wait
-
-        build_service "orchestrator-service" &
-        build_service "ai-service" &
-        wait
-
-      - echo "All images built and pushed successfully!"
+      - echo "Web app built and pushed successfully!"
 
   post_build:
     commands:
-      - echo "Build completed"
-      - echo "Image tag is $IMAGE_TAG"
+      - echo "Build completed - Image tag $IMAGE_TAG"
       - echo "[{\"name\":\"web\",\"imageUri\":\"$ECR_REGISTRY/applyai-web:$IMAGE_TAG\"}]" > imagedefinitions.json
 
 artifacts:
   files:
     - imagedefinitions.json
   discard-paths: yes
-
-cache:
-  paths:
-    - node_modules/**/*
