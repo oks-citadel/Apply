@@ -1,12 +1,13 @@
 version: 0.2
 
-# AWS CodeBuild buildspec for deploying to EKS
-# Simplified for initial deployment
+# AWS CodeBuild buildspec for deploying full stack to EKS
 
 env:
   variables:
     CLUSTER_NAME: "applyforus-dev"
-    NAMESPACE: "applyforus"
+    NAMESPACE: "applyforus-dev"
+    DB_HOST: "dev-applyforus.c456yy2skvzq.us-east-1.rds.amazonaws.com"
+    REDIS_HOST: "dev-applyforus-001.dev-applyforus.wjvwly.use1.cache.amazonaws.com"
 
 phases:
   install:
@@ -16,30 +17,481 @@ phases:
       - chmod +x kubectl
       - mv kubectl /usr/local/bin/
 
-      - echo "Installing kustomize..."
-      - curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
-      - mv kustomize /usr/local/bin/
-
   pre_build:
     commands:
       - echo "Configuring kubectl for EKS..."
       - aws eks update-kubeconfig --region $AWS_DEFAULT_REGION --name $CLUSTER_NAME
-
-      - echo "Verifying cluster access..."
       - kubectl cluster-info
-      - kubectl get nodes
-
       - export IMAGE_TAG=${CODEBUILD_RESOLVED_SOURCE_VERSION:0:8}
       - export AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
       - export ECR_REGISTRY=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
-      - echo "Deploying with IMAGE_TAG=$IMAGE_TAG to ECR_REGISTRY=$ECR_REGISTRY"
+      - echo "Deploying with IMAGE_TAG=$IMAGE_TAG"
 
   build:
     commands:
-      - echo "Creating namespace if not exists..."
+      - echo "Creating namespace..."
       - kubectl create namespace $NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
 
-      - echo "Deploying web app to Kubernetes..."
+      - echo "Creating ConfigMap..."
+      - |
+        cat <<EOF | kubectl apply -f -
+        apiVersion: v1
+        kind: ConfigMap
+        metadata:
+          name: app-config
+          namespace: $NAMESPACE
+        data:
+          NODE_ENV: "production"
+          DB_HOST: "$DB_HOST"
+          DB_PORT: "5432"
+          DB_NAME: "applyforus"
+          REDIS_HOST: "$REDIS_HOST"
+          REDIS_PORT: "6379"
+          AUTH_SERVICE_URL: "http://auth-service:4000"
+          USER_SERVICE_URL: "http://user-service:4004"
+          JOB_SERVICE_URL: "http://job-service:4002"
+          RESUME_SERVICE_URL: "http://resume-service:4001"
+          NOTIFICATION_SERVICE_URL: "http://notification-service:4005"
+          ANALYTICS_SERVICE_URL: "http://analytics-service:3007"
+          PAYMENT_SERVICE_URL: "http://payment-service:8009"
+          ORCHESTRATOR_SERVICE_URL: "http://orchestrator-service:3009"
+          AI_SERVICE_URL: "http://ai-service:5000"
+        EOF
+
+      # Deploy Auth Service
+      - echo "Deploying auth-service..."
+      - |
+        cat <<EOF | kubectl apply -f -
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: auth-service
+          namespace: $NAMESPACE
+        spec:
+          replicas: 2
+          selector:
+            matchLabels:
+              app: auth-service
+          template:
+            metadata:
+              labels:
+                app: auth-service
+            spec:
+              containers:
+              - name: auth-service
+                image: $ECR_REGISTRY/applyai-auth-service:$IMAGE_TAG
+                ports:
+                - containerPort: 4000
+                envFrom:
+                - configMapRef:
+                    name: app-config
+                resources:
+                  requests:
+                    memory: "256Mi"
+                    cpu: "100m"
+                  limits:
+                    memory: "512Mi"
+                    cpu: "500m"
+        ---
+        apiVersion: v1
+        kind: Service
+        metadata:
+          name: auth-service
+          namespace: $NAMESPACE
+        spec:
+          selector:
+            app: auth-service
+          ports:
+          - port: 4000
+            targetPort: 4000
+        EOF
+
+      # Deploy User Service
+      - echo "Deploying user-service..."
+      - |
+        cat <<EOF | kubectl apply -f -
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: user-service
+          namespace: $NAMESPACE
+        spec:
+          replicas: 2
+          selector:
+            matchLabels:
+              app: user-service
+          template:
+            metadata:
+              labels:
+                app: user-service
+            spec:
+              containers:
+              - name: user-service
+                image: $ECR_REGISTRY/applyai-user-service:$IMAGE_TAG
+                ports:
+                - containerPort: 4004
+                envFrom:
+                - configMapRef:
+                    name: app-config
+                resources:
+                  requests:
+                    memory: "256Mi"
+                    cpu: "100m"
+                  limits:
+                    memory: "512Mi"
+                    cpu: "500m"
+        ---
+        apiVersion: v1
+        kind: Service
+        metadata:
+          name: user-service
+          namespace: $NAMESPACE
+        spec:
+          selector:
+            app: user-service
+          ports:
+          - port: 4004
+            targetPort: 4004
+        EOF
+
+      # Deploy Job Service
+      - echo "Deploying job-service..."
+      - |
+        cat <<EOF | kubectl apply -f -
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: job-service
+          namespace: $NAMESPACE
+        spec:
+          replicas: 2
+          selector:
+            matchLabels:
+              app: job-service
+          template:
+            metadata:
+              labels:
+                app: job-service
+            spec:
+              containers:
+              - name: job-service
+                image: $ECR_REGISTRY/applyai-job-service:$IMAGE_TAG
+                ports:
+                - containerPort: 4002
+                envFrom:
+                - configMapRef:
+                    name: app-config
+                resources:
+                  requests:
+                    memory: "256Mi"
+                    cpu: "100m"
+                  limits:
+                    memory: "512Mi"
+                    cpu: "500m"
+        ---
+        apiVersion: v1
+        kind: Service
+        metadata:
+          name: job-service
+          namespace: $NAMESPACE
+        spec:
+          selector:
+            app: job-service
+          ports:
+          - port: 4002
+            targetPort: 4002
+        EOF
+
+      # Deploy Resume Service
+      - echo "Deploying resume-service..."
+      - |
+        cat <<EOF | kubectl apply -f -
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: resume-service
+          namespace: $NAMESPACE
+        spec:
+          replicas: 2
+          selector:
+            matchLabels:
+              app: resume-service
+          template:
+            metadata:
+              labels:
+                app: resume-service
+            spec:
+              containers:
+              - name: resume-service
+                image: $ECR_REGISTRY/applyai-resume-service:$IMAGE_TAG
+                ports:
+                - containerPort: 4001
+                envFrom:
+                - configMapRef:
+                    name: app-config
+                resources:
+                  requests:
+                    memory: "256Mi"
+                    cpu: "100m"
+                  limits:
+                    memory: "512Mi"
+                    cpu: "500m"
+        ---
+        apiVersion: v1
+        kind: Service
+        metadata:
+          name: resume-service
+          namespace: $NAMESPACE
+        spec:
+          selector:
+            app: resume-service
+          ports:
+          - port: 4001
+            targetPort: 4001
+        EOF
+
+      # Deploy Notification Service
+      - echo "Deploying notification-service..."
+      - |
+        cat <<EOF | kubectl apply -f -
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: notification-service
+          namespace: $NAMESPACE
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              app: notification-service
+          template:
+            metadata:
+              labels:
+                app: notification-service
+            spec:
+              containers:
+              - name: notification-service
+                image: $ECR_REGISTRY/applyai-notification-service:$IMAGE_TAG
+                ports:
+                - containerPort: 4005
+                envFrom:
+                - configMapRef:
+                    name: app-config
+                resources:
+                  requests:
+                    memory: "256Mi"
+                    cpu: "100m"
+                  limits:
+                    memory: "512Mi"
+                    cpu: "500m"
+        ---
+        apiVersion: v1
+        kind: Service
+        metadata:
+          name: notification-service
+          namespace: $NAMESPACE
+        spec:
+          selector:
+            app: notification-service
+          ports:
+          - port: 4005
+            targetPort: 4005
+        EOF
+
+      # Deploy Analytics Service
+      - echo "Deploying analytics-service..."
+      - |
+        cat <<EOF | kubectl apply -f -
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: analytics-service
+          namespace: $NAMESPACE
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              app: analytics-service
+          template:
+            metadata:
+              labels:
+                app: analytics-service
+            spec:
+              containers:
+              - name: analytics-service
+                image: $ECR_REGISTRY/applyai-analytics-service:$IMAGE_TAG
+                ports:
+                - containerPort: 3007
+                envFrom:
+                - configMapRef:
+                    name: app-config
+                resources:
+                  requests:
+                    memory: "256Mi"
+                    cpu: "100m"
+                  limits:
+                    memory: "512Mi"
+                    cpu: "500m"
+        ---
+        apiVersion: v1
+        kind: Service
+        metadata:
+          name: analytics-service
+          namespace: $NAMESPACE
+        spec:
+          selector:
+            app: analytics-service
+          ports:
+          - port: 3007
+            targetPort: 3007
+        EOF
+
+      # Deploy Payment Service
+      - echo "Deploying payment-service..."
+      - |
+        cat <<EOF | kubectl apply -f -
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: payment-service
+          namespace: $NAMESPACE
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              app: payment-service
+          template:
+            metadata:
+              labels:
+                app: payment-service
+            spec:
+              containers:
+              - name: payment-service
+                image: $ECR_REGISTRY/applyai-payment-service:$IMAGE_TAG
+                ports:
+                - containerPort: 8009
+                envFrom:
+                - configMapRef:
+                    name: app-config
+                resources:
+                  requests:
+                    memory: "256Mi"
+                    cpu: "100m"
+                  limits:
+                    memory: "512Mi"
+                    cpu: "500m"
+        ---
+        apiVersion: v1
+        kind: Service
+        metadata:
+          name: payment-service
+          namespace: $NAMESPACE
+        spec:
+          selector:
+            app: payment-service
+          ports:
+          - port: 8009
+            targetPort: 8009
+        EOF
+
+      # Deploy Orchestrator Service
+      - echo "Deploying orchestrator-service..."
+      - |
+        cat <<EOF | kubectl apply -f -
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: orchestrator-service
+          namespace: $NAMESPACE
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              app: orchestrator-service
+          template:
+            metadata:
+              labels:
+                app: orchestrator-service
+            spec:
+              containers:
+              - name: orchestrator-service
+                image: $ECR_REGISTRY/applyai-orchestrator-service:$IMAGE_TAG
+                ports:
+                - containerPort: 3009
+                envFrom:
+                - configMapRef:
+                    name: app-config
+                resources:
+                  requests:
+                    memory: "256Mi"
+                    cpu: "100m"
+                  limits:
+                    memory: "512Mi"
+                    cpu: "500m"
+        ---
+        apiVersion: v1
+        kind: Service
+        metadata:
+          name: orchestrator-service
+          namespace: $NAMESPACE
+        spec:
+          selector:
+            app: orchestrator-service
+          ports:
+          - port: 3009
+            targetPort: 3009
+        EOF
+
+      # Deploy AI Service
+      - echo "Deploying ai-service..."
+      - |
+        cat <<EOF | kubectl apply -f -
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: ai-service
+          namespace: $NAMESPACE
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              app: ai-service
+          template:
+            metadata:
+              labels:
+                app: ai-service
+            spec:
+              containers:
+              - name: ai-service
+                image: $ECR_REGISTRY/applyai-ai-service:$IMAGE_TAG
+                ports:
+                - containerPort: 5000
+                envFrom:
+                - configMapRef:
+                    name: app-config
+                resources:
+                  requests:
+                    memory: "512Mi"
+                    cpu: "200m"
+                  limits:
+                    memory: "1Gi"
+                    cpu: "1000m"
+        ---
+        apiVersion: v1
+        kind: Service
+        metadata:
+          name: ai-service
+          namespace: $NAMESPACE
+        spec:
+          selector:
+            app: ai-service
+          ports:
+          - port: 5000
+            targetPort: 5000
+        EOF
+
+      # Deploy Web App with updated config
+      - echo "Deploying web-app..."
       - |
         cat <<EOF | kubectl apply -f -
         apiVersion: apps/v1
@@ -47,8 +499,6 @@ phases:
         metadata:
           name: web-app
           namespace: $NAMESPACE
-          labels:
-            app: web
         spec:
           replicas: 2
           selector:
@@ -67,6 +517,8 @@ phases:
                 env:
                 - name: NODE_ENV
                   value: "production"
+                - name: NEXT_PUBLIC_API_URL
+                  value: "http://api-gateway"
                 resources:
                   requests:
                     memory: "256Mi"
@@ -74,11 +526,7 @@ phases:
                   limits:
                     memory: "512Mi"
                     cpu: "500m"
-        EOF
-
-      - echo "Creating service..."
-      - |
-        cat <<EOF | kubectl apply -f -
+        ---
         apiVersion: v1
         kind: Service
         metadata:
@@ -94,37 +542,105 @@ phases:
           ports:
           - port: 80
             targetPort: 3000
-            protocol: TCP
         EOF
 
-      - echo "Waiting for deployment rollout..."
-      - kubectl rollout status deployment/web-app -n $NAMESPACE --timeout=300s
+      # Deploy API Gateway (routes to backend services)
+      - echo "Deploying API Gateway..."
+      - |
+        cat <<EOF | kubectl apply -f -
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: api-gateway
+          namespace: $NAMESPACE
+        spec:
+          replicas: 2
+          selector:
+            matchLabels:
+              app: api-gateway
+          template:
+            metadata:
+              labels:
+                app: api-gateway
+            spec:
+              containers:
+              - name: nginx
+                image: nginx:alpine
+                ports:
+                - containerPort: 80
+                volumeMounts:
+                - name: nginx-config
+                  mountPath: /etc/nginx/nginx.conf
+                  subPath: nginx.conf
+              volumes:
+              - name: nginx-config
+                configMap:
+                  name: api-gateway-config
+        ---
+        apiVersion: v1
+        kind: ConfigMap
+        metadata:
+          name: api-gateway-config
+          namespace: $NAMESPACE
+        data:
+          nginx.conf: |
+            events { worker_connections 1024; }
+            http {
+              upstream auth { server auth-service:4000; }
+              upstream users { server user-service:4004; }
+              upstream jobs { server job-service:4002; }
+              upstream resumes { server resume-service:4001; }
+              upstream notifications { server notification-service:4005; }
+              upstream analytics { server analytics-service:3007; }
+              upstream payments { server payment-service:8009; }
+              upstream orchestrator { server orchestrator-service:3009; }
+              upstream ai { server ai-service:5000; }
+
+              server {
+                listen 80;
+
+                location /health { return 200 'OK'; }
+
+                location /auth/ { proxy_pass http://auth/; }
+                location /users/ { proxy_pass http://users/; }
+                location /jobs/ { proxy_pass http://jobs/; }
+                location /resumes/ { proxy_pass http://resumes/; }
+                location /notifications/ { proxy_pass http://notifications/; }
+                location /analytics/ { proxy_pass http://analytics/; }
+                location /payments/ { proxy_pass http://payments/; }
+                location /orchestrator/ { proxy_pass http://orchestrator/; }
+                location /ai/ { proxy_pass http://ai/; }
+              }
+            }
+        ---
+        apiVersion: v1
+        kind: Service
+        metadata:
+          name: api-gateway
+          namespace: $NAMESPACE
+          annotations:
+            service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+            service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
+        spec:
+          type: LoadBalancer
+          selector:
+            app: api-gateway
+          ports:
+          - port: 80
+            targetPort: 80
+        EOF
+
+      - echo "Waiting for deployments..."
+      - kubectl get pods -n $NAMESPACE
 
   post_build:
     commands:
       - echo "Deployment completed!"
       - kubectl get pods -n $NAMESPACE
       - kubectl get services -n $NAMESPACE
-
-      - echo "Getting Load Balancer URL..."
-      - |
-        for i in {1..30}; do
-          LB_URL=$(kubectl get svc web-app -n $NAMESPACE -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null)
-          if [ -n "$LB_URL" ]; then
-            echo "Load Balancer URL: $LB_URL"
-            echo "$LB_URL" > deployment-url.txt
-            break
-          fi
-          echo "Waiting for Load Balancer... ($i/30)"
-          sleep 10
-        done
-
-      - echo "Deployment to $NAMESPACE completed at $(date)"
       - echo "IMAGE_TAG=$IMAGE_TAG" > deployment-status.txt
-      - echo "NAMESPACE=$NAMESPACE" >> deployment-status.txt
 
 artifacts:
   files:
     - deployment-status.txt
-    - deployment-url.txt
   discard-paths: yes
