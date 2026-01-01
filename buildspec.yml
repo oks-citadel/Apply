@@ -24,7 +24,7 @@ phases:
 
       # Build auth-service (priority - needed for registration)
       - echo "Building auth-service..."
-      - docker build -t $ECR_REGISTRY/applyai-auth-service:$IMAGE_TAG -t $ECR_REGISTRY/applyai-auth-service:latest -f services/auth-service/Dockerfile .
+      - docker build --no-cache -t $ECR_REGISTRY/applyai-auth-service:$IMAGE_TAG -t $ECR_REGISTRY/applyai-auth-service:latest -f services/auth-service/Dockerfile .
       - docker push $ECR_REGISTRY/applyai-auth-service:$IMAGE_TAG
       - docker push $ECR_REGISTRY/applyai-auth-service:latest
 
