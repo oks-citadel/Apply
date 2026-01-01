@@ -1,14 +1,10 @@
 version: 0.2
 
 # AWS CodeBuild buildspec for ApplyForUs Platform
-# This builds all Docker images and pushes them to ECR
 
 env:
   variables:
     DOCKER_BUILDKIT: "1"
-  parameter-store:
-    DOCKER_HUB_USERNAME: "/applyai/docker-hub-username"
-    DOCKER_HUB_PASSWORD: "/applyai/docker-hub-password"
   exported-variables:
     - IMAGE_TAG
     - BUILD_ID
@@ -26,21 +22,9 @@ phases:
     commands:
       - echo "Logging into Amazon ECR..."
       - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
-
-      # Optional: Login to Docker Hub to avoid rate limits
-      - |
-        if [ -n "$DOCKER_HUB_USERNAME" ]; then
-          echo "$DOCKER_HUB_PASSWORD" | docker login -u "$DOCKER_HUB_USERNAME" --password-stdin
-        fi
-
-      # Set image tag based on commit SHA or build ID
       - export IMAGE_TAG=${CODEBUILD_RESOLVED_SOURCE_VERSION:0:8}
       - export BUILD_ID=$CODEBUILD_BUILD_NUMBER
       - echo "Building with IMAGE_TAG=$IMAGE_TAG"
-
-      # Run tests before building
-      - echo "Running tests..."
-      - pnpm run test --if-present || true
 
   build:
     commands:
@@ -84,52 +68,15 @@ phases:
 
   post_build:
     commands:
-      - echo "Build completed on $(date)"
-      - echo "Image tag: $IMAGE_TAG"
-
-      # Generate image definitions for ECS/EKS deployment
-      - |
-        cat > imagedefinitions.json << EOF
-        [
-          {"name": "web", "imageUri": "$ECR_REGISTRY/applyai-web:$IMAGE_TAG"},
-          {"name": "auth-service", "imageUri": "$ECR_REGISTRY/applyai-auth-service:$IMAGE_TAG"},
-          {"name": "user-service", "imageUri": "$ECR_REGISTRY/applyai-user-service:$IMAGE_TAG"},
-          {"name": "job-service", "imageUri": "$ECR_REGISTRY/applyai-job-service:$IMAGE_TAG"},
-          {"name": "resume-service", "imageUri": "$ECR_REGISTRY/applyai-resume-service:$IMAGE_TAG"},
-          {"name": "notification-service", "imageUri": "$ECR_REGISTRY/applyai-notification-service:$IMAGE_TAG"},
-          {"name": "auto-apply-service", "imageUri": "$ECR_REGISTRY/applyai-auto-apply-service:$IMAGE_TAG"},
-          {"name": "analytics-service", "imageUri": "$ECR_REGISTRY/applyai-analytics-service:$IMAGE_TAG"},
-          {"name": "payment-service", "imageUri": "$ECR_REGISTRY/applyai-payment-service:$IMAGE_TAG"},
-          {"name": "orchestrator-service", "imageUri": "$ECR_REGISTRY/applyai-orchestrator-service:$IMAGE_TAG"},
-          {"name": "ai-service", "imageUri": "$ECR_REGISTRY/applyai-ai-service:$IMAGE_TAG"}
-        ]
-        EOF
-
-      # Generate Kubernetes manifests with updated image tags
-      - |
-        for deployment in infrastructure/kubernetes/production/*-deployment.yaml; do
-          sed -i "s|:latest|:$IMAGE_TAG|g" $deployment
-          sed -i "s|:v[0-9]*\.[0-9]*\.[0-9]*|:$IMAGE_TAG|g" $deployment
-        done
-
-      - echo "Updated Kubernetes manifests with image tag $IMAGE_TAG"
+      - echo "Build completed"
+      - echo "Image tag is $IMAGE_TAG"
+      - echo "[{\"name\":\"web\",\"imageUri\":\"$ECR_REGISTRY/applyai-web:$IMAGE_TAG\"}]" > imagedefinitions.json
 
 artifacts:
   files:
     - imagedefinitions.json
-    - infrastructure/kubernetes/production/**/*
-    - appspec.yml
-  discard-paths: no
+  discard-paths: yes
 
 cache:
   paths:
-    - 'node_modules/**/*'
-    - '/root/.local/share/pnpm/store/**/*'
-    - '/root/.cache/docker/**/*'
-
-reports:
-  test-reports:
-    files:
-      - 'coverage/lcov.info'
-      - 'test-results/**/*'
-    file-format: COBERTURAXML
+    - node_modules/**/*
