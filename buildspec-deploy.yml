@@ -1,25 +1,24 @@
 version: 0.2
 
 # AWS CodeBuild buildspec for deploying to EKS
-# This is triggered after the build phase completes
+# Simplified for initial deployment
 
 env:
   variables:
-    CLUSTER_NAME: "applyai-eks-cluster"
+    CLUSTER_NAME: "applyforus-dev"
     NAMESPACE: "applyforus"
-  parameter-store:
-    KUBECONFIG_DATA: "/applyai/kubeconfig"
 
 phases:
   install:
     commands:
       - echo "Installing kubectl..."
-      - curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+      - curl -LO "https://dl.k8s.io/release/v1.28.0/bin/linux/amd64/kubectl"
       - chmod +x kubectl
       - mv kubectl /usr/local/bin/
 
-      - echo "Installing Helm..."
-      - curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+      - echo "Installing kustomize..."
+      - curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
+      - mv kustomize /usr/local/bin/
 
   pre_build:
     commands:
@@ -30,58 +29,115 @@ phases:
       - kubectl cluster-info
       - kubectl get nodes
 
+      - export IMAGE_TAG=${CODEBUILD_RESOLVED_SOURCE_VERSION:0:8}
+      - export ECR_REGISTRY=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
+      - echo "Deploying with IMAGE_TAG=$IMAGE_TAG"
+
   build:
     commands:
-      - echo "Deploying to Kubernetes..."
-      - export IMAGE_TAG=${CODEBUILD_RESOLVED_SOURCE_VERSION:0:8}
-
-      # Create namespace if not exists
+      - echo "Creating namespace if not exists..."
       - kubectl create namespace $NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
 
-      # Apply ConfigMaps and Secrets first
-      - kubectl apply -f infrastructure/kubernetes/production/configmap.yaml -n $NAMESPACE || true
-
-      # Apply deployments with rolling update
+      - echo "Deploying web app to Kubernetes..."
       - |
-        for deployment in infrastructure/kubernetes/production/*-deployment.yaml; do
-          echo "Applying $deployment..."
-          kubectl apply -f $deployment -n $NAMESPACE
-        done
+        cat <<EOF | kubectl apply -f -
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: web-app
+          namespace: $NAMESPACE
+          labels:
+            app: web
+        spec:
+          replicas: 2
+          selector:
+            matchLabels:
+              app: web
+          template:
+            metadata:
+              labels:
+                app: web
+            spec:
+              containers:
+              - name: web
+                image: $ECR_REGISTRY/applyai-web:$IMAGE_TAG
+                ports:
+                - containerPort: 3000
+                env:
+                - name: NODE_ENV
+                  value: "production"
+                - name: NEXT_PUBLIC_API_URL
+                  value: "https://api.applyforus.com"
+                resources:
+                  requests:
+                    memory: "256Mi"
+                    cpu: "100m"
+                  limits:
+                    memory: "512Mi"
+                    cpu: "500m"
+                readinessProbe:
+                  httpGet:
+                    path: /
+                    port: 3000
+                  initialDelaySeconds: 10
+                  periodSeconds: 5
+                livenessProbe:
+                  httpGet:
+                    path: /
+                    port: 3000
+                  initialDelaySeconds: 30
+                  periodSeconds: 10
+        EOF
 
-      # Apply services
-      - kubectl apply -f infrastructure/kubernetes/production/ -n $NAMESPACE --recursive || true
-
-      # Wait for rollouts to complete
+      - echo "Creating service..."
       - |
-        DEPLOYMENTS=$(kubectl get deployments -n $NAMESPACE -o jsonpath='{.items[*].metadata.name}')
-        for deploy in $DEPLOYMENTS; do
-          echo "Waiting for $deploy rollout..."
-          kubectl rollout status deployment/$deploy -n $NAMESPACE --timeout=300s || {
-            echo "Rollout failed for $deploy, initiating rollback..."
-            kubectl rollout undo deployment/$deploy -n $NAMESPACE
-            exit 1
-          }
-        done
+        cat <<EOF | kubectl apply -f -
+        apiVersion: v1
+        kind: Service
+        metadata:
+          name: web-app
+          namespace: $NAMESPACE
+          annotations:
+            service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+            service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
+        spec:
+          type: LoadBalancer
+          selector:
+            app: web
+          ports:
+          - port: 80
+            targetPort: 3000
+            protocol: TCP
+        EOF
+
+      - echo "Waiting for deployment rollout..."
+      - kubectl rollout status deployment/web-app -n $NAMESPACE --timeout=300s
 
   post_build:
     commands:
       - echo "Deployment completed!"
-
-      # Verify deployment health
       - kubectl get pods -n $NAMESPACE
       - kubectl get services -n $NAMESPACE
 
-      # Run smoke tests
+      - echo "Getting Load Balancer URL..."
       - |
-        WEB_URL=$(kubectl get svc web-app -n $NAMESPACE -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
-        if [ -n "$WEB_URL" ]; then
-          echo "Running smoke test against $WEB_URL..."
-          curl -f "http://$WEB_URL/api/health" || echo "Health check endpoint not ready"
-        fi
+        for i in {1..30}; do
+          LB_URL=$(kubectl get svc web-app -n $NAMESPACE -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null)
+          if [ -n "$LB_URL" ]; then
+            echo "Load Balancer URL: $LB_URL"
+            echo "$LB_URL" > deployment-url.txt
+            break
+          fi
+          echo "Waiting for Load Balancer... ($i/30)"
+          sleep 10
+        done
 
-      - echo "Deployment to $NAMESPACE completed successfully at $(date)"
+      - echo "Deployment to $NAMESPACE completed at $(date)"
+      - echo "IMAGE_TAG=$IMAGE_TAG" > deployment-status.txt
+      - echo "NAMESPACE=$NAMESPACE" >> deployment-status.txt
 
 artifacts:
   files:
     - deployment-status.txt
+    - deployment-url.txt
   discard-paths: yes
