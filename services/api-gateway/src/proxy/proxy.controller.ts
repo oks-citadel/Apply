@@ -14,7 +14,7 @@ import { SkipCsrf } from '@applyforus/security';
 
 import { JwtAuthGuard } from '../auth/jwt.guard';
 
-import type { ProxyService } from './proxy.service';
+import { ProxyService } from './proxy.service';
 import type { Request, Response } from 'express';
 
 @ApiTags('proxy')

@@ -4,7 +4,7 @@ import { SkipThrottle } from '@nestjs/throttler';
 
 import { Public } from '../common/decorators/public.decorator';
 
-import type { HealthService } from './health.service';
+import { HealthService } from './health.service';
 
 /**
  * Health Check Controller for Auth Service
