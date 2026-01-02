@@ -26,7 +26,7 @@ export const databaseConfig = (
     : configService.get<boolean>('database.synchronize', false),
   logging: configService.get<boolean>('database.logging'),
   ssl: configService.get<string>('nodeEnv') === 'production' ? {
-    rejectUnauthorized: true,
+    rejectUnauthorized: configService.get<string>('database.sslRejectUnauthorized') !== 'false',
     ca: configService.get<string>('database.sslCaCert'),
   } : false,
   extra: {

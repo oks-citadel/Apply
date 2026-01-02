@@ -27,7 +27,7 @@ export const dataSourceOptions: DataSourceOptions = {
   synchronize: false, // Never use synchronize in production - use migrations instead,
   logging: configService.get('NODE_ENV') === 'development',
   ssl: configService.get('NODE_ENV') === 'production' ? {
-    rejectUnauthorized: true,
+    rejectUnauthorized: configService.get<string>('database.sslRejectUnauthorized') !== 'false',
     ca: configService.get('DB_SSL_CA_CERT'),
   } : false,
   extra: {

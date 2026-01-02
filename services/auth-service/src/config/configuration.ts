@@ -18,6 +18,7 @@ export default () => ({
     // Always use migrations instead
     synchronize: false,
     logging: process.env.DB_LOGGING === 'true' || false,
+    sslRejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED || 'true',
   },
 
   // JWT Configuration
