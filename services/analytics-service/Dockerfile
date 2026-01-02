@@ -1,5 +1,5 @@
 # Monorepo-aware Dockerfile for analytics-service
-FROM node:20-alpine@sha256:c13b26e7e602ef2f1074aef304ce6e9b7dd284c419b35d89fcf3cc8e44a8def9 AS builder
+FROM public.ecr.aws/docker/library/node:20-alpine@sha256:c13b26e7e602ef2f1074aef304ce6e9b7dd284c419b35d89fcf3cc8e44a8def9 AS builder
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
@@ -34,7 +34,7 @@ RUN echo "=== Starting analytics-service build ===" && \
     ls -laR dist/ | head -50
 
 # Stage 2: Production - preserve monorepo structure for pnpm symlinks
-FROM node:20-alpine@sha256:c13b26e7e602ef2f1074aef304ce6e9b7dd284c419b35d89fcf3cc8e44a8def9 AS production
+FROM public.ecr.aws/docker/library/node:20-alpine@sha256:c13b26e7e602ef2f1074aef304ce6e9b7dd284c419b35d89fcf3cc8e44a8def9 AS production
 
 RUN apk add --no-cache dumb-init curl
 
