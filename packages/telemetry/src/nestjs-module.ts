@@ -63,6 +63,9 @@ export class TelemetryModule implements NestModule {
       logLevel = 'info',
     } = options;
 
+    // Sanitize service name for Prometheus (replace hyphens with underscores)
+    const sanitizedServiceName = serviceName.replace(/-/g, '_');
+
     const imports: any[] = [];
     const providers: any[] = [];
     const exports: any[] = [];
@@ -75,7 +78,7 @@ export class TelemetryModule implements NestModule {
           defaultMetrics: {
             enabled: enableDefaultMetrics,
             config: {
-              prefix: `${serviceName}_`,
+              prefix: `${sanitizedServiceName}_`,
             },
           },
         }),
