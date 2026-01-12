@@ -80,7 +80,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const { user, accessToken, refreshToken, expiresIn } = response.data as AuthResponseData;
 
       // Store tokens securely
-      await storeAuthData(accessToken, refreshToken, user as Record<string, unknown>, expiresIn);
+      await storeAuthData(accessToken, refreshToken, user as unknown as Record<string, unknown>, expiresIn);
 
       set({
         user,
@@ -103,7 +103,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const { user, accessToken, refreshToken, expiresIn } = response.data as AuthResponseData;
 
       // Store tokens securely
-      await storeAuthData(accessToken, refreshToken, user as Record<string, unknown>, expiresIn);
+      await storeAuthData(accessToken, refreshToken, user as unknown as Record<string, unknown>, expiresIn);
 
       set({
         user,
@@ -151,7 +151,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const { user, accessToken, refreshToken, expiresIn } = response.data as AuthResponseData;
 
       // Store tokens securely
-      await storeAuthData(accessToken, refreshToken, user as Record<string, unknown>, expiresIn);
+      await storeAuthData(accessToken, refreshToken, user as unknown as Record<string, unknown>, expiresIn);
 
       set({
         user,

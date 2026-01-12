@@ -1,11 +1,14 @@
 import { Controller, Get, Post, Res, Logger } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { SkipThrottle } from '@nestjs/throttler';
-import { Response } from 'express';
 
-import { CsrfService, SkipCsrf, CSRF_COOKIE_NAME } from '@applyforus/security';
+
+import type { CsrfService} from '@applyforus/security';
+import { SkipCsrf, CSRF_COOKIE_NAME } from '@applyforus/security';
 
 import { Public } from '../common/decorators/public.decorator';
+
+import type { Response } from 'express';
 
 /**
  * CSRF Token Controller

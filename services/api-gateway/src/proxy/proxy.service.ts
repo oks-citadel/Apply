@@ -1,9 +1,8 @@
 import { Injectable, Logger, HttpException, HttpStatus } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
 
-import { HttpService } from '@nestjs/axios';
-import { ConfigService } from '@nestjs/config';
-
+import type { HttpService } from '@nestjs/axios';
+import type { ConfigService } from '@nestjs/config';
 import type { AxiosRequestConfig, AxiosResponse, Method } from 'axios';
 
 export interface ProxyResponse<T = unknown> {

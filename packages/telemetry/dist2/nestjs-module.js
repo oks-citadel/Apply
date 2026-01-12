@@ -39,6 +39,8 @@ const prometheus_interceptor_1 = require("./prometheus.interceptor");
 let TelemetryModule = TelemetryModule_1 = class TelemetryModule {
     static forRoot(options) {
         const { serviceName, serviceVersion = '1.0.0', environment = process.env.NODE_ENV || 'development', enablePrometheus = true, prometheusPath = '/metrics', enableDefaultMetrics = true, logLevel = 'info', } = options;
+        // Sanitize service name for Prometheus (replace hyphens with underscores)
+        const sanitizedServiceName = serviceName.replace(/-/g, '_');
         const imports = [];
         const providers = [];
         const exports = [];
@@ -49,7 +51,7 @@ let TelemetryModule = TelemetryModule_1 = class TelemetryModule {
                 defaultMetrics: {
                     enabled: enableDefaultMetrics,
                     config: {
-                        prefix: `${serviceName}_`,
+                        prefix: `${sanitizedServiceName}_`,
                     },
                 },
             }));

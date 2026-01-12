@@ -2,8 +2,9 @@ import { Controller, Get, Param, HttpStatus, HttpException } from '@nestjs/commo
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { SkipThrottle } from '@nestjs/throttler';
 
-import { HealthService } from './health.service';
-import type { AggregatedHealth, ServiceHealth, IntegrationsHealthResponse } from './health.service';
+import type { HealthService , AggregatedHealth, ServiceHealth, IntegrationsHealthResponse } from './health.service';
+
+
 
 @ApiTags('health')
 @SkipThrottle()

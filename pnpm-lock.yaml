@@ -404,6 +404,9 @@ importers:
       react-native-vector-icons:
         specifier: ^10.0.3
         version: 10.3.0
+      socket.io-client:
+        specifier: ^4.7.5
+        version: 4.8.1
       zustand:
         specifier: ^4.5.2
         version: 4.5.7(@types/react@18.3.27)(react@18.3.1)
@@ -516,6 +519,9 @@ importers:
       date-fns:
         specifier: ^3.6.0
         version: 3.6.0
+      es-toolkit:
+        specifier: ^1.43.0
+        version: 1.43.0
       firebase:
         specifier: ^11.1.0
         version: 11.10.0
@@ -16816,8 +16822,8 @@ packages:
       is-symbol: 1.1.1
     dev: true
 
-  /es-toolkit@1.42.0:
-    resolution: {integrity: sha512-SLHIyY7VfDJBM8clz4+T2oquwTQxEzu263AyhVK4jREOAwJ+8eebaa4wM3nlvnAqhDrMm2EsA6hWHaQsMPQ1nA==}
+  /es-toolkit@1.43.0:
+    resolution: {integrity: sha512-SKCT8AsWvYzBBuUqMk4NPwFlSdqLpJwmy6AP322ERn8W2YLIB6JBXnwMI2Qsh2gfphT3q7EKAxKb23cvFHFwKA==}
     dev: false
 
   /esbuild@0.21.5:
@@ -17771,7 +17777,7 @@ packages:
     engines: {node: '>= 10.17.0'}
     hasBin: true
     dependencies:
-      debug: 4.3.4
+      debug: 4.4.3
       get-stream: 5.2.0
       yauzl: 2.10.0
     optionalDependencies:
@@ -18473,7 +18479,7 @@ packages:
     dependencies:
       basic-ftp: 5.0.5
       data-uri-to-buffer: 6.0.2
-      debug: 4.3.4
+      debug: 4.4.3
     transitivePeerDependencies:
       - supports-color
     dev: false
@@ -22425,7 +22431,7 @@ packages:
     dependencies:
       '@tootallnate/quickjs-emscripten': 0.23.0
       agent-base: 7.1.4
-      debug: 4.3.4
+      debug: 4.4.3
       get-uri: 6.0.5
       http-proxy-agent: 7.0.2
       https-proxy-agent: 7.0.6
@@ -23230,7 +23236,7 @@ packages:
     engines: {node: '>= 14'}
     dependencies:
       agent-base: 7.1.4
-      debug: 4.3.4
+      debug: 4.4.3
       http-proxy-agent: 7.0.2
       https-proxy-agent: 7.0.6
       lru-cache: 7.18.3
@@ -23798,7 +23804,7 @@ packages:
       '@reduxjs/toolkit': 2.11.1(react-redux@9.2.0)(react@18.3.1)
       clsx: 2.1.1
       decimal.js-light: 2.5.1
-      es-toolkit: 1.42.0
+      es-toolkit: 1.43.0
       eventemitter3: 5.0.1
       immer: 10.2.0
       react: 18.3.1

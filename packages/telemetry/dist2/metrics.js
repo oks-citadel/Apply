@@ -16,7 +16,8 @@ Object.defineProperty(exports, "register", { enumerable: true, get: function () 
 let MetricsService = class MetricsService {
     constructor(config) {
         this.registry = new prom_client_1.Registry();
-        this.serviceName = config.serviceName;
+        // Sanitize service name for Prometheus (replace hyphens with underscores)
+        this.serviceName = config.serviceName.replace(/-/g, '_');
         // Set default labels
         if (config.defaultLabels) {
             this.registry.setDefaultLabels(config.defaultLabels);

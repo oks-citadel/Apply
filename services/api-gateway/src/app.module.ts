@@ -9,8 +9,8 @@ import { TelemetryModule, PrometheusInterceptor } from '@applyforus/telemetry';
 
 import { AppController } from './app.controller';
 import { AuthModule } from './auth/auth.module';
-import { CsrfModule } from './csrf/csrf.module';
 import { JwtAuthGuard } from './auth/jwt.guard';
+import { CsrfModule } from './csrf/csrf.module';
 import { HealthModule } from './health/health.module';
 import { ProxyModule } from './proxy/proxy.module';
 import { RateLimitModule } from './rate-limit/rate-limit.module';
